@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://blog.konstas.us/sitemap.xml
+Sitemap: https://ikonstas70.github.io/sitemap.xml
