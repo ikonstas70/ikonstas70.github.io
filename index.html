@@ -1,15 +1,421 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Konstas Engineering Notes — moved</title>
-<meta name="robots" content="noindex">
 <link rel="canonical" href="https://blog.konstas.us/">
-<meta http-equiv="refresh" content="0; url=https://blog.konstas.us/">
-<script>location.replace("https://blog.konstas.us/");</script>
-<style>body{background:#0b0b0d;color:#cfc9bd;font-family:Menlo,monospace;display:flex;min-height:100vh;align-items:center;justify-content:center}a{color:#c9a35a}</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konstas — Engineering Notes</title>
+<meta name="description" content="Engineering notes on networking, cybersecurity, and infrastructure by Ioannis Konstas.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
 </head>
 <body>
-<p>This site has moved &rarr; <a href="https://blog.konstas.us/">blog.konstas.us</a></p>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <p class="section-intro">Field notes and long-form technical articles from two decades in enterprise networking, security operations, and infrastructure engineering — 108 pieces, grouped by domain. Use Search to find anything fast.</p>
+
+    <h2>Latest Report</h2>
+    <a class="card" href="/articles/strategic-business-impact-planning" style="border-color:var(--accent);">
+      <h3>Strategic Business Impact Planning Techniques</h3>
+      <p>An academic analysis of business–information systems alignment, competitive advantage, and strategic value creation across the seminal SISP frameworks (Porter, McFarlan, Parsons, Benjamin, Rackoff, Rockart), 1979–1991.</p>
+      <span class="date">New · Information Systems Strategy</span>
+    </a>
+
+    <h2>Networking</h2>
+    <a class="card" href="/articles/bgp-security">
+      <h3>BGP and Autonomous Systems: Routing You Can Trust</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/gh-cisco-csr1000v-serial-to-api">
+      <h3>Cisco CSR1000v: Converting Serial Consoles to a Secure REST API</h3>
+      <p>Cisco CSR1000v instances running on ESXi expose their consoles via serial-over-network — Telnet sessions mapped to incremented ports (2301–2320). This is…</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/gh-cisco-call-home-disable">
+      <h3>Cisco Device Hardening: Disabling Call Home and Controlling Outbound Communications</h3>
+      <p>Cisco networking equipment ships pre-configured with telemetry and support features — including Call Home, Smart Licensing transport, and HTTP management…</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/cisco-ios-path-selection">
+      <h3>Cisco IOS Path Selection: How a Router Chooses the Best Route</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/cisco-ios-recovery">
+      <h3>Cisco IOS Survival: Password Recovery, ROMMON, and SSH</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/gh-nexus-1000v-port-channels">
+      <h3>Cisco Nexus 1000V Port Channels and Trunking: Troubleshooting Guide</h3>
+      <p>End-of-Life Notice: Cisco announced End-of-Sale for the Nexus 1000V for VMware vSphere in 2019 and End-of-Support in 2025. This product should not be…</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/gh-cisco-uc500-cme-lab-unified-communications-manager">
+      <h3>Cisco UC500 / CME Lab: Unified Communications Manager Express Configuration</h3>
+      <p>← All ArticlesArchitecture of CME 8.6 on a UC520, SCCP ephone configuration, FXO/FXS voice ports, DHCP for phones, CUE module, and Python serial console…</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/firewall-architectures">
+      <h3>Firewall Architectures, From Packet Filters to Zero Trust</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/floating-static-routes">
+      <h3>Floating Static Routes: Backup Path Selection in Cisco Networks</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/classified-networks">
+      <h3>Inside Classified Networks: NIPRNet, SIPRNet, and JWICS</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/gh-sd-wan-lab-blueprint-cisco-csr1000v-v17-03-03">
+      <h3>SD-WAN Lab Blueprint — Cisco CSR1000v v17.03.03</h3>
+      <p>Topology · Dual-Transport IP Plan · OSPF Underlay · Overlay Config · Failover TestingTopology DiagramvBond10.10.0.100 — OrchestratorvSmart10.10.0.101 —…</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/osi-tcpip-model">
+      <h3>The OSI and TCP/IP Models, Revisited</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/gh-velocloud-sd-wan-hardening">
+      <h3>VMware SD-WAN VeloCloud: Security Hardening Guidelines</h3>
+      <p>Compromised network devices can be used to redirect traffic, exfiltrate data, and pivot into internal systems — making SD-WAN Edge hardening a critical part…</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/gh-voice-vlan-design-poe-switch-configuration-and-cis">
+      <h3>Voice VLAN Design: PoE Switch Configuration and Cisco IP Phone Provisioning</h3>
+      <p>← All ArticlesSeparating voice and data traffic with IEEE 802.1Q VLANs, PoE switch configuration, TFTP/DHCP provisioning for Cisco IP phones, and the SCCP…</p>
+      <span class="date">Networking</span>
+    </a>
+    <a class="card" href="/articles/gh-network-jitter-bandwidth-reference">
+      <h3>Network Jitter, Standard Deviation &amp; Bandwidth Measurement</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Networking</span>
+    </a>
+
+    <h2>Network Automation</h2>
+    <a class="card" href="/articles/gh-network-automation-platform-phase-2-roadmap">
+      <h3>Network Automation Platform — Phase 2 Roadmap</h3>
+      <p>Netmiko · NAPALM · Nornir · NetworkX · Scapy · Nginx SSLVisionThe current stack solves the &quot;last mile&quot; problem — serial console access via a REST API. Phase…</p>
+      <span class="date">Automation</span>
+    </a>
+    <a class="card" href="/articles/gh-network-automation-stack-functional">
+      <h3>Network Automation Stack Functional</h3>
+      <p>Programmatic HTTP-to-Telnet Gateway for Network Device FleetsOverviewThis project establishes a high-security, automated management layer for network device…</p>
+      <span class="date">Automation</span>
+    </a>
+    <a class="card" href="/articles/network-automation-netmiko">
+      <h3>Network Automation with Netmiko</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Automation</span>
+    </a>
+    <a class="card" href="/articles/gh-network-automation-stack-technical-report">
+      <h3>Technical Report: Network Automation Stack Project</h3>
+      <p>Executive SummaryThis project establishes a high-security, automated management layer for network device fleets. By leveraging a Flask-based API Gateway, we…</p>
+      <span class="date">Automation</span>
+    </a>
+    <a class="card" href="/articles/network-automation-api">
+      <h3>Wrapping Legacy Network Gear in a Modern API</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Automation</span>
+    </a>
+
+    <h2>CCIE Labs</h2>
+    <a class="card" href="/articles/ccie-advanced-lab/">
+      <h3>CCIE Advanced Lab — 20-Router MPLS + DMVPN Topology</h3>
+      <p>20 hands-on labs on one 20-router topology: MPLS core with LDP and L3VPN, dual DMVPN clouds, BGP route reflection and confederations, OSPF/EIGRP design, multicast, QoS, traffic engineering and 6PE.</p>
+      <span class="date">CCIE Lab</span>
+    </a>
+    <a class="card" href="/articles/ccie-enterprise-lab/">
+      <h3>CCIE Enterprise Lab — 18 Labs, Full EI v1.0 Blueprint</h3>
+      <p>18 labs covering 100% of the CCIE Enterprise Infrastructure v1.0 blueprint across five domains: campus switching, routing protocols, transport (MPLS/DMVPN/FlexVPN), security and services, and automation.</p>
+      <span class="date">CCIE Lab</span>
+    </a>
+
+    <h2>Virtualization & Infrastructure</h2>
+    <a class="card" href="/articles/gh-esxi-cpu-temperature-monitor">
+      <h3>ESXi CPU Temperature Monitor: A Shell Script for Real-Time IPMI Alerting</h3>
+      <p>ESXi does not ship with a continuous, color-coded temperature dashboard. If you manage bare-metal hosts in a lab or production environment and want immediate…</p>
+      <span class="date">Virtualization</span>
+    </a>
+    <a class="card" href="/articles/gh-esxi-recovery-playbook">
+      <h3>ESXi Recovery Playbook: hostd, localcli, vim-cmd, and Log Triage</h3>
+      <p>When the vSphere client cannot reach an ESXi host and PowerCLI connections time out, the management agent (hostd) has likely crashed or failed to start. This…</p>
+      <span class="date">Virtualization</span>
+    </a>
+    <a class="card" href="/articles/gh-powercli-esxi-shutdown-rewrite">
+      <h3>PowerCLI ESXi Shutdown: Code Review and Production Rewrite</h3>
+      <p>The original PowerCLI shutdown script circulating across VMware communities is widely copy-pasted into production runbooks. It works in a lab — but it has…</p>
+      <span class="date">Virtualization</span>
+    </a>
+    <a class="card" href="/articles/gh-esxi-hardening-45-controls">
+      <h3>VMware ESXi Hardening: A 45-Control Security Configuration Assessment</h3>
+      <p>ESXi hypervisors are the foundation of every virtual infrastructure — and because every workload runs on top of them, a misconfigured host is a single point…</p>
+      <span class="date">Virtualization</span>
+    </a>
+    <a class="card" href="/articles/gh-vmware-infrastructure-architecture">
+      <h3>VMware Infrastructure Architecture Overview</h3>
+      <p>Historical reference: This article documents the VMware Infrastructure 3 / early vSphere architecture. Components referenced here — ESX Server, VirtualCenter…</p>
+      <span class="date">Virtualization</span>
+    </a>
+    <a class="card" href="/articles/gh-vsphere7-security-config-guide">
+      <h3>VMware vSphere 7 Security Configuration Guide: A Practitioner&#x27;s Overview</h3>
+      <p>The VMware vSphere Security Configuration Guide (SCG) is the official baseline for hardening and auditing vSphere infrastructure. Version 7 — which…</p>
+      <span class="date">Virtualization</span>
+    </a>
+    <h2>Cybersecurity</h2>
+    <a class="card" href="/articles/ddos-taxonomy">
+      <h3>A Field Guide to Denial-of-Service Attacks</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Cybersecurity</span>
+    </a>
+    <a class="card" href="/articles/security-monitoring-stack">
+      <h3>Building an Open-Source Security Monitoring Stack</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Security Operations</span>
+    </a>
+    <a class="card" href="/articles/deepfakes">
+      <h3>Deepfakes: How They Work and How to Spot Them</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">AI &amp; Security</span>
+    </a>
+    <a class="card" href="/articles/security-models">
+      <h3>Formal Security Models: Bell-LaPadula and Biba</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Foundations</span>
+    </a>
+    <a class="card" href="/articles/gh-infosec-fundamentals">
+      <h3>Information Security Fundamentals: CIA, Risk, Access Control, Cryptography &amp; Compliance</h3>
+      <p>Sound information security practice rests on a small number of foundational concepts that appear repeatedly across every framework, standard, and regulation…</p>
+      <span class="date">Security</span>
+    </a>
+    <a class="card" href="/articles/penetration-testing">
+      <h3>Penetration Testing, End to End</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Offensive Security</span>
+    </a>
+    <a class="card" href="/articles/ransomware-defense">
+      <h3>Ransomware Defense in 2026</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Cybersecurity</span>
+    </a>
+    <a class="card" href="/articles/gh-pentest-professional-reference">
+      <h3>Penetration Testing Professional Reference Guide</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Offensive Security</span>
+    </a>
+    <a class="card" href="/articles/gh-buffer-overflow-memory-safety-reference">
+      <h3>Memory Safety, Buffer Overflows &amp; Baggy Bounds</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Offensive Security</span>
+    </a>
+    <a class="card" href="/articles/gh-layered-security-stack">
+      <h3>Layered Security Stack</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Architecture</span>
+    </a>
+    <a class="card" href="/articles/gh-endgame-cyber-warfare">
+      <h3>Endgame and the Blurring Line of Cyber Warfare</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Cybersecurity</span>
+    </a>
+    <a class="card" href="/articles/gh-facebook-privacy-defense">
+      <h3>Meta / Facebook Surveillance Architecture &amp; Technical Privacy Defense</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Privacy</span>
+    </a>
+
+    <h2>Cryptography</h2>
+    <a class="card" href="/articles/gh-factoring-algorithms-cascade">
+      <h3>A Cascade of Factoring Techniques: From Pollard&#x27;s Rho to the General Number Field Sieve</h3>
+      <p>While the General Number Field Sieve (GNFS) remains the premier method for factoring very large integers, other techniques are used depending on the size of…</p>
+      <span class="date">Cryptography</span>
+    </a>
+    <a class="card" href="/articles/gh-quadratic-sieve-factorization">
+      <h3>Advanced Integer Factorization Using the Quadratic Sieve Algorithm</h3>
+      <p>Executive SummaryThis document covers the design and implementation of an efficient integer factorization tool using the Quadratic Sieve (QS) algorithm. The…</p>
+      <span class="date">Cryptography</span>
+    </a>
+    <a class="card" href="/articles/gh-gnfs-energy-efficiency-review">
+      <h3>Expert Review: Energy-Efficient Approaches to the General Number Field Sieve</h3>
+      <p>I. Strategic Significance and Contextual AccuracyThe project proposal accurately identifies a critical nexus in modern computational security: the…</p>
+      <span class="date">Cryptography</span>
+    </a>
+    <a class="card" href="/articles/gh-extended-euclidean-euler-theorem-cryptology">
+      <h3>Extended Euclidean Algorithm, Euler&#x27;s Theorem &amp; Cryptological Applications</h3>
+      <p>Personal Reference1. The Euclidean Algorithm — GCD ComputationThe Greatest Common Divisor (GCD) of two integers a and b is the largest integer that divides…</p>
+      <span class="date">Cryptography</span>
+    </a>
+    <a class="card" href="/articles/gh-aes-galois-fields-reference">
+      <h3>Galois Fields in AES — Reference</h3>
+      <p>Mathematical reference for the Galois Field arithmetic that underpins AES encryption. Covers GF(2⁸) structure, polynomial representation, the AES irreducible…</p>
+      <span class="date">Cryptography</span>
+    </a>
+    <a class="card" href="/articles/gh-galois-fields-aes">
+      <h3>Galois Fields in AES: GF(2^8), Irreducible Polynomials, and the Extended Euclidean Algorithm</h3>
+      <p>AES — the symmetric cipher protecting the majority of encrypted data on the internet — is built on a branch of mathematics that most engineers never…</p>
+      <span class="date">Cryptography</span>
+    </a>
+    <a class="card" href="/articles/post-quantum-cryptography">
+      <h3>Post-Quantum Cryptography Is Now a Deadline</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Cryptography</span>
+    </a>
+    <a class="card" href="/articles/timing-attacks">
+      <h3>Side-Channel and Timing Attacks</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Cryptography</span>
+    </a>
+    <a class="card" href="/articles/gh-bitcoin-crypto-node-tools-reference">
+      <h3>Bitcoin &amp; Crypto Node Tools</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Cryptography</span>
+    </a>
+    <a class="card" href="/articles/gh-bitcoin-blockchain-data-platform">
+      <h3>Bitcoin Blockchain Data Platform &amp; Genesis Block Deep Dive</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Cryptography</span>
+    </a>
+
+    <h2>Telecom & VoIP</h2>
+    <a class="card" href="/articles/gh-a2billing-voip-billing-engine-architecture-agi-int">
+      <h3>A2Billing VoIP Billing Engine: Architecture, AGI Integration, and Rate Management</h3>
+      <p>← All ArticlesHow A2Billing integrates with Asterisk via AGI for real-time call billing, rate deck structure, calling card IVR flow, and MySQL database…</p>
+      <span class="date">Telecom</span>
+    </a>
+    <a class="card" href="/articles/gh-asterisk-pbx-architecture-channel-drivers-dialplan">
+      <h3>Asterisk PBX Architecture: Channel Drivers, Dialplan Engine, and AGI Integration</h3>
+      <p>← All ArticlesCore Asterisk components — chan_pjsip, extensions.conf dialplan logic, AGI scripting, AMI/ARI interfaces, CDR to MySQL, and STIR/SHAKEN…</p>
+      <span class="date">Telecom</span>
+    </a>
+    <a class="card" href="/articles/gh-asterisk22-kamailio-a2billing-docker-integration">
+      <h3>Building a Production CLEC Stack: Asterisk 22 + Kamailio 5 + A2Billing on Docker</h3>
+      <p>This article documents the full integration of a production-grade Competitive Local Exchange Carrier (CLEC) platform using Asterisk 22, Kamailio 5, and…</p>
+      <span class="date">Telecom</span>
+    </a>
+    <a class="card" href="/articles/gh-carrier-grade-sip-infrastructure-10-vm-open-source">
+      <h3>Carrier-Grade SIP Infrastructure: 10-VM Open Source Telecom Stack Architecture</h3>
+      <p>← All ArticlesArchitecture, network segmentation, jumbo frames, and call flow for a production VoIP carrier stack built entirely on open source…</p>
+      <span class="date">Telecom</span>
+    </a>
+    <a class="card" href="/articles/gh-docker-voip-stack-boot-sequencing-health-checks-an">
+      <h3>Docker VoIP Stack: Boot Sequencing, Health Checks, and Dependency Management</h3>
+      <p>← All ArticlesHow to correctly order Docker container startup for a Kamailio + Asterisk + A2Billing stack using health checks, and bridging VLAN-isolated IP…</p>
+      <span class="date">Telecom</span>
+    </a>
+    <a class="card" href="/articles/gh-kamailio-sip-server-proxy-load-balancer-and-sessio">
+      <h3>Kamailio SIP Server: Proxy, Load Balancer, and Session Border Controller</h3>
+      <p>← All ArticlesArchitecture, core modules, dispatcher load balancing, fraud protection, TLS, and RTPEngine integration for Kamailio in a production VoIP…</p>
+      <span class="date">Telecom</span>
+    </a>
+    <a class="card" href="/articles/gh-rtpengine-media-proxy-for-voip-nat-traversal-trans">
+      <h3>RTPEngine: Media Proxy for VoIP — NAT Traversal, Transcoding, and SRTP</h3>
+      <p>← All ArticlesHow RTPEngine solves NAT, codec mismatches, and media security in a Kamailio-based VoIP platform, with configuration and capacity reference.Why…</p>
+      <span class="date">Telecom</span>
+    </a>
+    <a class="card" href="/articles/gh-ss7-signaling-system-technical-reference">
+      <h3>SS7 (Signaling System No. 7) — Technical Reference</h3>
+      <p>What Is SS7Signaling System No. 7 (SS7) is an architecture for performing out-of-band signaling in support of the call-establishment, billing, routing, and…</p>
+      <span class="date">Telecom</span>
+    </a>
+    <a class="card" href="/articles/gh-stir-shaken-fcc-mandated-call-authentication-for-v">
+      <h3>STIR/SHAKEN: FCC-Mandated Call Authentication for VoIP Carriers</h3>
+      <p>← All ArticlesHow STIR/SHAKEN works, attestation levels A/B/C, PASSporT token structure, STI-CA certificate requirements, and Asterisk implementation.What Is…</p>
+      <span class="date">Telecom</span>
+    </a>
+    <h2>Communications</h2>
+    <a class="card" href="/articles/gh-hf-point-to-point-communication-harris-modem">
+      <h3>HF Point-to-Point CommunicationHarris Modem Interface, STANAG Waveforms &amp; Signal Processing</h3>
+      <p>Executive SummaryThis article presents a technical framework for High Frequency (HF) point-to-point communication using Harris military-grade modems,…</p>
+      <span class="date">Communications</span>
+    </a>
+    <a class="card" href="/articles/hf-radio">
+      <h3>High-Frequency Radio: Still Vital in a Satellite World</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Communications</span>
+    </a>
+    <h2>Systems & Architecture</h2>
+    <a class="card" href="/articles/gh-ibm-powerha-vs-journal-based-replication">
+      <h3>A Technical Comparison of IBM PowerHA Storage Replication and IBM Journal-Based Replication</h3>
+      <p>Executive SummaryThis report presents a detailed technical analysis comparing IBM PowerHA storage-based replication with IBM Journal-Based Replication (JBR)…</p>
+      <span class="date">Systems</span>
+    </a>
+    <a class="card" href="/articles/gh-active-directory-management">
+      <h3>Active Directory Management: Domain Controllers, FSMO Roles, Replication, DNS &amp; Best Practices</h3>
+      <p>Active Directory is the identity and access backbone of nearly every Windows-based enterprise network. Understanding its architecture — how Domain…</p>
+      <span class="date">Systems</span>
+    </a>
+    <a class="card" href="/articles/gh-bitcoin-lxd-sandbox-network-isolation">
+      <h3>Bitcoin LXD Sandbox — Network Isolation Analysis</h3>
+      <p>Analysis of a Bitcoin node running inside an LXD container (bitcoin-sandbox) on Ubuntu 24.04, confirming correct network isolation from the host…</p>
+      <span class="date">Systems</span>
+    </a>
+    <a class="card" href="/articles/bitcoin-leveldb">
+      <h3>How Bitcoin Core Stores the Blockchain</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Systems</span>
+    </a>
+    <a class="card" href="/articles/software-defined-systems">
+      <h3>The Power of Software-Defined Systems</h3>
+      <p>Articles · July 2026 · Ioannis Konstas</p>
+      <span class="date">Architecture</span>
+    </a>
+    <a class="card" href="/articles/gh-acl-analytics-excel-reference">
+      <h3>ACL Analytics &amp; Excel Data Manipulation Reference</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Analytics</span>
+    </a>
+    <a class="card" href="/articles/gh-acl-name-standardization-manual">
+      <h3>Name Standardization &amp; Filtering</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Analytics</span>
+    </a>
+    <a class="card" href="/articles/gh-powershell-ad-reference">
+      <h3>PowerShell Active Directory Reference</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Systems</span>
+    </a>
+    <a class="card" href="/articles/gh-genomic-pipeline-reference">
+      <h3>Large-Scale Genomic Data Processing</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Data Science</span>
+    </a>
+    <a class="card" href="/articles/gh-macos-ssv-tdm-restore">
+      <h3>Fixing a Broken SSV Seal MacBook Pro Restored from a Mac mini over Thunderbolt Target Disk Mode</h3>
+      <p>Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+      <span class="date">Systems</span>
+    </a>
+
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=home",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
 </body>
 </html>

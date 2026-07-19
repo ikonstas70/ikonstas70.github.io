@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/executives">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Executive Briefing — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Business</span>
+    <h1>The Executive Briefing</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Cybersecurity is a business continuity problem wearing a technology costume. The board question is never "are we using the right firewall" — it's "how many days of downtime can we survive, what would a regulator say about our data handling, and who decides what at 3 a.m. on the worst night." Executives who internalize five ideas make their organizations measurably harder to kill.</p>
+
+    <h2>1. You are a target because you exist</h2>
+    <p>"We're too small to interest hackers" misunderstands the adversary: it's automation. Scanners probe every internet-facing system on earth continuously; ransomware affiliates work from those lists, not from Fortune rankings. Small organizations are targeted <em>more</em>, because they pay ransoms faster and litigate less. Meanwhile you personally — with your wire authority and your assistant who "handles your inbox" — are the highest-value phishing target in the building. Executive exemptions from security controls are how executives become the incident.</p>
+
+    <h2>2. Most incidents are boring, and that's actionable</h2>
+    <p>The breaches that make the news involve novel exploits; the breaches that happen involve a phished password, an unpatched public server, or a vendor with your data and worse hygiene. The corollary is optimistic: unglamorous controls stop the majority of real attacks — phishing-resistant MFA everywhere, aggressive patching of anything internet-facing, offline backups that get <em>tested by restoring</em>, and least-privilege access so one stolen credential doesn't open every door. If your security budget conversation is about AI-powered threat platforms before those four are done, reorder the conversation.</p>
+
+    <h2>3. Incident response is a decision problem</h2>
+    <p>During a ransomware event, the technology is the easy half. The hard half: Who can authorize taking production offline? Do we pay — and who decides, with counsel, insurer, and possibly sanctions law in the room? What do we tell customers, and when — noting that disclosure clocks (72 hours under GDPR; four business days for SEC-registrant material incidents) start ticking whether you're ready or not. These questions have terrible answers when first asked at 3 a.m. Write the playbook now, print it (the wiki will be encrypted too), and run a tabletop exercise twice a year. The tabletop is the cheapest security control you will ever buy.</p>
+
+    <h2>4. Your perimeter includes companies you don't control</h2>
+    <p>Vendors, MSPs, payroll processors, and software suppliers hold your data and your access. Contract for security: breach notification deadlines, MFA requirements, the right to ask hard questions annually. Know which vendors could take you down, and have a manual fallback for the top three.</p>
+
+    <h2>5. Culture is a control</h2>
+    <p>The employee who clicked isn't the failure point; the system that made one click catastrophic is. Organizations where reporting a mistake is safe detect incidents in hours instead of months — fear is a threat actor's best friend. Fund security as a percentage of what it protects, put someone clearly accountable in the room where decisions happen, and let them finish the boring work first.</p>
+
+    <h2>The one-page checklist</h2>
+    <ul>
+      <li>Phishing-resistant MFA on email, VPN, admin accounts, and finance systems — no executive exemptions.</li>
+      <li>Tested, offline backups; a restore drill on the calendar.</li>
+      <li>Written, printed incident-response plan; tabletop twice a year.</li>
+      <li>Wire-transfer changes verified by callback on a known number — the control that kills business email compromise.</li>
+      <li>Vendor list ranked by blast radius, with notification clauses in contracts.</li>
+      <li>Cyber insurance reviewed against actual exclusions, not the brochure.</li>
+    </ul>
+
+    <blockquote>Stop budgeting for gadgets before basics. Think in downtime days, not threat feeds. Connect accountability to someone with a seat at the table.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-executives",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

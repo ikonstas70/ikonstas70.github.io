@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floating Static Routes: Backup Path Selection in Cisco Networks — Konstas Engineering Notes</title>
+<meta name="description" content="A floating static route is a backup route configured with a higher Administrative Distance than the primary path, so Cisco IOS keeps it out of the routing table until the preferred route fails — simple, protocol-free failover for WAN and Internet links.">
+<meta name="keywords" content="floating static route, Cisco IOS, administrative distance, backup route, failover, redundancy, OSPF, EIGRP, WAN backup, ip route">
+<meta name="author" content="Ioannis Konstas">
+<link rel="canonical" href="https://blog.konstas.us/articles/floating-static-routes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Floating Static Routes: Backup Path Selection in Cisco Networks">
+<meta property="og:description" content="A backup route with a higher Administrative Distance that stays inactive until the primary fails — protocol-free failover for WAN and Internet links, explained with OSPF and EIGRP examples.">
+<meta property="og:url" content="https://blog.konstas.us/articles/floating-static-routes">
+<meta property="og:image" content="https://blog.konstas.us/cisco-ios-path-selection.png">
+<meta property="og:site_name" content="Konstas Engineering Notes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Floating Static Routes: Backup Path Selection in Cisco Networks">
+<meta name="twitter:description" content="A backup route with a higher Administrative Distance that stays inactive until the primary fails — protocol-free failover, explained.">
+<meta name="twitter:image" content="https://blog.konstas.us/cisco-ios-path-selection.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Floating Static Routes: Backup Path Selection in Cisco Networks",
+  "description": "A floating static route is a backup route configured with a higher Administrative Distance than the primary path, so Cisco IOS keeps it out of the routing table until the preferred route fails.",
+  "image": "https://blog.konstas.us/cisco-ios-path-selection.png",
+  "author": { "@type": "Person", "name": "Ioannis Konstas", "url": "https://ikonstas70.github.io" },
+  "publisher": { "@type": "Person", "name": "Ioannis Konstas" },
+  "url": "https://blog.konstas.us/articles/floating-static-routes",
+  "datePublished": "2026-07-17",
+  "dateModified": "2026-07-17",
+  "articleSection": "Networking",
+  "keywords": "floating static route, administrative distance, backup route, failover, OSPF, EIGRP, WAN backup"
+}
+</script>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Networking</span>
+    <h1>Floating Static Routes: Backup Path Selection in Cisco Networks</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Redundancy is only useful if the router actually fails over when it should — and does nothing when it shouldn't. A floating static route is the simplest tool in Cisco IOS for exactly that: a backup path that sits silently in reserve, invisible to the routing table, until the primary route disappears. No second routing protocol, no tracking scripts in the basic case — just one number, the Administrative Distance, doing the work.</p>
+
+    <h2>The one rule it rests on</h2>
+    <p>When a router has more than one way to reach the same destination from different sources, it decides which to trust using <strong>Administrative Distance (AD)</strong> — a preference value where <em>lower means more trusted</em>. The route with the lowest AD is the one installed and used.</p>
+    <table>
+      <thead>
+        <tr><th>Route source</th><th style="text-align:right">Administrative Distance</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Connected</td><td style="text-align:right">0</td></tr>
+        <tr><td>Static</td><td style="text-align:right">1</td></tr>
+        <tr><td>EIGRP (internal)</td><td style="text-align:right">90</td></tr>
+        <tr><td>OSPF</td><td style="text-align:right">110</td></tr>
+        <tr><td>RIP</td><td style="text-align:right">120</td></tr>
+      </tbody>
+    </table>
+    <p>Here's the catch that makes floating statics necessary. A normal static route has an AD of just <strong>1</strong> — lower than every dynamic protocol. So if you configure a plain backup static route, it doesn't wait for anything; it beats your OSPF or EIGRP path immediately and becomes the <em>primary</em>. That's the opposite of what you want from a backup. The fix is to deliberately raise the static route's AD above the primary's, so it "floats" above the preferred path and only drops into the table when that path is gone.</p>
+
+    <h2>Example 1: OSPF primary, static backup</h2>
+    <p>Say the real path is learned through OSPF, which carries an AD of 110:</p>
+    <pre><code>O 10.10.10.0/24 [110/20] via 192.168.1.2</code></pre>
+    <p>You want a static route over a second link as backup, but it must not override OSPF. Configure it with an AD of 111 — one higher than OSPF — by appending the distance to the <code>ip route</code> command:</p>
+    <pre><code>ip route 10.10.10.0 255.255.255.0 192.168.2.2 111
+!                                              ^^^  administrative distance</code></pre>
+    <p>Now compare: OSPF's AD 110 is lower than the static's AD 111, so <strong>OSPF wins</strong> and is installed. The static route stays out of the table entirely — floating, inactive. The moment the OSPF route is withdrawn (the link or neighbor fails), OSPF's entry is removed, the AD-111 static becomes the best remaining route, and IOS installs it. Traffic keeps flowing over the backup with no manual intervention. When OSPF recovers, its lower AD reclaims the table and the static floats back out of the way.</p>
+
+    <h2>Example 2: EIGRP primary, static backup</h2>
+    <p>The same idea, tuned to whatever the primary's AD happens to be. EIGRP internal routes carry an AD of 90:</p>
+    <pre><code>D 172.16.0.0/16 [90/30720] via 10.1.1.1</code></pre>
+    <p>So the floating backup just needs to be one higher — AD 91:</p>
+    <pre><code>ip route 172.16.0.0 255.255.0.0 10.2.2.2 91</code></pre>
+    <p>EIGRP's 90 beats the static's 91, EIGRP is preferred, and the static activates only if the EIGRP route drops. The pattern is always the same: <strong>set the backup's AD just above the primary's</strong>. Whatever protocol carries your primary — 90 for internal EIGRP, 110 for OSPF, 120 for RIP — pick a static AD one higher and it becomes a clean standby.</p>
+
+    <h2>One caveat worth knowing</h2>
+    <p>A static route's health is only as good as its <em>next hop's reachability</em>. If the static points out a directly connected interface that goes down, IOS pulls the route as expected. But if it points to a next-hop IP that stays reachable through some other path while the intended link is actually broken, the floating route can install when it shouldn't — or fail to. For links where that matters, pair the floating static with an <strong>IP SLA object tracking</strong> a reachability test, so the route only installs when the backup path is genuinely usable. For a straightforward WAN or Internet backup, though, the plain floating static is often all you need.</p>
+
+    <h2>Why reach for a floating static</h2>
+    <ul>
+      <li><strong>Simple backup connectivity</strong> — one line of configuration, no extra protocol to run or secure.</li>
+      <li><strong>No second routing protocol</strong> — ideal where the backup link shouldn't participate in your IGP.</li>
+      <li><strong>Explicit control</strong> — you decide the exact failover path, not an algorithm.</li>
+      <li><strong>Built for WAN and Internet backups</strong> — the classic use case: a primary MPLS or fiber link with a secondary broadband or LTE path in reserve.</li>
+    </ul>
+
+    <blockquote>A floating static route is redundancy expressed as a single number. Primary path gets the lower Administrative Distance; the backup gets one higher and waits in the wings. IOS keeps the backup out of the table until the primary fails, then installs it automatically — clean failover, no dynamic protocol required.</blockquote>
+
+    <p>This is the same Administrative-Distance machinery covered in <a href="/articles/cisco-ios-path-selection">Cisco IOS Path Selection</a> — here it's simply turned into a deliberate failover tool.</p>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=floating-static-routes",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

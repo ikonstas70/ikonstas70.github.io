@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/firewall-architectures">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firewall Architectures, From Packet Filters to Zero Trust — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Networking</span>
+    <h1>Firewall Architectures, From Packet Filters to Zero Trust</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>"Firewall" names a job — decide what traffic is allowed — not a single technology. The generations differ by <em>how deep they look</em>, and each added depth in response to attacks the previous generation couldn't see. Understanding them by what they actually inspect explains both their strengths and why the perimeter model eventually gave way to zero trust.</p>
+
+    <h2>Generation 1 — packet filters</h2>
+    <p>The original firewall inspects each packet in isolation against static rules: source/destination IP, port, protocol. Fast and stateless — and blind to context. It can't tell a legitimate reply from an unsolicited packet crafted to look like one, because it has no memory of what came before. Still useful as a coarse first filter (ACLs on a router), never as the whole answer.</p>
+
+    <h2>Generation 2 — stateful inspection</h2>
+    <p>The leap that defined firewalls for two decades: track the <em>state</em> of connections. By maintaining a table of active flows, a stateful firewall knows that an inbound packet belongs to a connection the inside initiated, and rejects packets that don't fit any known conversation. This single idea killed whole classes of spoofing and is why "allow established/related" is the backbone of nearly every ruleset. A minimal stateful policy in nftables:</p>
+    <pre><code>table inet filter {
+  chain input {
+    type filter hook input priority 0; policy drop;
+
+    ct state established,related accept   # the stateful core
+    ct state invalid drop                 # no matching flow -> gone
+    iif "lo" accept
+    tcp dport { 22, 443 } ct state new accept
+    ip protocol icmp accept
+  }
+}</code></pre>
+    <p>It still operates mostly at Layers 3-4: it knows the connection is valid, not what's <em>inside</em> it.</p>
+
+    <h2>Generation 3 — proxy / application-layer firewalls</h2>
+    <p>A proxy firewall terminates the connection itself and opens a second one to the destination, so nothing flows end-to-end without inspection. Because it understands the application protocol (HTTP, SMTP), it can enforce rules on <em>content</em> — block a malformed request, strip a dangerous method, hide internal structure. The cost is latency and per-protocol complexity, which is why proxies live where deep control justifies it (web gateways, email security) rather than on every hop.</p>
+
+    <h2>Generation 4 — next-generation firewalls (NGFW)</h2>
+    <p>The NGFW fuses stateful inspection with application awareness and identity, adding:</p>
+    <ul>
+      <li><strong>Application identification</strong> — recognizing the app regardless of port, so "block port 80" becomes "block this application for this user group."</li>
+      <li><strong>User identity</strong> — rules by directory user/group, not just IP.</li>
+      <li><strong>Integrated IPS</strong> — signature and behavioral intrusion prevention inline.</li>
+      <li><strong>Deep packet inspection</strong>, including TLS inspection where policy and privacy allow.</li>
+    </ul>
+    <p>This is the enterprise perimeter device of the last decade. But notice what it needed to stay relevant: identity and application context — precisely because IP-and-port stopped describing reality once everything moved to HTTPS and the cloud.</p>
+
+    <h2>Why the perimeter dissolved</h2>
+    <p>Every generation above assumes a meaningful inside and outside. Cloud workloads, SaaS, and remote work erased that boundary — your "inside" now runs in three clouds and ten thousand laptops. When there's no perimeter to stand on, a perimeter firewall guards a wall with no ends.</p>
+
+    <h2>Generation 5 — zero trust</h2>
+    <p>Zero trust replaces "trusted network" with "never trust, always verify." Every request — user or service — is authenticated, authorized, and encrypted based on identity and device posture, regardless of network location. The firewall didn't disappear; it <em>distributed and abstracted</em>:</p>
+    <ul>
+      <li><strong>Identity-aware proxies</strong> gate application access per request, per identity — the Generation-3 proxy idea, reborn around identity instead of network position.</li>
+      <li><strong>Microsegmentation</strong> puts a stateful policy between every workload, so a breach in one service can't roam — Generation-2 statefulness, applied east-west at fine grain.</li>
+      <li><strong>Cloud-delivered security (SASE/SSE)</strong> moves NGFW and proxy functions to the edge, close to users wherever they are.</li>
+    </ul>
+    <p>The throughline: zero trust didn't discard firewalls, it took each generation's core idea — statefulness, application awareness, proxying — and re-anchored them to identity rather than to a network edge that no longer exists.</p>
+
+    <h2>How to think about it today</h2>
+    <table>
+      <tr><th>Layer inspected</th><th>Generation</th><th>Best role now</th></tr>
+      <tr><td>L3-4, stateless</td><td>Packet filter</td><td>Coarse ACLs, edge bogon filtering</td></tr>
+      <tr><td>L3-4, stateful</td><td>Stateful / microsegmentation</td><td>Connection integrity; east-west isolation</td></tr>
+      <tr><td>L7, content</td><td>Proxy / IAP</td><td>Web/email gateways; identity-aware app access</td></tr>
+      <tr><td>L3-7 + identity</td><td>NGFW / SASE</td><td>Enterprise policy, delivered at the cloud edge</td></tr>
+    </table>
+
+    <blockquote>Firewalls evolved by looking deeper — from packets, to connections, to content, to identity. Zero trust is the recognition that with the perimeter gone, identity is the only edge left to inspect.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=firewall-architectures",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-quadratic-sieve-factorization">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Advanced Integer Factorization Using the Quadratic Sieve Algorithm — Konstas Engineering Notes</title>
+<meta name="description" content="Executive SummaryThis document covers the design and implementation of an efficient integer factorization tool using the Quadratic Sieve (QS) algorithm. The implementatio">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Cryptography</span>
+    <h1>Advanced Integer Factorization Using the Quadratic Sieve Algorithm</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<h2>Executive Summary</h2><p>This document covers the design and implementation of an efficient integer factorization tool using the Quadratic Sieve (QS) algorithm. The implementation — <code>quadratic_sieve_factorizer.py</code> — leverages probabilistic primality testing (Miller-Rabin), smooth-number relation collection using a factor base, and Gaussian elimination over GF(2) to find congruences of squares that reveal non-trivial factors.</p><hr></hr><h2>Introduction</h2><p>Integer factorization is the foundation of RSA security. The difficulty of factoring large composite integers is what makes public-key cryptography viable. Efficient factoring algorithms are used both for testing the robustness of cryptographic systems and for attacking weakly generated keys.</p><p>The Quadratic Sieve is one of the most effective general-purpose factoring algorithms for numbers up to ~100 digits. It works by finding a set of congruences that can be combined to reveal factors of the target integer N.</p><hr></hr><h2>Key Components</h2><h3>1. Miller-Rabin Probabilistic Primality Test</h3><p>Used to build the factor base and to short-circuit factorization if N itself is prime.</p><pre><code>def miller_rabin(n, k=5):
+    if n &lt;= 1: return False
+    if n &lt;= 3: return True
+    if n % 2 == 0: return False
+
+    s, d = 0, n - 1
+    while d % 2 == 0:
+        s, d = s + 1, d // 2
+
+    def is_composite(a):
+        x = pow(a, d, n)
+        if x == 1 or x == n - 1:
+            return False
+        for _ in range(s - 1):
+            x = pow(x, 2, n)
+            if x == n - 1:
+                return False
+        return True
+
+    for _ in range(k):
+        a = random.randint(2, n - 2)
+        if is_composite(a):
+            return False
+    return True
+</code></pre><h3>2. Relation Collection</h3><p>For values <code>x</code> slightly above <code>√N</code>, compute <code>y² = x² mod N</code> and attempt to factor <code>y²</code> completely over the factor base. Values that factor completely are called <strong>B-smooth</strong> and form valid relations.</p><pre><code>start = math.isqrt(self.n) + 1
+for x in range(start, start + search_window):
+    y_sq = (x * x) % self.n
+    factors = self._factorize_over_base(y_sq)
+    if factors:
+        relations.append((x, factors))
+</code></pre><blockquote><p><strong>Why search near √N?</strong> Because <code>x² - N</code> is smallest there, making it more likely to be smooth over the factor base.</p></blockquote><h3>3. Matrix Operations over GF(2)</h3><p>Each relation is encoded as a binary row vector of prime exponents mod 2. Gaussian elimination over GF(2) finds a linear dependency — a subset of rows that XOR to the zero vector. This dependency identifies a subset of relations whose combined prime exponents are all even, forming a perfect square.</p><hr></hr><h2>The Congruence of Squares</h2><p>The goal is to find integers X and Y such that:</p><pre><code>X² ≡ Y²  (mod N)
+</code></pre><p>This implies N divides <code>X² − Y² = (X − Y)(X + Y)</code>. Unless the solution is trivial (<code>X ≡ ±Y mod N</code>), the GCD <code>gcd(X − Y, N)</code> yields a <strong>non-trivial factor</strong>.</p><p>The algorithm achieves this by:
+1. Collecting smooth numbers whose exponent vectors span GF(2)ᵐ
+2. Using Gaussian elimination to find a dependency (subset with all-even combined exponents)
+3. Computing X as the product of the x-values and Y as the square root of the combined factorization</p><hr></hr><h2>Test Execution</h2><pre><code>n = 8051
+factorizer = AdvancedFactorizer(n, factor_base_limit=100)
+result = factorizer.factorize()
+# Output: Factor found: 97  |  Other factor: 83  |  97 × 83 = 8051 ✓
+</code></pre><p>Run from the command line:</p><pre><code>python3 quadratic_sieve_factorizer.py --n 8051
+python3 quadratic_sieve_factorizer.py --n 8051 --limit 200
+</code></pre><hr></hr><h2>Performance Analysis</h2><h3>Strengths</h3><table><thead><tr><th>Property</th><th>Detail</th></tr></thead><tbody><tr><td>Speed vs trial division</td><td>Far superior for integers above 50 bits</td></tr><tr><td>Mathematical elegance</td><td>Reduces a number theory problem to linear algebra over GF(2)</td></tr><tr><td>Tunability</td><td>Increasing <code>factor_base_limit</code> directly improves smoothness probability</td></tr></tbody></table><h3>Known Limitations</h3><table><thead><tr><th>Issue</th><th>Explanation</th></tr></thead><tbody><tr><td>Square root logic</td><td>The square root is constructed from the factor base — not computed directly from N</td></tr><tr><td>Relation range</td><td>Searching from 2 to √N is inefficient; modern sieves search in a window around √(kN)</td></tr><tr><td>Scale ceiling</td><td>Numbers above ~100 bits require GNFS — see <code>cado_nfs_factorizer.py</code></td></tr></tbody></table><h3>Complexity</h3><table><thead><tr><th>Method</th><th>Complexity</th></tr></thead><tbody><tr><td>Trial Division</td><td>O(√N)</td></tr><tr><td>Quadratic Sieve</td><td>exp(√(ln N · ln ln N)) — sub-exponential</td></tr><tr><td>GNFS</td><td>exp(c · (ln N)^(1/3) · (ln ln N)^(2/3)) — asymptotically faster</td></tr></tbody></table><hr></hr><h2>Conclusion</h2><p>The Quadratic Sieve is an excellent educational and practical tool for integers up to ~100 bits. It demonstrates how linear algebra over a finite field can solve a hard arithmetic problem. For numbers above that threshold — such as 2048-bit RSA keys — the General Number Field Sieve (GNFS) is required. See <code>factoring_algorithms_reference.md</code> for a full comparison of the factoring cascade.</p><hr></hr><p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-quadratic-sieve-factorization",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

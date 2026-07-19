@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-network-jitter-bandwidth-reference">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network Jitter, Standard Deviation &amp; Bandwidth Measurement — Konstas Engineering Notes</title>
+<meta name="description" content="A technical reference for network engineers — covering RTT variance analysis, jitter classification, bandwidth testing, and annotated Python diagnostic tools.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Networking</span>
+    <h1>Network Jitter, Standard Deviation &amp; Bandwidth Measurement</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p class="header-sub">A technical reference for network engineers — covering RTT variance analysis, jitter classification, bandwidth testing, and annotated Python diagnostic tools.</p>
+  <p class="header-meta">Networking &nbsp;&middot;&nbsp; Python &nbsp;&middot;&nbsp; ICMP / ping &nbsp;&middot;&nbsp; Ioannis Alexander Konstas</p>
+  <div class="header-tags">
+    <span class="htag">Jitter</span>
+    <span class="htag">Standard Deviation</span>
+    <span class="htag">RTT Analysis</span>
+    <span class="htag">Bandwidth Testing</span>
+    <span class="htag">ICMP Ping</span>
+    <span class="htag">QoS</span>
+    <span class="htag">VoIP</span>
+    <span class="htag">Python</span>
+  </div>
+</header>
+
+<div class="container">
+
+  
+
+  <!-- ═══════════ 1. CONCEPTS ═══════════ -->
+  <div id="concepts" class="sec-head">
+    <span class="sec-label">Core Concepts</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§1</span>
+  </div>
+
+  <h2>What Is Jitter?</h2>
+  <p>Jitter is the <strong>variation in packet arrival times</strong> — specifically, how much individual Round Trip Times (RTTs) deviate from the average. A perfectly stable connection delivers every packet with the same delay. Real networks do not: queueing, routing changes, CPU load spikes, and link congestion all introduce fluctuation.</p>
+  <p>Jitter is measured in milliseconds. Low jitter means predictable delivery — critical for real-time traffic. High jitter means packets arrive unevenly, causing audio gaps, video stutters, and VoIP call degradation even when average latency looks acceptable.</p>
+
+  <div class="callout yellow">
+    <strong>Key insight:</strong> A connection with average RTT = 30ms and jitter = 40ms is worse for VoIP than one with average RTT = 80ms and jitter = 2ms. Jitter, not average latency, determines real-time quality.
+  </div>
+
+  <h2>What Is Standard Deviation in This Context?</h2>
+  <p>Standard deviation (σ) measures how spread out RTT values are around the mean. In networking, it is closely related to jitter but uses <strong>Bessel's correction</strong> (divides by n−1 instead of n), making it an unbiased estimator for the population variance when working from a sample of pings.</p>
+
+  <h2>What Is RTT?</h2>
+  <p>Round Trip Time is the elapsed time from sending an ICMP echo request to receiving the echo reply. It includes propagation delay (speed of light in fiber), transmission delay (link speed), processing delay (router CPU), and queueing delay (congestion buffers). The <code style="font-family:monospace;color:var(--cyan)">ping</code> utility measures RTT for each packet.</p>
+
+  <h2>What Is Bandwidth?</h2>
+  <p>Network bandwidth is the maximum data throughput — how many megabits per second can be transferred. Jitter and bandwidth are independent: a high-bandwidth link can have terrible jitter if the path traverses congested nodes. The bandwidth tool uses <code style="font-family:monospace;color:var(--cyan)">speedtest-cli</code> to measure download and upload throughput against Speedtest.net infrastructure.</p>
+
+  <!-- ═══════════ 2. MATH ═══════════ -->
+  <div id="math" class="sec-head">
+    <span class="sec-label">The Math — Jitter vs Standard Deviation</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§2</span>
+  </div>
+
+  <p>The two scripts use two related but distinct formulas. Understanding the difference matters when interpreting output.</p>
+
+  <div class="snippet">
+    <div class="snip-label math">Jitter formula (population RMS deviation)</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># RMS deviation — does NOT apply Bessel's correction</span>
+<span class="cmt"># Equivalent to: sqrt(E[X²] - E[X]²)  which equals population std dev</span>
+
+avg    = sum(times) / n
+sumsq  = sum(t**2 <span class="kw">for</span> t <span class="kw">in</span> times)
+<span class="formula">jitter = sqrt(sumsq / n  -  avg**2)</span>
+
+<span class="cmt"># Mathematical identity:</span>
+<span class="cmt"># E[X²] - E[X]²  ≡  Var(X)  (population variance)</span>
+<span class="cmt"># sqrt of that   ≡  σ (population standard deviation)</span>
+<span class="cmt"># So: jitter here = population std dev (no Bessel correction)</span></pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label math">Standard deviation formula (sample — Bessel's correction)</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Sample standard deviation — divides by (n-1) not n</span>
+<span class="cmt"># Bessel's correction removes bias when estimating from a sample</span>
+
+avg     = sum(times) / n
+<span class="formula">std_dev = sqrt(sum((t - avg)**2 <span class="kw">for</span> t <span class="kw">in</span> times) / (n - 1))</span>
+
+<span class="cmt"># When n is large (50+ pings), the difference between n and (n-1) is negligible</span>
+<span class="cmt"># Both values converge. The distinction matters most with small sample sizes.</span></pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label math">Worked example — 5 ping RTTs</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># RTT samples: 20ms, 22ms, 19ms, 35ms, 21ms</span>
+times   = [20, 22, 19, 35, 21]
+n       = 5
+
+avg     = (20+22+19+35+21) / 5   <span class="cmt"># = 23.4 ms</span>
+min_rtt = 19 ms
+max_rtt = 35 ms
+
+<span class="cmt"># Jitter (population std dev):</span>
+sumsq   = 20²+22²+19²+35²+21²   = 2971
+<span class="formula">jitter  = sqrt(2971/5 - 23.4²)   = sqrt(594.2 - 547.56) = sqrt(46.64) ≈ 6.83 ms</span>
+
+<span class="cmt"># Standard deviation (sample, Bessel corrected):</span>
+variance= ((20-23.4)²+(22-23.4)²+(19-23.4)²+(35-23.4)²+(21-23.4)²) / (5-1)
+        = (11.56+1.96+19.36+134.56+5.76) / 4
+        = 173.2 / 4 = 43.3
+<span class="formula">std_dev = sqrt(43.3) ≈ 6.58 ms</span>
+
+<span class="cmt"># Result: jitter = 6.83ms, std_dev = 6.58ms — close but not identical</span>
+<span class="cmt"># Classification: GOOD (6–20ms range)</span></pre>
+  </div>
+
+  <h2>Why Two Formulas?</h2>
+  <table class="ref-table">
+    <thead><tr><th>Metric</th><th>Formula</th><th>Divides by</th><th>Best for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Jitter</strong> (in script)</td><td>sqrt(E[X²] − E[X]²)</td><td>n</td><td>Real-time signal quality, RFC 3550 (RTP)</td></tr>
+      <tr><td><strong>Std Dev</strong> (in script)</td><td>sqrt(Σ(x−μ)²/(n−1))</td><td>n−1</td><td>Statistical estimation of population spread</td></tr>
+      <tr><td><strong>RFC 3550 Jitter</strong></td><td>Running avg of |delay diff|</td><td>16 (EWMA)</td><td>RTP stream jitter in VoIP/video (different formula)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ═══════════ 3. THRESHOLDS ═══════════ -->
+  <div id="thresholds" class="sec-head">
+    <span class="sec-label">Jitter Classification Thresholds</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§3</span>
+  </div>
+
+  <table class="ref-table">
+    <thead><tr><th>Jitter (ms)</th><th>Rating</th><th>Impact</th><th>Typical cause</th></tr></thead>
+    <tbody>
+      <tr><td><span class="ok"><strong>≤ 5 ms</strong></span></td><td><span class="ok">Excellent</span></td><td>Imperceptible — ideal for all traffic types</td><td>Direct fiber, LAN, well-engineered WAN</td></tr>
+      <tr><td><span class="warn-text"><strong>6 – 20 ms</strong></span></td><td><span class="warn-text">Good</span></td><td>VoIP acceptable with small jitter buffer; video smooth</td><td>Typical broadband, low congestion</td></tr>
+      <tr><td><span class="warn-text"><strong>21 – 50 ms</strong></span></td><td><span class="warn-text">Fair</span></td><td>VoIP degradation audible; video buffering possible</td><td>Congested paths, Wi-Fi interference, ISP issues</td></tr>
+      <tr><td><span class="bad"><strong>&gt; 50 ms</strong></span></td><td><span class="bad">Poor</span></td><td>VoIP unusable; real-time traffic drops; SLA breach</td><td>Network congestion, packet loss, poor routing</td></tr>
+    </tbody>
+  </table>
+
+  <h2>RTT Latency Reference</h2>
+  <table class="ref-table">
+    <thead><tr><th>Average RTT</th><th>Assessment</th><th>Typical use case</th></tr></thead>
+    <tbody>
+      <tr><td><span class="ok">&lt; 20 ms</span></td><td>Excellent</td><td>LAN, co-located servers, same city CDN</td></tr>
+      <tr><td><span class="ok">20 – 50 ms</span></td><td>Very good</td><td>Regional WAN, metro fiber</td></tr>
+      <tr><td><span class="warn-text">50 – 100 ms</span></td><td>Good</td><td>Cross-country broadband</td></tr>
+      <tr><td><span class="warn-text">100 – 150 ms</span></td><td>Acceptable</td><td>Intercontinental; VoIP still workable</td></tr>
+      <tr><td><span class="bad">&gt; 150 ms</span></td><td>Degraded</td><td>Satellite, congested WAN; VoIP impacted</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ═══════════ 4. TOPOLOGY ═══════════ -->
+  <div id="topology" class="sec-head">
+    <span class="sec-label">Network Topology &amp; Delay Sources</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§4</span>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;">
+      <rect width="700" height="320" fill="#0d1117"/>
+      <text x="350" y="20" fill="#8b949e" font-size="11" text-anchor="middle" letter-spacing="2">RTT DELAY SOURCES — PACKET JOURNEY</text>
+
+      <!-- Source host -->
+      <rect x="20" y="50" width="90" height="40" rx="4" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="65" y="68" fill="#58a6ff" font-size="11" text-anchor="middle" font-weight="bold">HOST</text>
+      <text x="65" y="82" fill="#8b949e" font-size="9" text-anchor="middle">ping src</text>
+
+      <!-- Gateway -->
+      <rect x="155" y="50" width="90" height="40" rx="4" fill="#161b22" stroke="#3fb950" stroke-width="1"/>
+      <text x="200" y="68" fill="#3fb950" font-size="11" text-anchor="middle">Gateway</text>
+      <text x="200" y="82" fill="#8b949e" font-size="9" text-anchor="middle">NAT / router</text>
+
+      <!-- ISP -->
+      <rect x="295" y="50" width="90" height="40" rx="4" fill="#161b22" stroke="#d29922" stroke-width="1"/>
+      <text x="340" y="68" fill="#d29922" font-size="11" text-anchor="middle">ISP POP</text>
+      <text x="340" y="82" fill="#8b949e" font-size="9" text-anchor="middle">edge router</text>
+
+      <!-- Internet core -->
+      <rect x="435" y="50" width="90" height="40" rx="4" fill="#161b22" stroke="#f0883e" stroke-width="1"/>
+      <text x="480" y="68" fill="#f0883e" font-size="11" text-anchor="middle">Internet</text>
+      <text x="480" y="82" fill="#8b949e" font-size="9" text-anchor="middle">transit/core</text>
+
+      <!-- Target -->
+      <rect x="575" y="50" width="90" height="40" rx="4" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="620" y="68" fill="#58a6ff" font-size="11" text-anchor="middle">TARGET</text>
+      <text x="620" y="82" fill="#8b949e" font-size="9" text-anchor="middle">DNS / host</text>
+
+      <!-- Arrows forward -->
+      <line x1="110" y1="70" x2="153" y2="70" stroke="#8b949e" stroke-width="1.5" marker-end="url(#fwd)"/>
+      <line x1="245" y1="70" x2="293" y2="70" stroke="#8b949e" stroke-width="1.5" marker-end="url(#fwd)"/>
+      <line x1="385" y1="70" x2="433" y2="70" stroke="#8b949e" stroke-width="1.5" marker-end="url(#fwd)"/>
+      <line x1="525" y1="70" x2="573" y2="70" stroke="#8b949e" stroke-width="1.5" marker-end="url(#fwd)"/>
+      <defs>
+        <marker id="fwd" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 Z" fill="#8b949e"/></marker>
+        <marker id="ret" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto"><path d="M6,0 L6,6 L0,3 Z" fill="#58a6ff"/></marker>
+      </defs>
+
+      <!-- Return path -->
+      <line x1="573" y1="90" x2="525" y2="90" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#ret)"/>
+      <line x1="433" y1="90" x2="385" y2="90" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#ret)"/>
+      <line x1="293" y1="90" x2="245" y2="90" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#ret)"/>
+      <line x1="153" y1="90" x2="110" y2="90" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#ret)"/>
+
+      <!-- Labels -->
+      <text x="65" y="130" fill="#8b949e" font-size="10" text-anchor="middle">Processing</text>
+      <text x="65" y="143" fill="#8b949e" font-size="10" text-anchor="middle">OS stack</text>
+      <text x="200" y="130" fill="#8b949e" font-size="10" text-anchor="middle">NAT lookup</text>
+      <text x="200" y="143" fill="#8b949e" font-size="10" text-anchor="middle">ARP cache</text>
+      <text x="340" y="130" fill="#d29922" font-size="10" text-anchor="middle">Queueing</text>
+      <text x="340" y="143" fill="#d29922" font-size="10" text-anchor="middle">congestion</text>
+      <text x="480" y="130" fill="#f0883e" font-size="10" text-anchor="middle">Propagation</text>
+      <text x="480" y="143" fill="#f0883e" font-size="10" text-anchor="middle">speed of light</text>
+      <text x="620" y="130" fill="#8b949e" font-size="10" text-anchor="middle">Server CPU</text>
+      <text x="620" y="143" fill="#8b949e" font-size="10" text-anchor="middle">ICMP handler</text>
+
+      <!-- Delay breakdown -->
+      <text x="30" y="185" fill="#e6edf3" font-size="12" font-weight="bold">RTT  =  Processing  +  Transmission  +  Propagation  +  Queueing</text>
+      <text x="30" y="205" fill="#8b949e" font-size="11">Processing:    OS/NIC overhead, NAT table lookup, ICMP responder CPU   → usually &lt; 1ms</text>
+      <text x="30" y="222" fill="#8b949e" font-size="11">Transmission:  Time to push packet bits onto the wire = size / link_rate   → &lt; 1ms on GbE</text>
+      <text x="30" y="239" fill="#f0883e" font-size="11">Propagation:   Distance ÷ (2×10⁸ m/s in fiber) → ~5ms per 1000km</text>
+      <text x="30" y="256" fill="#d29922" font-size="11">Queueing:      Packets waiting in congested router buffers  → main source of JITTER</text>
+      <text x="30" y="278" fill="#58a6ff" font-size="11">Jitter source: Queueing delay fluctuates packet-to-packet → causes RTT variance</text>
+      <text x="30" y="296" fill="#3fb950" font-size="11">Stable source: Propagation + transmission are constant → do NOT cause jitter</text>
+    </svg>
+    <p class="diagram-caption">Figure: RTT components across a typical internet path — queueing delay is the primary jitter source</p>
+  </div>
+
+  <!-- ═══════════ 5. TOOL ARCHITECTURE ═══════════ -->
+  <div id="tools" class="sec-head">
+    <span class="sec-label">Tool Architecture</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§5</span>
+  </div>
+
+  <table class="ref-table">
+    <thead><tr><th>Script</th><th>Measures</th><th>Dependencies</th><th>Key output</th></tr></thead>
+    <tbody>
+      <tr><td><code>ping_jitter_calculator.py</code></td><td>RTT jitter, std dev, min/max/avg</td><td>stdlib only (os, subprocess, math, shutil)</td><td>Jitter + classification, no bandwidth</td></tr>
+      <tr><td><code>ping_jitter_bandwidth_calculator.py</code></td><td>RTT jitter + download/upload/ping</td><td>stdlib + <code>speedtest-cli</code></td><td>Full network health snapshot</td></tr>
+    </tbody>
+  </table>
+
+  <h2>User-Configurable Parameters</h2>
+  <table class="ref-table">
+    <thead><tr><th>Parameter</th><th>Options</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Target host</strong></td><td>8.8.8.8 (Google), 1.1.1.1 (CF), 9.9.9.9 (Quad9), 208.67.222.222 (OpenDNS), custom</td><td>Determines path; test multiple to isolate ISP vs endpoint</td></tr>
+      <tr><td><strong>Packet size</strong></td><td>64, 128, 512, 1024 bytes, custom</td><td>Larger packets stress transmission queues more; reveal size-dependent QoS shaping</td></tr>
+      <tr><td><strong>Interval</strong></td><td>0.2s, 0.5s, 1.0s, 2.0s, custom</td><td>Fast intervals (0.2s) stress test; slow intervals (2s) sample over longer period</td></tr>
+      <tr><td><strong>Ping count</strong></td><td>Default 50, any integer</td><td>50+ gives statistically stable jitter; 200+ for SLA-grade baseline</td></tr>
+    </tbody>
+  </table>
+
+  <div class="snippet">
+    <div class="snip-label py">Install speedtest-cli (bandwidth script only)</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre>pip3 install speedtest-cli
+
+<span class="cmt"># Verify</span>
+python3 -c "import speedtest; print('OK')"</pre>
+  </div>
+
+  <!-- ═══════════ 6. JITTER ONLY SCRIPT ═══════════ -->
+  <div id="jitter-only" class="sec-head">
+    <span class="sec-label">Jitter Calculator — Annotated Code</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§6</span>
+  </div>
+
+  <p>Jitter-only script — no external dependencies. Uses stdlib <code style="font-family:monospace;color:var(--cyan)">subprocess</code> to run the system <code style="font-family:monospace;color:var(--cyan)">ping</code> command, parses RTT values from stdout, and computes all statistics in pure Python math.</p>
+
+  <div class="snippet">
+    <div class="snip-label py">ping_jitter_calculator.py — complete annotated script</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">import</span> os, subprocess, math, shutil
+
+<span class="cmt"># ── ANSI color codes ──────────────────────────────────────────────</span>
+RED    = <span class="str">"\033[91m"</span>
+GREEN  = <span class="str">"\033[92m"</span>
+YELLOW = <span class="str">"\033[93m"</span>
+RESET  = <span class="str">"\033[0m"</span>
+
+<span class="kw">def</span> <span class="fn">classify_jitter</span>(jitter):
+    <span class="cmt"># Thresholds: ≤5=Excellent  6-20=Good  21-50=Fair  >50=Poor</span>
+    <span class="kw">if</span>   jitter &lt;= <span class="num">5</span>:  <span class="kw">return</span> <span class="fn">f</span><span class="str">"{GREEN}Excellent{RESET}"</span>
+    <span class="kw">elif</span> jitter &lt;= <span class="num">20</span>: <span class="kw">return</span> <span class="fn">f</span><span class="str">"{YELLOW}Good{RESET}"</span>
+    <span class="kw">elif</span> jitter &lt;= <span class="num">50</span>: <span class="kw">return</span> <span class="fn">f</span><span class="str">"{YELLOW}Fair{RESET}"</span>
+    <span class="kw">else</span>:               <span class="kw">return</span> <span class="fn">f</span><span class="str">"{RED}Poor{RESET}"</span>
+
+<span class="kw">def</span> <span class="fn">get_selection</span>(options, prompt):
+    <span class="cmt"># Numbered menu — returns the value for the chosen key</span>
+    <span class="kw">print</span>(prompt)
+    <span class="kw">for</span> k, v <span class="kw">in</span> options.items(): <span class="kw">print</span>(<span class="fn">f</span><span class="str">"{k}. {v}"</span>)
+    <span class="kw">while</span> <span class="num">True</span>:
+        <span class="kw">try</span>:
+            sel = <span class="fn">int</span>(<span class="fn">input</span>(<span class="fn">f</span><span class="str">"Choose (default {list(options.keys())[0]}): "</span>) <span class="kw">or</span> <span class="fn">list</span>(options.keys())[<span class="num">0</span>])
+            <span class="kw">return</span> options.get(sel)
+        <span class="kw">except</span> ValueError: <span class="kw">print</span>(<span class="fn">f</span><span class="str">"{RED}Enter a number{RESET}"</span>)
+
+<span class="kw">def</span> <span class="fn">calculate_jitter</span>():
+    <span class="kw">while</span> <span class="num">True</span>:
+        <span class="kw">try</span>:
+            os.system(<span class="str">'clear'</span>)
+
+            <span class="cmt"># ── Target selection ─────────────────────────────────────</span>
+            dns_options = {<span class="num">1</span>:<span class="str">"8.8.8.8"</span>, <span class="num">2</span>:<span class="str">"1.1.1.1"</span>, <span class="num">3</span>:<span class="str">"9.9.9.9"</span>,
+                           <span class="num">4</span>:<span class="str">"208.67.222.222"</span>, <span class="num">5</span>:<span class="str">"custom"</span>}
+            host = <span class="fn">get_selection</span>(dns_options, <span class="str">"Select DNS target:"</span>)
+            <span class="kw">if</span> host == <span class="str">"custom"</span>: host = <span class="fn">input</span>(<span class="str">"Custom host: "</span>).strip()
+
+            <span class="cmt"># ── Packet size ──────────────────────────────────────────</span>
+            pkt_opts = {<span class="num">1</span>:<span class="num">64</span>, <span class="num">2</span>:<span class="num">128</span>, <span class="num">3</span>:<span class="num">512</span>, <span class="num">4</span>:<span class="num">1024</span>, <span class="num">5</span>:<span class="str">"custom"</span>}
+            packet_size = <span class="fn">get_selection</span>(pkt_opts, <span class="str">"Packet size (bytes):"</span>)
+            <span class="kw">if</span> packet_size == <span class="str">"custom"</span>: packet_size = <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"Size: "</span>))
+
+            <span class="cmt"># ── Interval ─────────────────────────────────────────────</span>
+            int_opts = {<span class="num">1</span>:<span class="num">0.2</span>, <span class="num">2</span>:<span class="num">0.5</span>, <span class="num">3</span>:<span class="num">1.0</span>, <span class="num">4</span>:<span class="num">2.0</span>, <span class="num">5</span>:<span class="str">"custom"</span>}
+            interval = <span class="fn">get_selection</span>(int_opts, <span class="str">"Ping interval (s):"</span>)
+            <span class="kw">if</span> interval == <span class="str">"custom"</span>: interval = <span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"Interval: "</span>))
+
+            ping_count = <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"\nNumber of pings (default 50): "</span>) <span class="kw">or</span> <span class="num">50</span>)
+
+            <span class="cmt"># ── Build platform-aware ping command ─────────────────────</span>
+            <span class="kw">if</span> os.name == <span class="str">"nt"</span>:   <span class="cmt"># Windows</span>
+                cmd = <span class="fn">f</span><span class="str">"ping -n {ping_count} -l {packet_size} {host}"</span>
+            <span class="kw">else</span>:                   <span class="cmt"># Linux / macOS</span>
+                cmd = <span class="fn">f</span><span class="str">"ping -c {ping_count} -i {interval} -s {packet_size} {host}"</span>
+
+            result = subprocess.<span class="fn">run</span>(cmd, shell=<span class="num">True</span>, capture_output=<span class="num">True</span>, text=<span class="num">True</span>, check=<span class="num">True</span>)
+
+            <span class="cmt"># ── Parse RTT values from ping stdout ─────────────────────</span>
+            times = []
+            <span class="kw">for</span> line <span class="kw">in</span> result.stdout.splitlines():
+                <span class="kw">if</span> <span class="str">"time="</span> <span class="kw">in</span> line:
+                    <span class="kw">try</span>: times.<span class="fn">append</span>(<span class="fn">float</span>(line.<span class="fn">split</span>(<span class="str">"time="</span>)[<span class="num">1</span>].<span class="fn">split</span>()[<span class="num">0</span>]))
+                    <span class="kw">except</span>: <span class="kw">pass</span>
+
+            <span class="kw">if</span> <span class="fn">len</span>(times) &lt; <span class="num">2</span>:
+                <span class="kw">print</span>(<span class="fn">f</span><span class="str">"{RED}Not enough data — increase ping count{RESET}"</span>); <span class="kw">break</span>
+
+            <span class="cmt"># ── Statistics ───────────────────────────────────────────</span>
+            count   = <span class="fn">len</span>(times)
+            avg     = <span class="fn">sum</span>(times) / count
+            sumsq   = <span class="fn">sum</span>(t**<span class="num">2</span> <span class="kw">for</span> t <span class="kw">in</span> times)
+            <span class="formula">jitter  = math.<span class="fn">sqrt</span>(sumsq / count - avg**<span class="num">2</span>)      <span class="cmt"># population std dev</span></span>
+            min_t   = <span class="fn">min</span>(times)
+            max_t   = <span class="fn">max</span>(times)
+            <span class="formula">std_dev = math.<span class="fn">sqrt</span>(<span class="fn">sum</span>((t - avg)**<span class="num">2</span> <span class="kw">for</span> t <span class="kw">in</span> times) / (count - <span class="num">1</span>))  <span class="cmt"># sample std dev</span></span>
+            rating  = <span class="fn">classify_jitter</span>(jitter)
+
+            <span class="cmt"># ── Output ───────────────────────────────────────────────</span>
+            rows = [
+                <span class="fn">f</span><span class="str">"Target Host:         {host}"</span>,
+                <span class="fn">f</span><span class="str">"Ping Count:          {count}"</span>,
+                <span class="fn">f</span><span class="str">"Interval:            {interval:.2f} s"</span>,
+                <span class="fn">f</span><span class="str">"Packet Size:         {packet_size} bytes"</span>,
+                <span class="fn">f</span><span class="str">"Average RTT:         {avg:.2f} ms"</span>,
+                <span class="fn">f</span><span class="str">"Minimum RTT:         {min_t:.2f} ms"</span>,
+                <span class="fn">f</span><span class="str">"Maximum RTT:         {max_t:.2f} ms"</span>,
+                <span class="fn">f</span><span class="str">"Standard Deviation:  {std_dev:.2f} ms"</span>,
+                <span class="fn">f</span><span class="str">"Jitter:              {jitter:.2f} ms"</span>,
+            ]
+            w = <span class="fn">min</span>(<span class="fn">max</span>(<span class="fn">len</span>(r) <span class="kw">for</span> r <span class="kw">in</span> rows) + <span class="num">4</span>, shutil.<span class="fn">get_terminal_size</span>().columns - <span class="num">4</span>)
+            border = <span class="str">"+"</span> + <span class="str">"-"</span> * w + <span class="str">"+"</span>
+            <span class="kw">print</span>(border)
+            <span class="kw">print</span>(<span class="str">"|"</span> + <span class="str">"PING JITTER RESULTS"</span>.<span class="fn">center</span>(w) + <span class="str">"|"</span>)
+            <span class="kw">print</span>(border)
+            <span class="kw">for</span> r <span class="kw">in</span> rows: <span class="kw">print</span>(<span class="fn">f</span><span class="str">"| {r.ljust(w-2)} |"</span>)
+            <span class="kw">print</span>(border)
+            <span class="kw">print</span>(<span class="fn">f</span><span class="str">"| Jitter Classification: {rating.ljust(w-24)} |"</span>)
+            <span class="kw">print</span>(border)
+
+            <span class="kw">if</span> <span class="fn">input</span>(<span class="str">"\nCalculate again? (y/n): "</span>).strip().lower() != <span class="str">'y'</span>: <span class="kw">break</span>
+
+        <span class="kw">except</span> Exception <span class="kw">as</span> e:
+            <span class="kw">print</span>(<span class="fn">f</span><span class="str">"{RED}Error: {e}{RESET}"</span>); <span class="kw">break</span>
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    <span class="fn">calculate_jitter</span>()</pre>
+  </div>
+
+  <!-- ═══════════ 7. BANDWIDTH SCRIPT ═══════════ -->
+  <div id="bandwidth" class="sec-head">
+    <span class="sec-label">Jitter + Bandwidth Calculator</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§7</span>
+  </div>
+
+  <p>Extends the jitter calculator with a <code style="font-family:monospace;color:var(--cyan)">speedtest-cli</code> call to measure download speed, upload speed, and ping against the nearest Speedtest.net server. Useful for correlating RTT jitter with actual throughput degradation.</p>
+
+  <div class="snippet">
+    <div class="snip-label py">ping_jitter_bandwidth_calculator.py — additional bandwidth section</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">import</span> speedtest
+
+<span class="kw">def</span> <span class="fn">test_bandwidth</span>():
+    st = speedtest.<span class="fn">Speedtest</span>()
+    st.<span class="fn">get_best_server</span>()           <span class="cmt"># select lowest-ping Speedtest server</span>
+    dl = st.<span class="fn">download</span>() / <span class="num">1_000_000</span>   <span class="cmt"># bps → Mbps</span>
+    ul = st.<span class="fn">upload</span>()   / <span class="num">1_000_000</span>   <span class="cmt"># bps → Mbps</span>
+    ping = st.results.ping             <span class="cmt"># ms to Speedtest server</span>
+    <span class="kw">return</span> dl, ul, ping
+
+<span class="cmt"># Called after jitter stats are computed, adds to result_lines:</span>
+dl, ul, ping = <span class="fn">test_bandwidth</span>()
+rows += [
+    <span class="fn">f</span><span class="str">"Download Speed:      {dl:.2f} Mbps"</span>,
+    <span class="fn">f</span><span class="str">"Upload Speed:        {ul:.2f} Mbps"</span>,
+    <span class="fn">f</span><span class="str">"Speedtest Ping:      {ping} ms"</span>,
+]</pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label out">Sample output — both scripts</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre>+------------------------------------------+
+|          PING JITTER RESULTS             |
++------------------------------------------+
+| Target Host:         1.1.1.1             |
+| Ping Count:          50                  |
+| Interval:            0.20 s              |
+| Packet Size:         64 bytes            |
+| Average RTT:         12.34 ms            |
+| Minimum RTT:         11.02 ms            |
+| Maximum RTT:         19.87 ms            |
+| Standard Deviation:  1.82 ms             |
+| Jitter:              1.79 ms             |
+| Download Speed:      412.50 Mbps         |
+| Upload Speed:        98.20 Mbps          |
+| Speedtest Ping:      14 ms               |
++------------------------------------------+
+| Jitter Classification: Excellent         |
++------------------------------------------+</pre>
+  </div>
+
+  <!-- ═══════════ 8. INTERPRET ═══════════ -->
+  <div id="interpret" class="sec-head">
+    <span class="sec-label">Interpreting Results</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§8</span>
+  </div>
+
+  <h2>High Jitter + Low Average RTT</h2>
+  <div class="callout warn">Burst congestion upstream — the path is fast on average but occasionally backs up. Common on cable/DOCSIS during peak hours. Fix: test at different times; check ISP SLA; enable QoS on router.</div>
+
+  <h2>High Jitter + High Average RTT</h2>
+  <div class="callout warn">Sustained congestion or a problematic hop. Run <code style="font-family:monospace;color:var(--cyan)">traceroute</code> to isolate which hop introduces the latency spike. May indicate oversubscribed ISP transit or a routing path change.</div>
+
+  <h2>Low Jitter + High Average RTT</h2>
+  <div class="callout yellow">Distance-limited — propagation delay dominates. Consistent but slow. VoIP may still work if jitter is ≤5ms despite high RTT. No fix for speed of light; use CDN / closer endpoints if possible.</div>
+
+  <h2>Std Dev Significantly Higher Than Jitter</h2>
+  <div class="callout">Outlier pings (timeouts, retransmits) are pulling sample std dev up more than population jitter. Review max RTT — a single 500ms spike in 50 pings will inflate std dev but barely move jitter. Filter or re-run without the outlier condition to diagnose.</div>
+
+  <h2>Low Bandwidth + Low Jitter</h2>
+  <div class="callout yellow">Link is clean but under-provisioned. Jitter target is met but throughput SLA is not. Traffic-shaping or QoS is not the issue — provisioned bandwidth is insufficient.</div>
+
+  <h2>Comparing Targets</h2>
+  <table class="ref-table">
+    <thead><tr><th>Target</th><th>What it tests</th><th>Good for</th></tr></thead>
+    <tbody>
+      <tr><td><code>8.8.8.8</code></td><td>Path to Google's DNS anycast network</td><td>General ISP path quality</td></tr>
+      <tr><td><code>1.1.1.1</code></td><td>Path to Cloudflare anycast</td><td>CDN path baseline</td></tr>
+      <tr><td><code>9.9.9.9</code></td><td>Quad9 DNS</td><td>Security-filtered path comparison</td></tr>
+      <tr><td><code>Gateway IP</code></td><td>Local CPE/router only</td><td>Isolate local LAN vs ISP jitter</td></tr>
+      <tr><td>Custom host</td><td>Application server or VoIP gateway</td><td>End-to-end SLA measurement</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ═══════════ 9. QOS ═══════════ -->
+  <div id="qos" class="sec-head">
+    <span class="sec-label">QoS &amp; Real-World Impact</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§9</span>
+  </div>
+
+  <table class="ref-table">
+    <thead><tr><th>Traffic type</th><th>Jitter tolerance</th><th>Max RTT</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>VoIP (G.711)</td><td>&lt; 20ms</td><td>&lt; 150ms</td><td>ITU-T G.114 recommendation; jitter buffer absorbs ≤30ms</td></tr>
+      <tr><td>Video conferencing</td><td>&lt; 30ms</td><td>&lt; 150ms</td><td>Adaptive bitrate helps but jitter causes pixelation</td></tr>
+      <tr><td>Online gaming</td><td>&lt; 15ms</td><td>&lt; 50ms</td><td>Jitter causes rubber-banding; position prediction fails</td></tr>
+      <tr><td>HTTP/web</td><td>Up to 100ms</td><td>&lt; 300ms</td><td>TCP retransmit handles it; perceived as slow page load</td></tr>
+      <tr><td>File transfer</td><td>Tolerant</td><td>Any</td><td>TCP flow control adapts; throughput may drop with high jitter</td></tr>
+      <tr><td>RTP streaming</td><td>&lt; 50ms</td><td>&lt; 200ms</td><td>RFC 3550 jitter estimator — different formula than this tool</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ═══════════ 10. REFERENCE ═══════════ -->
+  <div id="ref" class="sec-head">
+    <span class="sec-label">Command Reference</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§10</span>
+  </div>
+
+  <h3>Manual Ping Diagnostics</h3>
+  <div class="snippet">
+    <div class="snip-label py">Platform ping commands</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Linux/macOS — 50 pings, 64-byte, 0.2s interval</span>
+ping -c 50 -i 0.2 -s 64 1.1.1.1
+
+<span class="cmt"># Linux — flood ping (root only) — maximum stress test</span>
+sudo ping -f -c 1000 -s 1024 1.1.1.1
+
+<span class="cmt"># macOS — 100 pings with timestamps</span>
+ping -c 100 -D 8.8.8.8
+
+<span class="cmt"># Windows — 50 pings with 512-byte packets</span>
+ping -n 50 -l 512 8.8.8.8
+
+<span class="cmt"># Linux — compute jitter inline with awk after ping</span>
+ping -c 50 -q 1.1.1.1 | tail -1 | awk -F '/' '{print "avg="$5"ms  mdev(jitter)="$6"ms"}'
+
+<span class="cmt"># mdev in Linux ping output = mean deviation ≈ jitter</span></pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label py">Traceroute — isolate the jitter source</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Standard traceroute</span>
+traceroute 1.1.1.1
+
+<span class="cmt"># With ICMP (not UDP) — works through more firewalls</span>
+traceroute -I 1.1.1.1
+
+<span class="cmt"># MTR — live per-hop jitter + loss (best tool)</span>
+mtr --report --report-cycles 100 1.1.1.1
+
+<span class="cmt"># MTR JSON output for scripting</span>
+mtr --json --report-cycles 50 1.1.1.1 | python3 -m json.tool</pre>
+  </div>
+
+  <h3>Compute Jitter Manually</h3>
+  <div class="snippet">
+    <div class="snip-label py">Pure Python — paste RTT values, get stats</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">import</span> math
+
+times = [<span class="num">12.1</span>, <span class="num">11.8</span>, <span class="num">13.4</span>, <span class="num">25.0</span>, <span class="num">11.9</span>, <span class="num">12.2</span>, <span class="num">12.0</span>, <span class="num">11.7</span>, <span class="num">12.5</span>, <span class="num">12.1</span>]
+
+n       = <span class="fn">len</span>(times)
+avg     = <span class="fn">sum</span>(times) / n
+sumsq   = <span class="fn">sum</span>(t**<span class="num">2</span> <span class="kw">for</span> t <span class="kw">in</span> times)
+jitter  = math.<span class="fn">sqrt</span>(sumsq / n - avg**<span class="num">2</span>)                     <span class="cmt"># population</span>
+std_dev = math.<span class="fn">sqrt</span>(<span class="fn">sum</span>((t-avg)**<span class="num">2</span> <span class="kw">for</span> t <span class="kw">in</span> times) / (n-<span class="num">1</span>)) <span class="cmt"># sample (Bessel)</span>
+
+<span class="kw">print</span>(<span class="fn">f</span><span class="str">"n={n}  avg={avg:.2f}ms  min={min(times):.2f}ms  max={max(times):.2f}ms"</span>)
+<span class="kw">print</span>(<span class="fn">f</span><span class="str">"jitter={jitter:.2f}ms  std_dev={std_dev:.2f}ms"</span>)</pre>
+  </div>
+
+</div>
+    <p><a href="/">&#8592; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-network-jitter-bandwidth-reference",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

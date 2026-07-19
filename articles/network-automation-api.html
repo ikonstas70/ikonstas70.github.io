@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/network-automation-api">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wrapping Legacy Network Gear in a Modern API — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Automation</span>
+    <h1>Wrapping Legacy Network Gear in a Modern API</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Plenty of infrastructure predates the API era. Virtualized router fleets often expose their consoles as serial-over-network — raw Telnet sessions mapped to a range of ports — which is fine for a human with a terminal and hostile to automation: unpredictable timing, escape-character noise, no authentication, no structure. The goal of this project was to abstract those legacy serial interfaces into a clean, authenticated REST API without exposing the underlying fleet to anything. Here's the architecture, modernized.</p>
+
+    <h2>Foundation: total isolation</h2>
+    <p>The security model starts in the network, not the code. The hypervisor hosting the routers has <em>no default gateway</em>; it reaches the outside world only through a management host over a Layer-3 point-to-point link. The router fleet is unreachable from the internet by any direct path — every management action funnels through one controlled choke point. Nothing below survives if this principle is violated, so it comes first.</p>
+
+    <h2>The bridge, in three tiers</h2>
+    <p>The stack converts stateless HTTP requests into stateful terminal sessions:</p>
+    <ol>
+      <li><strong>An async API service</strong> — authenticates the caller, validates the target, and enqueues the work.</li>
+      <li><strong>A session controller</strong> — manages the fragile timing of virtual serial consoles.</li>
+      <li><strong>A transport relay</strong> — bridges local ports to the hypervisor's console ports.</li>
+    </ol>
+    <p>The original built this on Flask and shell-invoked Telnet with hand-tuned <code>sleep</code>s. The modernized version below is fully async, uses a real Telnet client library instead of shelling out, enforces API keys and per-target allow-listing, and returns structured JSON with proper timeouts.</p>
+
+    <h2>Tier 1 — the API (FastAPI, async, validated)</h2>
+    <pre><code>from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel, field_validator
+import asyncio, os, secrets
+
+ALLOWED_PORTS = set(range(2301, 2321))          # the console range, explicit
+API_KEY = os.environ["ROUTER_API_KEY"]          # never hard-coded
+HYPERVISOR = "10.10.0.210"                        # reachable only via mgmt host
+
+app = FastAPI(title="Router Console API")
+
+class Command(BaseModel):
+    port: int
+    command: str
+
+    @field_validator("port")
+    @classmethod
+    def port_in_range(cls, v):
+        if v not in ALLOWED_PORTS:
+            raise ValueError("port outside allowed console range")
+        return v
+
+    @field_validator("command")
+    @classmethod
+    def no_config_mode(cls, v):
+        # Read-only gateway: refuse config/exec that could change state
+        banned = ("conf", "reload", "erase", "write", "delete")
+        if v.strip().lower().startswith(banned):
+            raise ValueError("only show/diagnostic commands permitted")
+        return v
+
+def require_key(x_api_key: str = Header(...)):
+    if not secrets.compare_digest(x_api_key, API_KEY):
+        raise HTTPException(status_code=401, detail="bad api key")
+
+@app.post("/console")
+async def run(cmd: Command, _=Header(None, alias="X-API-Key")):
+    require_key(_)
+    try:
+        output = await asyncio.wait_for(
+            execute(cmd.port, cmd.command), timeout=15.0)
+    except asyncio.TimeoutError:
+        raise HTTPException(504, "console session timed out")
+    return {"port": cmd.port, "router": f"R{cmd.port - 2300}",
+            "output": scrub(output)}</code></pre>
+
+    <h2>Tier 2 — the session controller (no more magic sleeps)</h2>
+    <p>Virtual serial consoles drop characters if you type faster than the buffer drains. The old fix was a fixed <code>sleep</code> ladder; the robust fix is to <em>wait for the prompt</em> — read until the device signals it's ready, then send the next line. This is faster and doesn't break when a device is slow.</p>
+    <pre><code>import telnetlib3   # asyncio-native Telnet
+
+PROMPT = re.compile(rb"[\r\n][\w.-]+[#&gt;]\s*$")
+
+async def execute(port: int, command: str) -&gt; str:
+    reader, writer = await telnetlib3.open_connection(HYPERVISOR, port)
+    try:
+        await _read_until_prompt(reader)          # wake the console
+        writer.write("terminal length 0\r\n")     # disable pagination
+        await _read_until_prompt(reader)
+        writer.write(command + "\r\n")
+        output = await _read_until_prompt(reader)
+        return output
+    finally:
+        writer.close()                             # always release the session
+
+async def _read_until_prompt(reader, timeout=8.0) -&gt; str:
+    buf = bytearray()
+    while not PROMPT.search(buf):
+        chunk = await asyncio.wait_for(reader.read(1024), timeout)
+        if not chunk:
+            break
+        buf.extend(chunk.encode() if isinstance(chunk, str) else chunk)
+    return buf.decode(errors="replace")</code></pre>
+
+    <h2>Tier 3 — transport relay and output hygiene</h2>
+    <p>If the API host can't reach the console ports directly, a <code>socat</code> relay bridges them, forking per connection so concurrent sessions don't collide:</p>
+    <pre><code># One relay per console port; TCP-LISTEN forks a child per client
+for p in $(seq 2301 2320); do
+  socat TCP-LISTEN:${p},reuseaddr,fork \
+        TCP:10.10.0.210:${p} &amp;
+done</code></pre>
+    <p>Finally, strip the Telnet negotiation bytes, ANSI escapes, and echoed command so callers get clean text:</p>
+    <pre><code>import re
+_ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+_IAC  = re.compile(rb"\xff[\xfa-\xff].")
+
+def scrub(raw: str) -&gt; str:
+    text = _ANSI.sub("", raw)
+    return "\n".join(l.rstrip() for l in text.splitlines()
+                     if l.strip() and not l.startswith("terminal length"))</code></pre>
+
+    <h2>Reaching it safely from anywhere</h2>
+    <p>No inbound firewall port needs opening. An outbound-only tunnel (Cloudflare Tunnel, or an SSH reverse tunnel) publishes the API to an authenticated HTTPS endpoint while the management host initiates the connection. An engineer anywhere runs one authenticated request:</p>
+    <pre><code>curl -X POST https://console.example.internal/console \
+  -H "X-API-Key: $ROUTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"port": 2301, "command": "show ip interface brief"}'</code></pre>
+    <pre><code>{
+  "port": 2301,
+  "router": "R1",
+  "output": "Interface        IP-Address      OK? Status  Protocol\nGig1  10.0.0.1  YES up  up"
+}</code></pre>
+
+    <h2>What modernizing changed</h2>
+    <ul>
+      <li><strong>Prompt-driven timing</strong> replaced fixed sleeps — faster and reliable under load.</li>
+      <li><strong>Async throughout</strong> — many concurrent sessions without threads or crashes.</li>
+      <li><strong>Validation and a read-only guard</strong> at the edge — the API cannot be tricked into config mode or out-of-range ports.</li>
+      <li><strong>Secrets from the environment</strong>, constant-time key comparison, structured JSON out.</li>
+      <li><strong>Isolation preserved</strong> — the fleet is still unreachable except through one outbound-only path.</li>
+    </ul>
+
+    <blockquote>Legacy interfaces don't need replacing to be usable — they need a disciplined bridge. Isolate the fleet at the network layer, wait for the prompt instead of guessing, validate everything at the edge, and never open an inbound port.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=network-automation-api",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

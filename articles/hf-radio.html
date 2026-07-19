@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/hf-radio">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>High-Frequency Radio: Still Vital in a Satellite World — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Communications</span>
+    <h1>High-Frequency Radio: Still Vital in a Satellite World</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>In an age of satellites and fiber, high-frequency radio sounds like a museum piece. It isn't. HF — shortwave, the 3 to 30 MHz band — remains a strategic communications capability precisely because of a property nothing else has: it bounces signals off the sky to reach around the curve of the Earth, needing no infrastructure in between. When satellites are unavailable, jammed, or destroyed, HF is what still works.</p>
+
+    <h2>The physics that makes it special</h2>
+    <p>HF's superpower is the <strong>ionosphere</strong> — a layer of charged particles high in the atmosphere that refracts HF-band radio waves back toward the ground. A signal launched at the right angle "skips" off this layer and lands hundreds or thousands of kilometers away, far beyond the visible horizon. Chain several skips and you have intercontinental reach with nothing but a transmitter, a receiver, and the sky. No satellite, no cable, no cell tower, no relay — the atmosphere itself is the infrastructure.</p>
+
+    <h2>Where HF still earns its place</h2>
+    <ul>
+      <li><strong>Military and government.</strong> Beyond-line-of-sight communication that survives when space and terrestrial links don't — the ultimate fallback for command and control.</li>
+      <li><strong>Maritime and aviation.</strong> Ships and long-haul aircraft crossing oceans, far from any tower, rely on HF for long-range contact.</li>
+      <li><strong>Emergency and disaster response.</strong> When infrastructure is destroyed, HF radios keep working. Amateur radio operators have repeatedly provided emergency communications after hurricanes and earthquakes knocked out everything else.</li>
+      <li><strong>International broadcasting.</strong> Shortwave still carries news across borders and into regions where the internet is censored or absent.</li>
+      <li><strong>Amateur radio.</strong> A global community explores the HF bands with Morse, voice, and modern digital modes — part hobby, part living reservoir of emergency-comms skill.</li>
+    </ul>
+
+    <h2>The challenges — and why they're worth it</h2>
+    <p>HF is not easy. The ionosphere is a living, shifting medium: it changes with the time of day, the seasons, and the 11-year solar cycle, so the frequency that works at noon fails at midnight, and a solar storm can black out the band entirely. Signals fade, atmospheric noise intrudes, and usable bandwidth is modest. Overcoming this is a craft — careful antenna design, and <strong>propagation prediction</strong> tools that forecast which frequencies will "open" between two points at a given hour. The reward for that effort is a link that depends on no one else's infrastructure.</p>
+
+    <h2>The modern renaissance</h2>
+    <p>Two developments have quietly revitalized HF. First, <strong>digital modes</strong>: modern protocols pull readable messages out of signals buried in noise, making weak-signal HF far more reliable than the voice-only era allowed. Second, and more strategically, <strong>the return of contested space</strong>. As militaries plan for conflicts where satellites cannot be assumed — jammed, spoofed, or shot down — HF's independence from space infrastructure has moved it from legacy fallback back toward frontline capability. Software-defined radios (see <a href="/articles/software-defined-systems">The Power of Software-Defined Systems</a>) make HF systems more flexible and capable than the fixed hardware of the past.</p>
+
+    <h2>Security note</h2>
+    <p>HF's openness cuts both ways: the same skywave that reaches a friendly receiver reaches anyone else listening. Government and military HF therefore depends on strong encryption and frequency management to protect sensitive traffic — the propagation is free and public, so the confidentiality has to be built on top.</p>
+
+    <blockquote>HF radio endures because it needs nothing between sender and receiver but the sky. In a world increasingly worried about losing its satellites, a technology that bounces signals off the atmosphere isn't obsolete — it's the ultimate fallback, and increasingly a frontline one.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=hf-radio",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

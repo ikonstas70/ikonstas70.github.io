@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/wifi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wi-Fi: Public Networks and Your Own — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Networks</span>
+    <h1>Wi-Fi: Public Networks and Your Own</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>The coffee-shop Wi-Fi horror story needs an update. A decade ago, an attacker on the same open network could read half your traffic outright. Today nearly everything is encrypted with HTTPS, and the eavesdropping threat is smaller than the folklore suggests. But "smaller" is not "gone" — and the network most likely to hurt you is the one in your own living room.</p>
+
+    <h2>Public Wi-Fi: the honest 2026 threat model</h2>
+    <p>What an attacker on shared Wi-Fi can still do:</p>
+    <ul>
+      <li><strong>See where you go.</strong> Domain names still leak through DNS and connection metadata, even when content is encrypted. That's a privacy problem more than a theft problem.</li>
+      <li><strong>Run an evil twin.</strong> Anyone can broadcast a network named "Airport_Free_WiFi" and hand you a fake captive portal that harvests the email and password you type in — which, statistically, you also use elsewhere.</li>
+      <li><strong>Attack your device directly.</strong> Being on the same LAN exposes whatever your laptop is sharing: AirDrop set to everyone, file shares, development servers you forgot were running.</li>
+    </ul>
+    <p>The countermeasures are simple: never type real credentials into a captive portal (they need a checkbox, not your email password); keep your device's firewall on and sharing services off when roaming; use encrypted DNS or a reputable VPN if the privacy leak bothers you; and prefer your phone's hotspot for anything sensitive — cellular is a harder target than café Wi-Fi.</p>
+
+    <h2>Your home network: the ten-minute hardening pass</h2>
+    <h3>1. Log into your router — yes, actually</h3>
+    <p>The device that stands between the internet and everything you own often runs firmware from years ago with the password <code>admin</code>. Change the admin credential, apply pending firmware updates, and turn on automatic updates if offered. If the manufacturer stopped shipping updates entirely, the router is not old — it is expired.</p>
+    <h3>2. Use WPA3, or at minimum WPA2 with a real passphrase</h3>
+    <p>Your Wi-Fi passphrase can be captured offline and cracked at leisure, so length is the whole game: four random words beats any clever eight characters. Disable WPS — the push-button pairing feature has been a known weakness for over a decade.</p>
+    <h3>3. Segment your strangers</h3>
+    <p>The guest network isn't just for guests. Put every smart TV, camera, doorbell, and plug on it, isolated from the laptops and phones that hold your actual life. A compromised $30 gadget should never share a network segment with your tax returns. (More in <a href="/awareness/digital-home">Securing the Connected Home</a>.)</p>
+    <h3>4. Kill remote administration</h3>
+    <p>Unless you deliberately need it, your router's admin page should not be reachable from the internet. This single checkbox has been the entry point for entire botnets.</p>
+
+    <h2>The checklist</h2>
+    <ul>
+      <li>Public: firewall on, sharing off, no real credentials into portals, hotspot for banking.</li>
+      <li>Home: admin password changed, firmware current, WPA3/WPA2 with long passphrase, WPS off.</li>
+      <li>IoT on the guest network; remote admin disabled.</li>
+      <li>Once a year, look at the router's client list and evict anything you can't name.</li>
+    </ul>
+
+    <blockquote>Stop trusting networks by their name. Think about what your device is offering to strangers. Connect as a guest everywhere — including at home.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-wifi",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

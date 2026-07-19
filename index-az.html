@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/index-az">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alphabetical Index — Konstas Engineering Notes</title>
+<meta name="description" content="Alphabetical index of every article, guide and lab on Konstas Engineering Notes — like a book index, with short descriptions.">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .search-wrap { margin: 8px 0 30px; }
+  #q {
+    width: 100%; box-sizing: border-box; padding: 14px 18px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg); font-family: var(--mono); font-size: 1rem; outline: none;
+  }
+  #q:focus { border-color: var(--accent); }
+  #q::placeholder { color: var(--fg-dim); }
+  .controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 26px; }
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+  .filters button {
+    background: none; border: 1px solid var(--border); color: var(--fg-dim);
+    padding: 5px 14px; border-radius: 14px; font-family: var(--sans); font-size: 0.78rem;
+    letter-spacing: 0.08em; cursor: pointer; transition: all .2s; text-transform: uppercase;
+  }
+  .filters button.active, .filters button:hover { border-color: var(--accent); color: var(--accent); }
+  #count { color: var(--fg-dim); font-size: 0.8rem; }
+  .alpha { color: var(--accent); font-family: var(--serif); font-size: 1.5rem; margin: 30px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .result { display: block; padding: 14px 0; border-bottom: 1px solid var(--border); text-decoration: none; }
+  .result:hover .r-title { color: var(--accent); }
+  .r-title { color: var(--fg); font-family: var(--serif); font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+  .r-desc { color: var(--fg-dim); font-size: 0.85rem; }
+  .r-sect { color: var(--accent-dim); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; margin-left: 10px; }
+  #empty { color: var(--fg-dim); text-align: center; padding: 40px 0; display: none; }
+</style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az" class="active">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <style>
+.az-jump{letter-spacing:.18em;font-size:.95rem;margin:1.2rem 0 2rem}
+.az-jump a{margin-right:.35rem}
+dl.az{margin:0 0 2.2rem}
+dl.az dt{margin:1.05rem 0 .15rem;font-size:1.02rem}
+dl.az dt .az-tag{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;opacity:.55;margin-left:.55rem;white-space:nowrap}
+dl.az dd{margin:0 0 .2rem;padding-left:1.1rem;font-size:.9rem;opacity:.75;border-left:2px solid rgba(255,255,255,.12)}
+</style>
+<main>
+    <span class="tag">Index</span>
+    <h1>Alphabetical Index</h1>
+    <p class="meta">137 entries &middot; Articles, Security Awareness, Data Science &amp; CCIE Labs</p>
+    <p class="az-jump"><a href="#az-A">A</a> <a href="#az-B">B</a> <a href="#az-C">C</a> <a href="#az-D">D</a> <a href="#az-E">E</a> <a href="#az-F">F</a> <a href="#az-G">G</a> <a href="#az-H">H</a> <a href="#az-I">I</a> <a href="#az-K">K</a> <a href="#az-L">L</a> <a href="#az-M">M</a> <a href="#az-N">N</a> <a href="#az-O">O</a> <a href="#az-P">P</a> <a href="#az-R">R</a> <a href="#az-S">S</a> <a href="#az-T">T</a> <a href="#az-U">U</a> <a href="#az-V">V</a> <a href="#az-W">W</a> <a href="#az-Y">Y</a></p>
+    <h2 id="az-A">A</h2>
+    <dl class="az">
+      <dt><a href="/articles/gh-a2billing-voip-billing-engine-architecture-agi-int">A2Billing VoIP Billing Engine: Architecture, AGI Integration, and Rate Management</a> <span class="az-tag">Telecom</span></dt>
+      <dd>How A2Billing integrates with Asterisk via AGI for real-time call billing, rate deck structure, calling card IVR flow, and MySQL database…</dd>
+      <dt><a href="/articles/gh-acl-analytics-excel-reference">ACL Analytics &amp; Excel Data Manipulation Reference</a> <span class="az-tag">Analytics</span></dt>
+      <dd>Production-grade scripts, formulas, and audit patterns — from data cleaning through fraud detection. Built for professional auditors and data analysts…</dd>
+      <dt><a href="/articles/gh-active-directory-management">Active Directory Management: Domain Controllers, FSMO Roles, Replication, DNS &amp; Best Practices</a> <span class="az-tag">Systems</span></dt>
+      <dd>Active Directory is the identity and access backbone of nearly every Windows-based enterprise network. Understanding its architecture — how Domain…</dd>
+      <dt><a href="/articles/gh-quadratic-sieve-factorization">Advanced Integer Factorization Using the Quadratic Sieve Algorithm</a> <span class="az-tag">Cryptography</span></dt>
+      <dd>Executive SummaryThis document covers the design and implementation of an efficient integer factorization tool using the Quadratic Sieve (QS) algorithm. The…</dd>
+      <dt><a href="/articles/gh-asterisk-pbx-architecture-channel-drivers-dialplan">Asterisk PBX Architecture: Channel Drivers, Dialplan Engine, and AGI Integration</a> <span class="az-tag">Telecom</span></dt>
+      <dd>Core Asterisk components — chan_pjsip, extensions.conf dialplan logic, AGI scripting, AMI/ARI interfaces, CDR to MySQL, and STIR/SHAKEN…</dd>
+    </dl>
+    <h2 id="az-B">B</h2>
+    <dl class="az">
+      <dt><a href="/awareness/online-payments">Banking and Paying Safely Online</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/bgp-security">BGP and Autonomous Systems: Routing You Can Trust</a> <span class="az-tag">Networking</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-bitcoin-crypto-node-tools-reference">Bitcoin &amp; Crypto Node Tools</a> <span class="az-tag">Cryptography</span></dt>
+      <dd>A technical reference for Bitcoin node operators — covering live block monitoring, blockchain queries, halving phase analysis, threat detection, and r…</dd>
+      <dt><a href="/articles/gh-bitcoin-blockchain-data-platform">Bitcoin Blockchain Data Platform &amp; Genesis Block Deep Dive</a> <span class="az-tag">Cryptography</span></dt>
+      <dd>A comprehensive reference covering the architecture, revenue model, and API design for a Bitcoin historical data platform — plus a technical deep dive…</dd>
+      <dt><a href="/articles/gh-bitcoin-lxd-sandbox-network-isolation">Bitcoin LXD Sandbox — Network Isolation Analysis</a> <span class="az-tag">Systems</span></dt>
+      <dd>Analysis of a Bitcoin node running inside an LXD container (bitcoin-sandbox) on Ubuntu 24.04, confirming correct network isolation from the host…</dd>
+      <dt><a href="/articles/gh-asterisk22-kamailio-a2billing-docker-integration">Building a Production CLEC Stack: Asterisk 22 + Kamailio 5 + A2Billing on Docker</a> <span class="az-tag">Telecom</span></dt>
+      <dd>This article documents the full integration of a production-grade Competitive Local Exchange Carrier (CLEC) platform using Asterisk 22, Kamailio 5, and…</dd>
+      <dt><a href="/articles/security-monitoring-stack">Building an Open-Source Security Monitoring Stack</a> <span class="az-tag">Security Operations</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+    </dl>
+    <h2 id="az-C">C</h2>
+    <dl class="az">
+      <dt><a href="/articles/gh-carrier-grade-sip-infrastructure-10-vm-open-source">Carrier-Grade SIP Infrastructure: 10-VM Open Source Telecom Stack Architecture</a> <span class="az-tag">Telecom</span></dt>
+      <dd>Architecture, network segmentation, jumbo frames, and call flow for a production VoIP carrier stack built entirely on open source…</dd>
+      <dt><a href="/articles/gh-factoring-algorithms-cascade">A Cascade of Factoring Techniques: From Pollard's Rho to the General Number Field Sieve</a> <span class="az-tag">Cryptography</span></dt>
+      <dd>While the General Number Field Sieve (GNFS) remains the premier method for factoring very large integers, other techniques are used depending on the size of…</dd>
+      <dt><a href="/articles/ccie-advanced-lab/">CCIE Advanced Lab — 20-Router MPLS + DMVPN Topology</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>20 hands-on labs on one 20-router topology: MPLS core with LDP and L3VPN, dual DMVPN clouds, BGP route reflection and confederations, OSPF/EIGRP desig</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/">CCIE Enterprise Lab — 18 Labs, Full EI v1.0 Blueprint</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>18 labs covering 100% of the CCIE Enterprise Infrastructure v1.0 blueprint across five domains: campus switching, routing protocols, transport (MPLS/D</dd>
+      <dt><a href="/articles/gh-cisco-csr1000v-serial-to-api">Cisco CSR1000v: Converting Serial Consoles to a Secure REST API</a> <span class="az-tag">Networking</span></dt>
+      <dd>Cisco CSR1000v instances running on ESXi expose their consoles via serial-over-network — Telnet sessions mapped to incremented ports (2301–2320). This is…</dd>
+      <dt><a href="/articles/gh-cisco-call-home-disable">Cisco Device Hardening: Disabling Call Home and Controlling Outbound Communications</a> <span class="az-tag">Networking</span></dt>
+      <dd>Cisco networking equipment ships pre-configured with telemetry and support features — including Call Home, Smart Licensing transport, and HTTP management…</dd>
+      <dt><a href="/articles/cisco-ios-path-selection">Cisco IOS Path Selection: How a Router Chooses the Best Route</a> <span class="az-tag">Networking</span></dt>
+      <dd>How Cisco IOS picks one path from many: longest prefix match, Administrative Distance, metric, and the lowest-instance tie-break, then how the RIB feeds the FIB for hardware forwarding. By Ioannis Konstas.</dd>
+      <dt><a href="/articles/cisco-ios-recovery">Cisco IOS Survival: Password Recovery, ROMMON, and SSH</a> <span class="az-tag">Networking</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-nexus-1000v-port-channels">Cisco Nexus 1000V Port Channels and Trunking: Troubleshooting Guide</a> <span class="az-tag">Networking</span></dt>
+      <dd>End-of-Life Notice: Cisco announced End-of-Sale for the Nexus 1000V for VMware vSphere in 2019 and End-of-Support in 2025. This product should not be…</dd>
+      <dt><a href="/articles/gh-cisco-uc500-cme-lab-unified-communications-manager">Cisco UC500 / CME Lab: Unified Communications Manager Express Configuration</a> <span class="az-tag">Networking</span></dt>
+      <dd>Architecture of CME 8.6 on a UC520, SCCP ephone configuration, FXO/FXS voice ports, DHCP for phones, CUE module, and Python serial console…</dd>
+      <dt><a href="/data-science/classical-ml">Classical Machine Learning Still Wins on Tables</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Data Science Series · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/awareness/small-business">Cybersecurity for Small Business</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+    </dl>
+    <h2 id="az-D">D</h2>
+    <dl class="az">
+      <dt><a href="/data-science/security-analytics">Data Science for Security Operations</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Data Science Series · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/data-science/data-wrangling">Data Wrangling: Polars, Pandas, and Parquet</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Data Science Series · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/data-science/deep-learning">Deep Learning with PyTorch</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Data Science Series · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/deepfakes">Deepfakes: How They Work and How to Spot Them</a> <span class="az-tag">AI &amp; Security</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-docker-voip-stack-boot-sequencing-health-checks-an">Docker VoIP Stack: Boot Sequencing, Health Checks, and Dependency Management</a> <span class="az-tag">Telecom</span></dt>
+      <dd>How to correctly order Docker container startup for a Kamailio + Asterisk + A2Billing stack using health checks, and bridging VLAN-isolated IP…</dd>
+    </dl>
+    <h2 id="az-E">E</h2>
+    <dl class="az">
+      <dt><a href="/articles/gh-endgame-cyber-warfare">Endgame and the Blurring Line of Cyber Warfare</a> <span class="az-tag">Cybersecurity</span></dt>
+      <dd>The rise of Endgame in the early 2010s marked a critical shift in cybersecurity — the commercialization of advanced offensive capabilities. What once …</dd>
+      <dt><a href="/articles/gh-esxi-cpu-temperature-monitor">ESXi CPU Temperature Monitor: A Shell Script for Real-Time IPMI Alerting</a> <span class="az-tag">Virtualization</span></dt>
+      <dd>ESXi does not ship with a continuous, color-coded temperature dashboard. If you manage bare-metal hosts in a lab or production environment and want immediate…</dd>
+      <dt><a href="/articles/gh-esxi-recovery-playbook">ESXi Recovery Playbook: hostd, localcli, vim-cmd, and Log Triage</a> <span class="az-tag">Virtualization</span></dt>
+      <dd>When the vSphere client cannot reach an ESXi host and PowerCLI connections time out, the management agent (hostd) has likely crashed or failed to start. This…</dd>
+      <dt><a href="/awareness/executives">The Executive Briefing</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-gnfs-energy-efficiency-review">Expert Review: Energy-Efficient Approaches to the General Number Field Sieve</a> <span class="az-tag">Cryptography</span></dt>
+      <dd>I. Strategic Significance and Contextual AccuracyThe project proposal accurately identifies a critical nexus in modern computational security: the…</dd>
+      <dt><a href="/articles/gh-extended-euclidean-euler-theorem-cryptology">Extended Euclidean Algorithm, Euler's Theorem &amp; Cryptological Applications</a> <span class="az-tag">Cryptography</span></dt>
+      <dd>Personal Reference1. The Euclidean Algorithm — GCD ComputationThe Greatest Common Divisor (GCD) of two integers a and b is the largest integer that divides…</dd>
+    </dl>
+    <h2 id="az-F">F</h2>
+    <dl class="az">
+      <dt><a href="/articles/ddos-taxonomy">A Field Guide to Denial-of-Service Attacks</a> <span class="az-tag">Cybersecurity</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/data-science/the-field">The Field, Mapped</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Data Science Series · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/firewall-architectures">Firewall Architectures, From Packet Filters to Zero Trust</a> <span class="az-tag">Networking</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-macos-ssv-tdm-restore">Fixing a Broken SSV Seal MacBook Pro Restored from a Mac mini over Thunderbolt Target Disk Mode</a> <span class="az-tag">Systems</span></dt>
+      <dd>This report documents a full macOS restoration performed on a MacBook Pro (Late 2019, Intel, T2 Security Chip) using a Mac mini (M4 Pro, Apple Silicon…</dd>
+      <dt><a href="/articles/floating-static-routes">Floating Static Routes: Backup Path Selection in Cisco Networks</a> <span class="az-tag">Networking</span></dt>
+      <dd>A floating static route is a backup route with a higher Administrative Distance than the primary path, so Cisco IOS keeps it out of the table until the preferred route fails — simple, protocol-free failover for WAN and Internet links. By Ioannis Konstas.</dd>
+      <dt><a href="/articles/security-models">Formal Security Models: Bell-LaPadula and Biba</a> <span class="az-tag">Foundations</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+    </dl>
+    <h2 id="az-G">G</h2>
+    <dl class="az">
+      <dt><a href="/articles/gh-aes-galois-fields-reference">Galois Fields in AES — Reference</a> <span class="az-tag">Cryptography</span></dt>
+      <dd>Mathematical reference for the Galois Field arithmetic that underpins AES encryption. Covers GF(2⁸) structure, polynomial representation, the AES irreducible…</dd>
+      <dt><a href="/articles/gh-galois-fields-aes">Galois Fields in AES: GF(2^8), Irreducible Polynomials, and the Extended Euclidean Algorithm</a> <span class="az-tag">Cryptography</span></dt>
+      <dd>AES — the symmetric cipher protecting the majority of encrypted data on the internet — is built on a branch of mathematics that most engineers never…</dd>
+    </dl>
+    <h2 id="az-H">H</h2>
+    <dl class="az">
+      <dt><a href="/articles/gh-hf-point-to-point-communication-harris-modem">HF Point-to-Point CommunicationHarris Modem Interface, STANAG Waveforms &amp; Signal Processing</a> <span class="az-tag">Communications</span></dt>
+      <dd>Executive SummaryThis article presents a technical framework for High Frequency (HF) point-to-point communication using Harris military-grade modems,…</dd>
+      <dt><a href="/articles/hf-radio">High-Frequency Radio: Still Vital in a Satellite World</a> <span class="az-tag">Communications</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/bitcoin-leveldb">How Bitcoin Core Stores the Blockchain</a> <span class="az-tag">Systems</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+    </dl>
+    <h2 id="az-I">I</h2>
+    <dl class="az">
+      <dt><a href="/awareness/identity-theft">Identity Theft and Internet Scams</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-infosec-fundamentals">Information Security Fundamentals: CIA, Risk, Access Control, Cryptography &amp; Compliance</a> <span class="az-tag">Security</span></dt>
+      <dd>Sound information security practice rests on a small number of foundational concepts that appear repeatedly across every framework, standard, and regulation…</dd>
+      <dt><a href="/articles/classified-networks">Inside Classified Networks: NIPRNet, SIPRNet, and JWICS</a> <span class="az-tag">Networking</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+    </dl>
+    <h2 id="az-K">K</h2>
+    <dl class="az">
+      <dt><a href="/articles/gh-kamailio-sip-server-proxy-load-balancer-and-sessio">Kamailio SIP Server: Proxy, Load Balancer, and Session Border Controller</a> <span class="az-tag">Telecom</span></dt>
+      <dd>Architecture, core modules, dispatcher load balancing, fraud protection, TLS, and RTPEngine integration for Kamailio in a production VoIP…</dd>
+    </dl>
+    <h2 id="az-L">L</h2>
+    <dl class="az">
+      <dt><a href="/articles/ccie-advanced-lab/labs/01-mpls-core-ldp/lab.html">Lab 01 — MPLS Core LDP</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>MPLS Core LDP Label Distribution</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-1-network-infrastructure/01-switched-campus/lab.html">Lab 01 — Switched Campus — STP, EtherChannel &amp; VLANs</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>Switched Campus — STP, EtherChannel &amp; VLANs</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-1-network-infrastructure/02-eigrp-named-mode/lab.html">Lab 02 — EIGRP Named Mode &amp; Advanced Features</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>EIGRP Named Mode &amp; Advanced Features</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/02-mpls-vpn-corp/lab.html">Lab 02 — MPLS L3VPN — VRF CORP End-to-End</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>MPLS L3VPN — VRF CORP End-to-End</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/03-mpls-vpn-bgp-pece/lab.html">Lab 03 — MPLS VPN — PE-CE BGP with AS Override</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>MPLS VPN — PE-CE BGP with AS Override</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-1-network-infrastructure/03-ospf-multiarea/lab.html">Lab 03 — OSPF Multi-Area — OSPFv2 &amp; OSPFv3</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>OSPF Multi-Area — OSPFv2 &amp; OSPFv3</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-1-network-infrastructure/04-bgp-policies/lab.html">Lab 04 — BGP Policies, Communities &amp; Path Control</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>BGP Policies, Communities &amp; Path Control</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/04-mpls-internet-access/lab.html">Lab 04 — MPLS VPN — VRF Internet Access and Route Leaking</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>MPLS VPN — VRF Internet Access and Route Leaking</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/05-mpls-ospf-shamlink/lab.html">Lab 05 — MPLS VPN — OSPF Sham-Link for Backdoor Suppression</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>MPLS VPN — OSPF Sham-Link for Backdoor Suppression</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-1-network-infrastructure/05-multicast-pim/lab.html">Lab 05 — Multicast — PIM-SM, Anycast RP &amp; MSDP</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>Multicast — PIM-SM, Anycast RP &amp; MSDP</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/06-dmvpn-west-phase3/lab.html">Lab 06 — DMVPN Phase 3 — West Region Dual-Hub</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>DMVPN Phase 3 — West Region Dual-Hub</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-3-transport/06-mpls-ldp-l3vpn/lab.html">Lab 06 — MPLS LDP &amp; L3VPN (VPNv4/VPNv6)</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>MPLS LDP &amp; L3VPN (VPNv4/VPNv6)</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-3-transport/07-dmvpn-phase3/lab.html">Lab 07 — DMVPN Phase 3 — Dual-Hub &amp; Per-Tunnel QoS</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>DMVPN Phase 3 — Dual-Hub &amp; Per-Tunnel QoS</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/07-dmvpn-east-phase3/lab.html">Lab 07 — DMVPN Phase 3 — East Region with QoS Marking</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>DMVPN Phase 3 — East Region with QoS Marking</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/08-dmvpn-eigrp-summarization/lab.html">Lab 08 — DMVPN EIGRP — Summarization, Stub, and Leak-Map</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>DMVPN EIGRP — Summarization, Stub, and Leak-Map</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-3-transport/08-flexvpn/lab.html">Lab 08 — FlexVPN — IKEv2 Site-to-Site &amp; Spoke-to-Spoke</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>FlexVPN — IKEv2 Site-to-Site &amp; Spoke-to-Spoke</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/09-bgp-route-reflection/lab.html">Lab 09 — BGP Route Reflection — iBGP Scalability</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>BGP Route Reflection — iBGP Scalability</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-4-security-services/09-switch-security/lab.html">Lab 09 — Switch Security — 802.1X, DHCP Snooping &amp; DAI</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>Switch Security — 802.1X, DHCP Snooping &amp; DAI</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/10-bgp-confederation/lab.html">Lab 10 — BGP Confederation — Sub-AS Architecture</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>BGP Confederation — Sub-AS Architecture</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-4-security-services/10-device-security/lab.html">Lab 10 — Device Security — CoPP, AAA &amp; uRPF</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>Device Security — CoPP, AAA &amp; uRPF</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/11-bgp-communities/lab.html">Lab 11 — BGP Communities — Tagging and Policy Control</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>BGP Communities — Tagging and Policy Control</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-4-security-services/11-qos-mqc/lab.html">Lab 11 — QoS — MQC, DiffServ &amp; HQoS</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>QoS — MQC, DiffServ &amp; HQoS</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/12-bgp-prefix-filtering/lab.html">Lab 12 — BGP Prefix Filtering — Prefix-List, ORF, and Distribute-List</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>BGP Prefix Filtering — Prefix-List, ORF, and Distribute-List</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-4-security-services/12-network-services/lab.html">Lab 12 — Network Services — FHRP, DHCP, NAT &amp; NTP</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>Network Services — FHRP, DHCP, NAT &amp; NTP</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-4-security-services/13-network-optimization/lab.html">Lab 13 — Optimization &amp; Operations — IP SLA, NetFlow &amp; SPAN</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>Optimization &amp; Operations — IP SLA, NetFlow &amp; SPAN</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/13-ospf-area-design/lab.html">Lab 13 — OSPF Multi-Area Design — Stub, NSSA, Type-3 Filtering</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>OSPF Multi-Area Design — Stub, NSSA, Type-3 Filtering</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-2-sdi/14-sd-access/lab.html">Lab 14 — Cisco SD-Access — Design &amp; Deployment</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>Cisco SD-Access — Design &amp; Deployment</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/14-ospfv3-ipv6/lab.html">Lab 14 — OSPFv3 Dual-Stack — IPv6 Backbone Routing</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>OSPFv3 Dual-Stack — IPv6 Backbone Routing</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-2-sdi/15-sd-wan/lab.html">Lab 15 — Cisco SD-WAN — vManage, OMP &amp; Policies</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>Cisco SD-WAN — vManage, OMP &amp; Policies</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/15-eigrp-named-mode/lab.html">Lab 15 — EIGRP Named Mode — Wide Metrics and Address Families</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>EIGRP Named Mode — Wide Metrics and Address Families</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-5-automation/16-eem-guest-shell/lab.html">Lab 16 — EEM Applets &amp; Guest Shell Python</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>EEM Applets &amp; Guest Shell Python</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/16-mpls-traffic-eng/lab.html">Lab 16 — MPLS Traffic Engineering — TE Tunnels and RSVP</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>MPLS Traffic Engineering — TE Tunnels and RSVP</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/17-multicast-pim-sm/lab.html">Lab 17 — Multicast PIM Sparse Mode — Auto-RP and MSDP</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>Multicast PIM Sparse Mode — Auto-RP and MSDP</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-5-automation/17-netconf-restconf/lab.html">Lab 17 — NETCONF/YANG &amp; RESTCONF — IOS XE API</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>NETCONF/YANG &amp; RESTCONF — IOS XE API</dd>
+      <dt><a href="/articles/ccie-enterprise-lab/labs/domain-5-automation/18-api-programmability/lab.html">Lab 18 — API Programmability — DNA Center &amp; vManage</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>API Programmability — DNA Center &amp; vManage</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/18-qos-dmvpn/lab.html">Lab 18 — QoS on DMVPN — DSCP Classification, LLQ, and Shaping</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>QoS on DMVPN — DSCP Classification, LLQ, and Shaping</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/19-ipv6-mpls-6pe/lab.html">Lab 19 — 6PE — IPv6 over MPLS without P-Router IPv6</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>6PE — IPv6 over MPLS without P-Router IPv6</dd>
+      <dt><a href="/articles/ccie-advanced-lab/labs/20-full-integration/lab.html">Lab 20 — Full Integration — All Protocols Simultaneously</a> <span class="az-tag">CCIE Lab</span></dt>
+      <dd>Full Integration — All Protocols Simultaneously</dd>
+      <dt><a href="/articles/gh-genomic-pipeline-reference">Large-Scale Genomic Data Processing</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Educational Bioinformatics Pipeline Reference · macOS · GRCh37 / GRCh38</dd>
+      <dt><a href="/articles/gh-layered-security-stack">Layered Security Stack</a> <span class="az-tag">Architecture</span></dt>
+      <dd>A privacy-first, full-tunnel architecture combining WireGuard, encrypted DNS, network IDS, and SIEM — deployed on a client/server model.</dd>
+    </dl>
+    <h2 id="az-M">M</h2>
+    <dl class="az">
+      <dt><a href="/awareness/malware">Malware and Ransomware, Demystified</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-buffer-overflow-memory-safety-reference">Memory Safety, Buffer Overflows &amp; Baggy Bounds</a> <span class="az-tag">Offensive Security</span></dt>
+      <dd>A unified technical reference for system programmers, security engineers, and reverse engineers — from overflow fundamentals through allocator interna…</dd>
+      <dt><a href="/articles/gh-facebook-privacy-defense">Meta / Facebook Surveillance Architecture &amp; Technical Privacy Defense</a> <span class="az-tag">Privacy</span></dt>
+      <dd>A technical analysis of Meta's cross-site tracking infrastructure, their 2024–2026 policy changes, and a working layered defense stack validated in pr…</dd>
+      <dt><a href="/data-science/python-stack">The Modern Python Stack</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Data Science Series · July 2026 · Ioannis Konstas</dd>
+    </dl>
+    <h2 id="az-N">N</h2>
+    <dl class="az">
+      <dt><a href="/articles/gh-acl-name-standardization-manual">Name Standardization &amp; Filtering</a> <span class="az-tag">Analytics</span></dt>
+      <dd>Reusable ACL Analytics patterns for text normalization, structured key generation, multi-segment name codes, and exclusion filters for audit-ready dat…</dd>
+      <dt><a href="/articles/gh-network-automation-platform-phase-2-roadmap">Network Automation Platform — Phase 2 Roadmap</a> <span class="az-tag">Automation</span></dt>
+      <dd>Netmiko · NAPALM · Nornir · NetworkX · Scapy · Nginx SSLVisionThe current stack solves the "last mile" problem — serial console access via a REST API. Phase…</dd>
+      <dt><a href="/articles/gh-network-automation-stack-functional">Network Automation Stack Functional</a> <span class="az-tag">Automation</span></dt>
+      <dd>Programmatic HTTP-to-Telnet Gateway for Network Device FleetsOverviewThis project establishes a high-security, automated management layer for network device…</dd>
+      <dt><a href="/articles/network-automation-netmiko">Network Automation with Netmiko</a> <span class="az-tag">Automation</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-network-jitter-bandwidth-reference">Network Jitter, Standard Deviation &amp; Bandwidth Measurement</a> <span class="az-tag">Networking</span></dt>
+      <dd>A technical reference for network engineers — covering RTT variance analysis, jitter classification, bandwidth testing, and annotated Python diagnosti…</dd>
+    </dl>
+    <h2 id="az-O">O</h2>
+    <dl class="az">
+      <dt><a href="/awareness/gaming">Online Gaming Without the Griefers</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/osi-tcpip-model">The OSI and TCP/IP Models, Revisited</a> <span class="az-tag">Networking</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+    </dl>
+    <h2 id="az-P">P</h2>
+    <dl class="az">
+      <dt><a href="/awareness/passwords">Passwords, Passkeys, and MFA</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-pentest-professional-reference">Penetration Testing Professional Reference Guide</a> <span class="az-tag">Offensive Security</span></dt>
+      <dd>Rationale, methodology, network attack taxonomy, tooling reference, and service provider selection criteria — for security engineers, compliance teams…</dd>
+      <dt><a href="/articles/penetration-testing">Penetration Testing, End to End</a> <span class="az-tag">Offensive Security</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/awareness/phishing">Phishing in the Age of AI</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/post-quantum-cryptography">Post-Quantum Cryptography Is Now a Deadline</a> <span class="az-tag">Cryptography</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/software-defined-systems">The Power of Software-Defined Systems</a> <span class="az-tag">Architecture</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-powercli-esxi-shutdown-rewrite">PowerCLI ESXi Shutdown: Code Review and Production Rewrite</a> <span class="az-tag">Virtualization</span></dt>
+      <dd>The original PowerCLI shutdown script circulating across VMware communities is widely copy-pasted into production runbooks. It works in a lab — but it has…</dd>
+      <dt><a href="/articles/gh-powershell-ad-reference">PowerShell Active Directory Reference</a> <span class="az-tag">Systems</span></dt>
+      <dd>A professional collection of modern PowerShell 7 scripts for Active Directory administration — covering the full lifecycle from user provisioning to d…</dd>
+    </dl>
+    <h2 id="az-R">R</h2>
+    <dl class="az">
+      <dt><a href="/awareness/family">Raising Digital Natives</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/ransomware-defense">Ransomware Defense in 2026</a> <span class="az-tag">Cybersecurity</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/awareness/privacy">Reclaiming Your Privacy</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/awareness/reporting-cybercrime">Reporting a Cybercrime</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-rtpengine-media-proxy-for-voip-nat-traversal-trans">RTPEngine: Media Proxy for VoIP — NAT Traversal, Transcoding, and SRTP</a> <span class="az-tag">Telecom</span></dt>
+      <dd>How RTPEngine solves NAT, codec mismatches, and media security in a Kamailio-based VoIP platform, with configuration and capacity reference.Why…</dd>
+    </dl>
+    <h2 id="az-S">S</h2>
+    <dl class="az">
+      <dt><a href="/articles/gh-sd-wan-lab-blueprint-cisco-csr1000v-v17-03-03">SD-WAN Lab Blueprint — Cisco CSR1000v v17.03.03</a> <span class="az-tag">Networking</span></dt>
+      <dd>Topology · Dual-Transport IP Plan · OSPF Underlay · Overlay Config · Failover TestingTopology DiagramvBond10.10.0.100 — OrchestratorvSmart10.10.0.101 —…</dd>
+      <dt><a href="/awareness/digital-home">Securing the Connected Home</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/data-science/mlops">Shipping It: MLOps Without the Buzzwords</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Data Science Series · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/timing-attacks">Side-Channel and Timing Attacks</a> <span class="az-tag">Cryptography</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-ss7-signaling-system-technical-reference">SS7 (Signaling System No. 7) — Technical Reference</a> <span class="az-tag">Telecom</span></dt>
+      <dd>What Is SS7Signaling System No. 7 (SS7) is an architecture for performing out-of-band signaling in support of the call-establishment, billing, routing, and…</dd>
+      <dt><a href="/data-science/statistics">Statistics That Earn Their Keep</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Data Science Series · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-stir-shaken-fcc-mandated-call-authentication-for-v">STIR/SHAKEN: FCC-Mandated Call Authentication for VoIP Carriers</a> <span class="az-tag">Telecom</span></dt>
+      <dd>How STIR/SHAKEN works, attestation levels A/B/C, PASSporT token structure, STI-CA certificate requirements, and Asterisk implementation.What Is…</dd>
+      <dt><a href="/articles/strategic-business-impact-planning">Strategic Business Impact Planning Techniques</a> <span class="az-tag">Information Systems Strategy</span></dt>
+      <dd>An academic analysis of business–information systems alignment, competitive advantage, and strategic value creation across the seminal SISP frameworks (Porter, McFarlan, Parsons, Benjamin, Rackoff, Robson, Rockart), 1979–1997. By Ioannis Konstas.</dd>
+    </dl>
+    <h2 id="az-T">T</h2>
+    <dl class="az">
+      <dt><a href="/articles/gh-ibm-powerha-vs-journal-based-replication">A Technical Comparison of IBM PowerHA Storage Replication and IBM Journal-Based Replication</a> <span class="az-tag">Systems</span></dt>
+      <dd>Executive SummaryThis report presents a detailed technical analysis comparing IBM PowerHA storage-based replication with IBM Journal-Based Replication (JBR)…</dd>
+      <dt><a href="/articles/gh-network-automation-stack-technical-report">Technical Report: Network Automation Stack Project</a> <span class="az-tag">Automation</span></dt>
+      <dd>Executive SummaryThis project establishes a high-security, automated management layer for network device fleets. By leveraging a Flask-based API Gateway, we…</dd>
+      <dt><a href="/awareness/travel">Traveling with Technology</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+    </dl>
+    <h2 id="az-U">U</h2>
+    <dl class="az">
+      <dt><a href="/awareness/insider-threat">Understanding Insider Threats</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/awareness/social-media">Using Social Media Without Oversharing</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+    </dl>
+    <h2 id="az-V">V</h2>
+    <dl class="az">
+      <dt><a href="/data-science/visualization">Visualization and Storytelling</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Data Science Series · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/gh-esxi-hardening-45-controls">VMware ESXi Hardening: A 45-Control Security Configuration Assessment</a> <span class="az-tag">Virtualization</span></dt>
+      <dd>ESXi hypervisors are the foundation of every virtual infrastructure — and because every workload runs on top of them, a misconfigured host is a single point…</dd>
+      <dt><a href="/articles/gh-vmware-infrastructure-architecture">VMware Infrastructure Architecture Overview</a> <span class="az-tag">Virtualization</span></dt>
+      <dd>Historical reference: This article documents the VMware Infrastructure 3 / early vSphere architecture. Components referenced here — ESX Server, VirtualCenter…</dd>
+      <dt><a href="/articles/gh-velocloud-sd-wan-hardening">VMware SD-WAN VeloCloud: Security Hardening Guidelines</a> <span class="az-tag">Networking</span></dt>
+      <dd>Compromised network devices can be used to redirect traffic, exfiltrate data, and pivot into internal systems — making SD-WAN Edge hardening a critical part…</dd>
+      <dt><a href="/articles/gh-vsphere7-security-config-guide">VMware vSphere 7 Security Configuration Guide: A Practitioner's Overview</a> <span class="az-tag">Virtualization</span></dt>
+      <dd>The VMware vSphere Security Configuration Guide (SCG) is the official baseline for hardening and auditing vSphere infrastructure. Version 7 — which…</dd>
+      <dt><a href="/articles/gh-voice-vlan-design-poe-switch-configuration-and-cis">Voice VLAN Design: PoE Switch Configuration and Cisco IP Phone Provisioning</a> <span class="az-tag">Networking</span></dt>
+      <dd>Separating voice and data traffic with IEEE 802.1Q VLANs, PoE switch configuration, TFTP/DHCP provisioning for Cisco IP phones, and the SCCP…</dd>
+    </dl>
+    <h2 id="az-W">W</h2>
+    <dl class="az">
+      <dt><a href="/awareness/wifi">Wi-Fi: Public Networks and Your Own</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/data-science/llms">Working with Large Language Models</a> <span class="az-tag">Data Science</span></dt>
+      <dd>Data Science Series · July 2026 · Ioannis Konstas</dd>
+      <dt><a href="/articles/network-automation-api">Wrapping Legacy Network Gear in a Modern API</a> <span class="az-tag">Automation</span></dt>
+      <dd>Articles · July 2026 · Ioannis Konstas</dd>
+    </dl>
+    <h2 id="az-Y">Y</h2>
+    <dl class="az">
+      <dt><a href="/awareness/mobile">Your Phone Is Your Perimeter</a> <span class="az-tag">Security Awareness</span></dt>
+      <dd>Security Awareness · July 2026 · Ioannis Konstas</dd>
+    </dl>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+
+<script>
+let INDEX = [];
+let sect = "all";
+let sortMode = "az";
+const $ = (id) => document.getElementById(id);
+
+function render() {
+  const q = $("q").value.trim().toLowerCase();
+  const terms = q.split(/\s+/).filter(Boolean);
+  let list = INDEX.filter(it => {
+    if (sect !== "all" && it.section !== sect) return false;
+    if (!terms.length) return true;
+    const hay = (it.title + " " + it.desc + " " + it.tag + " " + it.section).toLowerCase();
+    return terms.every(t => hay.includes(t));
+  });
+  const domainOf = (it) => it.section === "Articles" ? (it.tag || "Articles") : it.section;
+  if (sortMode === "domain") {
+    list.sort((a, b) => domainOf(a).localeCompare(domainOf(b))
+      || a.title.toLowerCase().localeCompare(b.title.toLowerCase()));
+  } else {
+    list.sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()));
+  }
+
+  const box = $("results");
+  box.innerHTML = "";
+  $("count").textContent = list.length + (list.length === 1 ? " result" : " results");
+  $("empty").style.display = list.length ? "none" : "block";
+
+  let letter = "";
+  for (const it of list) {
+    const first = sortMode === "domain" ? domainOf(it) : it.title[0].toUpperCase();
+    if (first !== letter) {
+      letter = first;
+      const h = document.createElement("div");
+      h.className = "alpha";
+      h.textContent = letter;
+      box.appendChild(h);
+    }
+    const a = document.createElement("a");
+    a.className = "result";
+    a.href = it.url;
+    a.innerHTML = `<div class="r-title">${esc(it.title)}<span class="r-sect">${esc(it.section)}</span></div>`
+                + `<div class="r-desc">${esc(it.desc)}</div>`;
+    box.appendChild(a);
+  }
+}
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+$("q").addEventListener("input", render);
+document.querySelectorAll(".filters button[data-sect]").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".filters button[data-sect]").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    sect = b.dataset.sect;
+    render();
+  });
+});
+document.querySelectorAll("#sortmode button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#sortmode button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    sortMode = b.dataset.sort;
+    render();
+  });
+});
+
+fetch("/search-index.json")
+  .then(r => r.json())
+  .then(data => { INDEX = data; render(); })
+  .catch(() => { $("empty").textContent = "Could not load the index."; $("empty").style.display = "block"; });
+</script>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=index-az",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

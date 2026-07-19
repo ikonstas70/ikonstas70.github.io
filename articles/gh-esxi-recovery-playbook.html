@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-esxi-recovery-playbook">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESXi Recovery Playbook: hostd, localcli, vim-cmd, and Log Triage — Konstas Engineering Notes</title>
+<meta name="description" content="When the vSphere client cannot reach an ESXi host and PowerCLI connections time out, the management agent (hostd) has likely crashed or failed to start. This playbook cov">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Virtualization</span>
+    <h1>ESXi Recovery Playbook: hostd, localcli, vim-cmd, and Log Triage</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+</hr><p>When the vSphere client cannot reach an ESXi host and PowerCLI connections time out, the management agent (hostd) has likely crashed or failed to start. This playbook covers the full recovery sequence: check and restart hostd, read the right logs to find the root cause, fall back to <code>localcli</code> when <code>esxcli</code> is unavailable, manage VMs directly from the ESXi Shell with <code>vim-cmd</code>, and audit snapshots with PowerCLI once connectivity is restored.</p><hr></hr><h2>Step 1 — Check and Restart the hostd Service</h2><p>The hostd management agent handles all vSphere API calls — the vSphere client, PowerCLI, and the REST API all talk to hostd. If it is down, no remote management works. Connect via SSH or the DCUI console and run these commands in order:</p><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody><tr><td><code>/etc/init.d/hostd status</code></td><td>Check whether the hostd management agent is currently running. Returns a PID if running, or 'hostd is not running' if crashed or never started.</td></tr><tr><td><code>/etc/init.d/hostd start</code></td><td>Start the hostd service. If this command completes without error, wait 30–60 seconds then verify the vSphere client can reconnect before proceeding.</td></tr><tr><td><code>/etc/init.d/hostd restart</code></td><td>Restart a hostd service that is running but unresponsive. Terminates the existing process and starts a fresh one — less disruptive than a full host reboot.</td></tr></tbody></table><p><strong>Decision tree:</strong>
+1. <code>/etc/init.d/hostd status</code> — if running but unresponsive, jump to restart.
+2. If not running: attempt start and wait 60 seconds for the vSphere client to reconnect.
+3. If start fails or hostd crashes again immediately: check the logs below before attempting another restart.</p><hr></hr><h2>Step 2 — Read the Right Logs</h2><p>When hostd will not stay up, the logs tell you why. Three log files cover the full picture:</p><table><thead><tr><th>Log File</th><th>Purpose</th><th>What to Look For</th></tr></thead><tbody><tr><td><code>/var/log/vmkernel.log</code></td><td>VMkernel kernel messages</td><td>SCSI/storage errors, NFS timeouts, memory pressure, CPU scheduling failures. Kernel panics will appear here first.</td></tr><tr><td><code>/var/log/hostd.log</code></td><td>Management agent (hostd) log</td><td>hostd startup failures, API errors, certificate issues, out-of-memory conditions preventing hostd from initialising. This is the primary log for diagnosing hostd crashes.</td></tr><tr><td><code>/var/log/vpxa.log</code></td><td>vCenter agent (vpxa) log</td><td>vpxa-to-vCenter communication failures, certificate mismatches, VIB installation errors. If the host is disconnected from vCenter but hostd is running, check here.</td></tr></tbody></table><p>Tail the logs in real time to watch hostd start up and catch the exact line where it fails:</p><pre><code># Watch hostd log live
+tail -f /var/log/hostd.log
+
+# Search for errors in the last 200 lines
+tail -200 /var/log/hostd.log | grep -i error
+
+# Check vmkernel for storage or memory pressure
+tail -100 /var/log/vmkernel.log | grep -iE "error|warn|scsi|nfs|oom"
+
+# Check vpxa for vCenter connectivity issues
+tail -100 /var/log/vpxa.log | grep -i error
+</code></pre><hr></hr><h2>Step 3 — Use localcli When esxcli Is Unavailable</h2><p><code>esxcli</code> routes through the hostd API — so when hostd is down, <code>esxcli</code> commands will fail or hang. <code>localcli</code> is a direct CLI that bypasses hostd entirely and accesses the underlying ESXi subsystems directly. Every <code>esxcli</code> command has a <code>localcli</code> equivalent with the same syntax.</p><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody><tr><td><code>localcli network firewall get</code></td><td>Show the current firewall state (enabled/disabled) and the default action for unmatched traffic. Use this to confirm whether the firewall is blocking management traffic.</td></tr><tr><td><code>localcli network firewall set --enable false</code></td><td>Disable the ESXi host firewall entirely. Use only for emergency troubleshooting to rule out firewall blocking the management agent — re-enable immediately once diagnosed.</td></tr><tr><td><code>localcli system maintenanceMode set --enable true</code></td><td>Place the host in maintenance mode via localcli. vMotion is not available when hostd is down, so VMs must be shut down manually before this can complete cleanly.</td></tr><tr><td><code>localcli vm process list</code></td><td>List all running VM processes and their World IDs. This is how you identify which VMs are still running on the host when the vSphere client cannot connect.</td></tr><tr><td><code>localcli vm process kill -w &lt;World ID&gt; -t soft</code></td><td>Send a graceful shutdown signal to a specific VM process identified by its World ID from the list above. Use <code>-t soft</code> first; escalate to <code>-t hard</code> or <code>-t force</code> if the VM does not respond.</td></tr></tbody></table><p><strong>Kill type reference:</strong></p><table><thead><tr><th>Flag (-t)</th><th>Action</th><th>When to Use</th></tr></thead><tbody><tr><td><code>soft</code></td><td>Sends a soft power-off signal to the VMX process. If VMware Tools is running and responsive, the guest OS may perform a graceful shutdown — but this is not guaranteed. Functionally similar to pressing the soft-power button.</td><td>Try first</td></tr><tr><td><code>hard</code></td><td>Hard power-off equivalent — like Stop-VM in PowerCLI</td><td>If soft fails</td></tr><tr><td><code>force</code></td><td>Forcibly kills the VMX process — use only as last resort</td><td>Last resort</td></tr></tbody></table><pre><code># Example: list VMs, find World ID, send soft kill
+localcli vm process list
+# Output includes: DisplayName, World ID, VMX Cartel ID, UUID
+
+localcli vm process kill -w 12345 -t soft
+# If no response after 60s, escalate:
+localcli vm process kill -w 12345 -t hard
+</code></pre><hr></hr><h2>Step 4 — Manage VMs from the ESXi Shell with vim-cmd</h2><p>Once the ESXi Shell is accessible (via SSH or DCUI), <code>vim-cmd</code> provides VM lifecycle management that works for most operations independently of hostd. Power management operations (power.on, power.off, power.shutdown) do not require hostd to be running. These commands are available even when the vSphere client cannot connect.</p><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody><tr><td><code>vim-cmd vmsvc/getallvms</code></td><td>List all registered VMs with their VMID, display name, datastore path, guest OS, and version. VMID is what every other vim-cmd subcommand needs.</td></tr><tr><td><code>vim-cmd vmsvc/get.snapshotinfo &lt;vmid&gt;</code></td><td>Display snapshot tree details for a specific VM — snapshot name, creation time, description, and whether memory was included. Useful before shutdown to check for orphaned snapshot chains.</td></tr><tr><td><code>vim-cmd vmsvc/snapshot.get &lt;vmid&gt;</code></td><td>Alternate snapshot query that returns a flat list of snapshot IDs for a VM. Use this when get.snapshotinfo output is unclear and you need bare snapshot identifiers.</td></tr><tr><td><code>vim-cmd vmsvc/power.getstate &lt;vmid&gt;</code></td><td>Check the current power state of a specific VM (Powered on, Powered off, Suspended). Useful to confirm a VM actually shut down after issuing a power-off.</td></tr><tr><td><code>vim-cmd vmsvc/power.shutdown &lt;vmid&gt;</code></td><td>Graceful guest OS shutdown for a specific VM via VMware Tools — equivalent to <code>Shutdown-VMGuest</code> in PowerCLI. Requires Tools to be running.</td></tr><tr><td><code>vim-cmd vmsvc/power.off &lt;vmid&gt;</code></td><td>Hard power-off a specific VM. No guest notification. Use only when power.shutdown does not work or VMware Tools is not running.</td></tr></tbody></table><p><strong>Full recovery sequence using vim-cmd:</strong></p><pre><code># 1. List all registered VMs and their IDs
+vim-cmd vmsvc/getallvms
+
+# 2. Check snapshot state before powering off
+vim-cmd vmsvc/get.snapshotinfo &lt;vmid&gt;
+
+# 3. Check current power state
+vim-cmd vmsvc/power.getstate &lt;vmid&gt;
+
+# 4. Graceful shutdown (requires VMware Tools)
+vim-cmd vmsvc/power.shutdown &lt;vmid&gt;
+
+# 5. If no response, hard power-off
+vim-cmd vmsvc/power.off &lt;vmid&gt;
+
+# 6. Repeat for each VM, then place host in maintenance mode
+localcli system maintenanceMode set --enable true
+</code></pre><hr></hr><h2>Step 5 — Audit Snapshots with PowerCLI</h2><p>Once hostd is back up and the vSphere client can reconnect, check the snapshot state across all VMs before performing any shutdown or maintenance. Stale snapshots grow during host issues and can cause disk space exhaustion.</p><pre><code># Connect to host or vCenter
+$cred = Get-Credential
+Connect-VIServer -Server YourHost -Credential $cred
+
+# List all snapshots across all VMs
+Get-VM | Get-Snapshot | Select-Object VM, Name, Created, SizeMB, Description
+
+# Find snapshots older than 7 days
+Get-VM | Get-Snapshot | Where-Object { $_.Created -lt (Get-Date).AddDays(-7) } |
+    Select-Object VM, Name, Created, SizeMB |
+    Sort-Object Created
+
+# Find VMs with more than one snapshot (chains)
+Get-VM | Where-Object { (Get-Snapshot -VM $_).Count -gt 1 } |
+    Select-Object Name, @{N="SnapshotCount"; E={(Get-Snapshot -VM $_).Count}}
+</code></pre><p>VMware recommends deleting snapshots within 24–72 hours for production VMs; chains that have grown large or aged significantly increase the risk of disk space exhaustion during consolidation. Orphaned snapshot chains are one of the most common causes of vSphere disk space emergencies.</p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-esxi-recovery-playbook",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

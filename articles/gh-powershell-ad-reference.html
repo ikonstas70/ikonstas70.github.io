@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-powershell-ad-reference">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PowerShell Active Directory Reference — Konstas Engineering Notes</title>
+<meta name="description" content="A professional collection of modern PowerShell 7 scripts for Active Directory administration — covering the full lifecycle from user provisioning to domain r…">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Systems</span>
+    <h1>PowerShell Active Directory Reference</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p>
+    A professional collection of modern PowerShell 7 scripts for Active Directory
+    administration — covering the full lifecycle from user provisioning to domain
+    replication health and database-level recovery.
+  </p>
+  <div class="stats">
+    <div class="stat"><div class="stat-num">26</div><div class="stat-label">Scripts</div></div>
+    <div class="stat"><div class="stat-num">8</div><div class="stat-label">Categories</div></div>
+    <div class="stat"><div class="stat-num">PS7</div><div class="stat-label">Minimum</div></div>
+    <div class="stat"><div class="stat-num">RSAT</div><div class="stat-label">Required</div></div>
+  </div>
+</header>
+
+<!-- ── Disclaimer ── -->
+<div class="disclaimer">
+  <strong>Disclaimer:</strong>
+  <p>All scripts are provided for technical reference and educational purposes only. The author accepts no responsibility for any consequences arising from their use in production or non-production environments. Always test in an isolated lab before deploying to a live domain.</p>
+</div>
+
+<!-- ── Main ── -->
+<div class="container">
+
+  <!-- Prerequisites -->
+  <div id="prerequisites" class="prereq-card">
+    <h2>Prerequisites &amp; Requirements</h2>
+    <div class="prereq-grid">
+      <div class="prereq-col">
+        <h3>General Requirements (All Scripts)</h3>
+        <ul>
+          <li><strong>Windows</strong> — these scripts are Windows-only</li>
+          <li><strong>PowerShell 7.0+</strong> — install from <code class="inline">winget install Microsoft.PowerShell</code></li>
+          <li><strong>RSAT AD Module</strong> — Windows 10/11: install from Optional Features</li>
+          <li><strong>Domain membership</strong> — host must be joined to the target AD domain</li>
+          <li><strong>Run as Administrator</strong> — all scripts require elevated privileges</li>
+        </ul>
+        <pre class="prereq-code"># Install RSAT on Windows 10/11
+Add-WindowsCapability -Online `
+  -Name 'Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0'
+
+# Install RSAT Group Policy tools (GPO scripts)
+Add-WindowsCapability -Online `
+  -Name 'Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0'</pre>
+      </div>
+      <div class="prereq-col">
+        <h3>Domain Controller Only</h3>
+        <ul>
+          <li><strong>Invoke-ADSnapshotManager</strong> requires a Domain Controller</li>
+          <li>Needs <strong>ntdsutil.exe</strong> and <strong>dsamain.exe</strong> (installed with AD DS)</li>
+          <li>Snapshot creation requires sufficient <strong>VSS storage space</strong></li>
+          <li>Mount operations require a <strong>free TCP port</strong> (default: 50000)</li>
+          <li>Use <code class="inline">Invoke-Command -ComputerName &lt;DC&gt;</code> to run remotely</li>
+        </ul>
+        <pre class="prereq-code"># Check VSS storage
+vssadmin list shadowstorage
+
+# Verify ntdsutil is present (on DC)
+Get-Command ntdsutil.exe
+
+# Run snapshot manager remotely
+Invoke-Command -ComputerName DC01 -ScriptBlock {
+  & ".\Invoke-ADSnapshotManager.ps1" -Action List
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Category Summary Table ── -->
+  <div id="categories" class="cat-summary">
+    <h2>Script Categories</h2>
+    <table class="cat-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Scripts</th>
+          <th>Quick Access</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="#user-lifecycle">User Lifecycle</a></td>
+          <td>5</td>
+          <td>
+            <div class="script-links">
+              Get-ADUserAuditReport
+              Invoke-ADUserDeprovisioning
+              New-ADUserBulkProvisioning
+              Set-ADUserBulkAttributes
+              Get-ADInactiveUsers
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a href="#group-management">Group Management</a></td>
+          <td>5</td>
+          <td>
+            <div class="script-links">
+              Export-ADGroupMembership
+              Get-ADNestedGroupMembership
+              Invoke-ADGroupAudit
+              Remove-ADStaleGroupMemberships
+              Sync-ADGroupFromCSV
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a href="#computer-management">Computer Management</a></td>
+          <td>4</td>
+          <td>
+            <div class="script-links">
+              New-ADBulkComputerAccounts
+              Invoke-ADComputerDeprovisioning
+              Get-ADComputerOSInventory
+              Get-ADComputerStaleAccounts
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a href="#ou-management">OU &amp; Object Management</a></td>
+          <td>3</td>
+          <td>
+            <div class="script-links">
+              Get-ADOUStructure
+              Move-ADObjectsByAttribute
+              Protect-ADObjectDeletion
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a href="#gpo-operations">GPO Operations</a></td>
+          <td>3</td>
+          <td>
+            <div class="script-links">
+              Get-ADGPOLinkReport
+              Export-ADGPOBackup
+              Get-ADLinkedGPOsByOU
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a href="#domain-replication">Domain &amp; Replication</a></td>
+          <td>3</td>
+          <td>
+            <div class="script-links">
+              Get-ADReplicationStatus
+              Get-ADDomainControllerInventory
+              Get-ADSiteTopology
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a href="#security-forensics">Security &amp; Forensics</a></td>
+          <td>2</td>
+          <td>
+            <div class="script-links">
+              Get-ADPrivilegedGroupMembers
+              Get-ADPasswordPolicyReport
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><a href="#database-recovery">Database Recovery</a></td>
+          <td>1</td>
+          <td>
+            <div class="script-links">
+              Invoke-ADSnapshotManager
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── User Lifecycle ── -->
+  <div id="user-lifecycle" class="section cat-user">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(88,166,255,.12)">👤</div>
+      <h2>User Lifecycle Management</h2>
+      <span class="section-count">5 scripts</span>
+    </div>
+    <div class="cards">
+
+      
+        <div class="card-label">Get-ADUserAuditReport.ps1</div>
+        <div class="card-desc">Generates a comprehensive audit report of user accounts covering account status, password age, last logon date, group membership count, and inactive-account flagging. Supports OU scoping and CSV export.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+            <span class="tag tag-bulk">Bulk</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Invoke-ADUserDeprovisioning.ps1</div>
+        <div class="card-desc">Executes a complete user deprovisioning workflow: disables the account, removes group memberships (preserving Domain Users), moves to a Disabled OU, and stamps a dated description note. Supports single user or bulk CSV input.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-dryrun">Dry-Run Default</span>
+            <span class="tag tag-bulk">Bulk CSV</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">New-ADUserBulkProvisioning.ps1</div>
+        <div class="card-desc">Provisions user accounts in bulk from a CSV file with secure random password generation, UPN assignment, group membership, and per-run results export. Detects duplicate accounts automatically.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-dryrun">Dry-Run Default</span>
+            <span class="tag tag-bulk">Bulk CSV</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Set-ADUserBulkAttributes.ps1</div>
+        <div class="card-desc">Updates any writable AD user attribute in bulk from a CSV file. Each CSV column maps to an AD attribute. Validates user existence before applying and reports per-user success or failure.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-dryrun">Dry-Run Default</span>
+            <span class="tag tag-bulk">Bulk CSV</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Get-ADInactiveUsers.ps1</div>
+        <div class="card-desc">Identifies enabled user accounts inactive beyond a configurable threshold. Supports OU exclusions, SamAccountName pattern exclusions, and optionally flags accounts that have never logged on.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+    </div>
+  </div>
+
+  <!-- ── Group Management ── -->
+  <div id="group-management" class="section cat-group">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(63,185,80,.12)">👥</div>
+      <h2>Group Management</h2>
+      <span class="section-count">5 scripts</span>
+    </div>
+    <div class="cards">
+
+      
+        <div class="card-label">Export-ADGroupMembership.ps1</div>
+        <div class="card-desc">Exports membership data for one or more groups with optional recursive nested resolution. Accepts pipeline input of group names. Outputs CSV or JSON with member type, status, and department.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+            <span class="tag tag-bulk">Pipeline</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Get-ADNestedGroupMembership.ps1</div>
+        <div class="card-desc">Resolves the complete nested group membership tree for a user or group, traversing the memberOf hierarchy recursively. Detects and reports circular references. Returns depth and parent chain for each group.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Invoke-ADGroupAudit.ps1</div>
+        <div class="card-desc">Audits all groups for empty membership, nested group members, sole-member groups, and privileged group status. Returns structured audit flags per group for compliance reporting.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Remove-ADStaleGroupMemberships.ps1</div>
+        <div class="card-desc">Scans group memberships for disabled accounts and orphaned DNs (deleted objects still referenced). Reports all stale entries and removes them on commit. Skips protected built-in groups.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-dryrun">Dry-Run Default</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Sync-ADGroupFromCSV.ps1</div>
+        <div class="card-desc">Synchronizes group membership to a CSV-defined desired state. Adds missing members and removes extra members not in the CSV. Protected accounts (Administrator, krbtgt) are never removed.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-dryrun">Dry-Run Default</span>
+            <span class="tag tag-bulk">Bulk CSV</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+    </div>
+  </div>
+
+  <!-- ── Computer Management ── -->
+  <div id="computer-management" class="section cat-computer">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(240,136,62,.12)">💻</div>
+      <h2>Computer Management</h2>
+      <span class="section-count">4 scripts</span>
+    </div>
+    <div class="cards">
+
+      
+        <div class="card-label">New-ADBulkComputerAccounts.ps1</div>
+        <div class="card-desc">Creates pre-staged computer accounts in bulk from a CSV with name, target OU, description, managed-by, and group membership. Detects existing accounts and skips them rather than failing.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-dryrun">Dry-Run Default</span>
+            <span class="tag tag-bulk">Bulk CSV</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Invoke-ADComputerDeprovisioning.ps1</div>
+        <div class="card-desc">Deprovisions computer accounts: disables the account, removes group memberships (excluding Domain Computers), moves to a Decommission OU, and stamps a dated description note. Supports single or bulk CSV mode.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-dryrun">Dry-Run Default</span>
+            <span class="tag tag-bulk">Bulk CSV</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Get-ADComputerOSInventory.ps1</div>
+        <div class="card-desc">Generates an OS inventory from AD computer account attributes — no WinRM connectivity required. Flags potentially end-of-life operating systems (XP, Vista, 2003, 2008, Windows 7, etc.).</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Get-ADComputerStaleAccounts.ps1</div>
+        <div class="card-desc">Identifies computer accounts that have not authenticated to a DC within a configurable threshold. Automatically excludes domain controllers. Supports pattern-based exclusions and CSV export.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+    </div>
+  </div>
+
+  <!-- ── OU & Object Management ── -->
+  <div id="ou-management" class="section cat-ou">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(188,140,255,.12)">🗂️</div>
+      <h2>OU &amp; Object Management</h2>
+      <span class="section-count">3 scripts</span>
+    </div>
+    <div class="cards">
+
+      
+        <div class="card-label">Get-ADOUStructure.ps1</div>
+        <div class="card-desc">Renders the complete OU hierarchy as an indented tree in the console, or returns flat objects with depth metadata. Optional object count per OU (users, computers, groups). Supports CSV export.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Move-ADObjectsByAttribute.ps1</div>
+        <div class="card-desc">Moves user or computer objects to target OUs based on attribute-value rules defined in a CSV mapping file. First matching rule applies. Useful for OU restructuring and post-HR-feed migrations.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-dryrun">Dry-Run Default</span>
+            <span class="tag tag-bulk">Bulk</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Protect-ADObjectDeletion.ps1</div>
+        <div class="card-desc">Enables or disables the ProtectedFromAccidentalDeletion flag on OUs, users, computers, or groups. Supports single-object or bulk OU-scoped application. Reports before/after state per object.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-dryrun">Dry-Run Default</span>
+            <span class="tag tag-bulk">Bulk</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+    </div>
+  </div>
+
+  <!-- ── GPO Operations ── -->
+  <div id="gpo-operations" class="section cat-gpo">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(210,153,34,.12)">📋</div>
+      <h2>GPO Operations</h2>
+      <span class="section-count">3 scripts</span>
+    </div>
+    <div class="cards">
+
+      
+        <div class="card-label">Get-ADGPOLinkReport.ps1</div>
+        <div class="card-desc">Reports all GPO links across all OUs and the domain container. Parses the gpLink attribute to surface link order, enforced/disabled status, and GPO enabled state. No GPMC GUI required.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-gpo">GPO</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Export-ADGPOBackup.ps1</div>
+        <div class="card-desc">Backs up all or specified GPOs to a timestamped directory using Backup-GPO. Generates a manifest CSV and optionally compresses the backup to a ZIP archive for archival or migration.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-gpo">GPO</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Get-ADLinkedGPOsByOU.ps1</div>
+        <div class="card-desc">Lists all GPOs linked to a specific OU and optionally its child OUs. Resolves GPO names from GUIDs and reports link order, enforced and enabled flags per OU.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-gpo">GPO</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+    </div>
+  </div>
+
+  <!-- ── Domain Replication ── -->
+  <div id="domain-replication" class="section cat-repl">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(255,123,114,.12)">🔄</div>
+      <h2>Domain &amp; Replication Health</h2>
+      <span class="section-count">3 scripts</span>
+    </div>
+    <div class="cards">
+
+      
+        <div class="card-label">Get-ADReplicationStatus.ps1</div>
+        <div class="card-desc">Queries replication metadata for all directory partitions across all domain controllers. Flags failed partners, consecutive failure counts, and replication lag above a configurable threshold (default: 60 min).</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Get-ADDomainControllerInventory.ps1</div>
+        <div class="card-desc">Inventories all domain controllers with OS version, FSMO role assignments, site membership, Global Catalog status, RODC detection, and network reachability. Exportable to CSV.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Get-ADSiteTopology.ps1</div>
+        <div class="card-desc">Reports the complete AD Sites and Services topology: all sites, subnet assignments, and site link objects with cost and replication frequency. Outputs a console tree and optionally three category CSVs.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+    </div>
+  </div>
+
+  <!-- ── Security Forensics ── -->
+  <div id="security-forensics" class="section cat-sec">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(248,81,73,.12)">🔒</div>
+      <h2>Security &amp; Forensics</h2>
+      <span class="section-count">2 scripts</span>
+    </div>
+    <div class="cards">
+
+      
+        <div class="card-label">Get-ADPrivilegedGroupMembers.ps1</div>
+        <div class="card-desc">Enumerates all members of 11 privileged built-in groups (Domain Admins, Enterprise Admins, Schema Admins, etc.) with optional nested resolution. Flags disabled accounts and non-expiring passwords.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+      
+        <div class="card-label">Get-ADPasswordPolicyReport.ps1</div>
+        <div class="card-desc">Reports the Default Domain Password Policy and all Fine-Grained Password Policy (PSO) objects with their subjects. Optionally computes the effective resultant policy per user in a given OU.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag tag-safe">Read-Only</span>
+            <span class="tag tag-report">Report</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+    </div>
+  </div>
+
+  <!-- ── Database Recovery ── -->
+  <div id="database-recovery" class="section cat-db">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(88,166,255,.1)">🗄️</div>
+      <h2>Database Recovery</h2>
+      <span class="section-count">1 script</span>
+    </div>
+    <div class="cards">
+
+      
+        <div class="badge-featured">Essential — DC Only</div>
+        <div class="card-label">Invoke-ADSnapshotManager.ps1</div>
+        <div class="card-desc">
+          Manages the complete Active Directory database snapshot lifecycle using the built-in
+          ntdsutil snapshot facility and dsamain.exe. Enables object-level and attribute-level
+          recovery from a point-in-time snapshot without rebooting any domain controller or
+          performing an authoritative restore. This is the preferred recovery path for
+          accidentally deleted or modified AD objects in Windows Server 2008 R2 and later.
+        </div>
+        <ul class="func-list">
+          <li><strong>New-ADDatabaseSnapshot</strong> — Create a VSS snapshot of the live NTDS database with disk space pre-check</li>
+          <li><strong>Get-ADDatabaseSnapshot</strong> — List all available snapshots via ntdsutil; optional VSS query mode</li>
+          <li><strong>Mount-ADDatabaseSnapshot</strong> — Mount snapshot on a free LDAP port via dsamain.exe with 30s ready wait</li>
+          <li><strong>Dismount-ADDatabaseSnapshot</strong> — Stop dsamain and unmount the snapshot cleanly</li>
+          <li><strong>Remove-ADDatabaseSnapshot</strong> — Permanently delete old snapshots (requires -Commit)</li>
+          <li><strong>Repair-ADObjectAttribute</strong> — Restore a specific attribute value from snapshot to live directory (dry-run default)</li>
+          <li><strong>Repair-ADUserGroupMembership</strong> — Restore a user's group membership delta from snapshot (dry-run default)</li>
+        </ul>
+        <div class="card-footer" style="margin-top:14px;">
+          <div class="card-tags">
+            <span class="tag tag-dconly">DC Only</span>
+            <span class="tag tag-dryrun">Dry-Run Default</span>
+            <span class="tag tag-safe">PS7 Native</span>
+          </div>
+          <span class="view-link">View Script →</span>
+        </div>
+      
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Footer ── -->
+    <p><a href="/">&#8592; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-powershell-ad-reference",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

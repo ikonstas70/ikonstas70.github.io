@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/search">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search &amp; Index — Konstas Engineering Notes</title>
+<meta name="description" content="Search and browse every article on Konstas Engineering Notes alphabetically.">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .search-wrap { margin: 8px 0 30px; }
+  #q {
+    width: 100%; box-sizing: border-box; padding: 14px 18px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg); font-family: var(--mono); font-size: 1rem; outline: none;
+  }
+  #q:focus { border-color: var(--accent); }
+  #q::placeholder { color: var(--fg-dim); }
+  .controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 26px; }
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+  .filters button {
+    background: none; border: 1px solid var(--border); color: var(--fg-dim);
+    padding: 5px 14px; border-radius: 14px; font-family: var(--sans); font-size: 0.78rem;
+    letter-spacing: 0.08em; cursor: pointer; transition: all .2s; text-transform: uppercase;
+  }
+  .filters button.active, .filters button:hover { border-color: var(--accent); color: var(--accent); }
+  #count { color: var(--fg-dim); font-size: 0.8rem; }
+  .alpha { color: var(--accent); font-family: var(--serif); font-size: 1.5rem; margin: 30px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .result { display: block; padding: 14px 0; border-bottom: 1px solid var(--border); text-decoration: none; }
+  .result:hover .r-title { color: var(--accent); }
+  .r-title { color: var(--fg); font-family: var(--serif); font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+  .r-desc { color: var(--fg-dim); font-size: 0.85rem; }
+  .r-sect { color: var(--accent-dim); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; margin-left: 10px; }
+  #empty { color: var(--fg-dim); text-align: center; padding: 40px 0; display: none; }
+</style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search" class="active">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1 style="text-align:center">Search &amp; Index</h1>
+    <div class="search-wrap">
+      <input id="q" type="search" placeholder="Search articles, guides, topics…" autocomplete="off" autofocus>
+    </div>
+    <div class="controls">
+      <div class="filters">
+        <button data-sect="all" class="active">All</button>
+        <button data-sect="Articles">Articles</button>
+        <button data-sect="Security Awareness">Awareness</button>
+        <button data-sect="Data Science">Data Science</button>
+      </div>
+      <div class="filters" id="sortmode">
+        <button data-sort="az" class="active">A&ndash;Z</button>
+        <button data-sort="domain">By Domain</button>
+      </div>
+      <span id="count"></span>
+    </div>
+    <div id="results"></div>
+    <div id="empty">No matches. Try another term.</div>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+
+<script>
+let INDEX = [];
+let sect = "all";
+let sortMode = "az";
+const $ = (id) => document.getElementById(id);
+
+function render() {
+  const q = $("q").value.trim().toLowerCase();
+  const terms = q.split(/\s+/).filter(Boolean);
+  let list = INDEX.filter(it => {
+    if (sect !== "all" && it.section !== sect) return false;
+    if (!terms.length) return true;
+    const hay = (it.title + " " + it.desc + " " + it.tag + " " + it.section).toLowerCase();
+    return terms.every(t => hay.includes(t));
+  });
+  const domainOf = (it) => it.section === "Articles" ? (it.tag || "Articles") : it.section;
+  if (sortMode === "domain") {
+    list.sort((a, b) => domainOf(a).localeCompare(domainOf(b))
+      || a.title.toLowerCase().localeCompare(b.title.toLowerCase()));
+  } else {
+    list.sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()));
+  }
+
+  const box = $("results");
+  box.innerHTML = "";
+  $("count").textContent = list.length + (list.length === 1 ? " result" : " results");
+  $("empty").style.display = list.length ? "none" : "block";
+
+  let letter = "";
+  for (const it of list) {
+    const first = sortMode === "domain" ? domainOf(it) : it.title[0].toUpperCase();
+    if (first !== letter) {
+      letter = first;
+      const h = document.createElement("div");
+      h.className = "alpha";
+      h.textContent = letter;
+      box.appendChild(h);
+    }
+    const a = document.createElement("a");
+    a.className = "result";
+    a.href = it.url;
+    a.innerHTML = `<div class="r-title">${esc(it.title)}<span class="r-sect">${esc(it.section)}</span></div>`
+                + `<div class="r-desc">${esc(it.desc)}</div>`;
+    box.appendChild(a);
+  }
+}
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+$("q").addEventListener("input", render);
+document.querySelectorAll(".filters button[data-sect]").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".filters button[data-sect]").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    sect = b.dataset.sect;
+    render();
+  });
+});
+document.querySelectorAll("#sortmode button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#sortmode button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    sortMode = b.dataset.sort;
+    render();
+  });
+});
+
+fetch("/search-index.json")
+  .then(r => r.json())
+  .then(data => { INDEX = data; render(); })
+  .catch(() => { $("empty").textContent = "Could not load the index."; $("empty").style.display = "block"; });
+</script>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=search",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

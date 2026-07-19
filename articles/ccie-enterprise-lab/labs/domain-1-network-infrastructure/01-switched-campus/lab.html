@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/ccie-enterprise-lab/labs/domain-1-network-infrastructure/01-switched-campus/lab">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Lab 01 — Switched Campus — STP, EtherChannel & VLANs | CCIE EI Lab Workbook</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--green:#3fb950;--cyan:#58a6ff;--text:#e6edf3;--muted:#8b949e;--yellow:#d29922;--orange:#f0883e;--purple:#bc8cff;--red:#f85149;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;padding:10px 24px;border-bottom:1px solid var(--border);width:100%;background:var(--bg2);}
+.back:hover{color:var(--cyan);}
+.lab-header{background:linear-gradient(160deg,#0d1117,#0f1923);border-bottom:1px solid var(--border);padding:48px 24px 36px;}
+.lab-header-inner{max-width:960px;margin:0 auto;}
+.lab-meta-line{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.tag{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em;}
+.tag-bp{background:rgba(88,166,255,.12);color:var(--cyan);border:1px solid rgba(88,166,255,.25);}
+.tag-int{background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.25);}
+.tag-adv{background:rgba(210,153,34,.12);color:var(--yellow);border:1px solid rgba(210,153,34,.25);}
+.tag-exp{background:rgba(248,81,73,.12);color:var(--red);border:1px solid rgba(248,81,73,.25);}
+.tag-con{background:rgba(188,140,255,.12);color:var(--purple);border:1px solid rgba(188,140,255,.25);}
+h1{font-size:clamp(22px,3.5vw,34px);font-weight:800;color:var(--text);margin-bottom:10px;}
+.lab-subtitle{color:var(--muted);font-size:14px;max-width:680px;}
+.container{max-width:960px;margin:0 auto;padding:40px 24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:28px;}
+.card h2{font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.card h2::before{content:'';display:inline-block;width:4px;height:18px;border-radius:2px;}
+.card.prereq h2::before{background:var(--orange);}
+.card.tasks h2::before{background:var(--cyan);}
+.card.concepts h2::before{background:var(--green);}
+.card.verify h2::before{background:var(--purple);}
+.card.trouble h2::before{background:var(--red);}
+.task-block{border-left:3px solid var(--cyan);padding:12px 16px;margin-bottom:12px;background:rgba(88,166,255,.04);border-radius:0 6px 6px 0;}
+.task-num{font-size:11px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+.task-text{font-size:13px;color:var(--text);margin-bottom:8px;}
+.task-verify{font-size:12px;color:var(--muted);font-style:italic;}
+.task-verify code{background:var(--bg3);border-radius:3px;padding:1px 5px;color:var(--green);font-size:11px;}
+.diff-badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:3px;margin-left:8px;text-transform:uppercase;}
+.diff-m{background:rgba(63,185,80,.15);color:var(--green);}
+.diff-h{background:rgba(210,153,34,.15);color:var(--yellow);}
+.diff-e{background:rgba(248,81,73,.15);color:var(--red);}
+pre{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px 18px;overflow-x:auto;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;color:var(--green);margin:10px 0;}
+code{font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;color:var(--green);background:var(--bg3);padding:1px 5px;border-radius:3px;}
+.verify-cmd{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin-bottom:10px;}
+.verify-cmd .cmd{color:var(--cyan);font-family:monospace;font-size:13px;font-weight:700;}
+.verify-cmd .exp{color:var(--muted);font-size:12px;margin-top:4px;}
+.trouble-item{border-left:3px solid var(--red);padding:10px 14px;margin-bottom:10px;background:rgba(248,81,73,.04);border-radius:0 6px 6px 0;}
+.trouble-item h4{color:var(--red);font-size:13px;margin-bottom:4px;}
+.trouble-item p{color:var(--muted);font-size:12px;}
+.solution-gate{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center;margin-top:16px;}
+.solution-gate p{color:var(--muted);font-size:13px;margin-bottom:12px;}
+.sol-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 14px;color:var(--text);font-family:monospace;font-size:13px;width:200px;text-align:center;}
+.sol-btn{background:rgba(63,185,80,.15);border:1px solid rgba(63,185,80,.3);color:var(--green);border-radius:6px;padding:8px 20px;cursor:pointer;font-size:13px;font-weight:700;margin-left:8px;}
+.sol-btn:hover{background:rgba(63,185,80,.25);}
+#solution-content{display:none;}
+.timer-wrap{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;z-index:50;text-align:center;}
+.timer-display{font-family:monospace;font-size:22px;font-weight:700;color:var(--cyan);}
+.timer-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+.timer-btns{display:flex;gap:6px;margin-top:8px;justify-content:center;}
+.t-btn{background:var(--bg3);border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;}
+.t-btn:hover{color:var(--text);}
+.bp-footer{background:var(--bg2);border-top:1px solid var(--border);padding:16px 24px;text-align:center;font-size:12px;color:var(--muted);}
+.bp-footer a{color:var(--cyan);text-decoration:none;}
+
+.cfg-section{background:var(--bg2,#161b22);border:1px solid var(--border,#30363d);border-radius:8px;padding:16px 20px;margin:16px 0;}
+.cfg-section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted,#8b949e);margin-bottom:10px;font-weight:600;}
+.cfg-links{display:flex;flex-wrap:wrap;gap:8px;}
+.cfg-dl-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;font-size:12px;font-family:'SFMono-Regular',Consolas,monospace;text-decoration:none;border:1px solid var(--border,#30363d);background:var(--bg3,#21262d);color:var(--text,#e6edf3);transition:border-color .15s,color .15s;}
+.cfg-dl-btn:hover{border-color:var(--cyan,#58a6ff);color:var(--cyan,#58a6ff);text-decoration:none;}
+.cfg-init{border-color:rgba(63,185,80,.35);color:var(--green,#3fb950);}
+.cfg-init:hover{border-color:var(--green,#3fb950);}
+.topo-inline{background:var(--bg2,#161b22);border:1px solid var(--border,#30363d);border-radius:10px;padding:20px;overflow-x:auto;margin:24px 0;}
+</style>
+</head>
+<body>
+<a class="back" href="../../../index.html">← Back to Lab Index</a>
+<div class="lab-header">
+<div class="lab-header-inner">
+  <div class="lab-meta-line">
+    <span class="tag tag-bp">Lab 01</span>
+    <span class="tag tag-bp">§1.1</span>
+    <span class="tag tag-int">Intermediate</span>
+    <span class="tag" style="background:var(--bg3);color:var(--muted);border:1px solid var(--border)">⏱ 45 min</span>
+  </div>
+  <h1>Switched Campus — STP, EtherChannel & VLANs</h1>
+  <p class="lab-subtitle">Master Layer 2 switching: MST, EtherChannel LACP, VTP v3, STP security features, and VLAN design.</p>
+</div>
+</div>
+<div class="container">
+<div class="topo-inline">
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px;font-weight:600;">Network Topology</div>
+  <svg style="width:100%;height:auto;display:block;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700">
+  <rect width="1100" height="700" fill="#0d1117"/>
+  <!-- Zone backgrounds -->
+  <rect x="340" y="30" width="420" height="280" rx="12" fill="#161b22" stroke="#1f6feb" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="20" y="200" width="300" height="260" rx="12" fill="#161b22" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="780" y="200" width="300" height="260" rx="12" fill="#161b22" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="200" y="520" width="700" height="150" rx="12" fill="#161b22" stroke="#d29922" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <!-- Zone labels -->
+  <text x="550" y="22" fill="#58a6ff" font-family="monospace" font-size="11" text-anchor="middle" font-weight="600">MPLS CORE + PE EDGE</text>
+  <text x="170" y="194" fill="#3fb950" font-family="monospace" font-size="11" text-anchor="middle" font-weight="600">DMVPN WEST</text>
+  <text x="930" y="194" fill="#3fb950" font-family="monospace" font-size="11" text-anchor="middle" font-weight="600">DMVPN EAST</text>
+  <text x="550" y="516" fill="#d29922" font-family="monospace" font-size="11" text-anchor="middle" font-weight="600">CUSTOMER EDGE + BORDER</text>
+  <!-- CORE links -->
+  <line x1="490" y1="120" x2="600" y2="120" stroke="#30363d" stroke-width="2"/>
+  <line x1="460" y1="180" x2="460" y2="240" stroke="#30363d" stroke-width="2"/>
+  <line x1="640" y1="180" x2="640" y2="240" stroke="#30363d" stroke-width="2"/>
+  <line x1="490" y1="280" x2="600" y2="280" stroke="#30363d" stroke-width="2"/>
+  <!-- CORE to EDGE links -->
+  <line x1="420" y1="100" x2="280" y2="360" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="500" y1="100" x2="410" y2="370" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="600" y1="100" x2="690" y2="370" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="680" y1="100" x2="820" y2="360" stroke="#30363d" stroke-width="1.5"/>
+  <!-- EDGE to DMVPN/Border/CE links -->
+  <line x1="260" y1="390" x2="130" y2="280" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="260" y1="390" x2="130" y2="350" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="840" y1="390" x2="970" y2="280" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="840" y1="390" x2="970" y2="350" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="280" y1="400" x2="310" y2="580" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="820" y1="400" x2="790" y2="580" stroke="#30363d" stroke-width="1.5"/>
+  <!-- DMVPN Spokes -->
+  <line x1="110" y1="300" x2="80" y2="400" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="110" y1="300" x2="110" y2="430" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="110" y1="300" x2="170" y2="430" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="950" y1="300" x2="920" y2="410" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="950" y1="300" x2="970" y2="430" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="950" y1="300" x2="1020" y2="410" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <!-- CORE routers (blue) -->
+  <rect x="420" y="80" width="80" height="40" rx="6" fill="#1f3a5f" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="460" y="96" fill="#58a6ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">CORE-1</text>
+  <text x="460" y="112" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.1.1</text>
+  <rect x="620" y="80" width="80" height="40" rx="6" fill="#1f3a5f" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="660" y="96" fill="#58a6ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">CORE-2</text>
+  <text x="660" y="112" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.1.2</text>
+  <rect x="420" y="240" width="80" height="40" rx="6" fill="#1f3a5f" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="460" y="256" fill="#58a6ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">CORE-3</text>
+  <text x="460" y="272" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.1.3</text>
+  <rect x="620" y="240" width="80" height="40" rx="6" fill="#1f3a5f" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="660" y="256" fill="#58a6ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">CORE-4</text>
+  <text x="660" y="272" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.1.4</text>
+  <!-- EDGE routers -->
+  <rect x="230" y="360" width="80" height="40" rx="6" fill="#1a3040" stroke="#388bfd" stroke-width="1.5"/>
+  <text x="270" y="376" fill="#79c0ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">EDGE-1</text>
+  <text x="270" y="392" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.2.1</text>
+  <rect x="370" y="360" width="80" height="40" rx="6" fill="#1a3040" stroke="#388bfd" stroke-width="1.5"/>
+  <text x="410" y="376" fill="#79c0ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">EDGE-2</text>
+  <text x="410" y="392" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.2.2</text>
+  <rect x="650" y="360" width="80" height="40" rx="6" fill="#1a3040" stroke="#388bfd" stroke-width="1.5"/>
+  <text x="690" y="376" fill="#79c0ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">EDGE-3</text>
+  <text x="690" y="392" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.2.3</text>
+  <rect x="790" y="360" width="80" height="40" rx="6" fill="#1a3040" stroke="#388bfd" stroke-width="1.5"/>
+  <text x="830" y="376" fill="#79c0ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">EDGE-4</text>
+  <text x="830" y="392" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.2.4</text>
+  <!-- DMVPN Hubs (green) -->
+  <rect x="70" y="265" width="80" height="40" rx="6" fill="#12261e" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="110" y="281" fill="#3fb950" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">HUB-WC-1</text>
+  <text x="110" y="297" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">172.16.10.254</text>
+  <rect x="70" y="320" width="80" height="40" rx="6" fill="#12261e" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="110" y="336" fill="#3fb950" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">HUB-WC-2</text>
+  <text x="110" y="352" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">172.16.10.253</text>
+  <rect x="910" y="265" width="80" height="40" rx="6" fill="#12261e" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="950" y="281" fill="#3fb950" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">HUB-EC-1</text>
+  <text x="950" y="297" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">172.16.20.254</text>
+  <rect x="910" y="320" width="80" height="40" rx="6" fill="#12261e" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="950" y="336" fill="#3fb950" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">HUB-EC-2</text>
+  <text x="950" y="352" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">172.16.20.253</text>
+  <!-- DMVPN Spokes (gray) -->
+  <rect x="40" y="400" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="75" y="414" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-WC-1</text>
+  <text x="75" y="426" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.10.1</text>
+  <rect x="75" y="430" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="110" y="444" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-WC-2</text>
+  <text x="110" y="456" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.10.2</text>
+  <rect x="140" y="400" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="175" y="414" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-WC-3</text>
+  <text x="175" y="426" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.10.3</text>
+  <rect x="880" y="400" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="915" y="414" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-EC-1</text>
+  <text x="915" y="426" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.20.1</text>
+  <rect x="930" y="420" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="965" y="434" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-EC-2</text>
+  <text x="965" y="446" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.20.2</text>
+  <rect x="990" y="400" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="1025" y="414" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-EC-3</text>
+  <text x="1025" y="426" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.20.3</text>
+  <!-- BORDER routers (red) -->
+  <rect x="270" y="555" width="80" height="40" rx="6" fill="#2a1215" stroke="#f85149" stroke-width="1.5"/>
+  <text x="310" y="571" fill="#f85149" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">BORDER-1</text>
+  <text x="310" y="587" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.3.1</text>
+  <rect x="750" y="555" width="80" height="40" rx="6" fill="#2a1215" stroke="#f85149" stroke-width="1.5"/>
+  <text x="790" y="571" fill="#f85149" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">BORDER-2</text>
+  <text x="790" y="587" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.3.2</text>
+  <!-- CE routers (yellow) -->
+  <rect x="460" y="555" width="80" height="40" rx="6" fill="#26200a" stroke="#d29922" stroke-width="1.5"/>
+  <text x="500" y="571" fill="#d29922" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">CE-CORP-1</text>
+  <text x="500" y="587" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.6.1</text>
+  <rect x="560" y="555" width="80" height="40" rx="6" fill="#26200a" stroke="#d29922" stroke-width="1.5"/>
+  <text x="600" y="571" fill="#d29922" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">CE-CORP-2</text>
+  <text x="600" y="587" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.6.2</text>
+  <!-- CE links -->
+  <line x1="280" y1="400" x2="480" y2="555" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="820" y1="400" x2="580" y2="555" stroke="#30363d" stroke-width="1.5"/>
+  <!-- Legend -->
+  <rect x="20" y="650" width="10" height="10" fill="#1f6feb"/>
+  <text x="35" y="659" fill="#8b949e" font-family="monospace" font-size="9">P Router (CORE)</text>
+  <rect x="140" y="650" width="10" height="10" fill="#388bfd"/>
+  <text x="155" y="659" fill="#8b949e" font-family="monospace" font-size="9">PE Router (EDGE)</text>
+  <rect x="280" y="650" width="10" height="10" fill="#3fb950"/>
+  <text x="295" y="659" fill="#8b949e" font-family="monospace" font-size="9">DMVPN Hub</text>
+  <rect x="380" y="650" width="10" height="10" fill="#8b949e"/>
+  <text x="395" y="659" fill="#8b949e" font-family="monospace" font-size="9">DMVPN Spoke</text>
+  <rect x="490" y="650" width="10" height="10" fill="#f85149"/>
+  <text x="505" y="659" fill="#8b949e" font-family="monospace" font-size="9">Border (ASBR)</text>
+  <rect x="600" y="650" width="10" height="10" fill="#d29922"/>
+  <text x="615" y="659" fill="#8b949e" font-family="monospace" font-size="9">Customer Edge (CE)</text>
+  <!-- AS labels -->
+  <text x="550" y="165" fill="#484f58" font-family="monospace" font-size="9" text-anchor="middle">AS 65000 — OSPF Area 0 — LDP</text>
+</svg>
+
+</div>
+
+  <div class="card prereq">
+    <h2>Prerequisites</h2>
+    <ul style="list-style:none"><li style="padding:3px 0 3px 18px;position:relative;font-size:13px;color:var(--muted)"><span style="position:absolute;left:0;color:var(--cyan)">›</span>Understand 802.1Q trunking and VLAN fundamentals</li><li style="padding:3px 0 3px 18px;position:relative;font-size:13px;color:var(--muted)"><span style="position:absolute;left:0;color:var(--cyan)">›</span>Know STP port states and election process</li><li style="padding:3px 0 3px 18px;position:relative;font-size:13px;color:var(--muted)"><span style="position:absolute;left:0;color:var(--cyan)">›</span>Familiarity with port-channel configuration</li></ul>
+  </div>
+  <div class="card tasks">
+    <h2>Task Sheet — CCIE Exam Format</h2>
+    <div class="task-block"><div class="task-num">Task 1<span class="diff-badge diff-m">Medium</span></div><div class="task-text">Configure VTP v3 domain 'ENTERPRISE' with SW-CORE-1 as primary server. All other switches in client mode.</div><div class="task-verify">✓ Verify: <code>show vtp status | include Version</code></div></div>
+<div class="task-block"><div class="task-num">Task 2<span class="diff-badge diff-m">Medium</span></div><div class="task-text">Create VLANs: 100 (Management), 200 (Data), 300 (Voice), 400 (Native). Assign names matching VLAN numbers.</div><div class="task-verify">✓ Verify: <code>show vlan brief</code></div></div>
+<div class="task-block"><div class="task-num">Task 3<span class="diff-badge diff-h">Hard</span></div><div class="task-text">Configure EtherChannel between SW-CORE-1 and SW-CORE-2 using LACP active mode. Use port-channel 1. Configure as L3 with IP 10.0.100.0/31.</div><div class="task-verify">✓ Verify: <code>show etherchannel 1 summary</code></div></div>
+<div class="task-block"><div class="task-num">Task 4<span class="diff-badge diff-h">Hard</span></div><div class="task-text">Enable MST with region name 'ENTERPRISE', revision 1. Map VLAN 100-200 to instance 1, VLAN 300-400 to instance 2. SW-CORE-1 primary root for instance 1.</div><div class="task-verify">✓ Verify: <code>show spanning-tree mst</code></div></div>
+<div class="task-block"><div class="task-num">Task 5<span class="diff-badge diff-h">Hard</span></div><div class="task-text">Enable PortFast and BPDUGuard on all access ports. Enable Root Guard on all uplink ports toward distribution.</div><div class="task-verify">✓ Verify: <code>show spanning-tree detail | include Bpdu</code></div></div>
+<div class="task-block"><div class="task-num">Task 6<span class="diff-badge diff-e">Expert</span></div><div class="task-text">Configure private VLAN: primary VLAN 500, isolated secondary VLAN 501, community secondary VLAN 502.</div><div class="task-verify">✓ Verify: <code>show vlan private-vlan</code></div></div>
+
+  </div>
+  <div class="card concepts">
+    <h2>Key Concepts</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px">MST (Multiple Spanning Tree) maps multiple VLANs to a single STP instance, reducing CPU overhead compared to PVST+ which runs one instance per VLAN. MST instances share a common internal spanning tree (IST) for BPDU communication, with each region appearing as a single bridge to outside regions.</p><p style="font-size:13px;color:var(--muted);margin-bottom:10px">EtherChannel bundles physical links into one logical channel, providing bandwidth aggregation and link redundancy. LACP (802.3ad) is the standards-based protocol; active/active is preferred for fast negotiation. The load-balancing algorithm (src-dst-mac, src-dst-ip) determines per-flow link selection — change with 'port-channel load-balance'.</p><p style="font-size:13px;color:var(--muted);margin-bottom:10px">BPDUGuard disables a PortFast-enabled port if it receives any BPDU, protecting against accidental switch connections. Root Guard prevents a port from becoming root port, protecting the STP root election. Loop Guard prevents alternate/root ports from becoming designated if BPDUs stop (unidirectional link failure).</p>
+  </div>
+  <div class="card verify">
+    <h2>Verification Commands</h2>
+    <div class="verify-cmd"><div class="cmd">show spanning-tree mst 1</div><div class="exp">Expect SW-CORE-1 as root: 'This bridge is the root'</div></div><div class="verify-cmd"><div class="cmd">show etherchannel 1 summary</div><div class="exp">Expect Po1(SU) with member ports in (P) state</div></div><div class="verify-cmd"><div class="cmd">show vtp status</div><div class="exp">Expect VTP Version 3, Primary Server on SW-CORE-1</div></div><div class="verify-cmd"><div class="cmd">show interfaces trunk</div><div class="exp">Expect VLANs 100,200,300,400 active in allowed list</div></div>
+  </div>
+  <div class="card trouble">
+    <h2>Common Mistakes &amp; Troubleshooting</h2>
+    <div class="trouble-item"><h4>EtherChannel not forming</h4><p>Verify both ends use same mode (LACP active/active or active/passive). Check 'show etherchannel summary' for (I) flag = incompatible config. Speed, duplex, and trunk config must match.</p></div><div class="trouble-item"><h4>MST instances not converging</h4><p>Verify region name, revision number, and VLAN-to-instance mapping match exactly on all switches. Any mismatch puts switches in different MST regions. Use 'show spanning-tree mst configuration digest' to compare.</p></div><div class="trouble-item"><h4>BPDUGuard not triggering</h4><p>Confirm PortFast is enabled first ('spanning-tree portfast'). BPDUGuard only works on PortFast-enabled ports. Check 'show spanning-tree interface Gix/x detail'.</p></div>
+  </div>
+  <div class="card">
+    <h2 style="color:var(--red)">Solution Configs</h2>
+    <div id="solution-gate" class="solution-gate">
+      <p>Attempt the tasks yourself before viewing solutions.<br>Type <strong style="color:var(--text)">SOLUTION</strong> to unlock.</p>
+      <input id="sol-input" class="sol-input" placeholder="Type SOLUTION" autocomplete="off">
+      <button id="sol-check" class="sol-btn">Unlock</button>
+    </div>
+    <div id="solution-content">
+      <p style="color:var(--cyan);font-size:12px;font-weight:700;margin:12px 0 4px">SW-CORE-1</p><pre>! See solution-configs/SW-CORE-1.cfg
+! Key configs included in task walkthrough above</pre>
+    </div>
+  </div>
+</div>
+<div class="timer-wrap">
+  <div class="timer-label">Study Timer</div>
+  <div class="timer-display" id="td">45:00</div>
+  <div class="timer-btns">
+    <button class="t-btn" id="t-start">▶ Start</button>
+    <button class="t-btn" id="t-pause">⏸</button>
+    <button class="t-btn" id="t-reset">↺</button>
+  </div>
+</div>
+<div class="bp-footer">
+  CCIE EI v1.0 Blueprint: <strong style="color:var(--cyan)">§1.1</strong> &nbsp;·&nbsp;
+  <a href="../../../index.html">← All Labs</a> &nbsp;·&nbsp;
+  Independent study resource. Not affiliated with Cisco Systems, Inc.
+</div>
+<script>
+let secs=45*60,running=false,iv=null;
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+const td=document.getElementById('td');
+function tick(){if(secs>0){secs--;td.textContent=fmt(secs);}else{clearInterval(iv);running=false;td.style.color='var(--red)';td.textContent='TIME';}}
+document.getElementById('t-start').onclick=()=>{if(!running){iv=setInterval(tick,1000);running=true;}};
+document.getElementById('t-pause').onclick=()=>{clearInterval(iv);running=false;};
+document.getElementById('t-reset').onclick=()=>{clearInterval(iv);running=false;secs=45*60;td.textContent=fmt(secs);td.style.color='var(--cyan)';};
+td.textContent=fmt(secs);
+document.getElementById('sol-check').onclick=()=>{
+  const v=document.getElementById('sol-input').value.trim().toUpperCase();
+  if(v==='SOLUTION'){document.getElementById('solution-content').style.display='block';document.getElementById('solution-gate').style.display='none';}
+  else{document.getElementById('sol-input').value='';document.getElementById('sol-input').placeholder='Wrong — try again';}
+};
+</script>
+
+<div class="cfg-section">
+  <div class="cfg-section-title">⬇ Initial Configs — Load These to Start the Lab</div>
+  <div class="cfg-links"><a href="initial-configs/EDGE-1-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ EDGE-1-initial.cfg</a>
+<a href="initial-configs/EDGE-2-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ EDGE-2-initial.cfg</a>
+</div>
+</div>
+<div class="cfg-section">
+  <div class="cfg-section-title">Solution Configs — Reveal After Completing Tasks</div>
+  <div class="cfg-links"><span style="color:var(--muted);font-size:12px">Complete the tasks above, then check the solution configs folder after git clone.</span>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/phishing">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phishing in the Age of AI — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Essentials</span>
+    <h1>Phishing in the Age of AI</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>For twenty years we taught people to spot phishing by its clumsiness: broken English, generic greetings, obviously fake addresses. That advice is now dangerous, because it trains people to trust anything polished. Generative AI writes flawless corporate prose, clones a voice from thirty seconds of audio, and personalizes a scam from your public social media in bulk. The tells have changed. The defenses have too.</p>
+
+    <h2>What the modern lure looks like</h2>
+    <ul>
+      <li><strong>The perfect email.</strong> Correct branding, your real name, a plausible invoice or HR request. Grammar tells you nothing anymore.</li>
+      <li><strong>The cloned voice.</strong> A call that sounds exactly like your boss, or your grandchild in trouble, asking for gift cards, wire transfers, or a one-time code "to verify it's you."</li>
+      <li><strong>Quishing.</strong> QR codes on parking meters, restaurant tables, and posters that route to credential-harvesting pages — chosen precisely because your phone hides the URL.</li>
+      <li><strong>MFA fatigue.</strong> A flood of push notifications at 2 a.m. hoping you tap "Approve" just to make it stop.</li>
+      <li><strong>The callback scam.</strong> An invoice for something you never bought, with a helpful support number. You place the call, so it feels safe. It is not.</li>
+    </ul>
+
+    <h2>Defenses that survive AI</h2>
+    <h3>Verify through a second channel</h3>
+    <p>The single most durable defense. Any urgent request involving money, credentials, or sensitive data gets verified through a channel <em>you</em> initiate — call the person on the number you already have, walk to their office, open the company's website by typing it yourself. Never verify through the contact details the message conveniently provides.</p>
+    <h3>Let urgency itself be the red flag</h3>
+    <p>Every social-engineering script — human or machine — manufactures time pressure, because reflection is fatal to the scam. "Right now," "before close of business," "don't tell anyone" are the actual signatures of modern phishing. Legitimate organizations survive a fifteen-minute delay.</p>
+    <h3>Use phishing-resistant authentication</h3>
+    <p>Passkeys and hardware security keys cannot be phished even by a pixel-perfect fake site: the credential simply will not release to the wrong domain. This converts "did the user notice?" into "the math said no." Pair them with a password manager that refuses to autofill on lookalike domains.</p>
+    <h3>Agree on a family code word</h3>
+    <p>Voice cloning broke "I recognized their voice." Pick a phrase your family would never post online, and require it for any emergency money request. Low-tech, free, and remarkably effective.</p>
+
+    <h2>If you took the bait</h2>
+    <ul>
+      <li>Change the exposed password immediately — and everywhere it was reused.</li>
+      <li>Revoke active sessions and review MFA enrollments on the affected account.</li>
+      <li>If money moved, contact your bank first, then law enforcement. Speed matters more than embarrassment.</li>
+      <li>Report the message — to your IT team, your email provider, and the FTC. You will not be the only target.</li>
+    </ul>
+
+    <blockquote>Stop when something demands speed. Think about who is really asking. Connect only through channels you chose yourself.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-phishing",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

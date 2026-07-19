@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/data-science/data-wrangling">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Wrangling — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/" class="active">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Core Skills</span>
+    <h1>Data Wrangling: Polars, Pandas, and Parquet</h1>
+    <p class="meta">Data Science Series &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>The dirty secret of the profession: most working hours go to reshaping data, not modeling it. Joins, filters, aggregations, timestamps that lie, categories spelled four ways, and the eternal question of what NULL meant to whoever produced the file. Master this and you are useful anywhere; skip it and no model can save you.</p>
+
+    <h2>Think in split-apply-combine</h2>
+    <p>Nearly every transformation decomposes into: <em>split</em> rows into groups, <em>apply</em> a computation per group, <em>combine</em> results. Once you see it, you stop writing loops and start writing declarations:</p>
+    <pre><code>import polars as pl
+
+df = pl.read_parquet("data/flows.parquet")
+
+top_talkers = (
+    df.filter(pl.col("bytes") > 0)
+      .group_by("src_ip")
+      .agg(
+          pl.col("bytes").sum().alias("total_bytes"),
+          pl.col("dst_ip").n_unique().alias("unique_dests"),
+      )
+      .sort("total_bytes", descending=True)
+      .head(20)
+)</code></pre>
+    <p>Declarative chains aren't just cleaner — Polars' lazy mode (<code>pl.scan_parquet</code>) reads them as a query plan and optimizes the whole pipeline before touching a byte, which is how a laptop chews through files that used to demand a cluster.</p>
+
+    <h2>Polars or pandas?</h2>
+    <p>Learn to <em>read</em> both, and default to Polars for new work: multi-threaded, memory-lean, and strict — it raises errors where pandas silently guesses, which converts three future debugging sessions into one present-tense fix. You'll still meet pandas everywhere (tutorials, legacy code, libraries), and interop is one call in each direction: <code>df.to_pandas()</code> / <code>pl.from_pandas(df)</code>.</p>
+
+    <h2>Files: Parquet in, CSV only at the edges</h2>
+    <p>CSV has no types — everything is a string with ambitions — no compression, and no schema. Accept it from the outside world, then immediately convert:</p>
+    <pre><code>pl.scan_csv("export.csv").sink_parquet("data/export.parquet")</code></pre>
+    <p>Parquet is columnar, typed, compressed, and fast to filter. Reading two columns from a 50-million-row Parquet file touches only those columns; the same query against CSV parses everything. For datasets that outgrow memory, DuckDB queries Parquet in place with plain SQL — <code>duckdb.sql("SELECT ... FROM 'data/*.parquet'")</code> — and covers the awkward middle ground below "buy a warehouse."</p>
+
+    <h2>The cleaning discipline</h2>
+    <ul>
+      <li><strong>Never edit raw data.</strong> <code>data/raw/</code> is immutable history; transformations produce new files in <code>data/processed/</code>. Reproducibility is a lineage property, not a virtue.</li>
+      <li><strong>Interrogate NULLs.</strong> Missing-at-random, not-collected, and zero-meaning-absent are three different facts wearing one mask. Ask the producer; encode the answer explicitly.</li>
+      <li><strong>Parse timestamps to UTC on arrival</strong>, keep the original string until validated. Timezones cause more silent corruption than any other single feature of reality.</li>
+      <li><strong>Normalize categories early</strong> — <code>.str.strip_chars().str.to_lowercase()</code> before the first group-by, or "Miami", "miami ", and "MIAMI" are three cities.</li>
+      <li><strong>Validate at boundaries.</strong> Row counts before and after every join; a schema check (Pandera or plain asserts) at pipeline entry. Joins that silently drop or multiply rows are the field's most expensive bug.</li>
+    </ul>
+
+    <h2>Checkpoint</h2>
+    <p>Take any real dataset over a million rows, land it as Parquet, and answer five questions about it with lazy Polars chains — including one join and one time-based aggregation — with row counts asserted along the way. When that feels routine, you own the 80% of the job nobody puts on posters.</p>
+
+    <p><a href="/data-science/statistics">Next: Statistics That Earn Their Keep →</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=data-science-data-wrangling",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

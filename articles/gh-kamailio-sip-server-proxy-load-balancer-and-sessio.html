@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-kamailio-sip-server-proxy-load-balancer-and-sessio">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kamailio SIP Server: Proxy, Load Balancer, and Session Border Controller — Konstas Engineering Notes</title>
+<meta name="description" content="← All ArticlesArchitecture, core modules, dispatcher load balancing, fraud protection, TLS, and RTPEngine integration for Kamailio in a production VoIP platform.What Is K">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Telecom</span>
+    <h1>Kamailio SIP Server: Proxy, Load Balancer, and Session Border Controller</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<a href="../index.html">← All Articles</a><p>Architecture, core modules, dispatcher load balancing, fraud protection, TLS, and RTPEngine integration for Kamailio in a production VoIP platform.</p><h2>What Is Kamailio</h2><p>A high-performance open source SIP proxy, registrar, load balancer, and Session Border Controller.</p><p>Kamailio is an open source SIP server that processes <strong>millions of SIP messages per second</strong> on modest hardware. In a carrier-grade VoIP platform it sits in front of all Asterisk PBX nodes and performs signaling-plane functions — it does not process media (audio), which is handled by RTPEngine.</p><h3>Core Functions</h3><ul><li><strong>Load balancing</strong> — distributes SIP calls across Asterisk nodes via the dispatcher module</li><li><strong>SIP proxy</strong> — routes all SIP signaling between carriers and PBX nodes</li><li><strong>SBC (Session Border Controller)</strong> — NAT traversal, topology hiding, TLS termination</li><li><strong>STIR/SHAKEN</strong> — digitally signs outbound calls for caller ID authentication</li><li><strong>Fraud protection</strong> — rate limiting via the pike module, IP blocklisting</li><li><strong>Failover</strong> — automatically removes failed Asterisk nodes from rotation</li></ul><h2>Architecture Position</h2><pre>Internet / SIP Trunk Provider
+         │
+         ▼
+   ┌─────────────┐
+   │  KAMAILIO   │  ← All SIP signaling enters and exits here
+   │  SBC/Proxy  │    TLS termination, NAT traversal, fraud filtering
+   └──────┬──────┘
+          │ dispatcher module — round-robin, failover
+    ┌─────┼──────┬──────┐
+    ▼     ▼      ▼      ▼
+  Ast-1  Ast-2  Ast-3  ... N
+  (Asterisk PBX nodes — stateless from Kamailio's perspective)</pre><p>Each Asterisk node is stateless — Kamailio can route any call to any node. If a node fails, Kamailio's health-check removes it from rotation within seconds.</p><h2>Core Modules</h2><table><thead><tr><th>Module</th><th>Function</th></tr></thead><tbody><tr><td>dispatcher</td><td>Load balancing across Asterisk nodes — round-robin, weight-based, or hash</td></tr><tr><td>rtpengine</td><td>Controls RTPEngine for media proxying and NAT traversal</td></tr><tr><td>tls</td><td>SIP/TLS encryption — TLS 1.2/1.3 for carrier interconnection</td></tr><tr><td>pike</td><td>Rate limiting — blocks IPs exceeding request thresholds</td></tr><tr><td>auth / auth_db</td><td>SIP digest authentication against MySQL database</td></tr><tr><td>usrloc</td><td>User location and SIP registration storage</td></tr><tr><td>registrar</td><td>Handles REGISTER requests from SIP endpoints</td></tr><tr><td>nathelper</td><td>NAT traversal — fixes contact headers for devices behind NAT</td></tr><tr><td>acc</td><td>Accounting — logs call events to MySQL for billing correlation</td></tr><tr><td>carrierroute</td><td>Least-cost routing for outbound calls — per-prefix carrier selection</td></tr><tr><td>htable</td><td>In-memory hash table — used for real-time fraud detection counters</td></tr></tbody></table><h2>Load Balancing: dispatcher Module</h2><p>Kamailio distributes calls across Asterisk nodes and removes failed nodes automatically.</p><pre># dispatcher.list — format: id  flags  priority  uri
+1  0  0  sip:10.10.1.10:5060   # Asterisk Node 1
+1  0  0  sip:10.10.1.11:5060   # Asterisk Node 2
+1  0  0  sip:10.10.1.12:5060   # Asterisk Node 3</pre><pre># kamailio.cfg — dispatcher routing logic
+route[DISPATCH] {
+    if (!ds_select_dst(1, 4)) {   # Group 1, round-robin (algorithm 4)
+        send_reply("503", "Service Unavailable");
+        exit;
+    }
+    t_relay();
+}</pre><p>Kamailio pings each Asterisk node with <strong>SIP OPTIONS every 10 seconds</strong>. If a node fails to respond, it is automatically removed from rotation until it recovers — zero manual intervention required.</p><p>Algorithm 4 is round-robin. Alternatives: 0 (hash over Call-ID), 6 (random), 10 (load distribution based on active calls). Choose based on your traffic pattern.</p><h2>Fraud Protection: pike Module</h2><p>Rate limiting blocks IPs that generate abnormal SIP request volumes — the first line of defence against toll fraud.</p><pre># Block IPs sending more than 20 SIP requests per 2-second window
+modparam("pike", "sampling_time_unit", 2)
+modparam("pike", "reqs_density_per_unit", 40)
+modparam("pike", "remove_latency", 4)
+
+route[ANTIFLOOD] {
+    if (!pike_check_req()) {
+        xlog("L_ALERT","ANTI-FLOOD blocked $rm from $si
+");
+        drop;
+    }
+}</pre><p>The <code>htable</code> module can extend this with stateful counters — tracking failed authentication attempts per IP and auto-blocking after a threshold. Kamailio can also write blocked IPs to a database table shared with fail2ban or iptables for system-level blocking.</p><h2>TLS Configuration</h2><p>SIP/TLS encrypts the signaling channel — required for carrier interconnection and compliance.</p><pre># /etc/kamailio/tls.cfg
+[server:default]
+method = TLSv1.2+
+verify_certificate = no
+require_certificate = no
+private_key = /etc/kamailio/tls/server.key
+certificate = /etc/kamailio/tls/server.pem
+
+[client:default]
+method = TLSv1.2+
+verify_certificate = no</pre><p>Set <code>verify_certificate = yes</code> for production interconnects with known carriers. Use <code>no</code> only during lab testing.</p><h2>RTPEngine Integration</h2><p>Kamailio controls RTPEngine to proxy all media streams through the platform.</p><pre>modparam("rtpengine", "rtpengine_sock", "udp:127.0.0.1:2223")
+
+route[RTPENGINE] {
+    if (is_method("INVITE")) {
+        rtpengine_offer("replace-origin replace-session-connection");
+    }
+    if (is_method("BYE")) {
+        rtpengine_delete();
+    }
+}</pre><p>Kamailio rewrites the SDP (Session Description Protocol) in SIP INVITE messages to replace the endpoint's real IP/port with RTPEngine ports. The caller and called party both send audio to RTPEngine, which relays it bidirectionally — enabling call recording, transcoding, and NAT traversal.</p><h2>NAT Traversal</h2><p>Most SIP devices are behind NAT. Kamailio detects and handles this transparently.</p><pre>route[NATDETECT] {
+    force_rport();
+    if (nat_uac_test("19")) {
+        if (is_method("REGISTER")) {
+            fix_nated_register();
+        } else {
+            fix_nated_contact();
+        }
+        setflag(FLT_NATS);
+    }
+}</pre><p>The <code>nat_uac_test("19")</code> bitmask checks for: private IP in Contact header, private IP in Via header, and source IP different from Contact IP — the three classic NAT indicators.</p><h2>Capacity Reference</h2><table><thead><tr><th>Server Spec</th><th>Concurrent SIP Sessions</th><th>SIP Messages/sec</th></tr></thead><tbody><tr><td>4 core / 8 GB</td><td>5,000+</td><td>50,000+</td></tr><tr><td>8 core / 16 GB</td><td>15,000+</td><td>150,000+</td></tr></tbody></table><p>A single Kamailio node far exceeds the signaling requirements of a launch-phase carrier. A second node for high availability can be added later using the <code>usrloc</code> replication feature to share registration state.</p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-kamailio-sip-server-proxy-load-balancer-and-sessio",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-acl-analytics-excel-reference">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACL Analytics &amp; Excel Data Manipulation Reference — Konstas Engineering Notes</title>
+<meta name="description" content="Production-grade scripts, formulas, and audit patterns — from data cleaning through fraud detection. Built for professional auditors and data analysts.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Analytics</span>
+    <h1>ACL Analytics &amp; Excel Data Manipulation Reference</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p class="header-sub">Production-grade scripts, formulas, and audit patterns — from data cleaning through fraud detection. Built for professional auditors and data analysts.</p>
+  <p class="header-meta">ACL Analytics (Galvanize HighBond) &nbsp;&middot;&nbsp; Excel 365 &nbsp;&middot;&nbsp; Ioannis Alexander Konstas</p>
+  <div class="header-tags">
+    <span class="htag">Data Cleaning</span>
+    <span class="htag">Duplicate Detection</span>
+    <span class="htag">Fraud Testing</span>
+    <span class="htag">Benford's Law</span>
+    <span class="htag">Aging Analysis</span>
+    <span class="htag">Join &amp; Merge</span>
+    <span class="htag">Sampling</span>
+    <span class="htag">Gap Analysis</span>
+    <span class="htag">ACL Script</span>
+    <span class="htag">Excel 365</span>
+  </div>
+</header>
+
+<div class="container">
+
+  
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- PART 1 — ACL ANALYTICS -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-cleaning" class="sec-head">
+    <span class="sec-icon">🧹</span>
+    <span class="sec-label">ACL — Data Cleaning &amp; Standardization</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 1</span>
+  </div>
+
+  <div class="callout">
+    Always standardize text <strong>before</strong> any matching, joining, or deduplication. Inconsistent casing and whitespace are the most common cause of missed duplicates and failed joins in audit data.
+  </div>
+
+  <div class="subsection">
+    <div class="sub-title">Core Text Functions</div>
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Uppercase — Normalize casing</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">UPPER</span>(Name)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Trim — Remove leading/trailing spaces</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">ALLTRIM</span>(Name)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Include — Keep only letters A–Z</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Name), <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Exclude — Strip numeric digits</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXCLUDE</span>(Field, <span class="str">"0123456789"</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Include — Keep alphanumeric only</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Field),
+  <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Handle blanks — Replace with placeholder</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">IF</span> <span class="fn">ISBLANK</span>(Name) <span class="kw">THEN</span> <span class="str">"UNKNOWN"</span> <span class="kw">ELSE</span> Name</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Substitute — Replace a specific character</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">REPLACE</span>(Name, <span class="str">"-"</span>, <span class="str">""</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Pad — Right-pad to fixed length</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">PADR</span>(Name, <span class="num">20</span>)    <span class="cmt">" right-pad to 20 chars"</span>
+<span class="fn">PADL</span>(ID, <span class="num">10</span>)      <span class="cmt">" left-pad to 10 chars"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Convert number to string</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">STRING</span>(Amount, <span class="str">"2"</span>)   <span class="cmt">" 2 decimal places"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Convert string to number</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">VALUE</span>(Amount_String, <span class="str">"2"</span>)</pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-fields" class="sec-head">
+    <span class="sec-icon">🔧</span>
+    <span class="sec-label">ACL — Calculated &amp; Derived Fields</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 2</span>
+  </div>
+
+  <div class="subsection">
+    <div class="sub-title">Building Standardized Match Keys</div>
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Clean name field — 33-char key</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> Clean_Name <span class="kw">COMPUTED</span>
+  <span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(<span class="fn">ALLTRIM</span>(Name)),
+    <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">33</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Full name key — First + Last combined</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> Full_Key <span class="kw">COMPUTED</span>
+  <span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(
+    <span class="fn">ALLTRIM</span>(First_Name) + <span class="fn">ALLTRIM</span>(Last_Name)),
+    <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">20</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Last + First key — For surname-first matching</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> LF_Key <span class="kw">COMPUTED</span>
+  <span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(
+    <span class="fn">ALLTRIM</span>(Last_Name) + <span class="fn">ALLTRIM</span>(First_Name)),
+    <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">20</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Composite transaction key — ID + Date + Amount</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> Txn_Key <span class="kw">COMPUTED</span>
+  <span class="fn">ALLTRIM</span>(Vendor_ID) + <span class="str">"_"</span>
+  + <span class="fn">STRING</span>(Invoice_Date, <span class="str">"YYYYMMDD"</span>)
+  + <span class="str">"_"</span>
+  + <span class="fn">STRING</span>(Amount, <span class="str">"2"</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Flag high-value transactions</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> Risk_Flag <span class="kw">COMPUTED</span>
+  <span class="kw">IF</span> Amount >= <span class="num">10000</span> <span class="kw">THEN</span> <span class="str">"HIGH"</span>
+  <span class="kw">ELSE IF</span> Amount >= <span class="num">5000</span> <span class="kw">THEN</span> <span class="str">"MEDIUM"</span>
+  <span class="kw">ELSE</span> <span class="str">"NORMAL"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Days outstanding (aging)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> Days_Open <span class="kw">COMPUTED</span>
+  <span class="fn">AGE</span>(Invoice_Date, <span class="fn">TODAY</span>())</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Fiscal year derived from date</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> Fiscal_Year <span class="kw">COMPUTED</span>
+  <span class="fn">IF</span> <span class="fn">MONTH</span>(Txn_Date) >= <span class="num">10</span>
+  <span class="kw">THEN</span> <span class="fn">YEAR</span>(Txn_Date) + <span class="num">1</span>
+  <span class="kw">ELSE</span> <span class="fn">YEAR</span>(Txn_Date)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Extract leading digit (Benford prep)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> Lead_Digit <span class="kw">COMPUTED</span>
+  <span class="fn">VALUE</span>(<span class="fn">SUBSTR</span>(<span class="fn">LTRIM</span>(
+    <span class="fn">STRING</span>(<span class="fn">ABS</span>(Amount), <span class="str">"2"</span>),
+    <span class="str">"0"</span>), <span class="num">1</span>, <span class="num">1</span>), <span class="str">"0"</span>)</pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-filter" class="sec-head">
+    <span class="sec-icon">🔍</span>
+    <span class="sec-label">ACL — Filtering &amp; Extraction</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 3</span>
+  </div>
+
+  <div class="subsection">
+    <div class="sub-title">Filter Expressions &amp; EXTRACT Commands</div>
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Basic amount filter</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span> Amount > <span class="num">1000</span>
+  <span class="kw">TO</span> <span class="str">"High_Value"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Date range filter</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">BETWEEN</span>(Invoice_Date,
+    `<span class="num">20240101</span>`, `<span class="num">20241231</span>`)
+  <span class="kw">TO</span> <span class="str">"FY2024"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Multi-condition filter</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  Amount > <span class="num">5000</span>
+  <span class="kw">AND</span> Status = <span class="str">"APPROVED"</span>
+  <span class="kw">AND</span> Dept_Code &lt;&gt; <span class="str">"IT"</span>
+  <span class="kw">TO</span> <span class="str">"Flagged_Transactions"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Exclude specific descriptions</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  Description &lt;&gt; <span class="str">"TEST"</span>
+  <span class="kw">AND</span> Description &lt;&gt; <span class="str">"SAMPLE"</span>
+  <span class="kw">AND</span> Description &lt;&gt; <span class="str">"VOID"</span>
+  <span class="kw">TO</span> <span class="str">"Live_Transactions"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Pattern match — contains substring</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">FIND</span>(<span class="str">"PETTY CASH"</span>, <span class="fn">UPPER</span>(Description)) > <span class="num">0</span>
+  <span class="kw">TO</span> <span class="str">"Petty_Cash_Items"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Wildcard match with MATCH()</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">MATCH</span>(Vendor_Name,
+    <span class="str">"ACME*"</span>, <span class="str">"*HOLDINGS*"</span>, <span class="str">"*LTD"</span>)
+  <span class="kw">TO</span> <span class="str">"Matched_Vendors"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Round-dollar amount test (fraud indicator)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  Amount = <span class="fn">INT</span>(Amount)
+  <span class="kw">AND</span> Amount >= <span class="num">1000</span>
+  <span class="kw">TO</span> <span class="str">"Round_Amounts"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Extract specific fields only (not all columns)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">FIELDS</span>
+  Invoice_ID, Vendor_ID, Amount,
+  Invoice_Date, Approved_By
+  <span class="kw">IF</span> Amount > <span class="num">5000</span>
+  <span class="kw">TO</span> <span class="str">"High_Value_Summary"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Weekend transaction detection</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">DOW</span>(Txn_Date) = <span class="num">1</span>   <span class="cmt">" 1=Sunday"</span>
+  <span class="kw">OR</span> <span class="fn">DOW</span>(Txn_Date) = <span class="num">7</span> <span class="cmt">" 7=Saturday"</span>
+  <span class="kw">TO</span> <span class="str">"Weekend_Transactions"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Transactions below approval threshold (split payments)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  Amount >= <span class="num">4500</span> <span class="kw">AND</span> Amount < <span class="num">5000</span>
+  <span class="kw">TO</span> <span class="str">"Just_Below_Threshold"</span></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-sort" class="sec-head">
+    <span class="sec-icon">📂</span>
+    <span class="sec-label">ACL — Sorting, Indexing &amp; Sequencing</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 4</span>
+  </div>
+
+  <div class="subsection">
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Sort ascending by single field</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SORT</span> <span class="kw">ON</span> Name <span class="kw">TO</span> <span class="str">"Sorted_By_Name"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Sort descending by amount</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SORT</span> <span class="kw">ON</span> Amount <span class="kw">D TO</span> <span class="str">"Sorted_High_Low"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Sort on multiple fields</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SORT</span> <span class="kw">ON</span> Vendor_ID, Invoice_Date, Amount <span class="kw">D</span>
+  <span class="kw">TO</span> <span class="str">"Vendor_Date_Sorted"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Create index (faster than sort for large tables)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">INDEX</span> <span class="kw">ON</span> Name <span class="kw">TO</span> <span class="str">"Name_Index"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Sequence check — detect gaps in ID series</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SEQUENCE</span> <span class="kw">ON</span> Invoice_Num
+  <span class="kw">TO</span> <span class="str">"Missing_Invoices"</span>
+  PRESORT</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Find gaps in numeric sequence</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">GAPS</span> <span class="kw">ON</span> Check_Number
+  <span class="kw">TO</span> <span class="str">"Missing_Checks"</span>
+  PRESORT</pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-duplicates" class="sec-head">
+    <span class="sec-icon">🔁</span>
+    <span class="sec-label">ACL — Duplicate &amp; Gap Detection</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 5</span>
+  </div>
+
+  <div class="subsection">
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Find duplicate names</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">DUPLICATES</span> <span class="kw">ON</span> Clean_Name
+  <span class="kw">TO</span> <span class="str">"Duplicate_Names"</span>
+  PRESORT</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Duplicate invoices — same vendor, amount, date</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">DUPLICATES</span> <span class="kw">ON</span> Vendor_ID, Amount, Invoice_Date
+  <span class="kw">TO</span> <span class="str">"Duplicate_Invoices"</span>
+  PRESORT</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Extract unique records only</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SUMMARIZE</span> <span class="kw">ON</span> Clean_Name
+  <span class="kw">TO</span> <span class="str">"Unique_Names"</span>
+  PRESORT</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Duplicate employees — same SSN/TIN</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">DUPLICATES</span> <span class="kw">ON</span>
+  <span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(SSN, <span class="str">"0123456789"</span>), <span class="num">1</span>, <span class="num">9</span>)
+  <span class="kw">TO</span> <span class="str">"Duplicate_SSN"</span>
+  PRESORT</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Duplicate payments — same payee + amount</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">DUPLICATES</span> <span class="kw">ON</span> Payee_Name, Payment_Amount
+  <span class="kw">TO</span> <span class="str">"Possible_Double_Payments"</span>
+  PRESORT</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Gaps in check sequence</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">GAPS</span> <span class="kw">ON</span> Check_Number
+  <span class="kw">TO</span> <span class="str">"Missing_Check_Numbers"</span>
+  PRESORT</pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-joins" class="sec-head">
+    <span class="sec-icon">🔗</span>
+    <span class="sec-label">ACL — Joins, Lookups &amp; Merges</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 6</span>
+  </div>
+
+  <div class="subsection">
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Inner join — matched records only</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">JOIN</span>
+  <span class="kw">PRIMARY</span> Transactions <span class="kw">KEY</span> Vendor_ID
+  <span class="kw">SECONDARY</span> Vendor_Master <span class="kw">KEY</span> Vendor_ID
+  <span class="fn">MATCH</span>
+  <span class="kw">TO</span> <span class="str">"Matched_Vendors"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Left join — unmatched primary (orphaned records)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">JOIN</span>
+  <span class="kw">PRIMARY</span> Payments <span class="kw">KEY</span> Employee_ID
+  <span class="kw">SECONDARY</span> Employee_Master <span class="kw">KEY</span> Employee_ID
+  UNMATCH
+  <span class="kw">TO</span> <span class="str">"Payments_No_Employee"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Many-to-many join (all matches)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">JOIN</span>
+  <span class="kw">PRIMARY</span> Orders <span class="kw">KEY</span> Customer_ID
+  <span class="kw">SECONDARY</span> Customers <span class="kw">KEY</span> Customer_ID
+  MANY
+  <span class="kw">TO</span> <span class="str">"Orders_With_Customers"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Lookup — pull single value from secondary table</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> Vendor_Name <span class="kw">COMPUTED</span>
+  <span class="fn">LOOKUP</span>(Vendor_Master,
+    Vendor_ID, Vendor_ID,
+    Vendor_Name)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Merge two tables with same structure</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">MERGE</span>
+  Table_Q1 Table_Q2 Table_Q3 Table_Q4
+  <span class="kw">TO</span> <span class="str">"Full_Year_Transactions"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Exception join — find records in A not in B</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">JOIN</span>
+  <span class="kw">PRIMARY</span> Active_Users <span class="kw">KEY</span> User_ID
+  <span class="kw">SECONDARY</span> HR_Roster <span class="kw">KEY</span> Employee_ID
+  UNMATCH
+  <span class="kw">TO</span> <span class="str">"Ghost_Users"</span></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-summary" class="sec-head">
+    <span class="sec-icon">📊</span>
+    <span class="sec-label">ACL — Summarization &amp; Stratification</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 7</span>
+  </div>
+
+  <div class="subsection">
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Summarize with subtotals</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SUMMARIZE</span> <span class="kw">ON</span> Vendor_ID
+  <span class="kw">SUBTOTAL</span> Amount
+  <span class="kw">TO</span> <span class="str">"Vendor_Totals"</span>
+  PRESORT</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Summarize — count + sum + max</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SUMMARIZE</span> <span class="kw">ON</span> Dept_Code
+  <span class="kw">SUBTOTAL</span> Amount
+  <span class="kw">COUNT</span>
+  <span class="kw">TO</span> <span class="str">"Dept_Summary"</span>
+  PRESORT</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Stratify amounts into bands</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">STRATIFY</span> <span class="kw">ON</span> Amount
+  <span class="kw">INTERVALS</span> <span class="num">0</span> <span class="num">1000</span> <span class="num">5000</span> <span class="num">10000</span> <span class="num">50000</span> <span class="num">999999999</span>
+  <span class="kw">TO</span> <span class="str">"Amount_Bands"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Histogram by frequency</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">HISTOGRAM</span> <span class="kw">ON</span> Amount
+  <span class="kw">MINIMUM</span> <span class="num">0</span> <span class="kw">MAXIMUM</span> <span class="num">100000</span>
+  <span class="kw">INTERVALS</span> <span class="num">10</span>
+  <span class="kw">TO</span> <span class="str">"Amount_Histogram"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Crosstab — pivot by two dimensions</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">CROSSTAB</span>
+  <span class="kw">ON</span> Dept_Code
+  <span class="kw">SUBTOTAL</span> Amount
+  <span class="kw">COLUMNS</span> Quarter
+  <span class="kw">TO</span> <span class="str">"Dept_Quarter_Crosstab"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Top N vendors by spend</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SUMMARIZE</span> <span class="kw">ON</span> Vendor_ID
+  <span class="kw">SUBTOTAL</span> Amount
+  <span class="kw">TO</span> <span class="str">"Vendor_Totals"</span> PRESORT
+<span class="fn">SORT</span> <span class="kw">ON</span> Amount <span class="kw">D TO</span> <span class="str">"Top_Vendors"</span>
+<span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span> <span class="fn">RECNO</span>() &lt;= <span class="num">10</span>
+  <span class="kw">TO</span> <span class="str">"Top_10_Vendors"</span></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-sampling" class="sec-head">
+    <span class="sec-icon">🎲</span>
+    <span class="sec-label">ACL — Sampling Methods</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 8</span>
+  </div>
+
+  <div class="subsection">
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Random sample — 100 records</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SAMPLE</span> <span class="num">100</span> RANDOM
+  <span class="kw">TO</span> <span class="str">"Random_Sample_100"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Systematic sample — every Nth record</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SAMPLE</span> <span class="num">50</span> SYSTEMATIC
+  <span class="kw">TO</span> <span class="str">"Systematic_Sample"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Monetary Unit Sampling (MUS) — value-weighted</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SAMPLE</span> <span class="num">50</span> MU <span class="kw">ON</span> Amount
+  <span class="kw">TO</span> <span class="str">"MUS_Sample"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Cell sampling — fixed intervals across range</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SAMPLE</span> <span class="num">30</span> CELL
+  <span class="kw">TO</span> <span class="str">"Cell_Sample"</span></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-fraud" class="sec-head">
+    <span class="sec-icon">🚨</span>
+    <span class="sec-label">ACL — Fraud &amp; Anomaly Detection</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 9</span>
+  </div>
+
+  <div class="callout warn">
+    These tests are indicators only — each result requires professional judgment and investigation before conclusions are drawn.
+  </div>
+
+  <div class="subsection">
+    <div class="sub-title">Common Fraud Indicators</div>
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Just-below-threshold (split payment) test</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  Amount >= <span class="num">4500</span> <span class="kw">AND</span> Amount < <span class="num">5000</span>
+  <span class="kw">TO</span> <span class="str">"Just_Below_5K_Threshold"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Round-number concentration (fraud indicator)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">MOD</span>(Amount, <span class="num">1000</span>) = <span class="num">0</span>
+  <span class="kw">AND</span> Amount >= <span class="num">1000</span>
+  <span class="kw">TO</span> <span class="str">"Round_Dollar_Amounts"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Weekend and after-hours transactions</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">DOW</span>(Txn_Date) = <span class="num">1</span>
+  <span class="kw">OR</span> <span class="fn">DOW</span>(Txn_Date) = <span class="num">7</span>
+  <span class="kw">TO</span> <span class="str">"Weekend_Txns"</span>
+
+<span class="cmt">" After-hours: hour outside 08:00-18:00"</span>
+<span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">HOUR</span>(Txn_Time) < <span class="num">8</span>
+  <span class="kw">OR</span> <span class="fn">HOUR</span>(Txn_Time) > <span class="num">18</span>
+  <span class="kw">TO</span> <span class="str">"After_Hours_Txns"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Backdated entries — posted after period close</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  Post_Date > `<span class="num">20241231</span>`
+  <span class="kw">AND</span> Invoice_Date < `<span class="num">20241231</span>`
+  <span class="kw">TO</span> <span class="str">"Backdated_Entries"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Same vendor, same day, multiple payments</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">SUMMARIZE</span> <span class="kw">ON</span> Vendor_ID, Payment_Date
+  <span class="kw">SUBTOTAL</span> Amount <span class="kw">COUNT</span>
+  <span class="kw">TO</span> <span class="str">"Vendor_Day_Summary"</span> PRESORT
+<span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span> Count > <span class="num">1</span>
+  <span class="kw">TO</span> <span class="str">"Multi_Payments_Same_Day"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Terminated employee still receiving payments</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">JOIN</span>
+  <span class="kw">PRIMARY</span> Payroll <span class="kw">KEY</span> Employee_ID
+  <span class="kw">SECONDARY</span> Terminations <span class="kw">KEY</span> Employee_ID
+  <span class="fn">MATCH</span>
+  <span class="kw">TO</span> <span class="str">"Terminated_Still_Paid"</span>
+<span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  Pay_Date > Term_Date
+  <span class="kw">TO</span> <span class="str">"Ghost_Employees"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Vendor address matches employee address</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">JOIN</span>
+  <span class="kw">PRIMARY</span> Vendors <span class="kw">KEY</span>
+    <span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Address),
+      <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"</span>),
+      <span class="num">1</span>, <span class="num">30</span>)
+  <span class="kw">SECONDARY</span> Employees <span class="kw">KEY</span>
+    <span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Home_Address),
+      <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"</span>),
+      <span class="num">1</span>, <span class="num">30</span>)
+  <span class="fn">MATCH</span>
+  <span class="kw">TO</span> <span class="str">"Vendor_Employee_Address_Match"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">PO Box vendor addresses (elevated risk)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">FIND</span>(<span class="str">"PO BOX"</span>, <span class="fn">UPPER</span>(Vendor_Address)) > <span class="num">0</span>
+  <span class="kw">OR</span> <span class="fn">FIND</span>(<span class="str">"P.O."</span>, <span class="fn">UPPER</span>(Vendor_Address)) > <span class="num">0</span>
+  <span class="kw">TO</span> <span class="str">"PO_Box_Vendors"</span></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-benford" class="sec-head">
+    <span class="sec-icon">📐</span>
+    <span class="sec-label">ACL — Benford's Law &amp; Statistical Analysis</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 10</span>
+  </div>
+
+  <div class="callout">
+    Benford's Law states that in naturally occurring datasets, the leading digit is 1 approximately 30.1% of the time, 2 about 17.6%, and so on. Significant deviations suggest manipulation or data entry anomalies.
+  </div>
+
+  <div class="subsection">
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Benford's Law test — leading digit</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">BENFORD</span> <span class="kw">ON</span> Amount
+  <span class="kw">LEADING</span> <span class="num">1</span>
+  <span class="kw">TO</span> <span class="str">"Benford_Leading1"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Benford — first two digits</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">BENFORD</span> <span class="kw">ON</span> Amount
+  <span class="kw">LEADING</span> <span class="num">2</span>
+  <span class="kw">TO</span> <span class="str">"Benford_Leading2"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Statistics — descriptive summary of a field</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">STATISTICS</span> <span class="kw">ON</span> Amount
+  <span class="kw">TO</span> <span class="str">"Amount_Statistics"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Count records meeting condition</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">COUNT</span> <span class="kw">IF</span> Amount > <span class="num">10000</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Total sum of field</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">TOTAL</span> <span class="kw">FIELDS</span> Amount, Tax_Amount</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Age profile — transactions by time bucket</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">AGE</span> <span class="kw">ON</span> Invoice_Date
+  <span class="kw">CUTOFF</span> `<span class="num">20241231</span>`
+  <span class="kw">INTERVALS</span> <span class="num">30</span> <span class="num">60</span> <span class="num">90</span> <span class="num">120</span> <span class="num">999</span>
+  <span class="kw">TO</span> <span class="str">"AR_Aging"</span></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-aging" class="sec-head">
+    <span class="sec-icon">📅</span>
+    <span class="sec-label">ACL — Aging &amp; Threshold Analysis</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 11</span>
+  </div>
+
+  <div class="subsection">
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Accounts receivable aging — 30/60/90/120 days</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> Age_Bucket <span class="kw">COMPUTED</span>
+  <span class="kw">IF</span> <span class="fn">AGE</span>(Invoice_Date, `<span class="num">20241231</span>`) &lt;= <span class="num">30</span>
+  <span class="kw">THEN</span> <span class="str">"0-30"</span>
+  <span class="kw">ELSE IF</span> <span class="fn">AGE</span>(Invoice_Date, `<span class="num">20241231</span>`) &lt;= <span class="num">60</span>
+  <span class="kw">THEN</span> <span class="str">"31-60"</span>
+  <span class="kw">ELSE IF</span> <span class="fn">AGE</span>(Invoice_Date, `<span class="num">20241231</span>`) &lt;= <span class="num">90</span>
+  <span class="kw">THEN</span> <span class="str">"61-90"</span>
+  <span class="kw">ELSE IF</span> <span class="fn">AGE</span>(Invoice_Date, `<span class="num">20241231</span>`) &lt;= <span class="num">120</span>
+  <span class="kw">THEN</span> <span class="str">"91-120"</span>
+  <span class="kw">ELSE</span> <span class="str">"120+"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Days between invoice and payment</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">DEFINE FIELD</span> Days_To_Pay <span class="kw">COMPUTED</span>
+  <span class="fn">AGE</span>(Invoice_Date, Payment_Date)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Flag overdue invoices (past 90 days)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">AGE</span>(Due_Date, <span class="fn">TODAY</span>()) > <span class="num">90</span>
+  <span class="kw">AND</span> Status &lt;&gt; <span class="str">"PAID"</span>
+  <span class="kw">TO</span> <span class="str">"Overdue_90_Plus"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Slow-moving inventory (no movement in 180 days)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">AGE</span>(Last_Movement_Date, <span class="fn">TODAY</span>()) > <span class="num">180</span>
+  <span class="kw">AND</span> On_Hand_Qty > <span class="num">0</span>
+  <span class="kw">TO</span> <span class="str">"Slow_Moving_Inventory"</span></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="acl-scripting" class="sec-head">
+    <span class="sec-icon">⚙️</span>
+    <span class="sec-label">ACL — Script Structure &amp; Automation</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 12</span>
+  </div>
+
+  <div class="subsection">
+    <div class="sub-title">Complete Script Template</div>
+    <div class="snippet">
+      <div class="snip-label acl">Full audit script — structured template</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="cmt">" ═══════════════════════════════════════════
+" AUDIT SCRIPT: Vendor Payment Review
+" Purpose: Identify anomalies in vendor payments
+" Run on: Payments table (full year extract)
+" Author: [Auditor Name]  Date: 2024-01-01
+" ═══════════════════════════════════════════"</span>
+
+<span class="kw">COMMENT</span> Step 1: Open and verify source table
+<span class="fn">OPEN</span> Payments
+
+<span class="kw">COMMENT</span> Step 2: Set variables
+<span class="kw">SET</span> v_start_date = `<span class="num">20240101</span>`
+<span class="kw">SET</span> v_end_date   = `<span class="num">20241231</span>`
+<span class="kw">SET</span> v_threshold  = <span class="num">5000</span>
+
+<span class="kw">COMMENT</span> Step 3: Filter to period
+<span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  <span class="fn">BETWEEN</span>(Payment_Date, v_start_date, v_end_date)
+  <span class="kw">TO</span> <span class="str">"Period_Payments"</span>
+
+<span class="kw">COMMENT</span> Step 4: Run tests
+<span class="fn">OPEN</span> Period_Payments
+<span class="fn">DUPLICATES</span> <span class="kw">ON</span> Vendor_ID, Amount, Payment_Date
+  <span class="kw">TO</span> <span class="str">"Duplicate_Payments"</span> PRESORT
+<span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  Amount >= v_threshold <span class="op">*</span> <span class="num">0.9</span>
+  <span class="kw">AND</span> Amount < v_threshold
+  <span class="kw">TO</span> <span class="str">"Near_Threshold"</span>
+
+<span class="kw">COMMENT</span> Step 5: Summarize results
+<span class="fn">OPEN</span> Duplicate_Payments
+<span class="fn">TOTAL</span> <span class="kw">FIELDS</span> Amount
+<span class="fn">COUNT</span></pre>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="sub-title">Variables, Loops &amp; Control Flow</div>
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label acl">Variable declaration and assignment</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">SET</span> v_amount = <span class="num">10000</span>
+<span class="kw">SET</span> v_name = <span class="str">"ACME CORP"</span>
+<span class="kw">SET</span> v_date = <span class="fn">TODAY</span>()</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Conditional execution</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">IF</span> v_amount > <span class="num">5000</span>
+  <span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span> Amount > <span class="num">5000</span>
+    <span class="kw">TO</span> <span class="str">"High_Value"</span>
+<span class="kw">END</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Loop — run a script against multiple tables</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="kw">GROUP</span>
+  <span class="fn">DO SCRIPT</span> <span class="str">"Analyze_Table"</span>
+    <span class="kw">USING</span> <span class="str">"Q1_Payments"</span>
+  <span class="fn">DO SCRIPT</span> <span class="str">"Analyze_Table"</span>
+    <span class="kw">USING</span> <span class="str">"Q2_Payments"</span>
+  <span class="fn">DO SCRIPT</span> <span class="str">"Analyze_Table"</span>
+    <span class="kw">USING</span> <span class="str">"Q3_Payments"</span>
+<span class="kw">END</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Log output to session log</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">LOG</span> <span class="kw">ON TO</span> <span class="str">"Audit_Session_Log.log"</span>
+<span class="cmt">" ... run commands ..."</span>
+<span class="fn">LOG</span> <span class="kw">OFF</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Import Excel data into ACL table</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">IMPORT</span> EXCEL
+  <span class="kw">FROM</span> <span class="str">"C:\Audit\Payments.xlsx"</span>
+  <span class="kw">WORKSHEET</span> <span class="str">"Sheet1"</span>
+  <span class="kw">TO</span> <span class="str">"Payments_Imported"</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label acl">Export results to CSV</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><span class="fn">EXPORT</span>
+  <span class="kw">FORMAT</span> DELIMITED
+  <span class="kw">TO</span> <span class="str">"C:\Audit\Results.csv"</span></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- PART 2 — EXCEL -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="excel" class="sec-head">
+    <span class="sec-icon">📗</span>
+    <span class="sec-label">Excel — Formulas &amp; Functions</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 13</span>
+  </div>
+
+  <div class="subsection">
+    <div class="sub-title excel">Text Cleaning</div>
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label excel">Uppercase + trim combined</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">UPPER</span>(<span class="fn">TRIM</span>(A1))</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">Remove non-printable characters</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">CLEAN</span>(<span class="fn">TRIM</span>(A1))</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">Keep letters only — array formula (Ctrl+Shift+Enter)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">TEXTJOIN</span>(<span class="str">""</span>,<span class="kw">TRUE</span>,
+  <span class="fn">IF</span>(<span class="fn">ISNUMBER</span>(<span class="fn">FIND</span>(
+    <span class="fn">MID</span>(A1,<span class="fn">ROW</span>(<span class="fn">INDIRECT</span>(<span class="str">"1:"</span>&amp;<span class="fn">LEN</span>(A1))),<span class="num">1</span>),
+    <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>)),
+  <span class="fn">MID</span>(A1,<span class="fn">ROW</span>(<span class="fn">INDIRECT</span>(<span class="str">"1:"</span>&amp;<span class="fn">LEN</span>(A1))),<span class="num">1</span>),
+  <span class="str">""</span>))</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">Replace character in string</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">SUBSTITUTE</span>(A1, <span class="str">"-"</span>, <span class="str">""</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">Pad ID to fixed length with leading zeros</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">TEXT</span>(A1, <span class="str">"000000"</span>)   <span class="cmt">' 6-digit zero-padded ID</span></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="sub-title excel">Lookup &amp; Reference</div>
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label excel">XLOOKUP — modern lookup with fallback</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">XLOOKUP</span>(A2,
+  Table1[ID],
+  Table1[Name],
+  <span class="str">"NOT FOUND"</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">VLOOKUP — exact match</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">VLOOKUP</span>(A2, Sheet2!A:D, <span class="num">2</span>, <span class="kw">FALSE</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">INDEX + MATCH — flexible two-way lookup</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">INDEX</span>(C:C,<span class="fn">MATCH</span>(A2,B:B,<span class="num">0</span>))</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">IFERROR — suppress lookup errors</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">IFERROR</span>(
+  <span class="fn">VLOOKUP</span>(A2,Sheet2!A:B,<span class="num">2</span>,<span class="kw">FALSE</span>),
+  <span class="str">"UNMATCHED"</span>)</pre>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="sub-title excel">Duplicate Detection &amp; Counting</div>
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label excel">Flag duplicates with COUNTIF</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">COUNTIF</span>(A:A, A2) > <span class="num">1</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">Count duplicates — how many times does this appear</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">COUNTIF</span>($A$2:$A$1000, A2)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">Multi-column duplicate check</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">COUNTIFS</span>(A:A,A2,B:B,B2,C:C,C2)>1</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">Unique count of values in range</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">SUMPRODUCT</span>(<span class="num">1</span>/<span class="fn">COUNTIF</span>(A2:A100,A2:A100))</pre>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="sub-title excel">Date &amp; Logic Functions</div>
+    <div class="snippet-grid">
+
+      <div class="snippet">
+        <div class="snip-label excel">Days outstanding</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">TODAY</span>()-A2</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">DATEDIF — months between two dates</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">DATEDIF</span>(A2, <span class="fn">TODAY</span>(), <span class="str">"M"</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">Flag weekends</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">WEEKDAY</span>(A2,2)>=6   <span class="cmt">' Mon=1, Sat=6, Sun=7</span></pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">Aging bucket — 30/60/90/120+</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">IFS</span>(
+  <span class="fn">TODAY</span>()-A2<=<span class="num">30</span>,  <span class="str">"0-30"</span>,
+  <span class="fn">TODAY</span>()-A2<=<span class="num">60</span>,  <span class="str">"31-60"</span>,
+  <span class="fn">TODAY</span>()-A2<=<span class="num">90</span>,  <span class="str">"61-90"</span>,
+  <span class="fn">TODAY</span>()-A2<=<span class="num">120</span>, <span class="str">"91-120"</span>,
+  <span class="kw">TRUE</span>, <span class="str">"120+"</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">Multi-condition flag (AND logic)</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">IF</span>(<span class="fn">AND</span>(B2><span class="num">5000</span>,C2=<span class="str">"APPROVED"</span>,D2<><span class="str">"IT"</span>),
+  <span class="str">"FLAG"</span>,<span class="str">"OK"</span>)</pre>
+      </div>
+
+      <div class="snippet">
+        <div class="snip-label excel">SUMIFS — conditional sum</div>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre>=<span class="fn">SUMIFS</span>(C:C,A:A,<span class="str">"ACME"</span>,D:D,<span class="str">"PAID"</span>)</pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div id="comparison" class="sec-head">
+    <span class="sec-icon">⚖️</span>
+    <span class="sec-label">Tool Comparison &amp; Best Practices</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">Section 14</span>
+  </div>
+
+  <table class="comparison-table">
+    <thead>
+      <tr>
+        <th>Task</th>
+        <th><span class="pill pill-acl">ACL</span></th>
+        <th><span class="pill pill-xl">Excel</span></th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Datasets &gt; 1M rows</td><td class="yes">✅ Yes</td><td class="no">❌ No</td><td>Excel hard limit is ~1M rows</td></tr>
+      <tr><td>Audit trail / logging</td><td class="yes">✅ Built-in</td><td class="no">❌ Manual</td><td>ACL logs every command executed</td></tr>
+      <tr><td>Benford's Law test</td><td class="yes">✅ Native</td><td class="maybe">⚠️ Manual</td><td>ACL runs Benford in one command</td></tr>
+      <tr><td>Gap / sequence check</td><td class="yes">✅ Native</td><td class="maybe">⚠️ Formula</td><td>ACL GAPS/SEQUENCE commands are direct</td></tr>
+      <tr><td>Join large tables</td><td class="yes">✅ Yes</td><td class="no">❌ Slow</td><td>ACL JOIN handles millions of records</td></tr>
+      <tr><td>Quick pivot / visual</td><td class="no">❌ Limited</td><td class="yes">✅ Pivot Table</td><td>Excel pivot tables are faster to build</td></tr>
+      <tr><td>Formatted reporting</td><td class="maybe">⚠️ Export</td><td class="yes">✅ Yes</td><td>Export ACL results to Excel for presentation</td></tr>
+      <tr><td>Monetary Unit Sampling</td><td class="yes">✅ Native</td><td class="no">❌ No</td><td>ACL MU sampling is GAAS-compliant</td></tr>
+      <tr><td>Repeatable/automated</td><td class="yes">✅ Scripts</td><td class="maybe">⚠️ Macros</td><td>ACL scripts are version-controlled; VBA is fragile</td></tr>
+      <tr><td>Ad-hoc formula testing</td><td class="no">❌ Verbose</td><td class="yes">✅ Fast</td><td>Excel wins for quick one-off calculations</td></tr>
+    </tbody>
+  </table>
+
+  <div class="subsection" style="margin-top:32px">
+    <div class="sub-title note">Universal Best Practices</div>
+    <div class="callout tip">
+      <strong>1. Standardize before matching.</strong> Always apply UPPER() + ALLTRIM() + INCLUDE() before any join, duplicate, or comparison. Case and whitespace mismatches silently kill accuracy.<br><br>
+      <strong>2. Build consistent composite keys.</strong> For cross-table matching, derive a clean key field in both tables using the same normalization logic, then join on the key — not on raw source fields.<br><br>
+      <strong>3. Never modify source data.</strong> Always EXTRACT to a new table before cleaning or transforming. Preserve the original import in its raw state for defensibility.<br><br>
+      <strong>4. Document threshold decisions.</strong> Every filter threshold (e.g., &gt;5000, 90 days) must be documented with the audit rationale. Reviewers and regulators will ask.<br><br>
+      <strong>5. Validate results by sampling.</strong> After any EXTRACT or JOIN, run COUNT and TOTAL against the output and reconcile totals back to the source population. Never assume the output is correct.
+    </div>
+  </div>
+
+</div><!-- /container -->
+    <p><a href="/">&#8592; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-acl-analytics-excel-reference",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

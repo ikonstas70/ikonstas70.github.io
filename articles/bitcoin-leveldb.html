@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/bitcoin-leveldb">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Bitcoin Core Stores the Blockchain — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Systems</span>
+    <h1>How Bitcoin Core Stores the Blockchain</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>People imagine "the blockchain" as one giant database. Bitcoin Core actually uses a deliberate split: raw block data in flat files, and a fast key-value index in LevelDB. Understanding this design is a small masterclass in storage engineering — matching the storage model to the access pattern, and it explains why a full node can validate the entire chain on ordinary hardware.</p>
+
+    <h2>Two storage models, two jobs</h2>
+    <h3>Flat files — the archive</h3>
+    <p>The full blocks live in the <code>blocks/</code> directory as sequential flat files:</p>
+    <ul>
+      <li><code>blk*.dat</code> — the raw, complete block data, written in the order received.</li>
+      <li><code>rev*.dat</code> — "undo" data, used to roll back blocks cleanly during a chain reorganization.</li>
+    </ul>
+    <p>Why flat files? Block data is written once and read sequentially; it's append-heavy, huge, and rarely random-accessed. A sequential file is the perfect, cheapest fit — no database overhead for data that behaves like a log.</p>
+    <h3>LevelDB — the index and the UTXO set</h3>
+    <p>The <code>chainstate/</code> directory holds a LevelDB store containing the <strong>UTXO set</strong> (all unspent transaction outputs) and block index metadata. This is the hot data: every new transaction must check whether its inputs exist and are unspent, which demands fast random lookups and updates — exactly what a key-value store excels at and a flat file cannot provide.</p>
+
+    <h2>Why LevelDB, specifically</h2>
+    <p>LevelDB is a high-performance embedded key-value store, open-sourced in 2011. Its defining feature is the <strong>Log-Structured Merge-tree (LSM-tree)</strong>: writes are batched into memory and flushed to sorted files, then merged in the background. This optimizes for fast sequential writes and fast cached reads with low memory use — a good match for Bitcoin's workload of steadily ingesting blocks and constantly querying the UTXO set. It uses Snappy compression by default, supports atomic batch updates (but not full transactions), and is single-writer, multi-reader.</p>
+
+    <h2>A timeline that teaches a lesson</h2>
+    <p>Bitcoin (2009) predates LevelDB (2011). Early Bitcoin used <strong>Berkeley DB</strong> for its indexes — and that choice caused one of the network's most instructive incidents: the <strong>March 2013 chain fork</strong>, where a Berkeley DB lock-limit discrepancy between client versions split the network temporarily. Bitcoin Core migrated blockchain index storage to LevelDB in version 0.8.0 (2013), gaining both performance and a more predictable, self-contained engine. Wallets kept using Berkeley DB longer; modern Bitcoin Core wallets use <strong>SQLite</strong>. Three different storage engines, each chosen for a different access pattern — the whole system is a lesson in fitting the tool to the job.</p>
+
+    <h2>The UTXO set: why this design matters</h2>
+    <p>The genius of separating UTXO state from block archive is validation efficiency. To check a new transaction, a node doesn't scan the entire multi-hundred-gigabyte chain — it queries the comparatively small UTXO set in LevelDB: do these inputs exist, are they unspent, do the amounts and scripts satisfy the rules? Spend an output and it's deleted from the set; create outputs and they're added. The UTXO set is the <em>current state</em>, kept small and fast, while the flat files remain the immutable historical record you only replay when verifying from scratch or reorganizing.</p>
+
+    <h2>LevelDB's reach beyond Bitcoin</h2>
+    <p>The same engine (and its descendants) shows up widely: <strong>RocksDB</strong> (Meta's server-optimized fork) powers countless databases; Ethereum's Geth client and Chrome's IndexedDB have used LevelDB-family stores. It's a quiet workhorse of modern systems — worth knowing not because you'll write one, but because recognizing "this is an LSM-tree key-value store" tells you instantly how a system will behave under write-heavy load.</p>
+
+    <blockquote>Bitcoin Core doesn't use one database — it uses the right storage for each access pattern: flat files for the append-only archive, LevelDB's LSM-tree for the hot UTXO set, SQLite for wallets. That separation is why a full node validates the whole chain on a laptop.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=bitcoin-leveldb",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

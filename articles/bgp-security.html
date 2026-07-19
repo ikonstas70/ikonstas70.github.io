@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/bgp-security">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BGP and Autonomous Systems: Routing You Can Trust — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Networking</span>
+    <h1>BGP and Autonomous Systems: Routing You Can Trust</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>The Border Gateway Protocol holds the internet together by having tens of thousands of independent networks tell each other, on the honor system, which addresses they can reach. That honor system is the problem: BGP was designed for a smaller, more trusting internet, and for decades a single mis-origination could black-hole a country's traffic. The good news is that after years of slow-motion effort, the tooling to make routing verifiable is finally deployed at scale. Here's the current state of the art.</p>
+
+    <h2>The model in one paragraph</h2>
+    <p>An <strong>Autonomous System</strong> (AS) is a network under one administrative domain, identified by an AS number (ASN). BGP speakers exchange <em>prefixes</em> (blocks of IP space) annotated with path attributes — most importantly the <code>AS_PATH</code>, the list of ASes a route traversed. Routers pick a best path per prefix using a deterministic decision process (LOCAL_PREF, then AS_PATH length, and onward). <strong>eBGP</strong> runs between ASes; <strong>iBGP</strong> distributes those routes inside one.</p>
+
+    <h2>The three ways routing goes wrong</h2>
+    <ul>
+      <li><strong>Prefix hijack.</strong> An AS originates a prefix it doesn't own. Traffic to that space is drawn toward the impostor — for outage, interception, or spam.</li>
+      <li><strong>Path manipulation.</strong> A more subtle hijack that forges a plausible <code>AS_PATH</code> so the route looks legitimately sourced.</li>
+      <li><strong>Route leak.</strong> A network re-announces routes in a direction that violates business relationships (e.g., leaking a provider's routes to another provider), often accidentally, often catastrophically.</li>
+    </ul>
+
+    <h2>The defense stack, as it actually stands in 2026</h2>
+    <h3>RPKI + ROV — the deployed baseline</h3>
+    <p>Resource Public Key Infrastructure lets an address holder publish a signed <strong>Route Origin Authorization</strong> (ROA): "AS 64500 is authorized to originate 203.0.113.0/24, up to /24." Routers then perform <strong>Route Origin Validation</strong> (ROV), marking each received route Valid, Invalid, or NotFound and dropping Invalids. This is now majority-deployed across the default-free zone and stops the most common accidental and many malicious origin hijacks. Publishing ROAs for your space and dropping Invalids on your borders is table stakes.</p>
+    <h3>ASPA — closing the path gap</h3>
+    <p>ROV validates the <em>origin</em> but not the <em>path</em>. <strong>Autonomous System Provider Authorization</strong> (ASPA) is the RPKI object that fixes this: providers are declared, so routers can detect paths that violate valley-free routing and catch most route leaks and many forged-path hijacks. ASPA is the active frontier of deployment — worth designing for now.</p>
+    <h3>BGPsec — cryptographic paths, rarely deployed</h3>
+    <p>BGPsec signs the entire <code>AS_PATH</code> hop by hop, making forgery cryptographically detectable. It's the strongest guarantee and the least deployed, held back by hardware cost and the need for near-universal adoption to matter. Know it exists; don't wait for it.</p>
+
+    <h2>Config that validates, not just routes</h2>
+    <p>ROV on a route-server or edge router, dropping Invalids and preferring Valid (shown here in the widely used FRRouting/Cisco-style syntax):</p>
+    <pre><code>! Enable RPKI-to-router (RTR) sessions to your validators
+router bgp 64500
+ rpki
+  rpki cache 192.0.2.10 port 3323 preference 1
+  rpki cache 192.0.2.11 port 3323 preference 2
+ !
+ address-family ipv4 unicast
+  neighbor 198.51.100.1 route-map ROV-IN in
+ exit-address-family
+
+! Drop Invalids outright; give Valid routes a local-pref nudge
+route-map ROV-IN permit 10
+ match rpki invalid
+ set community no-advertise      ! belt: don't propagate
+ ! ...or simply: (no permit) to deny — cleanest is an explicit drop
+route-map ROV-IN deny 15
+ match rpki invalid
+route-map ROV-IN permit 20
+ match rpki valid
+ set local-preference 200
+route-map ROV-IN permit 30       ! NotFound: accept, normal pref
+</code></pre>
+    <p>Layer the classic hygiene underneath it: strict prefix filters and max-prefix limits on every eBGP session, bogon and RFC 1918 filtering, and TCP-AO (the modern replacement for the old TCP MD5) to authenticate the BGP session itself.</p>
+
+    <h2>Verify from the outside</h2>
+    <p>Validation is only as good as your monitoring. Query RPKI state and origins programmatically, and alert on your prefixes appearing with an unexpected origin:</p>
+    <pre><code>import httpx   # RIPEstat + Cloudflare/RIPE RPKI validator APIs
+
+def check_origin(prefix: str, expected_asn: int) -> None:
+    r = httpx.get("https://stat.ripe.net/data/routing-status/data.json",
+                  params={"resource": prefix}, timeout=10).json()
+    origins = {o["origin"] for o in r["data"]["origins"]}
+    if origins != {str(expected_asn)}:
+        alert(f"Unexpected origin for {prefix}: saw {origins}, "
+              f"expected AS{expected_asn}")
+
+check_origin("203.0.113.0/24", 64500)</code></pre>
+    <p>Pair this with a BGP-monitoring service (BGPalerter, or a commercial route-monitoring feed) so a hijack pages you in minutes, not after customers notice.</p>
+
+    <blockquote>BGP will always run partly on trust. Modern routing security is about shrinking the trust: sign your origins with ROAs, drop Invalids with ROV, adopt ASPA against leaks, and monitor as if none of it worked.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=bgp-security",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

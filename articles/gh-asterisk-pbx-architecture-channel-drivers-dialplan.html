@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-asterisk-pbx-architecture-channel-drivers-dialplan">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asterisk PBX Architecture: Channel Drivers, Dialplan Engine, and AGI Integration — Konstas Engineering Notes</title>
+<meta name="description" content="← All ArticlesCore Asterisk components — chan_pjsip, extensions.conf dialplan logic, AGI scripting, AMI/ARI interfaces, CDR to MySQL, and STIR/SHAKEN configuration.What I">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Telecom</span>
+    <h1>Asterisk PBX Architecture: Channel Drivers, Dialplan Engine, and AGI Integration</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<a href="../index.html">← All Articles</a><p>Core Asterisk components — chan_pjsip, extensions.conf dialplan logic, AGI scripting, AMI/ARI interfaces, CDR to MySQL, and STIR/SHAKEN configuration.</p><h2>What Is Asterisk</h2><p>The open source telephony engine that powers millions of phone systems and VoIP carriers worldwide.</p><p>Asterisk is an open source PBX (Private Branch Exchange) and telephony toolkit that runs on Linux. It turns a standard server into a communications engine capable of handling VoIP calls, IVR menus, voicemail, call queuing, conferencing, and call recording. A single Asterisk node on an 8-core / 16GB server handles approximately <strong>300–500 concurrent calls</strong> using G.711 passthrough.</p><pre>┌─────────────────────────────────────────────────────┐
+│                    ASTERISK                         │
+│                                                     │
+│  ┌──────────────┐    ┌────────────────────────┐   │
+│  │  Channel     │    │      Dialplan Engine      │   │
+│  │  Drivers     │───►│  extensions.conf / AEL  │   │
+│  │  (PJSIP/DAHDI)│    │  Lua / AGI scripts       │   │
+│  └──────────────┘    └────────────▬───────────┘   │
+│                                   │                 │
+│  ┌──────────────┐    ┌──────────▼───────────┐   │
+│  │  Codec       │    │      Applications         │   │
+│  │  Modules     │    │  Dial, Queue, Voicemail  │   │
+│  │  G.711/G.729 │    │  Playback, Record, AGI   │   │
+│  └──────────────┘    └──────────▬───────────┘   │
+│                                   │                 │
+│  ┌──────────────┐    ┌──────────▼───────────┐   │
+│  │  CDR/CEL     │    │      AMI / ARI            │   │
+│  │  MySQL/CSV   │    │  Management Interface     │   │
+│  └──────────────┘    └────────────────────────┘   │
+└─────────────────────────────────────────────────────┘</pre><h2>Channel Drivers</h2><p>Channel drivers are loadable modules that connect Asterisk to the outside world via specific protocols.</p><table><thead><tr><th>Driver</th><th>Protocol</th><th>Use Case</th></tr></thead><tbody><tr><td>chan_pjsip</td><td>SIP/TLS</td><td>All VoIP trunks and endpoints — modern, recommended for all new deployments</td></tr><tr><td>chan_sip</td><td>SIP</td><td>Legacy — avoid for new deployments; removed in Asterisk 21+</td></tr><tr><td>chan_dahdi</td><td>TDM/SS7</td><td>Physical telephone lines, T1/E1 circuits, PSTN gateway cards</td></tr></tbody></table><p><strong>chan_sip is deprecated.</strong> Asterisk 21 removes it entirely. All new deployments must use chan_pjsip. Migrating is a configuration rewrite — the module architecture is fundamentally different.</p><h2>The Dialplan (extensions.conf)</h2><p>The dialplan is the routing brain of Asterisk — it defines exactly what happens when any call arrives.</p><p>Every call flows through the dialplan sequentially. The dialplan is organized into <strong>contexts</strong> (logical groupings), <strong>extensions</strong> (matching patterns), and <strong>priorities</strong> (numbered steps within an extension).</p><pre>[from-trunk]
+; Inbound call from SIP carrier
+exten =&gt; _NXXNXXXXXX,1,NoOp(Inbound: ${EXTEN})
+exten =&gt; _NXXNXXXXXX,n,AGI(a2billing.php,1)     ; Check balance / authorise
+exten =&gt; _NXXNXXXXXX,n,Dial(PJSIP/${EXTEN}@internal,30)
+exten =&gt; _NXXNXXXXXX,n,VoiceMail(${EXTEN}@default)
+exten =&gt; _NXXNXXXXXX,n,Hangup()
+
+[from-internal]
+; Outbound call from customer extension
+exten =&gt; _1NXXNXXXXXX,1,AGI(a2billing.php,1)    ; Deduct credit
+exten =&gt; _1NXXNXXXXXX,n,Dial(PJSIP/${EXTEN}@carrier-trunk,60)
+exten =&gt; _1NXXNXXXXXX,n,Hangup()</pre><p>The pattern <code>_NXXNXXXXXX</code> matches any 10-digit North American number (N = 2–9, X = 0–9). The <code>n</code> priority means "next" — Asterisk auto-increments the number, making reordering steps easy.</p><h2>AGI — Asterisk Gateway Interface</h2><p>AGI allows external scripts to control call flow in real time — the integration point for billing systems.</p><p>When Asterisk reaches an <code>AGI()</code> application in the dialplan, it spawns an external script (PHP, Python, Perl) and passes call control to it over stdin/stdout. The script can read call variables, play audio, gather DTMF input, and control what happens next.</p><p>A2Billing uses AGI to check customer balances before connecting a call, calculate the maximum allowed duration based on the destination rate, and deduct credit in real time as the call progresses. When the credit runs out, Asterisk plays a warning and hangs up.</p><h2>AMI and ARI</h2><h3>AMI — Asterisk Manager Interface</h3><p>AMI is a TCP socket interface (port 5038) that allows external applications to monitor and control Asterisk in real time. Commands can originate calls, transfer calls, hang up channels, and read call state. Events stream continuously from Asterisk — new calls, hangups, DTMF, registration changes.</p><h3>ARI — Asterisk REST Interface</h3><p>ARI is a modern REST + WebSocket API for building call control applications in any language. Where AGI handles a single call in the dialplan, ARI gives an application full control over channels, bridges, endpoints, and media from outside Asterisk.</p><h2>CDR — Call Detail Records</h2><p>Every call generates a CDR written to MySQL — the billing system's source of truth.</p><pre>; cdr_mysql.conf
+[global]
+hostname=db-server
+dbname=asteriskcdrdb
+table=cdr
+user=asterisk
+password=&lt;strong-password&gt;
+port=3306</pre><p>Key CDR fields: <code>calldate</code>, <code>clid</code> (caller ID), <code>src</code>, <code>dst</code>, <code>duration</code>, <code>billsec</code> (billable seconds), <code>disposition</code> (ANSWERED/NO ANSWER/BUSY), <code>uniqueid</code>.</p><h2>STIR/SHAKEN Configuration</h2><p>Asterisk 16.15+ includes native STIR/SHAKEN support via the res_stir_shaken module.</p><pre>; /etc/asterisk/stir_shaken.conf
+[attestation]
+global_disable = no
+
+[certificate]
+type = certificate
+path = /etc/asterisk/stir_shaken/cert.pem
+private_key = /etc/asterisk/stir_shaken/key.pem
+attestation = A         ; A = full attestation (we know the customer)
+origid = your-carrier-id
+
+[verification]
+type = verification
+failure_action = continue   ; Continue call even if verification fails</pre><p>STIR/SHAKEN certificates must be obtained from an FCC-approved STI-CA (TransNexus, Sansay, etc.) and require an active FCC 499 filing as a prerequisite.</p><h2>Security Configuration</h2><pre>; Only accept SIP registrations from the Kamailio proxy
+[acl]
+type=acl
+deny=0.0.0.0/0
+permit=&lt;kamailio-ip&gt;/32
+
+; fail2ban jail for Asterisk security log
+[asterisk]
+enabled = true
+port = 5060,5061
+filter = asterisk
+logpath = /var/log/asterisk/security
+maxretry = 5
+bantime = 3600</pre><p>In a carrier architecture, Asterisk should <strong>not</strong> be directly reachable from the internet. Kamailio acts as the SBC — all SIP enters through Kamailio, and Asterisk is locked to only accept from the Kamailio IP.</p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-asterisk-pbx-architecture-channel-drivers-dialplan",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

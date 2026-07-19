@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/data-science/deep-learning">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deep Learning with PyTorch — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/" class="active">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Machine Learning</span>
+    <h1>Deep Learning with PyTorch</h1>
+    <p class="meta">Data Science Series &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Deep learning earns its keep where features can't be hand-built: images, audio, text, and sequences whose structure lives in raw signal. On a spreadsheet, Part 6's boosted trees usually win. Know that boundary and you'll never reach for the flamethrower to light a candle. This part builds the mental model — tensors, autograd, the training loop — that every deep system, up to and including LLMs, is made of.</p>
+
+    <h2>Three ideas, honestly stated</h2>
+    <h3>Tensors</h3>
+    <p>N-dimensional arrays that live on CPU or GPU and remember how they were computed. If you know NumPy, you know 80% of the API; Apple Silicon runs them on the GPU via the <code>mps</code> device, CUDA elsewhere.</p>
+    <h3>Autograd</h3>
+    <p>A network is just a function with millions of knobs. Autograd records every operation in the forward pass and then computes, automatically, how much each knob contributed to the error. That gradient is the training signal; nothing about it is magic — it's the chain rule with excellent bookkeeping.</p>
+    <h3>The training loop</h3>
+    <pre><code>import torch
+from torch import nn
+
+model = nn.Sequential(
+    nn.Linear(64, 128), nn.ReLU(),
+    nn.Linear(128, 2))
+opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
+loss_fn = nn.CrossEntropyLoss()
+
+for xb, yb in train_loader:          # batches
+    opt.zero_grad()
+    loss = loss_fn(model(xb), yb)    # forward
+    loss.backward()                  # gradients via autograd
+    opt.step()                       # nudge the knobs</code></pre>
+    <p>Every architecture you will ever meet — CNN, transformer, diffusion model — is this loop with a different <code>model</code> and enough data. Own the loop, and no paper will scare you again.</p>
+
+    <h2>The debugging catechism</h2>
+    <p>Deep learning fails silently; discipline compensates:</p>
+    <ul>
+      <li><strong>Overfit one batch first.</strong> A healthy model can memorize 32 examples to near-zero loss in seconds. If it can't, the bug is in your pipeline, not your hyperparameters.</li>
+      <li><strong>Watch train and validation loss together.</strong> Diverging curves mean overfitting (get more data, augment, or regularize); neither moving means the learning rate or the data plumbing.</li>
+      <li><strong>Loss ≈ ln(num_classes) at start</strong> for classification. Wildly off? The labels or the last layer are wrong.</li>
+      <li><strong>Fix seeds, log everything.</strong> Runs you can't reproduce are anecdotes.</li>
+    </ul>
+
+    <h2>Rule one of practice: don't train from scratch</h2>
+    <p>Somebody with more GPUs already learned generic vision and language for you. Fine-tuning a pretrained model — freeze the backbone, replace the head, train briefly at low learning rate — beats scratch training on almost any realistic dataset size. Hubs like Hugging Face and torchvision make this a dozen lines. Training from zero is a research activity and a budget line, not a default.</p>
+
+    <h2>When to say no</h2>
+    <p>Deep learning costs you interpretability, training stability, and compute. Decline it when the data is tabular and small, when the baseline from Part 6 is within noise of the fancy model, or when the deployment target is a Raspberry Pi and the model is a memory hog. "We used a neural network" is an engineering decision, not a press release.</p>
+
+    <h2>Checkpoint</h2>
+    <p>Fine-tune a small pretrained image model on a dataset you assembled yourself (two classes, a few hundred photos). Hit the wall, diagnose with the catechism above, and write down the train/val curves and what they told you. The scars are the curriculum.</p>
+
+    <p><a href="/data-science/llms">Next: Working with Large Language Models →</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=data-science-deep-learning",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

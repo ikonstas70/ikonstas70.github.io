@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-active-directory-management">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Active Directory Management: Domain Controllers, FSMO Roles, Replication, DNS &amp; Best Practices — Konstas Engineering Notes</title>
+<meta name="description" content="Active Directory is the identity and access backbone of nearly every Windows-based enterprise network. Understanding its architecture — how Domain Controllers work, how t">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Systems</span>
+    <h1>Active Directory Management: Domain Controllers, FSMO Roles, Replication, DNS &amp; Best Practices</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+</hr><p>Active Directory is the identity and access backbone of nearly every Windows-based enterprise network. Understanding its architecture — how Domain Controllers work, how the directory replicates, what the FSMO roles do, and how DNS underpins the entire system — is a prerequisite for designing it correctly, troubleshooting it effectively, and securing it against the identity-based attacks that target it relentlessly.</p><hr></hr><h2>Domain Controller Types</h2><table><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><strong>Read/Write Domain Controller</strong></td><td>Accepts changes to the Active Directory database and SYSVOL from domain members. Replicates those changes outward to other Domain Controllers. The standard DC type for production sites.</td></tr><tr><td><strong>Read-Only Domain Controller (RODC)</strong></td><td>Holds a read-only copy of the AD database. Changes cannot be written to an RODC directly — they are pushed to it by Read/Write DCs. Designed for branch offices and locations where physical security cannot be guaranteed: a compromised RODC cannot be used to poison the directory.</td></tr></tbody></table><hr></hr><h2>FSMO Roles</h2><table><thead><tr><th>Role</th><th>Scope</th></tr></thead><tbody><tr><td>PDC Emulator</td><td>Domain-wide</td></tr><tr><td>RID Pool Master</td><td>Domain-wide</td></tr><tr><td>Infrastructure Master</td><td>Domain-wide</td></tr><tr><td>Schema Master</td><td>Forest-wide</td></tr><tr><td>Domain Naming Master</td><td>Forest-wide</td></tr></tbody></table><p>Query FSMO role holders with:</p><pre><code>C:\&gt; netdom query fsmo
+
+Schema master               &lt;dc-hostname&gt;.&lt;domain&gt;
+Domain naming master        &lt;dc-hostname&gt;.&lt;domain&gt;
+PDC                         &lt;dc-hostname&gt;.&lt;domain&gt;
+RID pool manager            &lt;dc-hostname&gt;.&lt;domain&gt;
+Infrastructure master       &lt;dc-hostname&gt;.&lt;domain&gt;
+
+The command completed successfully.
+</code></pre><hr></hr><h2>Replication</h2><table><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><strong>Intrasite Replication</strong></td><td>Within an Active Directory site, replication uses pull-based notification. When a DC receives a change, it notifies its replication partners. After a brief delay, the partners pull the changes. To minimise network chatter, intrasite replication uses a bidirectional ring topology by default — the KCC connects each DC to at most two replication partners per naming context, so changes propagate around the ring rather than flooding every DC directly. The Knowledge Consistency Checker (KCC) builds and maintains this topology automatically.</td></tr><tr><td><strong>Intersite Replication</strong></td><td>Between Active Directory sites, replication is schedule-based rather than notification-based. After the default schedule interval (180 minutes / 3 hours by default), a bridgehead DC at one site requests changes from the bridgehead DC at the other site. The receiving bridgehead then propagates changes to the other DCs in its site using intrasite replication. Intersite replication compresses data to reduce WAN bandwidth consumption.</td></tr></tbody></table><hr></hr><h2>DNS Record Types</h2><p>Active Directory depends entirely on DNS for service location. Domain-joined clients locate Domain Controllers, Global Catalogue servers, Kerberos KDCs, and LDAP servers through SRV records registered automatically at DC promotion.</p><table><thead><tr><th>Record</th><th>Description</th></tr></thead><tbody><tr><td>A</td><td>Maps a hostname to an IPv4 address. The primary record type in Forward Lookup Zones.</td></tr><tr><td>AAAA</td><td>Maps a hostname to an IPv6 address. Used alongside A records in dual-stack environments.</td></tr><tr><td>SRV</td><td>Service location record. AD-integrated DNS zones use SRV records extensively so that domain-joined clients can locate Domain Controllers, Global Catalogue servers, Kerberos KDCs, and LDAP servers automatically.</td></tr><tr><td>PTR</td><td>Pointer record in a Reverse Lookup Zone. Maps an IP address back to a hostname. Used in logging, monitoring, and some authentication validation flows.</td></tr><tr><td>CNAME</td><td>Canonical name alias record. Points one hostname to another. Commonly used for load-balanced services and friendly names.</td></tr></tbody></table><hr></hr><h2>Deployment Best Practices</h2><table><thead><tr><th>Practice</th><th>Detail</th></tr></thead><tbody><tr><td>Deploy at least two Domain Controllers per domain</td><td>A single DC is a single point of failure for authentication, Group Policy, and all directory-dependent services. Two DCs provide redundancy and eliminate a complete service outage if one DC is lost.</td></tr><tr><td>Enforce role separation</td><td>Domain Controllers should not run additional workload roles (Exchange, SQL Server, IIS) unless the environment is specifically Windows Small Business Server. Shared roles increase the attack surface, complicate patching, and introduce resource contention that affects authentication performance.</td></tr><tr><td>Use hardware covered by vendor support lifecycle</td><td>DC failures outside of vendor support leave you without firmware updates and without a support path. Always check that hardware will remain supported for the intended operational period before promotion.</td></tr><tr><td>Run sysprep on virtual machine templates</td><td>Virtual DCs built from templates that were not properly sysprepped will have duplicate machine SIDs. Run <code>sysprep.exe</code> before promoting any template-derived Windows Server. Run Memory Diagnostics from the installation media before first boot to detect hardware-level issues early.</td></tr><tr><td>Document DSRM passwords and store them securely</td><td>Directory Services Restore Mode (DSRM) is the only way to perform authoritative restores and certain AD database repairs. The DSRM password is set per-DC at promotion. If it is lost, that DC cannot be recovered without a rebuild. Store it in a secured password management system.</td></tr><tr><td>Use answer files for DC promotion</td><td>Scripted, reviewed, and signed-off promotions eliminate the risk of configuration drift between Domain Controllers. After use, include the answer file in documentation — the server strips passwords from it automatically after promotion.</td></tr><tr><td>Review dcpromo.log, dcpromoui.log, and Event Viewer post-promotion</td><td>Promotion can complete with warnings that indicate problems that will surface later. Review all three log sources immediately after promotion and resolve any issues before the DC enters production rotation. Note: <code>dcpromo.exe</code> is no longer an interactive command since Windows Server 2012 — promotion is performed via Server Manager or <code>Install-ADDSDomainController</code> in PowerShell, but the log files remain at the same paths.</td></tr><tr><td>Run Windows Update immediately after promotion</td><td>AD-specific updates are not offered to Windows Server until after the DC promotion role is applied. The post-promotion update run is therefore not optional — it may address critical AD service vulnerabilities.</td></tr><tr><td>Configure regular System State backups</td><td>System State backup is the correct mechanism for AD recovery. It captures the AD database, SYSVOL, registry, and boot files. Configure it to run periodically and test restores. Back up Group Policy Objects separately through the Group Policy Management Console — granular GPO recovery is not possible from a System State backup alone.</td></tr><tr><td>Run the AD Best Practices Analyser regularly</td><td>The built-in BPA identifies configuration issues against Microsoft's best practice baseline. Schedule regular BPA runs as part of the routine health-check process rather than waiting for a visible problem.</td></tr></tbody></table>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-active-directory-management",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

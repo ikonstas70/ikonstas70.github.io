@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="en"><head>
+<link rel="canonical" href="https://blog.konstas.us/articles/ccie-advanced-lab/labs/10-bgp-confederation/lab"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab 10 — BGP Confederation — Sub-AS Architecture | CCIE Advanced Lab</title>
+<style>:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--green:#3fb950;--cyan:#58a6ff;--purple:#bc8cff;--orange:#f0883e;--red:#f85149;--yellow:#d29922;--text:#e6edf3;--muted:#8b949e;}
+*{box-sizing:border-box;margin:0;padding:0;}body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;}
+a{color:var(--cyan);text-decoration:none;}a:hover{text-decoration:underline;}
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:24px;position:sticky;top:0;z-index:100;}
+.nav-brand{color:var(--cyan);font-weight:bold;font-size:14px;}.hero{padding:40px 32px 24px;border-bottom:1px solid var(--border);}
+.lab-num{display:inline-block;background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:2px 10px;border-radius:12px;margin-bottom:12px;}
+.hero h1{font-size:26px;color:#e6edf3;margin-bottom:8px;}.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.badge{padding:3px 12px;border-radius:12px;font-size:11px;font-weight:bold;}
+.badge-blue{background:#1f6feb33;color:#58a6ff;border:1px solid #1f6feb;}.badge-green{background:#3fb95033;color:#3fb950;border:1px solid #3fb950;}
+.badge-purple{background:#bc8cff33;color:#bc8cff;border:1px solid #bc8cff;}.badge-yellow{background:#d2992233;color:#d29922;border:1px solid #d29922;}
+.badge-red{background:#f8514933;color:#f85149;border:1px solid #f85149;}.badge-orange{background:#f0883e33;color:#f0883e;border:1px solid #f0883e;}
+.content{max-width:1100px;margin:0 auto;padding:32px;}.section{margin-bottom:40px;}
+.section h2{font-size:16px;color:var(--cyan);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;}
+p{color:var(--muted);margin-bottom:12px;font-size:14px;}
+.topology-container{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px;overflow-x:auto;}
+.router-block{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:20px;overflow:hidden;}
+.router-header{background:var(--bg3);padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);}
+.router-name{color:#e6edf3;font-weight:bold;font-size:14px;}.router-role{color:var(--muted);font-size:12px;}.router-ip{color:var(--green);font-size:12px;margin-left:auto;}
+pre{background:#010409;border:none;padding:20px;overflow-x:auto;font-size:12px;color:#c9d1d9;line-height:1.5;}
+.verify-block{background:var(--bg2);border-left:3px solid var(--green);padding:16px 20px;margin:12px 0;border-radius:0 6px 6px 0;}
+.verify-block .cmd{color:var(--green);font-weight:bold;font-size:13px;}.verify-block .expected{color:var(--muted);font-size:12px;margin-top:6px;}
+.concept-box{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;padding:16px 20px;margin:12px 0;}
+.concept-box h4{color:var(--purple);margin-bottom:8px;font-size:13px;}.concept-box p{font-size:13px;color:var(--muted);}
+.footer{border-top:1px solid var(--border);padding:24px 32px;text-align:center;color:var(--muted);font-size:12px;}</style>
+</head><body>
+<nav class="nav"><span class="nav-brand">CCIE ADVANCED LAB</span><a href="../../index.html">← Back to Lab Index</a></nav>
+<div class="hero"><span class="lab-num">LAB 10 / 20</span><h1>BGP Confederation — Sub-AS Architecture</h1><div class="badges"><span class="badge badge-blue">BGP Confederation</span><span class="badge badge-purple">Sub-AS</span><span class="badge badge-orange">EBGP within AS</span><span class="badge badge-yellow">AS-Path</span></div></div>
+<div class="content">
+<div class="section"><h2>Active Nodes</h2>
+<div class="topology-container"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"  style="width:100%;height:auto;display:block;" style="background:#0d1117;font-family:'Courier New',monospace;">
+  <rect x="0" y="0" width="800" height="500" fill="#0d1117"/>
+  <text x="400" y="28" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="bold">10 BGP CONFEDERATION</text>
+  <text x="400" y="46" text-anchor="middle" fill="#bc8cff" font-size="11">Confederation — Active: CORE-1,CORE-2,CORE-3,CORE-4</text>
+
+  <!-- Reference topology note -->
+  <rect x="40" y="70" width="720" height="370" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="400" y="130" text-anchor="middle" fill="#8b949e" font-size="12">See master topology for full 20-router diagram</text>
+  <text x="400" y="155" text-anchor="middle" fill="#bc8cff" font-size="14" font-weight="bold">Active Nodes: CORE-1,CORE-2,CORE-3,CORE-4</text>
+
+  <!-- Color coded zone boxes -->
+  <rect x="80" y="175" width="620" height="200" rx="6" fill="#0d1117" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="400" y="200" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="bold">Confederation</text>
+
+  <!-- Router nodes listed -->
+  <text x="400" y="240" text-anchor="middle" fill="#e6edf3" font-size="12">CORE-1,CORE-2,CORE-3,CORE-4</text>
+
+  <!-- Protocol info -->
+  <text x="400" y="290" text-anchor="middle" fill="#8b949e" font-size="10">Refer to lab.html for complete step-by-step configuration</text>
+  <text x="400" y="310" text-anchor="middle" fill="#8b949e" font-size="10">and verification commands for each active router</text>
+
+  <!-- Legend strip -->
+  <rect x="40" y="455" width="720" height="28" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="60" y="462" width="14" height="14" rx="2" fill="#bc8cff"/>
+  <text x="82" y="473" fill="#8b949e" font-size="10">Active Zone</text>
+  <rect x="200" y="462" width="14" height="14" rx="2" fill="#21262d"/>
+  <text x="222" y="473" fill="#8b949e" font-size="10">Inactive (dimmed)</text>
+  <text x="680" y="473" text-anchor="end" fill="#6e7681" font-size="9">Ioannis Alexander Konstas</text>
+</svg>
+</div>
+<p>Active routers: <strong style="color:#58a6ff">CORE-1, CORE-2, CORE-3, CORE-4, EDGE-1, EDGE-4, BORDER-1, BORDER-2</strong></p></div>
+<div class="section"><h2>Key Concepts</h2>
+<div class="concept-box"><h4>BGP Confederation Architecture</h4><p>Confederation divides the AS (65000) into multiple sub-ASs. Routers within a sub-AS use iBGP. Between sub-ASs, they use a special form of eBGP that behaves like iBGP for NEXT_HOP, LOCAL_PREF, and MED attributes — unlike regular eBGP. The confederation sub-AS numbers are stripped from the AS-path before advertising to external neighbors, so the confederation structure remains hidden to the outside world. In this lab: sub-AS 65010 = CORE-1/2, sub-AS 65020 = CORE-3/4, sub-AS 65030 = EDGE routers.</p></div>
+<div class="concept-box"><h4>Confederation AS-Path</h4><p>Within the confederation, AS-path carries both regular AS numbers and confederation sub-AS numbers in parentheses: e.g., "65001 (65030 65010)". The sub-AS components in parentheses are stripped when advertising outside the confederation, so external peers see only "65001 65000". BGP loop prevention still works within the confederation — a router rejects routes containing its own sub-AS in the confederation segment of the AS-path.</p></div>
+<div class="concept-box"><h4>Confederation vs Route Reflection</h4><p>Confederation is more complex to configure but provides more autonomous routing domains within a single AS. Each sub-AS can have its own routing policies. In practice, large ISPs often combine both: route reflectors within each sub-AS, and confederation between sub-ASs. For the CCIE exam, know how to configure, verify, and troubleshoot confederation AS-path manipulation and attribute behavior across sub-AS boundaries.</p></div></div>
+<div class="section"><h2>Confederation Configuration</h2>
+<div class="router-block"><div class="router-header"><span class="router-name">CORE-1</span><span class="router-role">Sub-AS 65010 — Confederation BGP</span></div>
+<pre>router bgp 65010
+ bgp confederation identifier 65000
+ bgp confederation peers 65020 65030
+ bgp router-id 10.255.1.1
+ !
+ neighbor 10.255.1.2 remote-as 65010
+ neighbor 10.255.1.2 update-source Loopback0
+ !
+ neighbor 10.255.1.3 remote-as 65020
+ neighbor 10.255.1.3 update-source Loopback0
+ neighbor 10.255.1.3 ebgp-multihop 2
+ !
+ address-family vpnv4
+  neighbor 10.255.1.2 activate
+  neighbor 10.255.1.2 send-community extended
+  neighbor 10.255.1.3 activate
+  neighbor 10.255.1.3 send-community extended</pre></div></div>
+<div class="section"><h2>Verification</h2>
+<div class="verify-block"><div class="cmd">show ip bgp summary</div><div class="expected">Expected: Confederation peers listed. State shows Established. AS-number in "AS" column shows sub-AS number for confederation peers.</div></div>
+<div class="verify-block"><div class="cmd">show ip bgp 10.255.6.1/32</div><div class="expected">Expected: AS-path shows confederation segments in parentheses: e.g., "(65030 65010)". This is normal — not an error.</div></div>
+<div class="verify-block"><div class="cmd">show ip bgp neighbors 10.255.1.3 advertised-routes</div><div class="expected">Expected: Routes advertised to sub-AS 65020 neighbor carry confederation AS-path segments. MED and LOCAL_PREF preserved.</div></div></div>
+</div>
+<footer class="footer">Ioannis Alexander Konstas — Cybersecurity &amp; Infrastructure Engineer · Miami, FL<br>Advanced CCIE RS Lab — Educational/Reference Use Only</footer>
+
+<div class="cfg-section">
+  <div class="cfg-section-title">Initial Configs — Load These First</div>
+  <div class="cfg-links"><a href="initial-configs/CORE-1-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-1-initial.cfg</a>
+<a href="initial-configs/CORE-2-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-2-initial.cfg</a>
+<a href="initial-configs/CORE-3-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-3-initial.cfg</a>
+<a href="initial-configs/CORE-4-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-4-initial.cfg</a></div>
+</div>
+</body></html>

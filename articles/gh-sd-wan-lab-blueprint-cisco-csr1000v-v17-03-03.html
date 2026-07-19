@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-sd-wan-lab-blueprint-cisco-csr1000v-v17-03-03">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SD-WAN Lab Blueprint — Cisco CSR1000v v17.03.03 — Konstas Engineering Notes</title>
+<meta name="description" content="Topology · Dual-Transport IP Plan · OSPF Underlay · Overlay Config · Failover TestingTopology DiagramvBond10.10.0.100 — OrchestratorvSmart10.10.0.101 — ControllervManage1">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Networking</span>
+    <h1>SD-WAN Lab Blueprint — Cisco CSR1000v v17.03.03</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<h2>Topology · Dual-Transport IP Plan · OSPF Underlay · Overlay Config · Failover Testing</h2><h2>Topology Diagram</h2>vBond10.10.0.100 — OrchestratorvSmart10.10.0.101 — ControllervManage10.10.0.102 — ManagerCSR-HubSite 100ISP-A: 10.10.0.1/24ISP-B: 10.20.0.1/24LAN: 192.168.1.0/24CSR-Branch1Site 101ISP-A: 10.10.0.11/24ISP-B: 10.20.0.11/24LAN: 192.168.2.0/24CSR-Branch2Site 102ISP-A: 10.10.0.21/24ISP-B: 10.20.0.21/24LAN: 192.168.3.0/24Transport 1 — ISP-A: 10.10.0.0/24Transport 2 — ISP-B: 10.20.0.0/24Each edge: 2 WAN interfaces for path failover<h2>IP Addressing</h2><h3>Transport Layer (VPN 0)</h3><table><tr><th>Device</th><th>ISP-A Gig0/0</th><th>ISP-B Gig0/2</th></tr><tr><td>CSR-Hub</td><td>10.10.0.1/24</td><td>10.20.0.1/24</td></tr><tr><td>CSR-Branch1</td><td>10.10.0.11/24</td><td>10.20.0.11/24</td></tr><tr><td>CSR-Branch2</td><td>10.10.0.21/24</td><td>10.20.0.21/24</td></tr></table><h3>LAN Layer (VPN 1)</h3><table><tr><th>Device</th><th>Interface</th><th>IP Address</th></tr><tr><td>CSR-Hub</td><td>Gig0/1</td><td>192.168.1.1/24</td></tr><tr><td>CSR-Branch1</td><td>Gig0/1</td><td>192.168.2.1/24</td></tr><tr><td>CSR-Branch2</td><td>Gig0/1</td><td>192.168.3.1/24</td></tr></table><h3>Controllers</h3><table><tr><th>Device</th><th>IP</th><th>Role</th></tr><tr><td>vBond</td><td>10.10.0.100</td><td>Orchestrator — device onboarding</td></tr><tr><td>vSmart</td><td>10.10.0.101</td><td>Controller — policy distribution</td></tr><tr><td>vManage</td><td>10.10.0.102</td><td>Manager — config and monitoring</td></tr></table><h2>Underlay Configuration (OSPF — VPN 0 Transport Only)</h2><blockquote>Underlay OSPF covers <strong>transport interfaces only</strong>. LAN subnets (VPN 1) are distributed across the SD-WAN overlay by vSmart — do not include them in underlay OSPF.</blockquote><h3>CSR-Hub</h3><pre>router ospf 1
+ router-id 1.1.1.1
+ network 10.10.0.0 0.0.0.255 area 0
+ network 10.20.0.0 0.0.0.255 area 0</pre><h3>CSR-Branch1</h3><pre>router ospf 1
+ router-id 2.2.2.2
+ network 10.10.0.0 0.0.0.255 area 0
+ network 10.20.0.0 0.0.0.255 area 0</pre><h3>CSR-Branch2</h3><pre>router ospf 1
+ router-id 3.3.3.3
+ network 10.10.0.0 0.0.0.255 area 0
+ network 10.20.0.0 0.0.0.255 area 0</pre><h2>Overlay SD-WAN Configuration Steps</h2><ol><li><strong>Onboard devices in vManage</strong> using device certificates (ZTP or manual)</li><li><strong>Configure TLOCs</strong> — assign a color per transport: Gig0/0 (ISP-A) → <code>public-internet</code>, Gig0/2 (ISP-B) → <code>biz-internet</code></li><li><strong>Assign VPNs:</strong> VPN 0 — Transport, VPN 1 — LAN/enterprise</li><li><strong>Apply Control policies via vSmart</strong> — route propagation, VPN membership</li><li><strong>Apply Data policies</strong> — SLA-based path selection, QoS DSCP marking</li><li><strong>Verify:</strong></li></ol><pre>show sdwan control connections
+show sdwan bfd sessions
+show sdwan ipsec statistics</pre><h2>vManage Device Template Fields</h2><table><tr><th>Field</th><th>CSR-Hub</th><th>CSR-Branch1</th><th>CSR-Branch2</th></tr><tr><td>System IP</td><td>1.1.1.1</td><td>2.2.2.2</td><td>3.3.3.3</td></tr><tr><td>Site ID</td><td>100</td><td>101</td><td>102</td></tr><tr><td>WAN Interface 1</td><td>Gig0/0</td><td>Gig0/0</td><td>Gig0/0</td></tr><tr><td>TLOC Color 1</td><td>public-internet</td><td>public-internet</td><td>public-internet</td></tr><tr><td>WAN Interface 2</td><td>Gig0/2</td><td>Gig0/2</td><td>Gig0/2</td></tr><tr><td>TLOC Color 2</td><td>biz-internet</td><td>biz-internet</td><td>biz-internet</td></tr><tr><td>VPN IDs</td><td>0, 1</td><td>0, 1</td><td>0, 1</td></tr><tr><td>QoS Policy</td><td>DSCP EF for VoIP</td><td>same</td><td>same</td></tr></table><h2>Failover Testing</h2><pre># Ping across the overlay
+ping 192.168.2.1 source 192.168.1.1
+ping 192.168.3.1 source 192.168.1.1
+
+# Verify TLOCs and BFD
+show sdwan tloc
+show sdwan bfd sessions
+show sdwan control connections
+
+# Simulate WAN failover — shut ISP-A on CSR-Branch1
+interface GigabitEthernet0/0
+ shutdown
+
+# Verify SD-WAN switches to ISP-B automatically
+show sdwan bfd sessions
+show sdwan tunnel statistics
+
+# Restore and confirm failback
+interface GigabitEthernet0/0
+ no shutdown</pre><h2>Prerequisites</h2><ul><li>Licensed CSR1000v v17.03.03 images (Cisco DevNet Sandbox or direct download)</li><li>vManage, vSmart, vBond OVA/QCOW2 images (Cisco SD-WAN controller bundle)</li><li>GNS3 2.x, EVE-NG Pro, or CML 2.x</li><li>Minimum 32 GB RAM for full controller + 3-edge topology</li></ul>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-sd-wan-lab-blueprint-cisco-csr1000v-v17-03-03",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

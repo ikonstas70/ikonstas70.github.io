@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-facebook-privacy-defense">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meta / Facebook Surveillance Architecture &amp; Technical Privacy Defense — Konstas Engineering Notes</title>
+<meta name="description" content="A technical analysis of Meta's cross-site tracking infrastructure, their 2024–2026 policy changes, and a working layered defense stack validated in production.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Privacy</span>
+    <h1>Meta / Facebook Surveillance Architecture &amp; Technical Privacy Defense</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p class="subtitle">
+    A technical analysis of Meta's cross-site tracking infrastructure, their 2024–2026 policy changes,
+    and a working layered defense stack validated in production.
+  </p>
+  <div class="meta-row">
+    <span>Ioannis Alexander Konstas</span>
+    <span class="dot">·</span>
+    <span>Cybersecurity &amp; Infrastructure Engineer</span>
+    <span class="dot">·</span>
+    <span>@ikonstas70</span>
+  </div>
+</header>
+
+<div class="wrapper">
+
+  <!-- TOC -->
+  
+
+  <!-- 1 -->
+  <section id="s1">
+    <h2><span class="num">01</span> Executive Summary</h2>
+    <p>
+      Meta Platforms, Inc. operates one of the most extensive behavioral data collection systems in existence,
+      spanning its core products — Facebook, Instagram, Threads, WhatsApp — and extending across third-party
+      websites and applications through embedded tracking infrastructure. Recent policy updates have expanded
+      Meta's claimed rights to use collected data for artificial intelligence training, broadened cross-platform
+      data pooling, and reduced user consent requirements under the "legitimate interest" legal basis.
+    </p>
+    <p>
+      This document maps Meta's tracking architecture end-to-end, identifies the technical function of each
+      tracking domain, describes a working four-layer defense stack tested in production, and identifies
+      residual exposure vectors with mitigations. All claims are sourced from Meta's published policies,
+      regulatory enforcement records, and peer-reviewed research.
+    </p>
+  </section>
+
+  <!-- 2 -->
+  <section id="s2">
+    <h2><span class="num">02</span> What Meta Collects</h2>
+    <p>Meta's Privacy Policy (effective January 2023, amended March 2024) acknowledges collection of:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Category</th><th>Examples</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Content</strong></td><td>Posts, photos, messages, comments, stories</td></tr>
+          <tr><td><strong>Activity</strong></td><td>Pages visited, links clicked, time-on-post, scroll depth</td></tr>
+          <tr><td><strong>Connections</strong></td><td>Friends, follows, group memberships, event attendance</td></tr>
+          <tr><td><strong>Device &amp; Browser</strong></td><td>OS, browser, screen resolution, installed fonts, battery state</td></tr>
+          <tr><td><strong>Location</strong></td><td>GPS (when permitted), IP-derived location, Wi-Fi triangulation</td></tr>
+          <tr><td><strong>Off-platform browsing</strong></td><td>Via Meta Pixel, SDK, and social plugins on third-party sites</td></tr>
+          <tr><td><strong>Financial</strong></td><td>Payment info and purchase history via Meta Pay</td></tr>
+          <tr><td><strong>Inferred attributes</strong></td><td>Political views, religion, health conditions, sexual orientation — <em>derived, not declared</em></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <strong>FTC Finding (2023):</strong> Meta's internal documents confirmed inference of sensitive attributes
+      including health status and political affiliation without explicit user disclosure. [4]
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="s3">
+    <h2><span class="num">03</span> New Policy Developments 2024–2026</h2>
+
+    <h3>3.1 — AI Training via "Legitimate Interest"</h3>
+    <p>
+      In May 2024, Meta announced it would use public posts, photos, and user interactions to train its
+      generative AI models (Llama, Meta AI) citing <strong>legitimate interest</strong> under Article 6(1)(f) of GDPR. [5]
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>What It Means</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td>Scope</td><td>All public content since account creation eligible for AI training ingestion</td></tr>
+          <tr><td>Consent model</td><td>Opt-out only — no active consent required under Meta's legal framing</td></tr>
+          <tr><td>Opt-out</td><td>Manual objection form; Meta reviews individually and may reject</td></tr>
+          <tr><td>EU pause</td><td>Irish DPC paused AI training for EU users June 2024 — no equivalent pause for U.S. users [6]</td></tr>
+          <tr><td>Legal status</td><td>EDPB guidelines (March 2024) state legitimate interest cannot override fundamental privacy rights [7]</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>3.2 — Cross-Platform Data Pooling</h3>
+    <p>Meta pools data across all its properties into a single behavioral profile:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Platform</th><th>Data Pooled</th></tr></thead>
+        <tbody>
+          <tr><td>Facebook / Instagram / Threads</td><td>Full social graph, content, behavioral signals</td></tr>
+          <tr><td>WhatsApp</td><td>Communication metadata — who, when, frequency (not content)</td></tr>
+          <tr><td>Meta Quest (VR)</td><td>Physical movement, spatial behavior, gaze tracking</td></tr>
+          <tr><td>Audience Network</td><td>Third-party app and web activity</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>3.3 — Off-Facebook Activity (OFA) Scale</h3>
+    <p>
+      The Meta Pixel is embedded on approximately <strong>30% of all websites globally</strong> as of 2024. [10]
+      Any site with the Pixel reports your visit to Meta — even if you are not logged in and do not have a Facebook account.
+      Meta builds and maintains a shadow profile for these unregistered users.
+    </p>
+  </section>
+
+  <!-- 4 -->
+  <section id="s4">
+    <h2><span class="num">04</span> Facebook Tracking Topology</h2>
+    <p>The following diagrams show the complete data flow from browser to Meta's infrastructure, and where each defense layer intercepts it.</p>
+
+    <h3>4.1 — Cross-Site Tracking Flow (Meta Pixel)</h3>
+    <pre class="topology">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        USER'S BROWSER / DEVICE                          │
+│                                                                         │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │              THIRD-PARTY WEBSITE  (e.g. shop.com)                 │  │
+│  │                                                                   │  │
+│  │   &lt;script src="connect.facebook.net/en_US/fbevents.js"&gt;          │  │
+│  │              │                                                    │  │
+│  │   ┌──────────▼──────────────────────────────────────────────┐    │  │
+│  │   │               META PIXEL  (JavaScript)                  │    │  │
+│  │   │   Events: PageView · AddToCart · Purchase · Lead         │    │  │
+│  │   │   Signals: URL · referrer · device fingerprint           │    │  │
+│  │   │            cookies (c_user, datr, fr) · IP               │    │  │
+│  │   └─────────────────────────┬───────────────────────────────┘    │  │
+│  └─────────────────────────────┼───────────────────────────────────┘  │
+│                                │                                        │
+│   DNS query: pixel.facebook.com / connect.facebook.net                  │
+│              ◄─────────────────┘                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+                                │
+         ┌──────────────────────▼──────────────────────┐
+         │           /etc/hosts  DNS SINKHOLE           │  ◄── LAYER 1
+         │    pixel.facebook.com    →  0.0.0.0          │
+         │    connect.facebook.net  →  0.0.0.0          │
+         │    tr.facebook.com       →  0.0.0.0          │
+         │    [connection terminated — never sent]       │
+         └──────────────────────────────────────────────┘
+                         (if not sinkholed)
+                                │
+         ┌──────────────────────▼──────────────────────┐
+         │           WireGuard VPN  FULL TUNNEL         │  ◄── LAYER 2
+         │    All traffic encrypted (ChaCha20-Poly1305)  │
+         │    Real ISP IP hidden from all servers        │
+         │    AllowedIPs: 0.0.0.0/0, ::/0               │
+         └──────────────────────────────────────────────┘
+                                │
+         ┌──────────────────────▼──────────────────────┐
+         │         DNS Kill-Switch  (PF Firewall)       │  ◄── LAYER 3
+         │    DNS only resolves via VPN gateway          │
+         │    dnscrypt-proxy → DNS-over-HTTPS            │
+         │    VPN drop = DNS fail — no leak              │
+         └──────────────────────────────────────────────┘
+    </pre>
+
+    <h3>4.2 — Meta's Internal Data Infrastructure</h3>
+    <pre class="topology">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       META  DATA  INFRASTRUCTURE                        │
+│                                                                         │
+│   pixel.facebook.com  ──────►  Event Ingestion Pipeline                 │
+│   tr.facebook.com     ──────►  Off-Facebook Activity DB                 │
+│   an.facebook.com     ──────►  Audience Network Ad Matching             │
+│   graph.facebook.com  ──────►  Social Graph API                         │
+│                                          │                              │
+│                             ┌────────────▼────────────────┐             │
+│                             │    BEHAVIORAL PROFILE DB     │             │
+│                             │                              │             │
+│                             │  · Social graph              │             │
+│                             │  · Browsing history          │             │
+│                             │  · Purchase intent           │             │
+│                             │  · Inferred attributes       │             │
+│                             │  · Device fingerprints       │             │
+│                             │  · Communication patterns    │             │
+│                             └──────────┬──────────────────┘             │
+│                                        │                                │
+│                             ┌──────────▼──────────────────┐             │
+│                             │   AD TARGETING ENGINE        │             │
+│                             │   AI TRAINING PIPELINE       │             │
+│                             │   (Llama · Meta AI)          │             │
+│                             └─────────────────────────────┘             │
+└─────────────────────────────────────────────────────────────────────────┘
+    </pre>
+
+    <h3>4.3 — Cross-Platform Data Pooling</h3>
+    <pre class="topology">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                  CROSS-PLATFORM  DATA  POOLING                          │
+│                                                                         │
+│   Facebook  ──────┐                                                     │
+│   Instagram ──────┤                                                     │
+│   Threads   ──────┼──────►  UNIFIED META BEHAVIORAL PROFILE             │
+│   WhatsApp* ──────┤          (single identity across all properties)    │
+│   Meta Quest ─────┤                                                     │
+│   Audience Net ───┘                                                     │
+│                                                                         │
+│   * WhatsApp content is E2E encrypted — communication metadata pooled   │
+└─────────────────────────────────────────────────────────────────────────┘
+    </pre>
+
+    <h3>4.4 — MQTT Persistent Background Connection</h3>
+    <pre class="topology">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   MQTT  PERSISTENT  CONNECTION                          │
+│                                                                         │
+│   Browser / App                                                         │
+│        │                                                                │
+│        └──► mqtt.facebook.com:443 ──► Meta MQTT Broker                 │
+│             edge-mqtt.facebook.com                                      │
+│                                                                         │
+│   Maintains persistent TCP connection even when not using the app.      │
+│   Sends: heartbeats · notification delivery · telemetry · device state  │
+│   Interval: every 15–60 seconds                                         │
+│                                                                         │
+│   [BLOCKED via /etc/hosts sinkhole in defense architecture]             │
+└─────────────────────────────────────────────────────────────────────────┘
+    </pre>
+
+    <h3>4.5 — Link Interception via l.facebook.com</h3>
+    <pre class="topology">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      LINK  INTERCEPTION  FLOW                           │
+│                                                                         │
+│   User clicks link inside Facebook                                      │
+│            │                                                            │
+│            ▼                                                            │
+│   https://l.facebook.com/l.php?u=https%3A%2F%2Ftargetsite.com          │
+│            │                                                            │
+│            │  Meta logs: user ID · link target · timestamp              │
+│            │             device · session context                       │
+│            │                                                            │
+│            ▼                                                            │
+│   Redirect → targetsite.com                                             │
+│                                                                         │
+│   [l.facebook.com blocked — however links inside facebook.com itself    │
+│    remain intercepted as they execute within Meta's own domain]         │
+└─────────────────────────────────────────────────────────────────────────┘
+    </pre>
+  </section>
+
+  <!-- 5 -->
+  <section id="s5">
+    <h2><span class="num">05</span> Tracking Domain Reference</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Domain</th><th>Technical Function</th></tr></thead>
+        <tbody>
+          <tr><td><code>pixel.facebook.com</code></td><td>Primary endpoint for Meta Pixel event collection — PageView, Purchase, Lead</td></tr>
+          <tr><td><code>connect.facebook.net</code></td><td>CDN serving the Facebook JavaScript SDK — loads fbevents.js and social plugins</td></tr>
+          <tr><td><code>tr.facebook.com</code></td><td>Tracking redirect — receives Off-Facebook Activity events from partner sites</td></tr>
+          <tr><td><code>an.facebook.com</code></td><td>Meta Audience Network — serves and tracks ads on third-party apps</td></tr>
+          <tr><td><code>atlas.facebook.com</code></td><td>Atlas ad server — cross-device ad measurement and attribution</td></tr>
+          <tr><td><code>analytics.facebook.com</code></td><td>Facebook Analytics event ingestion (deprecated API, endpoint still active)</td></tr>
+          <tr><td><code>logging.facebook.com</code></td><td>Internal telemetry and error logging from Meta products</td></tr>
+          <tr><td><code>bigpipe.facebook.com</code></td><td>BigPipe streaming page delivery — also carries behavioral telemetry</td></tr>
+          <tr><td><code>sb.facebook.com</code></td><td>Security beacon — reports browser/session integrity signals</td></tr>
+          <tr><td><code>mqtt.facebook.com</code></td><td>MQTT broker — persistent push connection for Messenger and notifications</td></tr>
+          <tr><td><code>edge-mqtt.facebook.com</code></td><td>Edge-cached MQTT relay for lower-latency messaging connections</td></tr>
+          <tr><td><code>push.facebook.com</code></td><td>Web Push notification delivery endpoint</td></tr>
+          <tr><td><code>l.facebook.com</code></td><td>Link shim — all outbound links wrapped here for click tracking and logging</td></tr>
+          <tr><td><code>lm.facebook.com</code></td><td>Link measurement — A/B click-through tracking</td></tr>
+          <tr><td><code>ai.facebook.com</code></td><td>Meta AI product front-end</td></tr>
+          <tr><td><code>graph.meta.ai</code></td><td>Meta AI Graph API endpoint</td></tr>
+          <tr><td><code>meta.ai</code></td><td>Meta's consumer AI assistant</td></tr>
+          <tr><td><code>i.instagram.com</code></td><td>Instagram mobile API — media delivery and behavioral telemetry</td></tr>
+          <tr><td><code>graph.instagram.com</code></td><td>Instagram Graph API used by third-party apps for data access</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="s6">
+    <h2><span class="num">06</span> Technical Tracking Mechanisms</h2>
+
+    <h3>6.1 — Cookie-Based Identification</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Cookie</th><th>Purpose</th><th>Lifetime</th></tr></thead>
+        <tbody>
+          <tr><td><code>c_user</code></td><td>Plaintext Facebook user ID</td><td>Session / persistent</td></tr>
+          <tr><td><code>datr</code></td><td>Browser fingerprint — set for <em>all</em> visitors to facebook.com, including non-members</td><td>2 years</td></tr>
+          <tr><td><code>fr</code></td><td>Encrypted user+browser ID for ad targeting</td><td>90 days</td></tr>
+          <tr><td><code>sb</code></td><td>Security browser ID for integrity checks</td><td>2 years</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>6.2 — Browser Fingerprinting</h3>
+    <p>When Meta's JavaScript executes, it collects signals that survive cookie deletion and VPN IP changes:</p>
+    <pre>Canvas rendering fingerprint    — unique per GPU / driver combination
+WebGL renderer string           — identifies graphics hardware
+Installed font enumeration      — consistent across browser sessions
+AudioContext fingerprint        — unique per audio stack configuration
+Screen resolution + color depth
+Time zone offset
+Navigator properties            — language, platform, plugin list
+Mouse movement timing patterns
+Scroll behavior signatures</pre>
+    <p>
+      Laperdrix et al. (2020) found browser fingerprinting correctly re-identifies
+      <strong>90.84% of returning browsers</strong> — without any cookies. [14]
+    </p>
+
+    <h3>6.3 — Off-Facebook Activity Technical Flow</h3>
+    <pre>1.  User visits third-party site with embedded Meta Pixel
+2.  Browser loads: connect.facebook.net/en_US/fbevents.js
+3.  Pixel fires HTTP POST to: pixel.facebook.com/tr/
+    Payload:
+      · Event type (PageView, AddToCart, Purchase)
+      · Page URL and referrer
+      · User-Agent string
+      · Cookie values (fr, datr — if present)
+      · Hashed email (if site uses Advanced Matching)
+      · Custom parameters (product ID, price, category)
+4.  Meta matches payload to user profile via:
+      a. Cookie match (if user is logged into Facebook)
+      b. Probabilistic fingerprint match
+      c. IP + User-Agent correlation
+      d. SHA-256 hashed email match (Advanced Matching)
+5.  Event logged to behavioral profile — retained indefinitely</pre>
+  </section>
+
+  <!-- 7 -->
+  <section id="s7">
+    <h2><span class="num">07</span> Defense Architecture</h2>
+
+    <h3>Layer 1 — /etc/hosts DNS Sinkholing</h3>
+    <p>The OS resolves all 38 blocked domains to <code>0.0.0.0</code> before any TCP connection is opened. No data reaches Meta's servers.</p>
+    <pre><span class="c"># Meta Tracking Pixels &amp; SDK</span>
+0.0.0.0 pixel.facebook.com
+0.0.0.0 connect.facebook.net
+0.0.0.0 tr.facebook.com
+0.0.0.0 an.facebook.com
+0.0.0.0 analytics.facebook.com
+0.0.0.0 logging.facebook.com
+
+<span class="c"># MQTT / Push / Real-time</span>
+0.0.0.0 mqtt.facebook.com
+0.0.0.0 edge-mqtt.facebook.com
+0.0.0.0 push.facebook.com
+0.0.0.0 edge-chat.facebook.com
+0.0.0.0 rupload.facebook.com
+
+<span class="c"># Link Shim</span>
+0.0.0.0 l.facebook.com
+0.0.0.0 lm.facebook.com
+
+<span class="c"># Meta AI</span>
+0.0.0.0 ai.facebook.com
+0.0.0.0 graph.meta.ai
+0.0.0.0 meta.ai
+
+<span class="c"># Instagram Trackers</span>
+0.0.0.0 i.instagram.com
+0.0.0.0 graph.instagram.com
+0.0.0.0 b.i.instagram.com</pre>
+
+    <h3>Layer 2 — WireGuard Full-Tunnel VPN</h3>
+    <p>All traffic is encrypted and exits through a cloud VPN gateway. The real ISP-assigned IP is never exposed to any destination server.</p>
+    <pre><span class="c">[Interface]</span>
+PrivateKey = &lt;your-private-key&gt;
+Address = 10.10.0.2/24, fd00:10:10::2/128
+DNS = &lt;vpn-gateway-ip&gt;
+
+<span class="c">[Peer]</span>
+PublicKey = &lt;server-public-key&gt;
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = &lt;your-vps-ip&gt;:51820
+PersistentKeepalive = 25</pre>
+    <p>Encryption: <strong>ChaCha20-Poly1305</strong> for data, <strong>Curve25519</strong> for key exchange, <strong>BLAKE2s</strong> for hashing. [15]</p>
+
+    <h3>Layer 3 — DNS Kill-Switch (PF Firewall)</h3>
+    <p>DNS queries are locked to the VPN gateway. If the VPN tunnel drops, DNS resolution fails entirely — no fallback to cleartext ISP DNS, no leak.</p>
+    <pre><span class="c"># macOS PF rules — /etc/pf.anchors/wts-dns-killswitch</span>
+pass quick on lo0 proto { tcp, udp } to any port 53
+pass quick proto { tcp, udp } to &lt;vpn-gateway-ip&gt; port 53
+block drop quick proto { tcp, udp } to any port 53</pre>
+    <p>The VPN gateway runs <strong>dnscrypt-proxy</strong> → DNS-over-HTTPS, encrypting DNS queries against network-level snooping.</p>
+
+    <h3>Layer 4 — IP Threat Intelligence Auto-Block</h3>
+    <p>1,800+ known malicious IPs blocked at the network layer via daily-updated threat intelligence feeds. Snort IDS provides L3/L7 detection on the VPN gateway with real-time alerting.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="s8">
+    <h2><span class="num">08</span> Residual Exposure Analysis</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Vector</th><th>Risk</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>On-platform behavior</td>
+            <td><span class="risk-high">High</span></td>
+            <td>All activity on facebook.com / instagram.com is fully observable by Meta. Defense layers only address cross-site tracking.</td>
+          </tr>
+          <tr>
+            <td>Browser fingerprinting</td>
+            <td><span class="risk-medium">Medium</span></td>
+            <td>Canvas, WebGL, and font fingerprints persist across VPN IP changes and cookie clears. Requires browser-level tools (uBlock Origin, Firefox RFP).</td>
+          </tr>
+          <tr>
+            <td>Mobile devices</td>
+            <td><span class="risk-medium">Medium</span></td>
+            <td>/etc/hosts and PF rules are host-specific. Mobile devices require network-level DNS (Pi-hole, AdGuard) for equivalent protection.</td>
+          </tr>
+          <tr>
+            <td>WhatsApp metadata</td>
+            <td><span class="risk-low">Low–Med</span></td>
+            <td>Content is E2E encrypted. Communication metadata (who, when, frequency) is retained and pooled into the behavioral profile.</td>
+          </tr>
+          <tr>
+            <td>Past collected data</td>
+            <td><span class="risk-none">Non-remediable</span></td>
+            <td>Data collected before these defenses were deployed is in Meta's possession. GDPR Art. 17 provides a legal mechanism; practical effectiveness is limited.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section id="s9">
+    <h2><span class="num">09</span> Fairness Note</h2>
+    <div class="fairness">
+      <h3>On Objectivity</h3>
+      <p style="color:var(--text-dim);font-size:0.92rem;margin-bottom:0.75rem;">
+        This article documents Meta's practices as described in their own published policies, regulatory filings,
+        and peer-reviewed research. The following context is equally important:
+      </p>
+      <ul>
+        <li>Meta provides free services to billions of users; targeted advertising is the stated mechanism by which these services are funded.</li>
+        <li>Meta has implemented user-facing controls — the Off-Facebook Activity dashboard, Ad Preferences, and Privacy Checkup — that provide partial transparency and some degree of opt-out capability.</li>
+        <li>The "legitimate interest" legal basis for AI training is genuinely contested law; pending EDPB proceedings and court cases may narrow or expand Meta's claimed rights.</li>
+        <li>The tracking mechanisms described are not unique to Meta. Google, Amazon, and other large platforms operate comparable systems.</li>
+        <li>The objective of this article is technical accuracy, not advocacy. Users have the right to implement technical defenses against data collection.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section id="s10">
+    <h2><span class="num">10</span> Recommendations</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Priority</th><th>Action</th><th>Addresses</th></tr></thead>
+        <tbody>
+          <tr><td><span class="risk-high">High</span></td><td>Deploy Pi-hole on home router pointing to a DoH resolver</td><td>Extends protection to all LAN devices — phones, tablets, smart TVs</td></tr>
+          <tr><td><span class="risk-high">High</span></td><td>Firefox + uBlock Origin with Meta/Facebook filter lists</td><td>Canvas fingerprinting, newly registered tracking domains</td></tr>
+          <tr><td><span class="risk-medium">Medium</span></td><td>Dedicated browser profile for Facebook only — no other tabs</td><td>Cross-context leakage within browser memory</td></tr>
+          <tr><td><span class="risk-medium">Medium</span></td><td>Submit GDPR/CCPA AI training objection — Facebook Settings → Privacy Center</td><td>Documented opt-out record; paper trail for enforcement</td></tr>
+          <tr><td><span class="risk-medium">Medium</span></td><td>Enable source-destination check bypass on VPN gateway VNIC</td><td>Required for VPN to forward traffic to internet correctly</td></tr>
+          <tr><td><span class="risk-low">Low</span></td><td>Refresh /etc/hosts blocklist quarterly against updated Meta domain lists</td><td>New tracking subdomains and rebranded endpoints</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section id="s11" class="refs">
+    <h2><span class="num">11</span> References</h2>
+    <ol>
+      <li>Meta Platforms, Inc. — Q4 2025 Earnings Release, February 2026. Meta Investor Relations.<a href="https://investor.fb.com">https://investor.fb.com</a></li>
+      <li>Meta Platforms, Inc. — Form 10-K Annual Report 2025. U.S. Securities and Exchange Commission.<a href="https://www.sec.gov/cgi-bin/browse-edgar">https://www.sec.gov/cgi-bin/browse-edgar</a></li>
+      <li>Meta Privacy Policy (effective January 4, 2023; amended March 2024). Meta Platforms, Inc.<a href="https://www.facebook.com/privacy/policy/">https://www.facebook.com/privacy/policy/</a></li>
+      <li>Federal Trade Commission — "FTC Takes Action Against Meta for Surveillance Practices." FTC Press Release, May 2023.<a href="https://www.ftc.gov/news-events/news/press-releases/2023/05">https://www.ftc.gov/news-events/news/press-releases/2023/05</a></li>
+      <li>Meta — "Generative AI Features and Your Information." Meta Help Center, May 2024.<a href="https://www.facebook.com/help/">https://www.facebook.com/help/</a></li>
+      <li>Irish Data Protection Commission — "DPC Engages with Meta Ireland on AI Training." DPC Press Release, June 2024.<a href="https://www.dataprotection.ie">https://www.dataprotection.ie</a></li>
+      <li>European Data Protection Board — Guidelines 1/2024 on Legitimate Interest. EDPB, March 2024.<a href="https://edpb.europa.eu">https://edpb.europa.eu</a></li>
+      <li>Meta — "How Our Products Are Connected." Meta Newsroom, 2023.<a href="https://about.fb.com/news/">https://about.fb.com/news/</a></li>
+      <li>Meta Business Help Center — "About the Meta Pixel." Meta for Business.<a href="https://www.facebook.com/business/help/">https://www.facebook.com/business/help/</a></li>
+      <li>BuiltWith Technology Lookup — Facebook Pixel Market Share Report, 2024.<a href="https://builtwith.com/facebook-pixel">https://builtwith.com/facebook-pixel</a></li>
+      <li>WhatsApp Privacy Policy — "Information We Collect." WhatsApp LLC, 2024.<a href="https://www.whatsapp.com/legal/privacy-policy">https://www.whatsapp.com/legal/privacy-policy</a></li>
+      <li>Irish Data Protection Commission — Decision IN-21-7-7 (Meta). DPC Enforcement, November 2022.<a href="https://www.dataprotection.ie/en/dpc-guidance/enforcement">https://www.dataprotection.ie/en/dpc-guidance/enforcement</a></li>
+      <li>Englehardt, S. &amp; Narayanan, A. — "Online Tracking: A 1-million-site Measurement and Analysis." CCS '16, ACM, 2016.<a href="https://dl.acm.org/doi/10.1145/2976749.2978313">https://dl.acm.org/doi/10.1145/2976749.2978313</a></li>
+      <li>Laperdrix, P. et al. — "Browser Fingerprinting: A Survey." ACM Transactions on the Web, Vol. 14, No. 2, 2020.<a href="https://dl.acm.org/doi/10.1145/3386040">https://dl.acm.org/doi/10.1145/3386040</a></li>
+      <li>Donenfeld, J.A. — "WireGuard: Next Generation Kernel Network Tunnel." NDSS 2017.<a href="https://www.wireguard.com/papers/wireguard.pdf">https://www.wireguard.com/papers/wireguard.pdf</a></li>
+      <li>Nikiforakis, N. et al. — "Cookieless Monster: Exploring the Ecosystem of Web-based Device Fingerprinting." IEEE S&amp;P, 2013.<a href="https://ieeexplore.ieee.org/document/6547116">https://ieeexplore.ieee.org/document/6547116</a></li>
+      <li>European Parliament — GDPR Regulation (EU) 2016/679, Article 6 — Lawfulness of Processing.<a href="https://gdpr-info.eu/art-6-gdpr/">https://gdpr-info.eu/art-6-gdpr/</a></li>
+      <li>dnscrypt-proxy — Open Source DNS Proxy with Encryption. Frank Denis.<a href="https://github.com/DNSCrypt/dnscrypt-proxy">https://github.com/DNSCrypt/dnscrypt-proxy</a></li>
+    </ol>
+  </section>
+
+</div>
+    <p><a href="/">&#8592; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-facebook-privacy-defense",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

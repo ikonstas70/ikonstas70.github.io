@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/osi-tcpip-model">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The OSI and TCP/IP Models, Revisited — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Networking</span>
+    <h1>The OSI and TCP/IP Models, Revisited</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>The OSI model is the most-memorized, least-understood diagram in networking. Learners recite seven layers for an exam and promptly forget why they exist. The point was never the mnemonic — it's that networking is <em>layered abstraction</em>, where each layer offers a service to the one above and consumes the one below, so problems can be reasoned about in isolation. Get that, and the model becomes a diagnostic tool instead of trivia.</p>
+
+    <h2>The seven layers, by what they actually do</h2>
+    <table>
+      <tr><th>#</th><th>Layer</th><th>Job</th><th>You'd recognize</th></tr>
+      <tr><td>7</td><td>Application</td><td>What the user/app speaks</td><td>HTTP, DNS, SMTP</td></tr>
+      <tr><td>6</td><td>Presentation</td><td>Encoding, encryption, compression</td><td>TLS, character sets</td></tr>
+      <tr><td>5</td><td>Session</td><td>Establishing/managing dialogs</td><td>Session setup, RPC</td></tr>
+      <tr><td>4</td><td>Transport</td><td>End-to-end delivery, ports</td><td>TCP, UDP, QUIC</td></tr>
+      <tr><td>3</td><td>Network</td><td>Logical addressing, routing</td><td>IP, ICMP, routing</td></tr>
+      <tr><td>2</td><td>Data Link</td><td>Local delivery, framing, MAC</td><td>Ethernet, ARP, switches</td></tr>
+      <tr><td>1</td><td>Physical</td><td>Bits on the wire/air</td><td>Cables, radio, voltages</td></tr>
+    </table>
+
+    <h2>TCP/IP: the model we actually run</h2>
+    <p>The internet doesn't implement OSI — it runs the TCP/IP (DoD) model, which predates OSI and collapses those seven layers into four: <strong>Application</strong> (OSI 5-7), <strong>Transport</strong> (4), <strong>Internet</strong> (3), and <strong>Link/Network Access</strong> (1-2). OSI is the reference vocabulary; TCP/IP is the engineering reality. Both are useful — you'll hear engineers say "that's a Layer 2 problem" (OSI) while debugging a stack that's really TCP/IP. Hold both without confusing them.</p>
+
+    <h2>Encapsulation: the idea that makes it work</h2>
+    <p>As data descends the stack, each layer wraps it in its own header (and sometimes trailer): your HTTP request becomes a TCP segment, inside an IP packet, inside an Ethernet frame, becomes bits. The receiver reverses it on the way up. This nesting is why a switch can forward a frame without caring about HTTP, and why a router rewrites Layer-2 addresses at every hop while leaving Layer-3 intact.</p>
+    <pre><code># Watch encapsulation live: one HTTP GET, every layer visible
+sudo tcpdump -i any -n -vvv -X 'tcp port 80' &amp;
+curl http://example.com/ &gt; /dev/null
+# tcpdump shows: Ethernet frame -> IP packet -> TCP segment -> HTTP payload
+# Note how src/dst MAC (L2) differ from src/dst IP (L3): the router rewrote L2.</code></pre>
+
+    <h2>The model as a troubleshooting ladder</h2>
+    <p>The layers' real payoff is a debugging method — work bottom-up and stop guessing:</p>
+    <ol>
+      <li><strong>L1 Physical:</strong> link light, cable, interface up? <code>ip link</code></li>
+      <li><strong>L2 Data Link:</strong> ARP resolving, correct VLAN, switch port? <code>ip neigh</code></li>
+      <li><strong>L3 Network:</strong> IP, gateway, route, can you ping? <code>ip addr</code>, <code>ip route</code>, <code>ping</code></li>
+      <li><strong>L4 Transport:</strong> is the port open, firewall in the way? <code>ss -tlnp</code>, <code>nc -vz host port</code></li>
+      <li><strong>L7 Application:</strong> DNS, TLS, the app itself? <code>dig</code>, <code>curl -v</code></li>
+    </ol>
+    <p>"It's DNS" is funny because it's an L7 problem people reach for after skipping L1-L4. The layered method stops that.</p>
+
+    <h2>The security angle</h2>
+    <p>Attacks and defenses live at layers too, and naming the layer clarifies the fix: ARP spoofing is L2, IP spoofing and routing attacks are L3, SYN floods are L4, and application exploits and most DDoS are L7. A firewall that only inspects L3-4 cannot see an L7 attack — the exact gap that drove the evolution toward next-gen firewalls (see <a href="/articles/firewall-architectures">Firewall Architectures</a>).</p>
+
+    <blockquote>The OSI model isn't seven words to memorize — it's a promise that networking is layered, so a problem can be isolated to one layer and solved there. TCP/IP is what actually runs; OSI is how we talk about it.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=osi-tcpip-model",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

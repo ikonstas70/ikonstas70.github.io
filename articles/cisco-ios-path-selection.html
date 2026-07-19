@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cisco IOS Path Selection: How a Router Chooses the Best Route — Konstas Engineering Notes</title>
+<meta name="description" content="How Cisco IOS selects the best route: longest prefix match, Administrative Distance, and metric — plus the honest truth about the undocumented case of two same-protocol instances, and how the RIB feeds the FIB (CEF) for hardware forwarding.">
+<meta name="keywords" content="Cisco IOS path selection, route selection, longest prefix match, administrative distance, RIB, FIB, CEF, EIGRP, OSPF, BGP, ECMP, maximum-paths, routing table">
+<meta name="author" content="Ioannis Konstas">
+<link rel="canonical" href="https://blog.konstas.us/articles/cisco-ios-path-selection">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cisco IOS Path Selection: How a Router Chooses the Best Route">
+<meta property="og:description" content="Longest prefix match, Administrative Distance, metric — and the honest truth about the undocumented same-protocol tie-break. Plus how the RIB feeds the FIB for hardware forwarding.">
+<meta property="og:url" content="https://blog.konstas.us/articles/cisco-ios-path-selection">
+<meta property="og:image" content="https://blog.konstas.us/cisco-ios-path-selection.png">
+<meta property="og:site_name" content="Konstas Engineering Notes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cisco IOS Path Selection: How a Router Chooses the Best Route">
+<meta name="twitter:description" content="Longest prefix match, Administrative Distance, metric — and the honest truth about the undocumented same-protocol tie-break.">
+<meta name="twitter:image" content="https://blog.konstas.us/cisco-ios-path-selection.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Cisco IOS Path Selection: How a Router Chooses the Best Route",
+  "description": "How Cisco IOS selects the best route: longest prefix match, Administrative Distance, and metric, the undocumented same-protocol instance case, and how the RIB feeds the FIB (CEF) for hardware forwarding.",
+  "image": "https://blog.konstas.us/cisco-ios-path-selection.png",
+  "author": { "@type": "Person", "name": "Ioannis Konstas", "url": "https://ikonstas70.github.io" },
+  "publisher": { "@type": "Person", "name": "Ioannis Konstas" },
+  "url": "https://blog.konstas.us/articles/cisco-ios-path-selection",
+  "datePublished": "2026-07-17",
+  "dateModified": "2026-07-17",
+  "articleSection": "Networking",
+  "keywords": "Cisco IOS, path selection, longest prefix match, administrative distance, RIB, FIB, CEF, EIGRP, OSPF, ECMP"
+}
+</script>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Networking</span>
+    <h1>Cisco IOS Path Selection: How a Router Chooses the Best Route</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <img class="hero-banner" src="/cisco-ios-path-selection.png" width="1200" height="674" alt="Abstract network of directional data-flow arrows across a circuit fabric — routing path selection and secure forwarding">
+
+    <p>A router's whole job comes down to one repeated question: for this packet, which way is best? The interesting part is that a router usually knows several ways to reach the same destination — one learned from EIGRP, another from OSPF, a static route someone typed by hand — and it has to pick exactly one to install and forward on. Cisco IOS resolves that with a strict, predictable order of tie-breakers. Once you know the order, routing tables stop being mysterious and troubleshooting becomes a matter of walking down the same checklist the router does.</p>
+
+    <h2>Where routes come from</h2>
+    <p>Before anything gets compared, routes have to enter the router from somewhere. There are three sources: <strong>connected</strong> routes (the subnets on the router's own live interfaces), <strong>static</strong> routes (manually configured), and <strong>dynamic</strong> routes learned from a routing protocol. Each dynamic protocol runs its own algorithm to work out candidate paths — EIGRP uses DUAL, OSPF runs SPF (Dijkstra) over a link-state database, and BGP weighs a chain of path attributes. They all feed their best candidates into the same selection funnel.</p>
+
+    <h2>Step 1: Longest prefix match wins</h2>
+    <p>The very first thing IOS looks at is not the protocol or the metric — it's <em>specificity</em>. Given several routes that could carry a packet, the one with the longest matching prefix always wins, regardless of where it was learned. Consider three routes to overlapping space:</p>
+    <pre><code>10.0.0.0/8
+10.10.0.0/16
+10.10.10.0/24</code></pre>
+    <p>A packet destined for <code>10.10.10.50</code> matches all three, but IOS forwards it using <code>10.10.10.0/24</code> because that /24 is the most specific match. This rule sits above everything else, and it's the lever behind most traffic engineering: advertise a more specific prefix and you pull traffic toward it, no matter what the less specific routes say.</p>
+
+    <h2>Step 2: Administrative Distance breaks protocol ties</h2>
+    <p>When two <em>different</em> sources offer a route to the same prefix at the same length, IOS can't compare their metrics — an OSPF cost and an EIGRP composite metric aren't the same unit. So it falls back to <strong>Administrative Distance (AD)</strong>, a trust ranking of the source itself. Lower AD means more trusted, and the lower AD wins.</p>
+    <table>
+      <thead>
+        <tr><th>Route source</th><th style="text-align:right">Administrative Distance</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Connected</td><td style="text-align:right">0</td></tr>
+        <tr><td>Static</td><td style="text-align:right">1</td></tr>
+        <tr><td>EIGRP summary route</td><td style="text-align:right">5</td></tr>
+        <tr><td>External BGP (eBGP)</td><td style="text-align:right">20</td></tr>
+        <tr><td>EIGRP (internal)</td><td style="text-align:right">90</td></tr>
+        <tr><td>OSPF</td><td style="text-align:right">110</td></tr>
+        <tr><td>RIP</td><td style="text-align:right">120</td></tr>
+        <tr><td>ODR (On-Demand Routing)</td><td style="text-align:right">160</td></tr>
+        <tr><td>EIGRP (external)</td><td style="text-align:right">170</td></tr>
+        <tr><td>Internal BGP (iBGP)</td><td style="text-align:right">200</td></tr>
+        <tr><td>NHRP (DMVPN)</td><td style="text-align:right">250</td></tr>
+        <tr><td>Unreachable / not installed</td><td style="text-align:right">255</td></tr>
+      </tbody>
+    </table>
+    <p>So if EIGRP (AD 90) and OSPF (AD 110) both offer <code>10.1.1.0/24</code>, the EIGRP route is installed — not because EIGRP found a shorter path, but because IOS trusts it more by default. That default is deliberate and tunable: you can override AD per route to steer this decision when you want the "less trusted" protocol to win. Two values at the ends of the table are worth calling out: an <strong>AD of 5</strong> belongs to EIGRP summary routes (more on those below), and an <strong>AD of 255</strong> means "do not trust this source at all" — a route tagged 255 is never installed in the table.</p>
+
+    <h2>Step 3: Metric decides within one protocol</h2>
+    <p>Only when the two candidates come from the <em>same</em> protocol does the metric finally matter — now the units are comparable. IOS installs the route with the lowest metric. What "metric" means depends on the protocol: EIGRP builds a composite from bandwidth and delay (with reliability and load available but off by default), while OSPF derives a cost primarily from interface bandwidth. Same protocol, lowest metric, done.</p>
+
+    <h2>The edge case worth being honest about: two instances of the same protocol</h2>
+    <p>This is the corner of IOS path selection that the standard references gloss over — they walk you through prefix length, Administrative Distance, and metric, then stop. You can run more than one instance of a protocol on the same router (two EIGRP autonomous systems, or two OSPF processes), and it's fair to ask what happens when both instances learn the same prefix at the same Administrative Distance.</p>
+    <pre><code>router eigrp 5     ! learns 10.1.1.0/24
+router eigrp 7     ! also learns 10.1.1.0/24  (same AD 90)
+
+router ospf 5      ! learns 192.168.1.0/24
+router ospf 7      ! also learns 192.168.1.0/24  (same AD 110)</code></pre>
+    <p>You'll see it claimed — in a lot of study material — that IOS simply prefers the lower autonomous-system number or the lower process ID. Be careful with that: it is <strong>not</strong> documented, deterministic Cisco behavior. The two instances maintain separate topologies, so their metrics aren't comparable, and with the Administrative Distance already tied there is no published rule that "the lower number wins." In practice the route that is <em>already installed</em> tends to stay, which makes the outcome depend on timing and install order rather than on the instance number.</p>
+    <p>So the genuinely useful, field-tested takeaway isn't a tie-break rule — it's this: <strong>never design around this case.</strong> If you're running overlapping EIGRP ASes or OSPF processes that both carry the same prefix, don't trust an implicit winner. Make the decision explicit — tune the Administrative Distance, or redistribute deliberately — so the router installs the route you chose, not the one it happened to see first.</p>
+
+    <h2>When routes are truly equal: load balancing</h2>
+    <p>Sometimes two paths survive every comparison as genuine equals. Rather than discard one, IOS installs both and shares traffic across them — <strong>equal-cost multipath (ECMP)</strong>:</p>
+    <pre><code>10.1.1.0/24 via GigabitEthernet0/0
+10.1.1.0/24 via GigabitEthernet0/1
+! equal cost -> both installed, traffic balanced</code></pre>
+    <p>How many equal paths IOS will install is capped by <code>maximum-paths</code> under the routing process. Raise it to spread load across more links; the default varies by platform and protocol, so set it explicitly when the design depends on it.</p>
+
+    <h2>RIB and FIB: deciding versus forwarding</h2>
+    <p>The output of all this comparison is the <strong>Routing Information Base (RIB)</strong> — the routing table you see with <code>show ip route</code>. The RIB holds the winning routes with their next hops and exit interfaces. But the RIB is a control-plane structure; it's not what forwards packets at line rate.</p>
+    <p>From the RIB, IOS builds the <strong>Forwarding Information Base (FIB)</strong> — the CEF forwarding table, pre-computed and optimized so the data plane can look up a destination and forward it in hardware without re-running the decision logic per packet. The clean way to hold the two apart: the RIB <em>decides</em>, the FIB <em>forwards</em>.</p>
+    <pre><code>Routing protocols  (EIGRP / OSPF / BGP, static, connected)
+        &darr;
+Candidate routes
+        &darr;
+Best-route selection   (prefix length &rarr; AD &rarr; metric &rarr; instance)
+        &darr;
+RIB    (show ip route)      &larr; the decision
+        &darr;
+FIB    (CEF table)          &larr; the forwarding
+        &darr;
+Packet out the interface</code></pre>
+
+    <h2>Turning the rules into traffic engineering</h2>
+    <p>Because longest-prefix-match outranks everything, the most reliable way to steer traffic is to advertise something more specific. A neighbor announcing <code>192.168.0.0/16</code> carries the whole block, but announce <code>192.168.10.0/24</code> from a second path and every packet to <code>192.168.10.x</code> follows the /24 — the /16 never gets a say for that range. This one behavior underpins ISP traffic engineering, multi-homing, and inbound path control. It's also why route filtering and prefix-length policy matter so much at the edge: a single more-specific advertisement, yours or someone else's, quietly rewrites where traffic goes.</p>
+
+    <h2>The other lever: EIGRP summary routes and AD 5</h2>
+    <p>If advertising a <em>more specific</em> prefix is how you pull traffic toward a path, summarization is the opposite move — collapsing many prefixes into one advertisement to shrink routing tables and stop local instability from rippling across the network. EIGRP has a neat, and slightly under-explained, way of handling this. When you configure a manual summary on an interface:</p>
+    <pre><code>interface GigabitEthernet0/0
+ ip summary-address eigrp 10 172.16.0.0 255.255.0.0</code></pre>
+    <p>EIGRP does two things. It advertises the single <code>172.16.0.0/16</code> summary to neighbors — and locally it installs a <strong>summary route to Null0 with Administrative Distance 5</strong>. That AD 5 (from the table above) makes the summary route very trusted — more trusted than internal EIGRP itself — so it stays put in the table.</p>
+    <p>The Null0 part is the clever bit. It's a discard route: any packet that matches the <code>/16</code> summary but has no more-specific real route to land on gets dropped instead of forwarded. That prevents a loop — without it, traffic for a non-existent subnet inside the summarized block could bounce back and forth between the summarizing router and its upstream. And it all coexists cleanly with longest-prefix-match: real destinations inside the block still match their more-specific routes and forward normally; only the gaps — addresses that don't actually exist — fall through to Null0 and die quietly. Summary for advertisement efficiency, longest match for real forwarding, Null0 plus AD 5 for loop safety.</p>
+
+    <h2>The mental model to keep</h2>
+    <ul>
+      <li><strong>Specificity first</strong> — longest prefix match beats everything, every time.</li>
+      <li><strong>Then trust</strong> — Administrative Distance decides between different protocols.</li>
+      <li><strong>Then cost</strong> — metric decides within one protocol.</li>
+      <li><strong>Two instances of one protocol is undefined</strong> — don't rely on a lowest-AS/PID tie-break; control it explicitly with AD or redistribution.</li>
+      <li><strong>RIB decides, FIB forwards</strong> — control plane chooses, data plane executes in hardware.</li>
+    </ul>
+
+    <blockquote>Path selection isn't guesswork — it's the same checklist run in the same order every time: most specific prefix, lowest Administrative Distance, lowest metric. Learn that order and any routing table will tell you exactly why a packet went the way it did — and where the order runs out, make the decision explicit rather than trusting the router to break the tie for you.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=cisco-ios-path-selection",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

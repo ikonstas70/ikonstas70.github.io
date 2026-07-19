@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-ss7-signaling-system-technical-reference">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SS7 (Signaling System No. 7) — Technical Reference — Konstas Engineering Notes</title>
+<meta name="description" content="What Is SS7Signaling System No. 7 (SS7) is an architecture for performing out-of-band signaling in support of the call-establishment, billing, routing, and information-ex">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Telecom</span>
+    <h1>SS7 (Signaling System No. 7) — Technical Reference</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+</hr><h2>What Is SS7</h2><p>Signaling System No. 7 (SS7) is an architecture for performing <strong>out-of-band signaling</strong> in support of the call-establishment, billing, routing, and information-exchange functions of the Public Switched Telephone Network (PSTN). It identifies functions to be performed by a signaling-system network and a protocol to enable their performance.</p><p>SS7 carries <strong>signaling only</strong> — not voice. Voice is carried on separate bearer circuits (TDM or IP). SS7 tells the network what to do; the voice travels on a different path. Signaling links carry data at a rate of <strong>56 or 64 kbps</strong>.</p><h3>What Is Out-of-Band Signaling?</h3><p>Out-of-band signaling is signaling that does not take place over the same path as the conversation. Traditional telephony used in-band signaling — dial tones, digits, and voice all traveled over the same wire. SS7 establishes a <strong>separate digital channel</strong> (the signaling link) exclusively for signaling messages. This provides several advantages:</p><ul><li>Allows transport of more data at higher speeds (56 kbps vs. MF outpulsing)</li><li>Allows signaling at any time during the call, not only at the beginning</li><li>Enables signaling to network elements with no direct trunk connection</li></ul><h3>SS7 Message Examples</h3><p>SS7 messages convey information such as:
+- "I'm forwarding to you a call from 212-555-1234 to 718-555-5678. Look for it on trunk 067."
+- "Someone just dialed 800-555-1212. Where do I route the call?"
+- "The called subscriber for the call on trunk 11 is busy. Release the call and play a busy tone."
+- "The route to XXX is congested. Don't send messages unless priority 2 or higher."</p><hr></hr><h2>Why SS7 Matters for WTS as a CLEC</h2><p>As a CLEC, WTS must interconnect with the PSTN to:
+- Originate calls (customer calls out to any phone number)
+- Terminate calls (any phone number can call WTS customers)
+- Handle number portability (port numbers to/from other carriers)
+- Access CNAM (Caller ID name database)
+- Interact with 911 (emergency services routing)
+- Deliver SMS (A2P and P2P messaging)</p><p>All of these functions — at the carrier level — rely on SS7. The question is whether WTS interfaces directly with SS7 or through an intermediary.</p><hr></hr><h2>WTS SS7 Use Cases</h2><table><thead><tr><th>Use Case</th><th>SS7 Role</th><th>WTS Approach</th></tr></thead><tbody><tr><td>Outbound PSTN calls</td><td>ISUP call setup via SS7</td><td>Via SIP trunk provider (Phase 1) → Direct SS7 (Phase 3)</td></tr><tr><td>Inbound PSTN calls</td><td>ISUP routing to WTS gateway</td><td>Via SIP trunk provider (Phase 1) → Direct SS7 (Phase 3)</td></tr><tr><td>Number Portability (LNP)</td><td>TCAP query to NPAC/LNP database</td><td>Via SIP provider (Phase 1) → Direct (Phase 3)</td></tr><tr><td>CNAM lookup</td><td>TCAP query to CNAM database</td><td>Via TNS/Neustar API (all phases)</td></tr><tr><td>911 routing</td><td>ISUP to PSAP via SS7</td><td>Via Bandwidth E911 API (all phases)</td></tr><tr><td>SMS delivery</td><td>MAP protocol over SS7</td><td>Via SMS gateway API (Phase 2+)</td></tr></tbody></table><hr></hr><h2>SS7 Network Architecture</h2><pre><code>┌──────────┐    SS7 Links    ┌──────────┐    SS7 Links    ┌──────────┐
+│   SSP    │◀──────────────▶│   STP    │◀──────────────▶│   SCP    │
+│ (Switch) │                 │(Transfer)│                 │(Database)│
+└──────────┘                 └──────────┘                 └──────────┘
+     │                            │
+  Voice                      Signaling
+  Circuits                   Messages
+     │
+┌──────────┐
+│  PSTN    │
+│  (ILEC)  │
+└──────────┘
+</code></pre><h3>Three Core Node Types</h3><table><thead><tr><th>Node</th><th>Full Name</th><th>Function</th></tr></thead><tbody><tr><td><strong>SSP</strong></td><td>Service Switching Point</td><td>A telephone switch that originates, terminates, or tandem-switches calls. Generates SS7 messages when calls are set up or torn down. CLECs are SSPs.</td></tr><tr><td><strong>STP</strong></td><td>Signal Transfer Point</td><td>A packet router for SS7 messages. Does not originate or terminate calls — only routes SS7 signaling packets between SSPs and SCPs. Deployed in redundant pairs.</td></tr><tr><td><strong>SCP</strong></td><td>Service Control Point</td><td>A database server that responds to queries from SSPs. Used for 800-number translation, LNP lookups, calling card validation, and advanced services.</td></tr></tbody></table><hr></hr><h2>SS7 Protocol Stack</h2><p>SS7 is a layered protocol, analogous to the OSI model:</p><pre><code>┌──────────────────────────────────┐
+│  ISUP / MAP / TCAP / INAP       │  ← Application layer (call control)
+├──────────────────────────────────┤
+│  SCCP                            │  ← Network services (addressing)
+├──────────────────────────────────┤
+│  MTP Level 3                     │  ← Network layer (routing)
+├──────────────────────────────────┤
+│  MTP Level 2                     │  ← Data link layer (error correction)
+├──────────────────────────────────┤
+│  MTP Level 1                     │  ← Physical layer (56/64 kbps links)
+└──────────────────────────────────┘
+</code></pre><h3>Layer Details</h3><table><thead><tr><th>Layer</th><th>Name</th><th>Function</th></tr></thead><tbody><tr><td><strong>MTP 1</strong></td><td>Message Transfer Part Level 1</td><td>Physical signaling link — 56 or 64 kbps digital circuits (DS0)</td></tr><tr><td><strong>MTP 2</strong></td><td>Message Transfer Part Level 2</td><td>Error detection and correction on each signaling link. Ensures reliable delivery between two directly connected nodes.</td></tr><tr><td><strong>MTP 3</strong></td><td>Message Transfer Part Level 3</td><td>Routing of SS7 messages through the network. Equivalent to IP routing — routes messages based on Point Codes.</td></tr><tr><td><strong>SCCP</strong></td><td>Signaling Connection Control Part</td><td>Provides additional routing using Global Title Addressing (phone numbers, service codes). Required for TCAP transactions.</td></tr><tr><td><strong>TCAP</strong></td><td>Transaction Capabilities Application Part</td><td>Enables query/response transactions between SSPs and SCPs. Used for LNP lookups, 800-number routing, calling card validation.</td></tr><tr><td><strong>ISUP</strong></td><td>ISDN User Part</td><td>Controls circuit-switched voice call setup and teardown between switches. The most important SS7 protocol for a CLEC.</td></tr><tr><td><strong>MAP</strong></td><td>Mobile Application Part</td><td>Protocols used by mobile networks for HLR/VLR queries, SMS routing, roaming authentication.</td></tr></tbody></table><hr></hr><h2>ISUP — How a Call Is Set Up (Step by Step)</h2><p>ISUP (ISDN User Part) is the SS7 protocol that sets up and tears down telephone calls between carrier switches. The following is the exact message sequence from the reference tutorial (IEC Web ProForum):</p><p><strong>Scenario:</strong> Subscriber on Switch A calls subscriber on Switch B, routed through STPs W and X.</p><ol><li>Switch A analyses dialed digits and selects an idle trunk to Switch B</li><li>Switch A formulates an <strong>IAM</strong> (Initial Address Message) containing: calling number, called number, trunk selected, originating switch ID</li><li>Switch A sends IAM over A link (AW) to STP W</li><li>STP W inspects routing label → forwards IAM to Switch B over link BW</li><li>Switch B determines it serves the called number → called number is idle</li><li>Switch B formulates <strong>ACM</strong> (Address Complete Message), sends ringing tone on trunk toward Switch A, rings called subscriber</li><li>Switch B sends ACM over A link (BX) to STP X</li><li>STP X routes ACM to Switch A over link AX</li><li>Switch A connects calling subscriber to trunk so caller hears ringing</li><li>Called subscriber answers → Switch B formulates <strong>ANM</strong> (Answer Message)</li><li>Switch B sends ANM over BX → STP X → AX → Switch A</li><li>Switch A connects both directions — <strong>conversation begins</strong>, billing starts</li><li>Calling subscriber hangs up → Switch A formulates <strong>REL</strong> (Release Message)</li><li>Switch A sends REL over AW → STP W → WB → Switch B</li><li>Switch B disconnects trunk, returns to idle, formulates <strong>RLC</strong> (Release Complete)</li><li>Switch B sends RLC over BX → STP X → AX → Switch A</li><li>Switch A idles the trunk → <strong>call fully torn down</strong></li></ol><pre><code>Calling Party          SSP (CLEC/WTS)         SSP (ILEC/AT&amp;T)        Called Party
+      │                      │                       │                      │
+      │──── Dial digit ──────▶│                       │                      │
+      │                      │──── IAM ──────────────▶│                      │
+      │                      │  (Initial Address Msg) │                      │
+      │                      │                       │──── ring ────────────▶│
+      │                      │◀─── ACM ──────────────│                      │
+      │                      │ (Address Complete Msg) │                      │
+      │◀─── ringback ────────│                       │                      │
+      │                      │                       │◀─── ANM ─────────────│
+      │                      │◀─── ANM ──────────────│  (Answer Message)    │
+      │                      │  (Answer Message)      │                      │
+      │◀═══ voice path ══════╪═══════════════════════╪═════════════════════▶│
+      │    (call connected)  │                       │                      │
+      │                      │                       │                      │
+      │──── hang up ─────────▶│                       │                      │
+      │                      │──── REL ──────────────▶│                      │
+      │                      │  (Release Message)     │                      │
+      │                      │◀─── RLC ──────────────│                      │
+      │                      │  (Release Complete)    │                      │
+</code></pre><h3>Key ISUP Messages</h3><table><thead><tr><th>Message</th><th>Abbreviation</th><th>Direction</th><th>Purpose</th></tr></thead><tbody><tr><td>Initial Address Message</td><td>IAM</td><td>Originating → Terminating</td><td>Starts call setup. Contains called number, calling number, circuit ID.</td></tr><tr><td>Address Complete Message</td><td>ACM</td><td>Terminating → Originating</td><td>Called party is being alerted (ringing).</td></tr><tr><td>Answer Message</td><td>ANM</td><td>Terminating → Originating</td><td>Called party answered. Start billing.</td></tr><tr><td>Release</td><td>REL</td><td>Either direction</td><td>One party hung up. Request to release the circuit.</td></tr><tr><td>Release Complete</td><td>RLC</td><td>Response to REL</td><td>Circuit released. Call fully torn down.</td></tr><tr><td>Continuity</td><td>COT</td><td>Originating</td><td>Tests the voice circuit before completing the call.</td></tr></tbody></table><hr></hr><h2>TCAP — Database Queries (SCP Lookups)</h2><p>TCAP enables an SSP to query a remote SCP database mid-call or pre-call. The following 800-number example illustrates the exact TCAP query flow (from IEC Web ProForum reference):</p><p><strong>Scenario:</strong> Subscriber on Switch A dials an 800 number.</p><ol><li>Subscriber dials 800 number on Switch A</li><li>Switch A recognises it is an 800 call requiring database assistance — <strong>suspends call setup</strong></li><li>Switch A formulates an <strong>800 query message</strong> (TCAP) with calling number + dialed 800 number, sends to STP X over A link</li><li>STP X determines this is an 800 query → selects appropriate SCP (e.g., SCP M)</li><li>STP X forwards query to SCP M over A link</li><li>SCP M looks up the 800 number → determines the real routing number (or carrier) based on calling number, time of day, day of week</li><li>SCP M formulates a <strong>TCAP response</strong> with the routing destination, sends back via STP W → Switch A</li><li>Switch A receives the response → uses routing info to select trunk → generates <strong>IAM</strong> → proceeds with normal ISUP call setup</li></ol><p>This same TCAP mechanism is used for WTS:
+- <strong>LNP queries</strong> — is the dialed number ported to another carrier?
+- <strong>CNAM lookups</strong> — what is the caller ID name for this number?
+- <strong>Calling card validation</strong> — is this PIN valid and does the account have credit?</p><hr></hr><h2>TCAP — Database Queries (WTS Use Cases)</h2><h3>LNP Query (Local Number Portability)</h3><p>Before routing a call, WTS must check if the dialed number has been ported to another carrier. This is a TCAP query to the NPAC (Number Portability Administration Center) SCP.</p><pre><code>WTS SSP ──── TCAP Query (dialed number) ────▶ NPAC SCP
+WTS SSP ◀─── TCAP Response (routing number) ─ NPAC SCP
+       └─── Route call to correct carrier ───▶
+</code></pre><h3>800-Number Routing</h3><p>Toll-free numbers are translated via TCAP query to an SCP that returns the actual routing number.</p><hr></hr><h2>SS7 Point Codes</h2><p>Every node in an SS7 network has a unique <strong>Point Code</strong> — an address analogous to an IP address. WTS as a CLEC requires its own Point Code assigned by the NANC.</p><table><thead><tr><th>Network</th><th>Point Code Format</th><th>Example</th></tr></thead><tbody><tr><td>North America (ANSI)</td><td>3-8-8 bit format</td><td>001-001-001</td></tr><tr><td>International (ITU)</td><td>14-bit format</td><td>varies</td></tr></tbody></table><hr></hr><h2>SS7 Link Types</h2><p>All SS7 signaling links are 56 or 64 kbps bidirectional data links. What differs is their <strong>use</strong> within the signaling network.</p><table><thead><tr><th>Link</th><th>Name</th><th>Function</th></tr></thead><tbody><tr><td><strong>A</strong></td><td>Access</td><td>Connects SSP or SCP to its home STP pair. All signaling to/from an SSP travels on A links. WTS uses A links to connect to the carrier STP.</td></tr><tr><td><strong>B</strong></td><td>Bridge</td><td>Interconnects peer mated STP pairs at the same hierarchical level (quad of 4 links).</td></tr><tr><td><strong>C</strong></td><td>Cross</td><td>Interconnects the two STPs of a mated pair. Used when one STP cannot reach its destination — reroutes via its mate.</td></tr><tr><td><strong>D</strong></td><td>Diagonal</td><td>Interconnects mated STP pairs at different hierarchical levels.</td></tr><tr><td><strong>E</strong></td><td>Extended</td><td>Optional backup A links from an SSP to a second STP pair, for enhanced reliability.</td></tr><tr><td><strong>F</strong></td><td>Fully Associated</td><td>Direct SSP-to-SSP link, bypasses STP. Not typically used between networks.</td></tr></tbody></table><p><strong>Key deployment rule:</strong> Each SSP connects to <strong>both STPs of a mated pair</strong> via two A links. This ensures that if one STP fails, the other handles all signaling without interruption. STPs and SCPs are always deployed in <strong>mated pairs</strong> for redundancy.</p><p>WTS Phase 3 deployment connects to the carrier STP network via <strong>A links</strong>.</p><hr></hr><h2>SS7 vs SIP — Comparison</h2><table><thead><tr><th>Feature</th><th>SS7</th><th>SIP</th></tr></thead><tbody><tr><td>Origin</td><td>1975 (ITU-T)</td><td>1996 (IETF)</td></tr><tr><td>Network</td><td>PSTN (TDM)</td><td>Internet (IP)</td></tr><tr><td>Transport</td><td>Dedicated 56/64 kbps signaling links</td><td>UDP / TCP / TLS</td></tr><tr><td>Voice path</td><td>Separate TDM circuits</td><td>RTP over IP</td></tr><tr><td>Call setup</td><td>ISUP IAM → ACM → ANM</td><td>INVITE → 180 Ringing → 200 OK</td></tr><tr><td>Used by</td><td>ILECs, mobile carriers, PSTN core</td><td>VoIP providers, CLECs, enterprises</td></tr><tr><td>Security</td><td>Physical circuit security</td><td>TLS, SRTP, STIR/SHAKEN</td></tr><tr><td>Cost</td><td>Very high (hardware + co-location)</td><td>Low (software + internet)</td></tr></tbody></table><hr></hr><h2>WTS SS7 Deployment Roadmap</h2><h3>Phase 1 — SIP Trunking (Launch, Months 1–9)</h3><p>SIP trunk provider (Bandwidth.com) handles all PSTN interconnection. They do SS7. WTS does SIP.</p><pre><code>WTS Asterisk ──SIP──▶ Bandwidth.com ──SS7──▶ PSTN/ILECs
+</code></pre><ul><li>No SS7 hardware required</li><li>Cost: per-minute termination rates</li><li>Suitable for: 0–5 million minutes/month</li></ul><h3>Phase 2 — SS7 via Gateway (Year 2–3)</h3><p>At higher volumes, WTS deploys a <strong>Signaling Gateway</strong> that converts between SIP and SS7. This gives direct PSTN interconnection while keeping IP infrastructure.</p><pre><code>WTS Asterisk ──SIP──▶ Signaling Gateway ──SS7──▶ PSTN/ILECs
+                      (Sangoma/Dialogic)
+</code></pre><ul><li>Hardware: Sangoma SS7 cards or Dialogic gateway appliance</li><li>Cost: $15,000–$40,000 hardware + co-location</li><li>Suitable for: 5–50 million minutes/month</li></ul><h3>Phase 3 — Direct SS7 Interconnection (Year 3+)</h3><p>WTS obtains its own SS7 Point Code and connects directly to carrier STPs via A Links. Full carrier-grade interconnection.</p><pre><code>WTS SS7 Switch ──A Link──▶ Carrier STP ──▶ PSTN
+</code></pre><ul><li>Requires: NANC Point Code, physical co-location, STP access agreements</li><li>Cost: $100,000+ setup + monthly co-location</li><li>Suitable for: 50+ million minutes/month</li></ul><hr></hr><h2>SS7 Security Considerations</h2><p>SS7 has well-documented security vulnerabilities due to its age and lack of authentication:</p><table><thead><tr><th>Vulnerability</th><th>Risk</th><th>Mitigation</th></tr></thead><tbody><tr><td>SS7 location tracking</td><td>Caller location exposed via MAP queries</td><td>Physical circuit security, monitoring</td></tr><tr><td>Call interception</td><td>ISUP manipulation can reroute calls</td><td>Carrier-level monitoring, anomaly detection</td></tr><tr><td>SMS interception</td><td>MAP protocol exposes SMS routing</td><td>SMPP over TLS for A2P SMS</td></tr><tr><td>Denial of service</td><td>Flood of ISUP messages can overwhelm a switch</td><td>STP-level filtering, rate limiting</td></tr></tbody></table><p>WTS mitigates these by using a managed STP provider (Phase 1–2) and implementing SS7 firewall/monitoring (Phase 3).</p><hr></hr><h2>Open Source SS7 Tools</h2><table><thead><tr><th>Tool</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>OpenSS7</strong></td><td>Open source SS7 stack for Linux (openss7.org)</td></tr><tr><td><strong>Sangoma SS7</strong></td><td>Commercial SS7 cards + open source drivers for Asterisk/Dahdi</td></tr><tr><td><strong>osmocom</strong></td><td>Open source SS7/mobile stack (used in research and testing)</td></tr><tr><td><strong>SigPloit</strong></td><td>SS7 vulnerability testing framework (security research)</td></tr></tbody></table><hr></hr><p><em>World Telephony Services Corp — Confidential</em></p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-ss7-signaling-system-technical-reference",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

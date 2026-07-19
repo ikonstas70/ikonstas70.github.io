@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/data-science/python-stack">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Modern Python Stack — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/" class="active">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Foundations</span>
+    <h1>The Modern Python Stack</h1>
+    <p class="meta">Data Science Series &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Half of historical data-science pain was never about data — it was Python environments. That era is over if you let it be. The 2026 setup is one tool, one lockfile, and a project layout that separates exploration from code you intend to keep.</p>
+
+    <h2>One tool: uv</h2>
+    <p><code>uv</code> replaced the pip/venv/conda tangle for most practitioners: it installs Python versions, creates environments, resolves dependencies fast, and pins everything in a lockfile so a colleague — or you, in six months — gets the same environment.</p>
+    <pre><code># new project, isolated environment, pinned deps
+uv init churn-analysis && cd churn-analysis
+uv add polars scikit-learn matplotlib jupyter
+uv run jupyter lab</code></pre>
+    <p>Two rules carry the day: <strong>never install into system Python</strong>, and <strong>one environment per project</strong>. Every "it works on my machine" story starts by breaking one of them.</p>
+
+    <h2>Notebooks are for questions, scripts are for answers</h2>
+    <p>Jupyter is the right tool for exploration: look at data, try things, plot, iterate. It is the wrong tool for anything that must run twice reliably — hidden state and out-of-order execution make notebooks lie to you politely. The working rhythm:</p>
+    <ul>
+      <li>Explore in a notebook until something works.</li>
+      <li>Promote what worked into a module under <code>src/</code>, imported back into the notebook.</li>
+      <li>Anything scheduled, shared, or load-bearing becomes a script or pipeline — never a notebook on cron.</li>
+    </ul>
+    <pre><code>churn-analysis/
+├── pyproject.toml        # deps + config, managed by uv
+├── data/                 # raw/ and processed/, gitignored
+├── notebooks/            # numbered: 01-explore.ipynb, 02-features.ipynb
+├── src/churn/            # the code you keep
+└── tests/                # yes, even for analysis code</code></pre>
+
+    <h2>The libraries that matter</h2>
+    <ul>
+      <li><strong>Polars</strong> — the modern default for dataframes: fast, multi-threaded, and strict enough to catch mistakes early. <strong>Pandas</strong> remains everywhere and must be readable; write new work in either, but know both (Part 3).</li>
+      <li><strong>DuckDB</strong> — SQL over local files at absurd speed; the single-node answer to "do we need Spark?" (usually: no).</li>
+      <li><strong>scikit-learn</strong> — classical ML's lingua franca (Part 6).</li>
+      <li><strong>PyTorch</strong> — the deep-learning default (Part 7).</li>
+      <li><strong>matplotlib / seaborn / plotly</strong> — charts from rough to publishable (Part 5).</li>
+    </ul>
+
+    <h2>Version control from day one</h2>
+    <p>Analysis code is code: <code>git init</code> before the first notebook, <code>data/</code> and credentials in <code>.gitignore</code>, and small commits with honest messages. Strip notebook output before committing (<code>nbstripout</code> automates it) so diffs show thinking, not base64 blobs. Your future self is the collaborator you're being kind to.</p>
+
+    <h2>Checkpoint</h2>
+    <p>You're done with setup when this works end-to-end: fresh clone → <code>uv sync</code> → <code>uv run jupyter lab</code> → notebook imports from <code>src/</code> and reads a file from <code>data/</code>. That loop, boring as it looks, is the difference between a laptop full of scripts and a body of work.</p>
+
+    <p><a href="/data-science/data-wrangling">Next: Data Wrangling →</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=data-science-python-stack",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/data-science/mlops">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shipping It: MLOps Without the Buzzwords — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/" class="active">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Production</span>
+    <h1>Shipping It: MLOps Without the Buzzwords</h1>
+    <p class="meta">Data Science Series &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>A model in a notebook is an opinion. A model in production is a promise — that it will keep being roughly this good, for these users, while the world changes underneath it. MLOps is just the reliability engineering that keeps the promise, and 90% of it is ordinary software discipline applied to two unusual artifacts: data and models.</p>
+
+    <h2>Reproducibility is the foundation</h2>
+    <p>Any prediction in production must be traceable to: the code version (git), the data version, the model artifact, and the training configuration. Assemble it from parts you already know: git for code, immutable versioned data (Part 3's <code>data/raw/</code> discipline, scaled up), an experiment tracker (MLflow or W&amp;B — a spreadsheet beats nothing) recording every run's config and metrics, and model artifacts stored with checksums, never "final_model_v2_REAL.pkl" on someone's laptop.</p>
+
+    <h2>Deployment shapes, simplest first</h2>
+    <ul>
+      <li><strong>Batch scoring</strong> — a scheduled job writes predictions to a table. Boring, debuggable, and sufficient for most business problems. Start here unless latency forbids it.</li>
+      <li><strong>Online service</strong> — the model behind an API (FastAPI + a container). Now it's a service like any other: health checks, timeouts, load tests, and a rollback path.</li>
+      <li><strong>Streaming/edge</strong> — only when the problem genuinely demands millisecond decisions where the data lives.</li>
+    </ul>
+    <p>Ship the <em>pipeline</em>, not the pickle: the same feature code must run in training and serving, or you've built training-serving skew — the production twin of leakage.</p>
+
+    <h2>Models rot: monitor for drift</h2>
+    <p>Software breaks loudly; models degrade politely, still returning confident numbers as the world walks away from their training data. Watch three layers:</p>
+    <ul>
+      <li><strong>Data drift:</strong> input distributions shifting (new device type, new customer segment, schema change upstream). Cheap statistical checks per feature, alerted like any SLO.</li>
+      <li><strong>Prediction drift:</strong> the output distribution moving — often the earliest smoke.</li>
+      <li><strong>Performance drift:</strong> actual accuracy against ground truth, measured as fast as labels arrive (chargebacks in weeks, churn in months — design the feedback loop <em>before</em> launch).</li>
+    </ul>
+    <p>Retraining is the response, on a schedule or a trigger — but always through the same gate: new model beats current champion on the golden evaluation, or it doesn't ship. Automate the pipeline, keep a human on the promote button until trust is earned.</p>
+
+    <h2>The go-live checklist</h2>
+    <ul>
+      <li>One-command retrain from versioned data; artifact checksummed and registered.</li>
+      <li>Same featurization code in train and serve; a skew test proving it.</li>
+      <li>Golden-set gate wired into CI; champion/challenger comparison logged.</li>
+      <li>Drift dashboards with owners and thresholds, not just charts.</li>
+      <li>Rollback rehearsed: previous model restorable in minutes.</li>
+      <li>An owner on the rota — a model without an owner is an outage with a lead time.</li>
+    </ul>
+
+    <h2>Checkpoint — and the series, closed</h2>
+    <p>Take the Part 6 model and give it the full treatment: tracked training run, containerized batch scorer, drift check on a held-out "future" month, and a written rollback plan. Do that once and you'll never again wonder what separates a data scientist from a data science <em>engineer</em> — it's this part, done unglamorously, every time.</p>
+
+    <p><a href="/data-science/">← Back to the series index</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=data-science-mlops",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

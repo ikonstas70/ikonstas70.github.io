@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-bitcoin-crypto-node-tools-reference">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitcoin &amp; Crypto Node Tools — Konstas Engineering Notes</title>
+<meta name="description" content="A technical reference for Bitcoin node operators — covering live block monitoring, blockchain queries, halving phase analysis, threat detection, and real-tim…">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Cryptography</span>
+    <h1>Bitcoin &amp; Crypto Node Tools</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p class="header-sub">A technical reference for Bitcoin node operators — covering live block monitoring, blockchain queries, halving phase analysis, threat detection, and real-time price tracking. Annotated Python and Bash tools.</p>
+  <p class="header-meta">Bitcoin Core &nbsp;&middot;&nbsp; Python &nbsp;&middot;&nbsp; Bash &nbsp;&middot;&nbsp; Coinbase API &nbsp;&middot;&nbsp; Ioannis Alexander Konstas</p>
+  <div class="header-tags">
+    <span class="htag">Bitcoin Core</span>
+    <span class="htag">Blockchain</span>
+    <span class="htag">Node Monitoring</span>
+    <span class="htag">Halving Phases</span>
+    <span class="htag">Security Dashboard</span>
+    <span class="htag">Price Tracking</span>
+    <span class="htag">JSON-RPC</span>
+    <span class="htag">Coinbase API</span>
+  </div>
+</header>
+
+<div class="container">
+
+  
+
+  <!-- ═══════════ 1. CONCEPTS ═══════════ -->
+  <div id="concepts" class="sec-head">
+    <span class="sec-label">Core Concepts &amp; Why These Tools Matter</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§1</span>
+  </div>
+
+  <h2>Running Your Own Bitcoin Node</h2>
+  <p>A Bitcoin full node independently validates every transaction and block against the consensus rules — it trusts no third party. Running your own node means you are not relying on someone else's node to tell you what the blockchain says. This matters for privacy (you don't leak your addresses to a third-party API), for security (you verify your own balance independently), and for network health (every node strengthens decentralization).</p>
+
+  <h2>Why Monitor It?</h2>
+  <p>A Bitcoin node is a long-running daemon. Without monitoring, silent failures go undetected: the node may fall behind the chain tip, peer connections may drop, mempool may fill, or malicious peers may attempt eclipse attacks. The tools in this reference turn passive node operation into active infrastructure management.</p>
+
+  <table class="ref-table">
+    <thead><tr><th>Tool</th><th>What it solves</th><th>Why it matters</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Block Monitor</strong></td><td>Real-time block arrival detection</td><td>Confirms node is synced and processing new blocks. Detects chain stalls within seconds.</td></tr>
+      <tr><td><strong>Genesis Query</strong></td><td>Validate RPC methods and node connectivity</td><td>The genesis block (height 0) is immutable — querying it with 6 methods validates that bitcoin-cli, JSON-RPC, and REST interfaces all work correctly.</td></tr>
+      <tr><td><strong>Halving Explorer</strong></td><td>Inspect coinbase reward across halving boundaries</td><td>Each halving cuts miner reward in half. Verifying the actual coinbase transaction value at boundary blocks confirms the halvings encoded in the consensus rules are executing correctly.</td></tr>
+      <tr><td><strong>Security Monitor</strong></td><td>Peer threat detection, mempool health, chain tips</td><td>Inbound peer spikes, time drift, suspicious subversions, and forked chain tips are early signals of network attacks. Catches eclipse and Sybil attempts before they impact operations.</td></tr>
+      <tr><td><strong>Price Ticker</strong></td><td>Live BTC/ETH/LTC/DOGE prices in terminal</td><td>Real-time Coinbase API price feed. No browser, no notifications — clean terminal display for operators who live in the shell.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Bitcoin Halving — What and Why</h2>
+  <p>Every 210,000 blocks (~4 years), the Bitcoin protocol cuts the block subsidy in half. This is coded in the consensus rules — not administered by anyone. The halving controls Bitcoin's total supply cap of 21 million BTC and its issuance schedule. Understanding which phase a block belongs to is fundamental to analyzing miner economics and network security budget over time.</p>
+
+  <table class="ref-table">
+    <thead><tr><th>Phase</th><th>Block range</th><th>Subsidy (BTC/block)</th><th>Approximate date</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>0 – 209,999</td><td><span class="ok">50.0</span></td><td>Jan 2009 – Nov 2012</td></tr>
+      <tr><td>2</td><td>210,000 – 419,999</td><td><span class="ok">25.0</span></td><td>Nov 2012 – Jul 2016</td></tr>
+      <tr><td>3</td><td>420,000 – 629,999</td><td><span class="hi">12.5</span></td><td>Jul 2016 – May 2020</td></tr>
+      <tr><td>4</td><td>630,000 – 839,999</td><td><span class="hi">6.25</span></td><td>May 2020 – Apr 2024</td></tr>
+      <tr><td>5</td><td>840,000 – 1,049,999</td><td><span class="bad">3.125</span></td><td>Apr 2024 – ~2028</td></tr>
+    </tbody>
+  </table>
+
+  <h2>What Is the Genesis Block?</h2>
+  <p>Block height 0 — the first block ever mined by Satoshi Nakamoto on January 3, 2009. Its hash is hardcoded into every Bitcoin client. The coinbase transaction cannot be spent (a quirk of the original implementation). The block's timestamp and Merkle root are fixed constants used to validate chain continuity. Querying the genesis block via multiple RPC methods is the standard sanity check for a freshly configured node.</p>
+
+  <h2>What Is a Peer Eclipse Attack?</h2>
+  <p>An eclipse attack isolates a node by monopolizing all of its peer connections with attacker-controlled nodes. The victim node only sees the attacker's view of the chain. The security monitor watches for sudden inbound peer spikes, unusual peer subversion strings (<code>/Satoshi:0.1.0/</code> style), and geographic peer concentration — all early eclipse indicators.</p>
+
+  <!-- ═══════════ 2. SETUP ═══════════ -->
+  <div id="setup" class="sec-head">
+    <span class="sec-label">Node Setup &amp; Dependencies</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§2</span>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label sh">Install Bitcoin Core (Ubuntu / Debian)</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Snap install (easiest — manages updates automatically)</span>
+sudo snap install bitcoin-core
+
+<span class="cmt"># Verify CLI is accessible</span>
+bitcoin-core.cli --version
+bitcoin-core.cli getblockchaininfo | jq '{chain, blocks, headers, synced:.verificationprogress}'
+
+<span class="cmt"># For manual installs — set alias if using bitcoin-cli directly</span>
+alias btc="bitcoin-cli -rpcuser=user -rpcpassword=pass"</pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label sh">bitcoin.conf — minimum RPC configuration</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># ~/.bitcoin/bitcoin.conf</span>
+server=1
+rpcuser=user
+rpcpassword=&lt;strong-random-password&gt;
+rpcallowip=127.0.0.1
+txindex=1       <span class="cmt"># required for getransaction on any tx (not just wallet)</span>
+daemon=1        <span class="cmt"># run as background daemon</span>
+maxconnections=40</pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label py">Python dependencies</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre">pip3 install requests speedtest-cli
+
+<span class="cmt"># requests — Coinbase API calls (price tools)</span>
+<span class="cmt"># speedtest-cli — not needed for Bitcoin tools, only for the jitter+bandwidth reference</span>
+<span class="cmt"># jq is required for the bash scripts</span>
+sudo apt install jq</pre>
+  </div>
+
+  <!-- ═══════════ 3. BLOCK MONITOR ═══════════ -->
+  <div id="monitor" class="sec-head">
+    <span class="sec-label">Live Block Monitor</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§3</span>
+  </div>
+
+  <p>Polls <code>bitcoin-core.cli getblockcount</code> every 10 seconds. When a new block is detected, fetches full block data via <code>getblock</code> + <code>getblockstats</code> and renders it in a 100-column terminal box. Also appends every new block to <code>bitcoin_block_log.txt</code> for historical review.</p>
+
+  <div class="callout yellow">
+    <strong>Why it matters:</strong> Bitcoin produces a block roughly every 10 minutes. If your monitor stops showing new blocks, your node has either stalled (stuck at a chain tip), lost peers, or encountered a consensus failure. This is your first alert for node health issues.
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label py">bitcoin_block_monitor.py — complete script</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">import</span> json, subprocess, time, os
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime, timezone
+
+BOX_WIDTH     = <span class="num">100</span>
+POLL_INTERVAL = <span class="num">10</span>   <span class="cmt"># seconds between height checks</span>
+
+<span class="kw">def</span> <span class="fn">run_cli</span>(*args):
+    <span class="cmt"># Runs bitcoin-core.cli and returns stdout string, or None on error</span>
+    <span class="kw">try</span>:
+        r = subprocess.<span class="fn">run</span>([<span class="str">"bitcoin-core.cli"</span>, *args],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=<span class="num">True</span>)
+        <span class="kw">return</span> r.stdout.<span class="fn">decode</span>().<span class="fn">strip</span>()
+    <span class="kw">except</span> subprocess.CalledProcessError <span class="kw">as</span> e:
+        <span class="kw">print</span>(<span class="fn">f</span><span class="str">"[!] CLI error: {e.stderr.decode().strip()}"</span>)
+        <span class="kw">return</span> <span class="num">None</span>
+
+<span class="kw">def</span> <span class="fn">get_current_block_height</span>():
+    raw = <span class="fn">run_cli</span>(<span class="str">"getblockcount"</span>)
+    <span class="kw">return</span> <span class="fn">int</span>(raw) <span class="kw">if</span> raw <span class="kw">else</span> <span class="num">None</span>
+
+<span class="kw">def</span> <span class="fn">get_block_data</span>(height):
+    block_hash = <span class="fn">run_cli</span>(<span class="str">"getblockhash"</span>, <span class="fn">str</span>(height))
+    <span class="kw">if not</span> block_hash: <span class="kw">return</span> <span class="num">None</span>
+    block_json = <span class="fn">run_cli</span>(<span class="str">"getblock"</span>, block_hash, <span class="str">"1"</span>)
+    <span class="kw">return</span> json.<span class="fn">loads</span>(block_json) <span class="kw">if</span> block_json <span class="kw">else</span> <span class="num">None</span>
+
+<span class="kw">def</span> <span class="fn">display_block</span>(block):
+    ts   = datetime.<span class="fn">fromtimestamp</span>(block[<span class="str">'time'</span>], tz=timezone.utc).<span class="fn">strftime</span>(<span class="str">'%Y-%m-%d %H:%M:%S UTC'</span>)
+    rows = [
+        (<span class="str">"Height"</span>,       block[<span class="str">'height'</span>]),
+        (<span class="str">"Hash"</span>,         block[<span class="str">'hash'</span>]),
+        (<span class="str">"Time"</span>,         ts),
+        (<span class="str">"Transactions"</span>, block[<span class="str">'nTx'</span>]),
+        (<span class="str">"Size (bytes)"</span>,  block[<span class="str">'size'</span>]),
+        (<span class="str">"Weight"</span>,       block[<span class="str">'weight'</span>]),
+        (<span class="str">"Difficulty"</span>,   <span class="fn">f</span><span class="str">"{block['difficulty']:,.0f}"</span>),
+        (<span class="str">"Merkle Root"</span>,  block[<span class="str">'merkleroot'</span>]),
+        (<span class="str">"Nonce"</span>,        block[<span class="str">'nonce'</span>]),
+        (<span class="str">"Version"</span>,      block[<span class="str">'versionHex'</span>]),
+    ]
+    border = <span class="str">"+"</span> + <span class="str">"─"</span> * (BOX_WIDTH - <span class="num">2</span>) + <span class="str">"+"</span>
+    <span class="kw">print</span>(border)
+    <span class="kw">print</span>(<span class="fn">f</span><span class="str">"│{'NEW BLOCK DETECTED'.center(BOX_WIDTH-2)}│"</span>)
+    <span class="kw">print</span>(border)
+    <span class="kw">for</span> label, value <span class="kw">in</span> rows:
+        line = <span class="fn">f</span><span class="str">"  {label:<15}{value}"</span>
+        <span class="kw">print</span>(<span class="fn">f</span><span class="str">"│{str(line):<{BOX_WIDTH-2}}│"</span>)
+    <span class="kw">print</span>(border)
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    <span class="kw">print</span>(<span class="str">"[*] Bitcoin Block Monitor — polling every 10 seconds"</span>)
+    last_height = <span class="num">None</span>
+    <span class="kw">while</span> <span class="num">True</span>:
+        height = <span class="fn">get_current_block_height</span>()
+        <span class="kw">if</span> height <span class="kw">and</span> height != last_height:
+            block = <span class="fn">get_block_data</span>(height)
+            <span class="kw">if</span> block:
+                <span class="fn">display_block</span>(block)
+                <span class="cmt"># Append to log</span>
+                <span class="kw">with</span> <span class="fn">open</span>(<span class="str">"bitcoin_block_log.txt"</span>, <span class="str">"a"</span>) <span class="kw">as</span> f:
+                    f.<span class="fn">write</span>(json.<span class="fn">dumps</span>({<span class="str">"height"</span>: height, <span class="str">"hash"</span>: block[<span class="str">'hash'</span>],
+                                          <span class="str">"time"</span>: block[<span class="str">'time'</span>], <span class="str">"ntx"</span>: block[<span class="str">'nTx'</span>]}) + <span class="str">"\n"</span>)
+                last_height = height
+        time.<span class="fn">sleep</span>(POLL_INTERVAL)
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    <span class="fn">main</span>()</pre>
+  </div>
+
+  <!-- ═══════════ 4. GENESIS ═══════════ -->
+  <div id="genesis" class="sec-head">
+    <span class="sec-label">Genesis Block Query — 6 Methods</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§4</span>
+  </div>
+
+  <p>The genesis block (height 0, hash <code>000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</code>) is the immutable anchor of the entire Bitcoin blockchain. Querying it via six different interfaces validates that the node's RPC, JSON-RPC, and REST APIs all work. The coinbase transaction of the genesis block is unspendable — this is a known quirk of Satoshi's original implementation.</p>
+
+  <div class="callout tip">
+    <strong>Why 6 methods?</strong> Each method exercises a different code path: the CLI binary, the HTTP JSON-RPC endpoint, the REST API, header-only queries, verbose decode levels, and raw hex output. If any method fails while others succeed, the failure points to a specific subsystem — not the node sync itself.
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label sh">bitcoin_genesis_block_query.sh — all 6 methods</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre>#!/usr/bin/env bash
+CLI="${BITCOIN_CLI:-/snap/bin/bitcoin-core.cli}"
+RPC_USER="${BITCOIN_RPC_USER:-user}"
+RPC_PASS="${BITCOIN_RPC_PASS:-pass}"
+RPC_HOST="127.0.0.1"
+RPC_PORT="8332"
+
+<span class="cmt"># ── Method 1: By block height via CLI (recommended) ──────────────</span>
+GENESIS_HASH=$("$CLI" getblockhash 0)
+"$CLI" getblock "$GENESIS_HASH" | jq '{hash, height, time, nTx, size, difficulty, merkleroot, nonce}'
+
+<span class="cmt"># ── Method 2: Header only (lighter / faster) ──────────────────────</span>
+"$CLI" getblockheader "$GENESIS_HASH" | jq '{hash, height, time, difficulty, mediantime, chainwork}'
+
+<span class="cmt"># ── Method 3: Raw block data (hex) ────────────────────────────────</span>
+"$CLI" getblock "$GENESIS_HASH" 0    <span class="cmt"># verbosity 0 = raw hex serialization</span>
+
+<span class="cmt"># ── Method 4: Full JSON decode (verbosity 2 — all tx data) ────────</span>
+"$CLI" getblock "$GENESIS_HASH" 2 | jq '.tx[0] | {txid, locktime, vout: .vout[0]}'
+
+<span class="cmt"># ── Method 5: JSON-RPC over HTTP (curl) ───────────────────────────</span>
+curl -s --user "$RPC_USER:$RPC_PASS" \
+  --data-binary '{"jsonrpc":"1.0","id":"genesis","method":"getblock","params":["'$GENESIS_HASH'",1]}' \
+  -H 'content-type: text/plain;' \
+  "http://$RPC_HOST:$RPC_PORT/" | jq '.result | {hash, height, time, nTx}'
+
+<span class="cmt"># ── Method 6: REST API (no auth required — local only) ────────────</span>
+curl -s "http://127.0.0.1:8332/rest/block/$GENESIS_HASH.json" | jq '{hash, height, time, nTx}'</pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label out">Expected genesis block output</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre>{
+  "hash":       "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+  "height":     0,
+  "time":       1231006505,   <span class="cmt">← 2009-01-03 18:15:05 UTC — Satoshi's timestamp</span>
+  "nTx":        1,            <span class="cmt">← one coinbase transaction only</span>
+  "size":       285,
+  "difficulty": 1,
+  "merkleroot": "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
+  "nonce":      2083236893    <span class="cmt">← proof of work nonce</span>
+}</pre>
+  </div>
+
+  <!-- ═══════════ 5. HALVING ═══════════ -->
+  <div id="halving" class="sec-head">
+    <span class="sec-label">Halving Phases Explorer</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§5</span>
+  </div>
+
+  <p>Iterates through the block heights at each halving boundary (209,999 → 210,000, 419,999 → 420,000, etc.) and queries the actual coinbase transaction value at each boundary. This lets you observe the protocol-enforced subsidy cut in the raw blockchain data — not from a third-party source.</p>
+
+  <div class="callout yellow">
+    <strong>Why it matters:</strong> The halving is a consensus rule, not a policy. Verifying it in your own node's data confirms that the block you are examining actually enforces the subsidy schedule — critical for auditing miner behavior at epoch boundaries.
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label sh">bitcoin_halving_phases_explorer.sh</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre>#!/bin/bash
+
+<span class="cmt"># Boundary block heights — start and end of each halving epoch</span>
+BLOCK_HEIGHTS=(1 209999 210000 419999 420000 629999 630000 839999 840000 1049999)
+
+RED='\033[0;31m'; GREEN='\033[0;32m'; WHITE='\033[1;37m'; NC='\033[0m'
+
+<span class="kw">for</span> ((i=0; i&lt;${#BLOCK_HEIGHTS[@]}-1; i+=2)); <span class="kw">do</span>
+    PHASE_START=${BLOCK_HEIGHTS[$i]}
+    PHASE_END=${BLOCK_HEIGHTS[$((i+1))]}
+    echo -e "${RED}Phase $((i/2+1)): Blocks $PHASE_START — $PHASE_END${NC}"
+
+    <span class="cmt"># ── Fetch start block ──────────────────────────────────────────</span>
+    START_HASH=$(bitcoin-core.cli getblockhash "$PHASE_START" 2>/dev/null)
+    <span class="kw">if</span> [[ $? -eq 0 ]]; <span class="kw">then</span>
+        START_DATA=$(bitcoin-core.cli getblock "$START_HASH" 2)
+        <span class="cmt"># coinbase value = first output of first (coinbase) transaction</span>
+        VALUE=$(echo "$START_DATA" | jq -r '.tx[0].vout[0].value')
+        TS=$(echo "$START_DATA"    | jq -r '.time')
+        DATE=$(date -d @$TS '+%Y-%m-%d %H:%M:%S')
+        echo -e "  Start — height $PHASE_START | coinbase: ${WHITE}${VALUE} BTC${NC} | $DATE"
+    <span class="kw">fi</span>
+
+    <span class="cmt"># ── Fetch end block ────────────────────────────────────────────</span>
+    END_HASH=$(bitcoin-core.cli getblockhash "$PHASE_END" 2>/dev/null)
+    <span class="kw">if</span> [[ $? -eq 0 ]]; <span class="kw">then</span>
+        END_DATA=$(bitcoin-core.cli getblock "$END_HASH" 2)
+        VALUE=$(echo "$END_DATA" | jq -r '.tx[0].vout[0].value')
+        TS=$(echo "$END_DATA"    | jq -r '.time')
+        DATE=$(date -d @$TS '+%Y-%m-%d %H:%M:%S')
+        echo -e "  End   — height $PHASE_END   | coinbase: ${WHITE}${VALUE} BTC${NC} | $DATE"
+    <span class="kw">fi</span>
+    sleep 1
+<span class="kw">done</span>
+
+<span class="cmt"># Phase 5 — post-4th-halving spot checks</span>
+echo -e "${RED}Phase 5: Spot checks 850000 – 880000${NC}"
+<span class="kw">for</span> HEIGHT <span class="kw">in</span> 850000 860000 870000 880000; <span class="kw">do</span>
+    HASH=$(bitcoin-core.cli getblockhash "$HEIGHT" 2>/dev/null) || { echo "  height $HEIGHT not yet mined"; <span class="kw">continue</span>; }
+    DATA=$(bitcoin-core.cli getblock "$HASH" 2)
+    VALUE=$(echo "$DATA" | jq -r '.tx[0].vout[0].value')
+    TS=$(echo "$DATA"    | jq -r '.time')
+    echo -e "  Height $HEIGHT | coinbase: ${WHITE}${VALUE} BTC${NC} | $(date -d @$TS '+%Y-%m-%d')"
+    sleep 1
+<span class="kw">done</span></pre>
+  </div>
+
+  <!-- ═══════════ 6. SECURITY ═══════════ -->
+  <div id="security" class="sec-head">
+    <span class="sec-label">Node Security Monitor</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§6</span>
+  </div>
+
+  <p>Intelligent dashboard that runs heuristic threat detection against the live node state. Collects data from five RPC calls — <code>getnetworkinfo</code>, <code>getpeerinfo</code>, <code>getblockchaininfo</code>, <code>getmempoolinfo</code>, <code>getchaintips</code> — and applies structured checks every 20 seconds. Alerts write to a log file and optionally to syslog.</p>
+
+  <h2>Heuristic Threat Checks</h2>
+  <table class="ref-table">
+    <thead><tr><th>Check</th><th>Metric</th><th>Threshold</th><th>Threat it detects</th></tr></thead>
+    <tbody>
+      <tr><td>Inbound peer count</td><td><code>getnetworkinfo.connections_in</code></td><td>&gt; 50</td><td>Sybil / eclipse attack — attacker flooding inbound slots</td></tr>
+      <tr><td>Peer spike</td><td>Δ peer count vs previous run</td><td>+15 in 20s</td><td>Sudden mass connection — early eclipse indicator</td></tr>
+      <tr><td>Time drift</td><td><code>getpeerinfo[].timeoffset</code></td><td>&gt; ±70s per peer</td><td>Time-warp attack — manipulate median time past</td></tr>
+      <tr><td>Stale peers</td><td><code>getpeerinfo[].lastseen</code></td><td>&gt; 3600s</td><td>Dead peers wasting connection slots</td></tr>
+      <tr><td>Suspicious subversion</td><td><code>getpeerinfo[].subver</code></td><td>Known malicious strings</td><td>Non-standard clients, probe bots, MITM proxies</td></tr>
+      <tr><td>Peer concentration</td><td>Unique /24 subnets</td><td>&lt; 4 unique /24s</td><td>All peers from same ASN — eclipse, co-located attack</td></tr>
+      <tr><td>Chain tip divergence</td><td><code>getchaintips</code></td><td>Any non-active tips</td><td>Orphaned blocks, forks — chain split indicator</td></tr>
+      <tr><td>Debug.log errors</td><td>Tail of debug.log</td><td>ERROR / WARNING lines</td><td>Internal consensus failures, disk issues</td></tr>
+    </tbody>
+  </table>
+
+  <div class="snippet">
+    <div class="snip-label sh">bitcoin_node_security_monitor.sh — key sections</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre">#!/usr/bin/env bash
+BITCOIN_CLI="${BITCOIN_CLI:-/snap/bin/bitcoin-core.cli}"
+LOGFILE="${HOME}/bitcoin_node_monitor.log"
+UPDATE_INTERVAL=20
+
+ALERT_SYSLOG=true
+PEER_SPIKE_THRESHOLD=15
+HIGH_INBOUND_THRESHOLD=50
+
+<span class="cmt"># ── RPC data collection ───────────────────────────────────────────</span>
+NET_INFO=$(  "$BITCOIN_CLI" getnetworkinfo   2>/dev/null)
+PEER_INFO=$( "$BITCOIN_CLI" getpeerinfo      2>/dev/null)
+CHAIN_INFO=$("$BITCOIN_CLI" getblockchaininfo 2>/dev/null)
+MEM_INFO=$(  "$BITCOIN_CLI" getmempoolinfo   2>/dev/null)
+TIPS=$(      "$BITCOIN_CLI" getchaintips     2>/dev/null)
+
+<span class="cmt"># ── Heuristic: Inbound peer count ────────────────────────────────</span>
+INBOUND=$(echo "$NET_INFO" | jq '.connections_in // 0')
+[[ "$INBOUND" -gt "$HIGH_INBOUND_THRESHOLD" ]] &amp;&amp;
+    log_alert "HIGH INBOUND PEERS: $INBOUND (threshold $HIGH_INBOUND_THRESHOLD) — possible eclipse"
+
+<span class="cmt"># ── Heuristic: Peer spike detection (state in /tmp) ──────────────</span>
+PREV_PEERS=$(cat /tmp/btc_peer_count 2>/dev/null || echo 0)
+CUR_PEERS=$(echo "$PEER_INFO" | jq 'length')
+DELTA=$((CUR_PEERS - PREV_PEERS))
+echo "$CUR_PEERS" > /tmp/btc_peer_count
+[[ "$DELTA" -gt "$PEER_SPIKE_THRESHOLD" ]] &amp;&amp;
+    log_alert "PEER SPIKE: +$DELTA peers in ${UPDATE_INTERVAL}s — investigate immediately"
+
+<span class="cmt"># ── Heuristic: Time drift ─────────────────────────────────────────</span>
+echo "$PEER_INFO" | jq -r '.[] | "\(.addr) \(.timeoffset)"' | while read ADDR OFFSET; do
+    ABS=$(echo "$OFFSET" | tr -d '-')
+    [[ "$ABS" -gt 70 ]] &amp;&amp; log_alert "TIME DRIFT: $ADDR offset=${OFFSET}s — time-warp risk"
+done
+
+<span class="cmt"># ── Heuristic: Suspicious subversion strings ─────────────────────</span>
+BAD_SUBS=("/Satoshi:0.1.0/" "/Satoshi:0.0.1/" "/therealbitcoin.org/")
+echo "$PEER_INFO" | jq -r '.[].subver' | while read SUB; do
+    <span class="kw">for</span> BAD <span class="kw">in</span> "${BAD_SUBS[@]}"; <span class="kw">do</span>
+        [[ "$SUB" == *"$BAD"* ]] &amp;&amp; log_alert "SUSPICIOUS PEER SUBVER: $SUB"
+    <span class="kw">done</span>
+done
+
+<span class="cmt"># ── Heuristic: Chain tip divergence ──────────────────────────────</span>
+echo "$TIPS" | jq -r '.[] | "\(.status) \(.hash) height=\(.height)"' | grep -v "^active " |
+    while read line; do log_alert "CHAIN TIP: $line"; done
+
+<span class="cmt"># ── Dashboard output (top peers by ping) ──────────────────────────</span>
+echo "$PEER_INFO" | jq -r 'sort_by(.pingtime) | .[:10] | .[] |
+    "  \(.addr | .[0:40])<35 ping=\(.pingtime*1000|round)ms in=\(.bytesrecv) out=\(.bytessent)"'</pre>
+  </div>
+
+  <!-- ═══════════ 7. TICKER ═══════════ -->
+  <div id="ticker" class="sec-head">
+    <span class="sec-label">Live Price Ticker — Framed Terminal Display</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§7</span>
+  </div>
+
+  <p>Fetches live prices for BTC, ETH, LTC, and DOGE from the Coinbase public spot price API every 10 seconds. Renders inside a fixed-width terminal frame. Color-codes each price: <span class="ok">green</span> for up, <span class="bad">red</span> for down, <span class="hi">yellow</span> for unavailable. Press <code>Q</code> to quit cleanly.</p>
+
+  <div class="callout">
+    <strong>Why Coinbase API?</strong> The <code>https://api.coinbase.com/v2/prices/{CURRENCY}-USD/spot</code> endpoint is public, no auth required, and returns a simple JSON object. No API key needed for spot price reads. The rate limit is generous for a 10-second polling interval.
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label py">crypto_ticker_framed_centered.py</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">import</span> requests, time, shutil, os
+
+CURRENCIES    = [<span class="str">'BTC'</span>, <span class="str">'ETH'</span>, <span class="str">'LTC'</span>, <span class="str">'DOGE'</span>]
+UPDATE_SECS   = <span class="num">10</span>
+FRAME_WIDTH   = <span class="num">44</span>
+
+<span class="kw">def</span> <span class="fn">fetch_price</span>(currency):
+    <span class="kw">try</span>:
+        r = requests.<span class="fn">get</span>(<span class="fn">f</span><span class="str">"https://api.coinbase.com/v2/prices/{currency}-USD/spot"</span>, timeout=<span class="num">5</span>)
+        r.<span class="fn">raise_for_status</span>()
+        <span class="kw">return</span> <span class="fn">float</span>(r.<span class="fn">json</span>()[<span class="str">'data'</span>][<span class="str">'amount'</span>])
+    <span class="kw">except</span>: <span class="kw">return</span> <span class="num">None</span>
+
+<span class="kw">def</span> <span class="fn">format_change</span>(cur, prev):
+    <span class="kw">if</span> cur <span class="kw">is None</span>: <span class="kw">return</span> <span class="str">"\033[33mUnavailable\033[0m"</span>
+    <span class="kw">if</span> prev <span class="kw">is None</span>: <span class="kw">return</span> <span class="fn">f</span><span class="str">"{cur:.2f}"</span>
+    diff = cur - prev
+    color = <span class="str">"\033[32m"</span> <span class="kw">if</span> diff &gt;= <span class="num">0</span> <span class="kw">else</span> <span class="str">"\033[31m"</span>
+    sign  = <span class="str">"+"</span> <span class="kw">if</span> diff &gt; <span class="num">0</span> <span class="kw">else</span> <span class="str">""</span>
+    <span class="kw">return</span> <span class="fn">f</span><span class="str">"{color}{cur:.2f} ({sign}{diff:.2f})\033[0m"</span>
+
+<span class="kw">def</span> <span class="fn">display</span>(prev_prices):
+    <span class="kw">print</span>(<span class="str">"\033[H"</span>, end=<span class="str">""</span>)       <span class="cmt"># cursor to top — no scroll</span>
+    bar = <span class="str">"═"</span> * FRAME_WIDTH
+    <span class="kw">print</span>(bar)
+    <span class="kw">print</span>(<span class="str">"  CRYPTO PRICES (USD)"</span>.<span class="fn">center</span>(FRAME_WIDTH))
+    <span class="kw">print</span>(bar)
+    <span class="kw">for</span> c <span class="kw">in</span> CURRENCIES:
+        price = <span class="fn">fetch_price</span>(c)
+        <span class="kw">print</span>(<span class="fn">f</span><span class="str">"  {c:5} {format_change(price, prev_prices.get(c))}"</span>)
+        <span class="kw">if</span> price: prev_prices[c] = price
+    <span class="kw">print</span>(bar)
+    <span class="kw">print</span>(<span class="str">"  [Q] Quit"</span>.<span class="fn">center</span>(FRAME_WIDTH))
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    prev = {}
+    <span class="kw">try</span>:
+        <span class="kw">while</span> <span class="num">True</span>:
+            <span class="fn">display</span>(prev)
+            time.<span class="fn">sleep</span>(UPDATE_SECS)
+    <span class="kw">except</span> KeyboardInterrupt:
+        <span class="kw">print</span>(<span class="str">"\nExiting."</span>)
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    <span class="fn">main</span>()</pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label out">Sample ticker output</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre>════════════════════════════════════════════
+         CRYPTO PRICES (USD)
+════════════════════════════════════════════
+  BTC   105432.18 (+218.40)
+  ETH    3891.55 (-12.30)
+  LTC      87.42 (+0.15)
+  DOGE      0.3812 (+0.0021)
+════════════════════════════════════════════
+              [Q] Quit</pre>
+  </div>
+
+  <!-- ═══════════ 8. JSON API ═══════════ -->
+  <div id="api" class="sec-head">
+    <span class="sec-label">JSON Price API Output</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§8</span>
+  </div>
+
+  <p>Minimal script — fetches prices for BTC, ETH, LTC, DOGE and outputs a JSON object to stdout. Designed to be piped into other tools or called from a parent script that needs machine-readable price data without parsing terminal display output.</p>
+
+  <div class="snippet">
+    <div class="snip-label py">crypto_price_json_output.py</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">import</span> requests, json, sys
+
+CURRENCIES  = [<span class="str">'BTC'</span>, <span class="str">'ETH'</span>, <span class="str">'LTC'</span>, <span class="str">'DOGE'</span>]
+API_TIMEOUT = <span class="num">5</span>
+
+<span class="kw">def</span> <span class="fn">fetch_price</span>(currency):
+    <span class="kw">try</span>:
+        r = requests.<span class="fn">get</span>(<span class="fn">f</span><span class="str">"https://api.coinbase.com/v2/prices/{currency}-USD/spot"</span>, timeout=API_TIMEOUT)
+        r.<span class="fn">raise_for_status</span>()
+        <span class="kw">return</span> <span class="fn">float</span>(r.<span class="fn">json</span>()[<span class="str">'data'</span>][<span class="str">'amount'</span>])
+    <span class="kw">except</span>: <span class="kw">return</span> <span class="num">None</span>
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    prices = {c: <span class="fn">fetch_price</span>(c) <span class="kw">for</span> c <span class="kw">in</span> CURRENCIES}
+    <span class="kw">print</span>(json.<span class="fn">dumps</span>(prices, indent=<span class="num">2</span>))</pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label out">Usage — pipe into jq</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre">python3 crypto_price_json_output.py | jq .
+<span class="cmt"># Output:</span>
+{
+  "BTC":  105432.18,
+  "ETH":   3891.55,
+  "LTC":     87.42,
+  "DOGE":     0.38
+}
+
+<span class="cmt"># Get BTC price only</span>
+python3 crypto_price_json_output.py | jq '.BTC'</pre>
+  </div>
+
+  <!-- ═══════════ 9. COLORED DISPLAY ═══════════ -->
+  <div id="colored" class="sec-head">
+    <span class="sec-label">Colored Price Display with Change Tracking</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§9</span>
+  </div>
+
+  <p>Enhanced version of the price tracker — runs in a continuous loop with configurable update interval (default 10s), tracks previous price to display delta with color coding, and handles API errors gracefully by printing to stderr without crashing the loop. Press any key + Enter to quit.</p>
+
+  <div class="snippet">
+    <div class="snip-label py">crypto_prices_colored_display_v2.py</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">import</span> requests, time, sys, os, select
+
+CURRENCIES      = [<span class="str">'BTC'</span>, <span class="str">'ETH'</span>, <span class="str">'LTC'</span>, <span class="str">'DOGE'</span>]
+API_TIMEOUT     = <span class="num">5</span>
+UPDATE_INTERVAL = <span class="num">10</span>
+
+<span class="kw">def</span> <span class="fn">fetch_price</span>(currency):
+    url = <span class="fn">f</span><span class="str">"https://api.coinbase.com/v2/prices/{currency}-USD/spot"</span>
+    <span class="kw">try</span>:
+        r = requests.<span class="fn">get</span>(url, timeout=API_TIMEOUT)
+        r.<span class="fn">raise_for_status</span>()
+        <span class="kw">return</span> <span class="fn">float</span>(r.<span class="fn">json</span>()[<span class="str">'data'</span>][<span class="str">'amount'</span>])
+    <span class="kw">except</span> requests.exceptions.RequestException <span class="kw">as</span> e:
+        <span class="kw">print</span>(<span class="fn">f</span><span class="str">"Error fetching {currency}: {e}"</span>, file=sys.stderr)
+        <span class="kw">return</span> <span class="num">None</span>
+
+<span class="kw">def</span> <span class="fn">format_change</span>(current, previous):
+    <span class="kw">if</span> current <span class="kw">is None</span>: <span class="kw">return</span> <span class="str">"\033[33mUnavailable\033[0m"</span>
+    <span class="kw">if</span> previous <span class="kw">is None</span>: <span class="kw">return</span> <span class="fn">f</span><span class="str">"{current:.2f}"</span>
+    diff = current - previous
+    <span class="kw">if</span>   diff &gt; <span class="num">0</span>: <span class="kw">return</span> <span class="fn">f</span><span class="str">"\033[32m{current:.2f} (+{diff:.2f})\033[0m"</span>
+    <span class="kw">elif</span> diff &lt; <span class="num">0</span>: <span class="kw">return</span> <span class="fn">f</span><span class="str">"\033[31m{current:.2f} ({diff:.2f})\033[0m"</span>
+    <span class="kw">else</span>:          <span class="kw">return</span> <span class="fn">f</span><span class="str">"{current:.2f} (=)"</span>
+
+<span class="kw">def</span> <span class="fn">display</span>(prev_prices):
+    os.<span class="fn">system</span>(<span class="str">'clear'</span>)
+    <span class="kw">print</span>(<span class="str">"═"</span> * <span class="num">44</span>)
+    <span class="kw">print</span>(<span class="fn">f</span><span class="str">"  {'Currency':<8}  {'Price (USD)'}"</span>)
+    <span class="kw">print</span>(<span class="str">"─"</span> * <span class="num">44</span>)
+    <span class="kw">for</span> c <span class="kw">in</span> CURRENCIES:
+        price = <span class="fn">fetch_price</span>(c)
+        <span class="kw">print</span>(<span class="fn">f</span><span class="str">"  {c:<8}  {format_change(price, prev_prices.get(c))}"</span>)
+        <span class="kw">if</span> price: prev_prices[c] = price
+    <span class="kw">print</span>(<span class="str">"═"</span> * <span class="num">44</span>)
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    prev_prices = {}
+    <span class="kw">try</span>:
+        <span class="kw">while</span> <span class="num">True</span>:
+            <span class="fn">display</span>(prev_prices)
+            <span class="cmt"># Non-blocking stdin check — quit if input arrives</span>
+            <span class="kw">if</span> sys.stdin <span class="kw">in</span> select.<span class="fn">select</span>([sys.stdin], [], [], UPDATE_INTERVAL)[<span class="num">0</span>]:
+                <span class="kw">break</span>
+    <span class="kw">except</span> KeyboardInterrupt: <span class="kw">pass</span>
+    <span class="kw">print</span>(<span class="str">"\nExiting."</span>)
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    <span class="fn">main</span>()</pre>
+  </div>
+
+  <!-- ═══════════ 10. RPC REFERENCE ═══════════ -->
+  <div id="ref" class="sec-head">
+    <span class="sec-label">Bitcoin RPC Command Reference</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§10</span>
+  </div>
+
+  <h3>Blockchain &amp; Block Data</h3>
+  <table class="ref-table">
+    <thead><tr><th>Command</th><th>Purpose</th><th>Key output fields</th></tr></thead>
+    <tbody>
+      <tr><td><code>getblockchaininfo</code></td><td>Full chain state</td><td>chain, blocks, headers, verificationprogress, pruned</td></tr>
+      <tr><td><code>getblockcount</code></td><td>Current block height (integer)</td><td>—</td></tr>
+      <tr><td><code>getblockhash &lt;height&gt;</code></td><td>Block hash at given height</td><td>—</td></tr>
+      <tr><td><code>getblock &lt;hash&gt; [verbosity]</code></td><td>Block data (0=hex, 1=json, 2=full tx)</td><td>height, nTx, size, weight, time, difficulty, merkleroot</td></tr>
+      <tr><td><code>getblockheader &lt;hash&gt;</code></td><td>Header only — no tx list (fast)</td><td>hash, height, time, difficulty, chainwork</td></tr>
+      <tr><td><code>getchaintips</code></td><td>All known chain tips (forks/orphans)</td><td>status: active, valid-fork, invalid, headers-only</td></tr>
+      <tr><td><code>getblockstats &lt;hash&gt;</code></td><td>Per-block fee and size statistics</td><td>avgfee, avgfeerate, totalfee, utxo_increase</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Network &amp; Peers</h3>
+  <table class="ref-table">
+    <thead><tr><th>Command</th><th>Purpose</th><th>Key fields</th></tr></thead>
+    <tbody>
+      <tr><td><code>getnetworkinfo</code></td><td>Network config and connection counts</td><td>version, subversion, connections, connections_in, connections_out, relayfee</td></tr>
+      <tr><td><code>getpeerinfo</code></td><td>Per-peer connection details</td><td>addr, subver, pingtime, timeoffset, bytessent, bytesrecv, inbound, synced_headers</td></tr>
+      <tr><td><code>addnode &lt;ip&gt; add</code></td><td>Manually add a trusted peer</td><td>—</td></tr>
+      <tr><td><code>disconnectnode &lt;ip&gt;</code></td><td>Disconnect a specific peer</td><td>—</td></tr>
+      <tr><td><code>setban &lt;ip&gt; add</code></td><td>Ban an IP from connecting</td><td>—</td></tr>
+      <tr><td><code>listbanned</code></td><td>Show all banned IPs and expiry</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Mempool</h3>
+  <table class="ref-table">
+    <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>getmempoolinfo</code></td><td>Mempool size, bytes, usage, min fee rate</td></tr>
+      <tr><td><code>getrawmempool</code></td><td>All txids currently in mempool</td></tr>
+      <tr><td><code>getmempoolentry &lt;txid&gt;</code></td><td>Single transaction mempool status, fees, ancestors</td></tr>
+    </tbody>
+  </table>
+
+  <div class="snippet">
+    <div class="snip-label sh">Useful one-liners</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre"><span class="cmt"># Current sync status</span>
+bitcoin-core.cli getblockchaininfo | jq '{blocks, headers, synced: (.verificationprogress*100|round|tostring + "%")}'
+
+<span class="cmt"># List all inbound peers with ping</span>
+bitcoin-core.cli getpeerinfo | jq '[.[] | select(.inbound) | {addr, ping_ms: (.pingtime*1000|round), subver}]'
+
+<span class="cmt"># Mempool fee summary</span>
+bitcoin-core.cli getmempoolinfo | jq '{size, bytes, minrelaytxfee, mempoolminfee}'
+
+<span class="cmt"># Check for chain forks</span>
+bitcoin-core.cli getchaintips | jq '[.[] | select(.status != "active")]'
+
+<span class="cmt"># Current block reward (coinbase of latest block)</span>
+HEIGHT=$(bitcoin-core.cli getblockcount)
+HASH=$(bitcoin-core.cli getblockhash $HEIGHT)
+bitcoin-core.cli getblock $HASH 2 | jq '.tx[0].vout[0].value'
+
+<span class="cmt"># Watch new blocks arrive (live)</span>
+watch -n 10 'bitcoin-core.cli getblockcount'</pre>
+  </div>
+
+</div>
+    <p><a href="/">&#8592; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-bitcoin-crypto-node-tools-reference",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/data-science/llms">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Working with Large Language Models — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/" class="active">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">AI Engineering</span>
+    <h1>Working with Large Language Models</h1>
+    <p class="meta">Data Science Series &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>LLMs inverted the old workflow: the model arrives already trained, and the engineering is everything around it — feeding it the right context, constraining its output, measuring whether it's actually good, and paying for it sanely. Treat an LLM as a very capable, occasionally overconfident text function, and build systems that assume both halves of that sentence.</p>
+
+    <h2>Prompting is interface design</h2>
+    <p>A production prompt is a spec, not a wish: role and constraints stated plainly, the output format pinned down (JSON with a schema — modern APIs enforce structured output natively), two or three worked examples for anything subtle, and an explicit escape hatch — <em>"if the answer isn't in the provided context, say so."</em> That last line, plus context in the prompt, removes most hallucination in practice. Version prompts in git like the code they are; a one-word change can move quality double digits.</p>
+
+    <h2>RAG: give the model your facts</h2>
+    <p>Models know the public internet as of their training cutoff. They do not know your runbooks, tickets, or configs. Retrieval-augmented generation closes the gap without training anything:</p>
+    <ul>
+      <li><strong>Index:</strong> chunk documents, compute embeddings (vectors where similar meaning lands nearby), store them — pgvector, Chroma, or SQLite variants; you rarely need exotic infrastructure.</li>
+      <li><strong>Retrieve:</strong> embed the user's question, fetch the most similar chunks; hybrid (keyword + vector) search beats either alone on technical text full of acronyms and hostnames.</li>
+      <li><strong>Generate:</strong> answer <em>from the retrieved context</em>, citing which chunk supports which claim.</li>
+    </ul>
+    <p>When RAG disappoints, the retrieval is almost always the culprit, not the model — debug what got fetched before blaming what got written.</p>
+
+    <h2>Fine-tune, or just write a better prompt?</h2>
+    <p>In order of preference: better prompt → RAG → fine-tuning. Fine-tune (LoRA on an open model, cheaply) to change a model's <em>behavior</em> — house style, a niche format, a specialized classification. Don't fine-tune to add <em>knowledge</em>; facts belong in retrieval, where updating them is a re-index instead of a training run. Local open-weight models via Ollama or vLLM make sense for privacy-sensitive pipelines, high-volume cost control, and air-gapped environments; frontier APIs still win on the hardest reasoning.</p>
+
+    <h2>Evaluation, or it didn't happen</h2>
+    <p>The demo always works. The discipline that separates AI engineering from AI theater:</p>
+    <ul>
+      <li>Build a <strong>golden set</strong> — 50–200 real inputs with known-good answers, growing every time production surprises you.</li>
+      <li>Score every prompt/model/pipeline change against it — exact checks where possible, an LLM judge with a rubric where not (spot-check the judge; it drifts toward generosity).</li>
+      <li>Log production inputs and outputs; sample and review weekly. Regressions arrive silently, wearing an API version number.</li>
+    </ul>
+
+    <h2>Security is part of the job now</h2>
+    <p>Anything an LLM reads can instruct it — a webpage, a retrieved document, a pasted email can carry "ignore your instructions and…" Prompt injection is unsolved; engineer accordingly: least-privilege tools, no secrets in context, human confirmation for consequential actions, and treat model output as untrusted input to downstream systems — the same posture you'd take with any user-supplied data.</p>
+
+    <h2>Checkpoint</h2>
+    <p>Build a small RAG assistant over your own notes or docs: index, hybrid retrieval, cited answers, a 50-question golden set, and a measured before/after for one prompt change. Under a hundred lines with modern libraries — and it exercises every concept above.</p>
+
+    <p><a href="/data-science/security-analytics">Next: Data Science for Security Operations →</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=data-science-llms",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

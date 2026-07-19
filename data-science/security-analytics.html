@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/data-science/security-analytics">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Science for Security Operations — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/" class="active">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Applied</span>
+    <h1>Data Science for Security Operations</h1>
+    <p class="meta">Data Science Series &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Security operations is a data problem wearing a badge: terabytes of logs, flows, and alerts, a handful of humans, and adversaries hiding in the ratio. It's also where naive data science goes to die — because the base rates are brutal, the labels are scarce, and every false positive spends an analyst's hour. This part is the field guide.</p>
+
+    <h2>The base-rate wall</h2>
+    <p>Start from the arithmetic in Part 4: if truly malicious events are one in ten thousand, a detector with 99% precision-sounding accuracy still buries the SOC in false alarms. Every design decision flows from this: <strong>optimize precision at a fixed, budgeted alert volume</strong> — "our analysts can investigate 40 alerts a day; make those 40 count" — rather than chasing recall in the abstract. An alert queue is a ranking problem, not a classification problem.</p>
+
+    <h2>Features beat algorithms here</h2>
+    <p>The wins come from representing behavior, not from exotic models:</p>
+    <ul>
+      <li><strong>Aggregates per entity per window:</strong> logins per user per hour, unique destinations per host per day, bytes out vs. that host's own trailing baseline.</li>
+      <li><strong>Rarity features:</strong> first-time-ever pairs (this user, this country; this host, this port) — "new" is the most underrated signal in security.</li>
+      <li><strong>Time-of-day and cadence:</strong> humans are diurnal and sloppy; beacons are periodic and precise. A near-perfect 60-second heartbeat is a machine talking to its handler.</li>
+      <li><strong>Peer deviation:</strong> compare each entity to its cohort (developers vs. finance), not to a global average that nobody resembles.</li>
+    </ul>
+
+    <h2>Unsupervised where labels don't exist</h2>
+    <p>You rarely have labeled attacks; you always have mountains of "probably normal." Isolation Forests and simple per-entity baselines (median + MAD, robust to the heavy tails everywhere in network data) surface the weird cheaply. Two honest warnings: anomalous ≠ malicious (the payroll run is anomalous every second Friday), so unsupervised output feeds <em>triage</em>, never auto-blocking; and normal drifts (see Part 10), so baselines must re-fit on a schedule.</p>
+
+    <h2>Where supervised and LLMs fit</h2>
+    <p>Supervised models shine where labels accumulate naturally: phishing (reported emails), malware (sandbox verdicts), fraud (chargebacks). Analyst dispositions — true/false positive on every closed alert — are a free label stream; feed them back and the ranking model compounds. LLMs (Part 8) earn a place at the triage layer: summarizing an alert's context, drafting the timeline, translating a query into the SIEM's language — always as the analyst's clerk, never as the decision-maker, and mindful that attacker-controlled text in logs is prompt-injection surface.</p>
+
+    <h2>The engineering substrate</h2>
+    <p>Security data science is 80% pipeline: parse logs to typed columns (Parquet, not gzipped text), normalize timestamps to UTC at ingest, sessionize flows, and make everything queryable (DuckDB locally, the SIEM or a lake at scale). Model quality is capped by how honestly the data is plumbed — Part 3's disciplines, at hostile volume.</p>
+
+    <h2>Evaluating a detector like an adult</h2>
+    <ul>
+      <li>Backtest on time-based splits — training on Friday to detect Tuesday is leakage with a clearance.</li>
+      <li>Report precision@k (k = daily alert budget), time-to-detect, and analyst feedback rate — not ROC-AUC alone, which flatters everything at these base rates.</li>
+      <li>Red-team your own features: which ones can an adversary who read your blog trivially evade? Rarity and cadence features degrade gracefully; signature-like features snap.</li>
+    </ul>
+
+    <h2>Checkpoint</h2>
+    <p>Take a week of any log you own (auth, DNS, web). Build per-entity hourly aggregates, flag first-ever events and top deviations-from-self, and rank the top 20. Triage them honestly. The ones that made you look twice — that's your precision, and your resume.</p>
+
+    <p><a href="/data-science/mlops">Next: Shipping It →</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=data-science-security-analytics",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/ccie-enterprise-lab/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCIE Enterprise Infrastructure — Lab Workbook | Ioannis Alexander Konstas</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--green:#3fb950;--cyan:#58a6ff;--text:#e6edf3;--muted:#8b949e;--yellow:#d29922;--orange:#f0883e;--purple:#bc8cff;--red:#f85149;--pink:#ff7b72;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;}
+nav{position:sticky;top:0;z-index:100;background:rgba(13,17,23,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:0 24px;}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:6px;height:52px;overflow-x:auto;}
+.nav-brand{font-weight:800;font-size:14px;color:var(--text);white-space:nowrap;margin-right:16px;letter-spacing:-.01em;}
+.nav-brand span{color:var(--cyan);}
+.nav-link{font-size:12px;color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:6px;white-space:nowrap;transition:color .15s,background .15s;}
+.nav-link:hover{color:var(--text);background:var(--bg3);}
+header{background:linear-gradient(160deg,#0d1117 0%,#0f1923 50%,#0d1117 100%);border-bottom:1px solid var(--border);padding:72px 24px 56px;text-align:center;}
+.badge{display:inline-block;background:rgba(63,185,80,.12);border:1px solid rgba(63,185,80,.3);color:var(--green);font-size:11px;font-weight:700;letter-spacing:.1em;padding:4px 12px;border-radius:20px;margin-bottom:20px;text-transform:uppercase;}
+header h1{font-size:clamp(26px,4vw,44px);font-weight:800;color:var(--text);line-height:1.15;margin-bottom:12px;}
+header h1 span{color:var(--cyan);}
+header .subtitle{max-width:680px;margin:0 auto 12px;color:var(--muted);font-size:16px;}
+.disclaimer-banner{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.25);border-radius:8px;padding:10px 20px;margin:20px auto 0;max-width:720px;font-size:12px;color:var(--muted);text-align:center;}
+.disclaimer-banner strong{color:var(--red);}
+.stats{display:flex;justify-content:center;gap:40px;flex-wrap:wrap;margin-top:36px;}
+.stat{text-align:center;}
+.stat-num{font-size:32px;font-weight:800;color:var(--cyan);}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+.container{max-width:1200px;margin:0 auto;padding:56px 24px;}
+.section{margin-bottom:56px;}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:24px;}
+/* Progress tracker */
+.progress-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:40px;}
+.progress-card h2{font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.progress-card h2::before{content:'';display:inline-block;width:4px;height:18px;background:var(--green);border-radius:2px;}
+.progress-bar-wrap{background:var(--bg3);border-radius:20px;height:8px;margin-bottom:8px;}
+.progress-bar{background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:20px;height:8px;transition:width .4s;}
+.progress-text{font-size:12px;color:var(--muted);}
+.progress-text span{color:var(--green);font-weight:700;}
+/* Blueprint table */
+.bp-table{width:100%;border-collapse:collapse;font-size:13px;}
+.bp-table thead th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);}
+.bp-table tbody tr{border-bottom:1px solid var(--border);transition:background .15s;}
+.bp-table tbody tr:last-child{border-bottom:none;}
+.bp-table tbody tr:hover{background:var(--bg3);}
+.bp-table td{padding:10px 12px;vertical-align:middle;}
+.bp-pct{font-weight:800;font-size:18px;}
+.pct-d1{color:var(--cyan);}
+.pct-d2{color:var(--purple);}
+.pct-d3{color:var(--green);}
+.pct-d4{color:var(--orange);}
+.pct-d5{color:var(--yellow);}
+.bp-weight{display:inline-block;height:6px;border-radius:3px;vertical-align:middle;}
+/* Domain sections */
+.domain{margin-bottom:48px;}
+.domain-header{display:flex;align-items:center;gap:14px;border-bottom:2px solid var(--border);padding-bottom:14px;margin-bottom:20px;}
+.domain-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.domain-header h2{font-size:20px;font-weight:700;color:var(--text);}
+.domain-pct{margin-left:auto;font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px;}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+a.lab-card{display:block;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px 22px;text-decoration:none;color:inherit;transition:border-color .2s,transform .15s,background .15s;position:relative;overflow:hidden;}
+a.lab-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+a.lab-card:hover{transform:translateY(-2px);background:#1a2130;border-color:rgba(88,166,255,.4);}
+.d1 a.lab-card::before{background:var(--cyan);}
+.d2 a.lab-card::before{background:var(--purple);}
+.d3 a.lab-card::before{background:var(--green);}
+.d4 a.lab-card::before{background:var(--orange);}
+.d5 a.lab-card::before{background:var(--yellow);}
+.lab-num{font-family:'SFMono-Regular',Consolas,monospace;font-size:10px;color:var(--muted);margin-bottom:6px;}
+.lab-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.lab-desc{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:12px;}
+.lab-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;}
+.tag-bp{background:rgba(88,166,255,.12);color:var(--cyan);border:1px solid rgba(88,166,255,.25);}
+.tag-int{background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.25);}
+.tag-adv{background:rgba(210,153,34,.12);color:var(--yellow);border:1px solid rgba(210,153,34,.25);}
+.tag-exp{background:rgba(248,81,73,.12);color:var(--red);border:1px solid rgba(248,81,73,.25);}
+.tag-con{background:rgba(188,140,255,.12);color:var(--purple);border:1px solid rgba(188,140,255,.25);}
+.tag-time{background:var(--bg3);color:var(--muted);border:1px solid var(--border);}
+.lab-go{margin-left:auto;font-size:11px;color:var(--muted);}
+a.lab-card:hover .lab-go{color:var(--cyan);}
+/* How to use */
+.how-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:28px 32px;margin-bottom:40px;}
+.how-card h2{font-size:17px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.how-card h2::before{content:'';display:inline-block;width:4px;height:18px;background:var(--cyan);border-radius:2px;}
+.how-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+@media(max-width:700px){.how-grid{grid-template-columns:1fr;}}
+.how-col h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--orange);margin-bottom:10px;}
+.how-col ul{list-style:none;}
+.how-col ul li{font-size:13px;color:var(--muted);padding:3px 0 3px 16px;position:relative;}
+.how-col ul li::before{content:'›';position:absolute;left:0;color:var(--cyan);}
+.how-col ul li strong{color:var(--text);}
+/* Topology */
+.topo-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:40px;overflow-x:auto;}
+.topo-wrap img,.topo-wrap object{max-width:100%;border-radius:6px;}
+/* Author footer */
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:36px 24px;text-align:center;}
+footer p{font-size:13px;color:var(--muted);margin-bottom:6px;}
+footer a{color:var(--cyan);text-decoration:none;}
+footer a:hover{text-decoration:underline;}
+.progress-checks{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.p-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;}
+.p-check input{accent-color:var(--green);}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <div class="nav-brand">CCIE <span>EI</span></div>
+    <a class="nav-link" href="#progress">Progress</a>
+    <a class="nav-link" href="#topology">Topology</a>
+    <a class="nav-link" href="#domain-1">Domain 1</a>
+    <a class="nav-link" href="#domain-3">Domain 3</a>
+    <a class="nav-link" href="#domain-4">Domain 4</a>
+    <a class="nav-link" href="#domain-2">Domain 2</a>
+    <a class="nav-link" href="#domain-5">Domain 5</a>
+    <a class="nav-link" href="#how-to-use">How to Use</a>
+  </div>
+</nav>
+
+<header>
+  <div class="badge">CCIE Enterprise Infrastructure v1.0</div>
+  <h1>Complete <span>Lab Workbook</span></h1>
+  <p class="subtitle">18 hands-on labs aligned to the official Cisco CCIE EI v1.0 exam blueprint · IPv4/IPv6 dual-stack · 20-router topology</p>
+  <div class="disclaimer-banner">
+    <strong>Disclaimer:</strong> Independent study resource. Not affiliated with or endorsed by Cisco Systems, Inc. All configurations are original works for educational purposes only.
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-num">18</div><div class="stat-label">Labs</div></div>
+    <div class="stat"><div class="stat-num">5</div><div class="stat-label">Domains</div></div>
+    <div class="stat"><div class="stat-num">20</div><div class="stat-label">Routers</div></div>
+    <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Blueprint</div></div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Progress -->
+  <div id="progress" class="progress-card">
+    <h2>Study Progress</h2>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="pbar" style="width:0%"></div></div>
+    <div class="progress-text">Completed: <span id="pcnt">0</span> of 18 labs (<span id="ppct">0%</span>)</div>
+    <div class="progress-checks" id="pchecks"></div>
+  </div>
+
+  <!-- Blueprint Coverage -->
+  <div class="section">
+    <div class="section-title">Blueprint Coverage</div>
+    <div class="how-card" style="padding:0;overflow:hidden;">
+      <table class="bp-table">
+        <thead><tr><th>Domain</th><th>Weight</th><th>Coverage</th><th>Labs</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1. Network Infrastructure</strong><br><small style="color:var(--muted)">Switching, EIGRP, OSPF, BGP, Multicast</small></td><td><span class="bp-pct pct-d1">30%</span></td><td><div class="bp-weight" style="width:120px;background:var(--cyan)"></div></td><td style="color:var(--muted)">Labs 01–05</td></tr>
+          <tr><td><strong>3. Transport Technologies</strong><br><small style="color:var(--muted)">MPLS L3VPN, DMVPN Phase 3, FlexVPN</small></td><td><span class="bp-pct pct-d3">15%</span></td><td><div class="bp-weight" style="width:60px;background:var(--green)"></div></td><td style="color:var(--muted)">Labs 06–08</td></tr>
+          <tr><td><strong>4. Infrastructure Security &amp; Services</strong><br><small style="color:var(--muted)">Security, QoS, FHRP, DHCP, NAT, IP SLA</small></td><td><span class="bp-pct pct-d4">15%</span></td><td><div class="bp-weight" style="width:60px;background:var(--orange)"></div></td><td style="color:var(--muted)">Labs 09–13</td></tr>
+          <tr><td><strong>2. Software Defined Infrastructure</strong><br><small style="color:var(--muted)">SD-Access (DNA Center), SD-WAN (vManage)</small></td><td><span class="bp-pct pct-d2">25%</span></td><td><div class="bp-weight" style="width:100px;background:var(--purple)"></div></td><td style="color:var(--muted)">Labs 14–15</td></tr>
+          <tr><td><strong>5. Infrastructure Automation</strong><br><small style="color:var(--muted)">EEM, Guest Shell, NETCONF/RESTCONF, API</small></td><td><span class="bp-pct pct-d5">15%</span></td><td><div class="bp-weight" style="width:60px;background:var(--yellow)"></div></td><td style="color:var(--muted)">Labs 16–18</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Topology -->
+  <div id="topology" class="section">
+    <div class="section-title">Master Topology — 20-Router Design</div>
+    <div class="topo-wrap">
+      <div style="overflow-x:auto;border-radius:8px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" width="1100" height="700" style="width:100%;height:auto;display:block;">
+  <rect width="1100" height="700" fill="#0d1117"/>
+  <!-- Zone backgrounds -->
+  <rect x="340" y="30" width="420" height="280" rx="12" fill="#161b22" stroke="#1f6feb" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="20" y="200" width="300" height="260" rx="12" fill="#161b22" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="780" y="200" width="300" height="260" rx="12" fill="#161b22" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="200" y="520" width="700" height="150" rx="12" fill="#161b22" stroke="#d29922" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <!-- Zone labels -->
+  <text x="550" y="22" fill="#58a6ff" font-family="monospace" font-size="11" text-anchor="middle" font-weight="600">MPLS CORE + PE EDGE</text>
+  <text x="170" y="194" fill="#3fb950" font-family="monospace" font-size="11" text-anchor="middle" font-weight="600">DMVPN WEST</text>
+  <text x="930" y="194" fill="#3fb950" font-family="monospace" font-size="11" text-anchor="middle" font-weight="600">DMVPN EAST</text>
+  <text x="550" y="516" fill="#d29922" font-family="monospace" font-size="11" text-anchor="middle" font-weight="600">CUSTOMER EDGE + BORDER</text>
+  <!-- CORE links -->
+  <line x1="490" y1="120" x2="600" y2="120" stroke="#30363d" stroke-width="2"/>
+  <line x1="460" y1="180" x2="460" y2="240" stroke="#30363d" stroke-width="2"/>
+  <line x1="640" y1="180" x2="640" y2="240" stroke="#30363d" stroke-width="2"/>
+  <line x1="490" y1="280" x2="600" y2="280" stroke="#30363d" stroke-width="2"/>
+  <!-- CORE to EDGE links -->
+  <line x1="420" y1="100" x2="280" y2="360" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="500" y1="100" x2="410" y2="370" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="600" y1="100" x2="690" y2="370" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="680" y1="100" x2="820" y2="360" stroke="#30363d" stroke-width="1.5"/>
+  <!-- EDGE to DMVPN/Border/CE links -->
+  <line x1="260" y1="390" x2="130" y2="280" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="260" y1="390" x2="130" y2="350" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="840" y1="390" x2="970" y2="280" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="840" y1="390" x2="970" y2="350" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="280" y1="400" x2="310" y2="580" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="820" y1="400" x2="790" y2="580" stroke="#30363d" stroke-width="1.5"/>
+  <!-- DMVPN Spokes -->
+  <line x1="110" y1="300" x2="80" y2="400" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="110" y1="300" x2="110" y2="430" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="110" y1="300" x2="170" y2="430" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="950" y1="300" x2="920" y2="410" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="950" y1="300" x2="970" y2="430" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="950" y1="300" x2="1020" y2="410" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+  <!-- CORE routers (blue) -->
+  <rect x="420" y="80" width="80" height="40" rx="6" fill="#1f3a5f" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="460" y="96" fill="#58a6ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">CORE-1</text>
+  <text x="460" y="112" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.1.1</text>
+  <rect x="620" y="80" width="80" height="40" rx="6" fill="#1f3a5f" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="660" y="96" fill="#58a6ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">CORE-2</text>
+  <text x="660" y="112" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.1.2</text>
+  <rect x="420" y="240" width="80" height="40" rx="6" fill="#1f3a5f" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="460" y="256" fill="#58a6ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">CORE-3</text>
+  <text x="460" y="272" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.1.3</text>
+  <rect x="620" y="240" width="80" height="40" rx="6" fill="#1f3a5f" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="660" y="256" fill="#58a6ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">CORE-4</text>
+  <text x="660" y="272" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.1.4</text>
+  <!-- EDGE routers -->
+  <rect x="230" y="360" width="80" height="40" rx="6" fill="#1a3040" stroke="#388bfd" stroke-width="1.5"/>
+  <text x="270" y="376" fill="#79c0ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">EDGE-1</text>
+  <text x="270" y="392" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.2.1</text>
+  <rect x="370" y="360" width="80" height="40" rx="6" fill="#1a3040" stroke="#388bfd" stroke-width="1.5"/>
+  <text x="410" y="376" fill="#79c0ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">EDGE-2</text>
+  <text x="410" y="392" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.2.2</text>
+  <rect x="650" y="360" width="80" height="40" rx="6" fill="#1a3040" stroke="#388bfd" stroke-width="1.5"/>
+  <text x="690" y="376" fill="#79c0ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">EDGE-3</text>
+  <text x="690" y="392" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.2.3</text>
+  <rect x="790" y="360" width="80" height="40" rx="6" fill="#1a3040" stroke="#388bfd" stroke-width="1.5"/>
+  <text x="830" y="376" fill="#79c0ff" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">EDGE-4</text>
+  <text x="830" y="392" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.2.4</text>
+  <!-- DMVPN Hubs (green) -->
+  <rect x="70" y="265" width="80" height="40" rx="6" fill="#12261e" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="110" y="281" fill="#3fb950" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">HUB-WC-1</text>
+  <text x="110" y="297" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">172.16.10.254</text>
+  <rect x="70" y="320" width="80" height="40" rx="6" fill="#12261e" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="110" y="336" fill="#3fb950" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">HUB-WC-2</text>
+  <text x="110" y="352" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">172.16.10.253</text>
+  <rect x="910" y="265" width="80" height="40" rx="6" fill="#12261e" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="950" y="281" fill="#3fb950" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">HUB-EC-1</text>
+  <text x="950" y="297" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">172.16.20.254</text>
+  <rect x="910" y="320" width="80" height="40" rx="6" fill="#12261e" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="950" y="336" fill="#3fb950" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">HUB-EC-2</text>
+  <text x="950" y="352" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">172.16.20.253</text>
+  <!-- DMVPN Spokes (gray) -->
+  <rect x="40" y="400" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="75" y="414" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-WC-1</text>
+  <text x="75" y="426" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.10.1</text>
+  <rect x="75" y="430" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="110" y="444" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-WC-2</text>
+  <text x="110" y="456" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.10.2</text>
+  <rect x="140" y="400" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="175" y="414" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-WC-3</text>
+  <text x="175" y="426" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.10.3</text>
+  <rect x="880" y="400" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="915" y="414" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-EC-1</text>
+  <text x="915" y="426" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.20.1</text>
+  <rect x="930" y="420" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="965" y="434" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-EC-2</text>
+  <text x="965" y="446" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.20.2</text>
+  <rect x="990" y="400" width="70" height="34" rx="5" fill="#1c1c1c" stroke="#8b949e" stroke-width="1"/>
+  <text x="1025" y="414" fill="#8b949e" font-family="monospace" font-size="9" text-anchor="middle">SPK-EC-3</text>
+  <text x="1025" y="426" fill="#484f58" font-family="monospace" font-size="7" text-anchor="middle">.20.3</text>
+  <!-- BORDER routers (red) -->
+  <rect x="270" y="555" width="80" height="40" rx="6" fill="#2a1215" stroke="#f85149" stroke-width="1.5"/>
+  <text x="310" y="571" fill="#f85149" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">BORDER-1</text>
+  <text x="310" y="587" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.3.1</text>
+  <rect x="750" y="555" width="80" height="40" rx="6" fill="#2a1215" stroke="#f85149" stroke-width="1.5"/>
+  <text x="790" y="571" fill="#f85149" font-family="monospace" font-size="10" text-anchor="middle" font-weight="700">BORDER-2</text>
+  <text x="790" y="587" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.3.2</text>
+  <!-- CE routers (yellow) -->
+  <rect x="460" y="555" width="80" height="40" rx="6" fill="#26200a" stroke="#d29922" stroke-width="1.5"/>
+  <text x="500" y="571" fill="#d29922" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">CE-CORP-1</text>
+  <text x="500" y="587" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.6.1</text>
+  <rect x="560" y="555" width="80" height="40" rx="6" fill="#26200a" stroke="#d29922" stroke-width="1.5"/>
+  <text x="600" y="571" fill="#d29922" font-family="monospace" font-size="9" text-anchor="middle" font-weight="700">CE-CORP-2</text>
+  <text x="600" y="587" fill="#8b949e" font-family="monospace" font-size="8" text-anchor="middle">10.255.6.2</text>
+  <!-- CE links -->
+  <line x1="280" y1="400" x2="480" y2="555" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="820" y1="400" x2="580" y2="555" stroke="#30363d" stroke-width="1.5"/>
+  <!-- Legend -->
+  <rect x="20" y="650" width="10" height="10" fill="#1f6feb"/>
+  <text x="35" y="659" fill="#8b949e" font-family="monospace" font-size="9">P Router (CORE)</text>
+  <rect x="140" y="650" width="10" height="10" fill="#388bfd"/>
+  <text x="155" y="659" fill="#8b949e" font-family="monospace" font-size="9">PE Router (EDGE)</text>
+  <rect x="280" y="650" width="10" height="10" fill="#3fb950"/>
+  <text x="295" y="659" fill="#8b949e" font-family="monospace" font-size="9">DMVPN Hub</text>
+  <rect x="380" y="650" width="10" height="10" fill="#8b949e"/>
+  <text x="395" y="659" fill="#8b949e" font-family="monospace" font-size="9">DMVPN Spoke</text>
+  <rect x="490" y="650" width="10" height="10" fill="#f85149"/>
+  <text x="505" y="659" fill="#8b949e" font-family="monospace" font-size="9">Border (ASBR)</text>
+  <rect x="600" y="650" width="10" height="10" fill="#d29922"/>
+  <text x="615" y="659" fill="#8b949e" font-family="monospace" font-size="9">Customer Edge (CE)</text>
+  <!-- AS labels -->
+  <text x="550" y="165" fill="#484f58" font-family="monospace" font-size="9" text-anchor="middle">AS 65000 — OSPF Area 0 — LDP</text>
+</svg>
+</div>
+    </div>
+  </div>
+
+  <!-- Domain 1 -->
+  <div id="domain-1" class="domain d1">
+    <div class="domain-header">
+      <div class="domain-icon" style="background:rgba(88,166,255,.1)">🌐</div>
+      <h2>Domain 1 — Network Infrastructure</h2>
+      <span class="domain-pct" style="background:rgba(88,166,255,.12);color:var(--cyan);border:1px solid rgba(88,166,255,.25)">30% of exam</span>
+    </div>
+    <div class="cards">
+      <a class="lab-card" href="labs/domain-1-network-infrastructure/01-switched-campus/lab.html">
+        <div class="lab-num">LAB 01 · §1.1</div>
+        <div class="lab-title">Switched Campus — STP, EtherChannel &amp; VLANs</div>
+        <div class="lab-desc">MST/Rapid PVST+, EtherChannel LACP, VTP v3, PortFast/BPDUGuard, Loop Guard, Root Guard, private VLANs, voice VLAN, trunk negotiation.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§1.1</span><span class="tag tag-int">Intermediate</span><span class="tag tag-time">⏱ 45 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-1-network-infrastructure/02-eigrp-named-mode/lab.html">
+        <div class="lab-num">LAB 02 · §1.3</div>
+        <div class="lab-title">EIGRP Named Mode &amp; Advanced Features</div>
+        <div class="lab-desc">Named mode, wide metrics, stub routing with leak-map, unequal-cost load balancing, IP FRR (fast reroute), BFD integration, add-path.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§1.3</span><span class="tag tag-adv">Advanced</span><span class="tag tag-time">⏱ 50 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-1-network-infrastructure/03-ospf-multiarea/lab.html">
+        <div class="lab-num">LAB 03 · §1.4</div>
+        <div class="lab-title">OSPF Multi-Area — OSPFv2 &amp; OSPFv3</div>
+        <div class="lab-desc">Multi-area OSPF (stub, NSSA, totally-stub), LSA filtering, prefix suppression, SPF/LSA throttling, GTSM, graceful shutdown, BFD, loop-free alternate.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§1.4</span><span class="tag tag-adv">Advanced</span><span class="tag tag-time">⏱ 60 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-1-network-infrastructure/04-bgp-policies/lab.html">
+        <div class="lab-num">LAB 04 · §1.5</div>
+        <div class="lab-title">BGP Policies, Communities &amp; Path Control</div>
+        <div class="lab-desc">Route reflectors, communities (standard/extended), conditional advertisement, ORF, AS-path prepend, regexp filtering, remove-private-AS, add-path, multi-homing.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§1.5</span><span class="tag tag-exp">Expert</span><span class="tag tag-time">⏱ 75 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-1-network-infrastructure/05-multicast-pim/lab.html">
+        <div class="lab-num">LAB 05 · §1.6</div>
+        <div class="lab-title">Multicast — PIM-SM, Anycast RP &amp; MSDP</div>
+        <div class="lab-desc">PIM Sparse Mode, BSR + AutoRP, Anycast RP using MSDP, Bidirectional PIM, SSM, IGMPv3, IGMP snooping, multicast boundary, PIMv6 Anycast RP.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§1.6</span><span class="tag tag-exp">Expert</span><span class="tag tag-time">⏱ 60 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Domain 3 -->
+  <div id="domain-3" class="domain d3">
+    <div class="domain-header">
+      <div class="domain-icon" style="background:rgba(63,185,80,.1)">🔗</div>
+      <h2>Domain 3 — Transport Technologies</h2>
+      <span class="domain-pct" style="background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.25)">15% of exam</span>
+    </div>
+    <div class="cards">
+      <a class="lab-card" href="labs/domain-3-transport/06-mpls-ldp-l3vpn/lab.html">
+        <div class="lab-num">LAB 06 · §3.1</div>
+        <div class="lab-title">MPLS LDP &amp; L3VPN (VPNv4/VPNv6)</div>
+        <div class="lab-desc">LDP label distribution, MP-BGP VPNv4, PE-CE routing (OSPF, BGP, EIGRP), route leaking (extranet), MPLS ping/traceroute, label stack verification.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§3.1</span><span class="tag tag-exp">Expert</span><span class="tag tag-time">⏱ 75 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-3-transport/07-dmvpn-phase3/lab.html">
+        <div class="lab-num">LAB 07 · §3.2.a</div>
+        <div class="lab-title">DMVPN Phase 3 — Dual-Hub &amp; Per-Tunnel QoS</div>
+        <div class="lab-desc">DMVPN Phase 3, dual-hub NHS redundancy, NHRP redirect/shortcut, IKEv2 PSK encryption, spoke-to-spoke direct tunnels, per-tunnel QoS policy.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§3.2.a</span><span class="tag tag-exp">Expert</span><span class="tag tag-time">⏱ 75 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-3-transport/08-flexvpn/lab.html">
+        <div class="lab-num">LAB 08 · §3.2.b</div>
+        <div class="lab-title">FlexVPN — IKEv2 Site-to-Site &amp; Spoke-to-Spoke</div>
+        <div class="lab-desc">IKEv2 FlexVPN site-to-site, dynamic spoke-to-spoke tunnels, smart defaults, IKEv2 authorization, MPLS over FlexVPN, certificate vs PSK comparison.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§3.2.b</span><span class="tag tag-exp">Expert</span><span class="tag tag-time">⏱ 60 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Domain 4 -->
+  <div id="domain-4" class="domain d4">
+    <div class="domain-header">
+      <div class="domain-icon" style="background:rgba(240,136,62,.1)">🔒</div>
+      <h2>Domain 4 — Infrastructure Security &amp; Services</h2>
+      <span class="domain-pct" style="background:rgba(240,136,62,.12);color:var(--orange);border:1px solid rgba(240,136,62,.25)">15% of exam</span>
+    </div>
+    <div class="cards">
+      <a class="lab-card" href="labs/domain-4-security-services/09-switch-security/lab.html">
+        <div class="lab-num">LAB 09 · §4.2.a</div>
+        <div class="lab-title">Switch Security — 802.1X, DHCP Snooping &amp; DAI</div>
+        <div class="lab-desc">802.1X port-based auth (device roles, host modes), DHCP snooping + option 82, Dynamic ARP Inspection, IP Source Guard, VACL/PACL, storm control, private VLAN.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§4.2</span><span class="tag tag-adv">Advanced</span><span class="tag tag-time">⏱ 55 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-4-security-services/10-device-security/lab.html">
+        <div class="lab-num">LAB 10 · §4.1 §4.2.b</div>
+        <div class="lab-title">Device Security — CoPP, AAA &amp; uRPF</div>
+        <div class="lab-desc">Control Plane Policing (CoPP), AAA with TACACS+, SSH hardening, privilege levels, uRPF, IPv6 RA Guard, DHCP Guard, ND Inspection, device tracking.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§4.1 §4.2.b</span><span class="tag tag-adv">Advanced</span><span class="tag tag-time">⏱ 60 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-4-security-services/11-qos-mqc/lab.html">
+        <div class="lab-num">LAB 11 · §4.4</div>
+        <div class="lab-title">QoS — MQC, DiffServ &amp; HQoS</div>
+        <div class="lab-desc">End-to-end L3 QoS using MQC, DiffServ, DSCP/CoS marking, NBAR classification, CBWFQ, LLQ for voice, policing/shaping, HQoS on sub-rate links.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§4.4</span><span class="tag tag-adv">Advanced</span><span class="tag tag-time">⏱ 55 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-4-security-services/12-network-services/lab.html">
+        <div class="lab-num">LAB 12 · §4.5</div>
+        <div class="lab-title">Network Services — FHRP, DHCP, NAT &amp; NTP</div>
+        <div class="lab-desc">HSRP/GLBP/VRRP, NTP v4 with authentication, DHCP server/relay/options, stateful DHCPv6 + prefix delegation, static/dynamic NAT/PAT, VRF-aware NAT.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§4.5</span><span class="tag tag-int">Intermediate</span><span class="tag tag-time">⏱ 60 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-4-security-services/13-network-optimization/lab.html">
+        <div class="lab-num">LAB 13 · §4.6 §4.7</div>
+        <div class="lab-title">Optimization &amp; Operations — IP SLA, NetFlow &amp; SPAN</div>
+        <div class="lab-desc">IP SLA (ICMP/UDP/TCP probes), object tracking with static route failover, Flexible NetFlow v9, SPAN/RSPAN/ERSPAN, Embedded Packet Capture, conditional debug.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§4.6 §4.7</span><span class="tag tag-adv">Advanced</span><span class="tag tag-time">⏱ 50 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Domain 2 -->
+  <div id="domain-2" class="domain d2">
+    <div class="domain-header">
+      <div class="domain-icon" style="background:rgba(188,140,255,.1)">☁️</div>
+      <h2>Domain 2 — Software Defined Infrastructure</h2>
+      <span class="domain-pct" style="background:rgba(188,140,255,.12);color:var(--purple);border:1px solid rgba(188,140,255,.25)">25% of exam</span>
+    </div>
+    <div class="cards">
+      <a class="lab-card" href="labs/domain-2-sdi/14-sd-access/lab.html">
+        <div class="lab-num">LAB 14 · §2.1</div>
+        <div class="lab-title">Cisco SD-Access — Design &amp; Deployment</div>
+        <div class="lab-desc">IS-IS underlay design, LISP control plane, VXLAN data plane, Cisco TrustSec (SGT), DNA Center workflows, fabric border handoff, micro/macro segmentation.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§2.1</span><span class="tag tag-con">Conceptual</span><span class="tag tag-exp">Expert</span><span class="tag tag-time">⏱ 90 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-2-sdi/15-sd-wan/lab.html">
+        <div class="lab-num">LAB 15 · §2.2</div>
+        <div class="lab-title">Cisco SD-WAN — vManage, OMP &amp; Policies</div>
+        <div class="lab-desc">vBond/vSmart/vManage architecture, OMP protocol, TLOC, ZTP onboarding, configuration templates, Application Aware Routing, centralized topology policies.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§2.2</span><span class="tag tag-con">Conceptual</span><span class="tag tag-exp">Expert</span><span class="tag tag-time">⏱ 90 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Domain 5 -->
+  <div id="domain-5" class="domain d5">
+    <div class="domain-header">
+      <div class="domain-icon" style="background:rgba(210,153,34,.1)">⚙️</div>
+      <h2>Domain 5 — Infrastructure Automation &amp; Programmability</h2>
+      <span class="domain-pct" style="background:rgba(210,153,34,.12);color:var(--yellow);border:1px solid rgba(210,153,34,.25)">15% of exam</span>
+    </div>
+    <div class="cards">
+      <a class="lab-card" href="labs/domain-5-automation/16-eem-guest-shell/lab.html">
+        <div class="lab-num">LAB 16 · §5.2</div>
+        <div class="lab-title">EEM Applets &amp; Guest Shell Python</div>
+        <div class="lab-desc">EEM applets (syslog, CLI, timer, SNMP triggers), Guest Shell Linux environment, CLI Python module, EEM Python module, automated event response workflows.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§5.2</span><span class="tag tag-adv">Advanced</span><span class="tag tag-time">⏱ 55 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-5-automation/17-netconf-restconf/lab.html">
+        <div class="lab-num">LAB 17 · §5.3.c</div>
+        <div class="lab-title">NETCONF/YANG &amp; RESTCONF — IOS XE API</div>
+        <div class="lab-desc">NETCONF via ncclient (Python), RESTCONF via requests library, YANG data models, model-driven telemetry with gRPC on-change subscriptions, Postman collections.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§5.3.c §5.3.d</span><span class="tag tag-exp">Expert</span><span class="tag tag-time">⏱ 60 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+      <a class="lab-card" href="labs/domain-5-automation/18-api-programmability/lab.html">
+        <div class="lab-num">LAB 18 · §5.3.a §5.3.b</div>
+        <div class="lab-title">API Programmability — DNA Center &amp; vManage</div>
+        <div class="lab-desc">DNA Center API (GET/PUT/POST via Python requests + Postman), vManage API monitoring and configuration endpoints, JSON/XML encoding, HTTP response handling.</div>
+        <div class="lab-meta"><span class="tag tag-bp">§5.1 §5.3.a §5.3.b</span><span class="tag tag-exp">Expert</span><span class="tag tag-time">⏱ 60 min</span><span class="lab-go">Open Lab →</span></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- How to Use -->
+  <div id="how-to-use" class="section">
+    <div class="section-title">How to Use This Workbook</div>
+    <div class="how-card">
+      <h2>Study Guide</h2>
+      <div class="how-grid">
+        <div class="how-col">
+          <h3>Recommended Order</h3>
+          <ul>
+            <li>Start with <strong>Labs 01–03</strong> (L2/EIGRP/OSPF) for foundations</li>
+            <li>Progress through <strong>Labs 04–05</strong> (BGP + Multicast)</li>
+            <li>Build the transport layer: <strong>Labs 06–08</strong></li>
+            <li>Security and services: <strong>Labs 09–13</strong></li>
+            <li>Study SDI conceptually: <strong>Labs 14–15</strong></li>
+            <li>Finish with automation: <strong>Labs 16–18</strong></li>
+          </ul>
+        </div>
+        <div class="how-col">
+          <h3>Lab Environment</h3>
+          <ul>
+            <li><strong>Cisco Modeling Labs (CML)</strong> — recommended</li>
+            <li><strong>EVE-NG Pro</strong> — IOS XE 17.x images</li>
+            <li><strong>GNS3</strong> — with IOS XE qemu images</li>
+            <li>Minimum RAM: <strong>16 GB</strong> for full topology</li>
+            <li>IOS XE version: <strong>17.6+</strong> required</li>
+            <li>Labs 14–15 need <strong>DNA Center / SD-WAN</strong></li>
+          </ul>
+        </div>
+        <div class="how-col">
+          <h3>Lab Structure</h3>
+          <ul>
+            <li><strong>Initial configs</strong> — start here (IPs only)</li>
+            <li><strong>Task sheet</strong> — CCIE-style exam tasks</li>
+            <li><strong>Verification</strong> — exact show commands</li>
+            <li><strong>Key concepts</strong> — theory and why</li>
+            <li><strong>Troubleshooting</strong> — common mistakes</li>
+            <li><strong>Solution</strong> — type SOLUTION to reveal</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p><strong>CCIE Enterprise Infrastructure Lab Workbook</strong></p>
+  <p>Author: <a href="https://github.com/ikonstas70">Ioannis Alexander Konstas</a> — Cybersecurity &amp; Infrastructure Engineer · Miami, FL</p>
+  <p> &nbsp;·&nbsp; <a href="https://blog.konstas.us">ikonstas70.github.io</a></p>
+  <p style="margin-top:12px;font-size:11px;color:#484f58">Independent study resource. Not affiliated with or endorsed by Cisco Systems, Inc. CCIE is a trademark of Cisco Systems, Inc.</p>
+</footer>
+
+<script>
+const LABS = ['01-switched-campus','02-eigrp-named-mode','03-ospf-multiarea','04-bgp-policies','05-multicast-pim','06-mpls-ldp-l3vpn','07-dmvpn-phase3','08-flexvpn','09-switch-security','10-device-security','11-qos-mqc','12-network-services','13-network-optimization','14-sd-access','15-sd-wan','16-eem-guest-shell','17-netconf-restconf','18-api-programmability'];
+const NAMES = ['Switched Campus','EIGRP Named Mode','OSPF Multi-Area','BGP Policies','Multicast PIM','MPLS L3VPN','DMVPN Phase 3','FlexVPN','Switch Security','Device Security','QoS MQC','Network Services','Optimization','SD-Access','SD-WAN','EEM & Guest Shell','NETCONF/RESTCONF','API Programmability'];
+const pbar=document.getElementById('pbar'), pcnt=document.getElementById('pcnt'), ppct=document.getElementById('ppct'), pchecks=document.getElementById('pchecks');
+function updateProgress(){
+  const done=LABS.filter(l=>localStorage.getItem('ccie-lab-'+l)==='1').length;
+  const pct=Math.round(done/LABS.length*100);
+  pbar.style.width=pct+'%'; pcnt.textContent=done; ppct.textContent=pct+'%';
+}
+LABS.forEach((l,i)=>{
+  const wrap=document.createElement('label');wrap.className='p-check';
+  const cb=document.createElement('input');cb.type='checkbox';cb.checked=localStorage.getItem('ccie-lab-'+l)==='1';
+  cb.addEventListener('change',()=>{localStorage.setItem('ccie-lab-'+l,cb.checked?'1':'0');updateProgress();});
+  wrap.appendChild(cb);wrap.appendChild(document.createTextNode('Lab '+(i<9?'0':'')+(i+1)+' '+NAMES[i]));
+  pchecks.appendChild(wrap);
+});
+updateProgress();
+</script>
+</body>
+</html>

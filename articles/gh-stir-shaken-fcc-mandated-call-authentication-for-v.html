@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-stir-shaken-fcc-mandated-call-authentication-for-v">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STIR/SHAKEN: FCC-Mandated Call Authentication for VoIP Carriers — Konstas Engineering Notes</title>
+<meta name="description" content="← All ArticlesHow STIR/SHAKEN works, attestation levels A/B/C, PASSporT token structure, STI-CA certificate requirements, and Asterisk implementation.What Is STIR/SHAKENT">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Telecom</span>
+    <h1>STIR/SHAKEN: FCC-Mandated Call Authentication for VoIP Carriers</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<a href="../index.html">← All Articles</a><p>How STIR/SHAKEN works, attestation levels A/B/C, PASSporT token structure, STI-CA certificate requirements, and Asterisk implementation.</p><h2>What Is STIR/SHAKEN</h2><p>The FCC-mandated framework that digitally signs outbound calls to prevent caller ID spoofing.</p><p>STIR/SHAKEN is the call authentication framework all US carriers and CLECs must implement. It digitally signs outbound calls so that receiving carriers can verify the caller ID has not been spoofed — addressing the robocall and caller ID fraud epidemic that has eroded trust in the telephone network.</p><ul><li><strong>STIR</strong> — Secure Telephone Identity Revisited (IETF RFC 8226, 8588)</li><li><strong>SHAKEN</strong> — Signature-based Handling of Asserted information using toKENs</li></ul><p>Mandatory for all CLECs since <strong>September 2025</strong>. Carriers without STIR/SHAKEN are required by FCC rules to have their calls blocked by terminating carriers.</p><h2>How It Works</h2><pre>Originating Carrier                    Receiving Carrier
+        │                                    │
+        │ 1. Sign the call                   │
+        │    Create PASSporT JWT token        │
+        │                                    │
+        │──── SIP INVITE with Identity: ───►│
+        │      header (JWT token)            │ 2. Verify signature
+        │                                    │    against originator's cert
+        │                                    │    (fetched from STI-CA)
+        │                                    │
+        │                                    │ 3. Display verification
+        │                                    │    result to called party
+        │                                    │    (checkmark or "Spam?")
+</pre><p>The <strong>PASSporT</strong> (Personal Assertion Token) is a JSON Web Token (JWT) signed with the carrier's STIR/SHAKEN private key. It contains: originating number, destination number, attestation level, originating carrier ID, and a timestamp. The receiving carrier fetches the public certificate from the STI-CA to verify the signature.</p><h2>Attestation Levels</h2><p>Carriers must set the attestation level honestly — it indicates how much the carrier knows about the call's origin.</p><table><thead><tr><th>Level</th><th>Name</th><th>Meaning</th><th>When to Use</th></tr></thead><tbody><tr><td>A</td><td>Full Attestation</td><td>The carrier knows the customer and the number is legitimately assigned to them</td><td>Retail customers using their assigned DID numbers</td></tr><tr><td>B</td><td>Partial Attestation</td><td>The carrier knows the customer but cannot fully verify the number they are presenting</td><td>Business customers using their own numbers ported in</td></tr><tr><td>C</td><td>Gateway Attestation</td><td>The carrier received the call from another carrier and cannot vouch for the origin</td><td>Transit / wholesale calls, international gateway</td></tr></tbody></table><p>Over-claiming attestation (using A when B or C is correct) is an FCC violation. Under-claiming (using C for all calls) degrades call scoring and may trigger blocking. Set the level accurately.</p><h2>Implementation in Asterisk</h2><p>Asterisk 16.15+ includes native STIR/SHAKEN via the res_stir_shaken module.</p><pre>; /etc/asterisk/stir_shaken.conf
+
+[attestation]
+global_disable = no
+
+[certificate]
+type = certificate
+path = /etc/asterisk/stir_shaken/cert.pem
+private_key = /etc/asterisk/stir_shaken/key.pem
+attestation = A          ; A, B, or C
+origid = your-carrier-id ; Your unique carrier identifier
+
+[verification]
+type = verification
+failure_action = continue  ; continue | reject | ignore
+; Use "continue" during rollout; "reject" once fully deployed</pre><p>Asterisk adds the <code>Identity:</code> SIP header automatically to all outbound INVITEs when STIR/SHAKEN is configured. The PASSporT token is generated using the private key and embedded as a Base64-encoded JWT.</p><h2>Certificate Requirements</h2><h3>Obtaining a STIR/SHAKEN Certificate</h3><p>You must obtain a certificate from an FCC-approved <strong>STI-CA</strong> (Secure Telephone Identity Certification Authority). Approved STI-CAs include TransNexus, Sansay, Comcast, and iconectiv.</p><ul><li><strong>Prerequisite:</strong> Active FCC Form 499 filing as a telecommunications carrier</li><li><strong>Prerequisite:</strong> Registration in the FCC's Robocall Mitigation Database (RMD)</li><li><strong>Cost:</strong> Approximately $1,000–$3,000 per year depending on the STI-CA</li><li><strong>Format:</strong> X.509 certificate with telephone number extension</li></ul><p>The certificate contains your public key and carrier identity. It is published at a public URL so receiving carriers can fetch it during call verification. Your private key never leaves your server.</p><h2>Robocall Mitigation Database (RMD)</h2><p>All carriers must file a Robocall Mitigation Plan with the FCC's RMD at <code>fcc.gov/robocall-mitigation-database</code>. This is a prerequisite for STIR/SHAKEN certificate issuance and for interconnecting with other carriers.</p><p><strong>Without an active RMD filing, other US carriers are required by FCC rules to block all calls from your network.</strong> This must be completed before any commercial interconnection, not after.</p><h3>What the Mitigation Plan Must Include</h3><ul><li>Description of your robocall detection and prevention measures</li><li>Process for responding to traceback requests from other carriers</li><li>Contact information for robocall complaints</li><li>STIR/SHAKEN implementation status and timeline</li></ul><h2>STIR/SHAKEN vs. Caller ID Spoofing</h2><table><thead><tr><th>Without STIR/SHAKEN</th><th>With STIR/SHAKEN</th></tr></thead><tbody><tr><td>Any carrier can claim any caller ID</td><td>Caller ID is cryptographically signed</td></tr><tr><td>No way for receiving party to verify origin</td><td>Receiving carrier verifies signature against STI-CA</td></tr><tr><td>Robocallers easily spoof legitimate numbers</td><td>Spoofed calls fail verification — marked or blocked</td></tr><tr><td>Consumers ignore unknown calls</td><td>Verified calls display checkmark on modern phones</td></tr></tbody></table>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-stir-shaken-fcc-mandated-call-authentication-for-v",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

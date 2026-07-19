@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-powercli-esxi-shutdown-rewrite">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PowerCLI ESXi Shutdown: Code Review and Production Rewrite — Konstas Engineering Notes</title>
+<meta name="description" content="The original PowerCLI shutdown script circulating across VMware communities is widely copy-pasted into production runbooks. It works in a lab — but it has seven real prob">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Virtualization</span>
+    <h1>PowerCLI ESXi Shutdown: Code Review and Production Rewrite</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+</hr><p>The original PowerCLI shutdown script circulating across VMware communities is widely copy-pasted into production runbooks. It works in a lab — but it has seven real problems that range from a plaintext password in the command line to a logic flaw that can trigger a host shutdown while VMs are still running. This article reviews every issue and presents a production-grade rewrite.</p><hr></hr><h2>Issues Found in the Original Script</h2><table><thead><tr><th>#</th><th>Severity</th><th>Issue</th><th>Problem</th><th>Fix</th></tr></thead><tbody><tr><td>1</td><td>High</td><td>Plaintext password in the command line</td><td>The password is visible in plain text, will appear in shell history, process lists, and any logging. Anyone with access to the host running the script can read it.</td><td>Use <code>Get-Credential</code> to prompt for credentials at runtime. It returns a <code>PSCredential</code> object with the password stored as a <code>SecureString</code> — never written to disk or visible in logs.</td></tr><tr><td>2</td><td>High</td><td>No error handling — silent failures cascade</td><td>If <code>Connect-VIServer</code> fails, <code>Stop-VM</code> fails, or any other step throws, the script continues to the next line. The host shutdown command can be reached even when VMs are still running, risking data corruption.</td><td>Wrap everything in <code>try/catch/finally</code>. Set <code>$ErrorActionPreference = 'Stop'</code> so any terminating error is caught immediately instead of silently skipped.</td></tr><tr><td>3</td><td>High</td><td>No verification that VMs are actually off before host shutdown</td><td>The 10-second sleep is a blind wait — it doesn't check whether VMs actually powered off. If <code>Stop-VM</code> takes longer than 10 seconds (common), <code>Stop-VMHost</code> runs against a host that still has live VMs, which can fail or cause inconsistent state.</td><td>After the shutdown attempt, re-query <code>Get-VM</code> and check <code>PowerState</code>. Only proceed to <code>Stop-VMHost</code> when count of powered-on VMs is confirmed zero. If VMs remain, abort and throw.</td></tr><tr><td>4</td><td>Medium</td><td><code>Disconnect-VIServer</code> without <code>-Server *</code></td><td>Omitting <code>-Server</code> disconnects only the most recently connected server when multiple connections are open. In environments with multiple connections, other sessions are left dangling.</td><td>Use <code>Disconnect-VIServer -Server * -Confirm:$false</code> to close every open connection. Place this in the <code>finally</code> block so it always runs, even when an error occurs.</td></tr><tr><td>5</td><td>Low</td><td>No logging or progress output</td><td>When the script runs unattended (scheduled task, runbook), there is no record of what happened, when, or whether it succeeded. Failures leave no trail.</td><td>Add a <code>Write-Log</code> helper that prefixes every message with a timestamp and severity level. This makes the output useful both interactively and when redirected to a log file.</td></tr></tbody></table><hr></hr><h2>Improvements in the Rewrite</h2><table><thead><tr><th>Improvement</th><th>Description</th></tr></thead><tbody><tr><td><code>Get-Credential</code> instead of plaintext <code>-Password</code></td><td>Prompts interactively and stores the password as a <code>SecureString</code>. For unattended use, retrieve credentials from PowerShell SecretManagement or a secrets vault — never embed them in the script.</td></tr><tr><td><code>try / catch / finally</code> with <code>$ErrorActionPreference = 'Stop'</code></td><td>Every error is caught immediately. The <code>finally</code> block guarantees <code>Disconnect-VIServer</code> runs even when the script fails mid-way. Without this, a failed <code>Stop-VM</code> could silently allow the host shutdown to proceed.</td></tr><tr><td><code>Shutdown-VMGuest</code> → poll → <code>Stop-VM</code> fallback</td><td>Graceful guest OS shutdown first, with a configurable timeout and real polling loop. Only falls back to a hard power-off for VMs that do not respond within the grace period.</td></tr><tr><td>Hard abort before <code>Stop-VMHost</code></td><td>If any VM is still powered on after all shutdown attempts, the script throws and exits. <code>Stop-VMHost</code> is never called with live VMs on the host.</td></tr><tr><td>VMware Tools status check per VM</td><td>Queries <code>ExtensionData.Guest.ToolsRunningStatus</code> before calling <code>Shutdown-VMGuest</code>. VMs without running Tools are flagged immediately as WARN and queued for force-off rather than silently failing.</td></tr><tr><td><code>Write-Log</code> with timestamps and severity</td><td>Every action is logged with a UTC timestamp and color-coded severity (INFO=cyan, WARN=yellow, ERROR=red). Redirect stdout to a file for persistent audit records.</td></tr><tr><td><code>Disconnect-VIServer -Server *</code></td><td>Closes every open vSphere connection, not just the most recent. Placed in <code>finally</code> so it executes regardless of whether the script succeeded or failed. Always use <code>-Server *</code> when multiple connections may be open.</td></tr><tr><td><code>param()</code> block with <code>-HardPowerOff</code> switch</td><td>All tunable values (timeout, poll interval, hard-off override) are script parameters, not magic numbers buried in the code. Supports <code>-HardPowerOff</code> for lab environments where guest shutdown is unnecessary.</td></tr></tbody></table><hr></hr><h2>The Original Script</h2><p>Here is the script under review, exactly as typically found:</p><pre><code># Connect to vCenter Server or ESXi host
+Connect-VIServer -Server YourESXiHost -User YourUsername -Password YourPassword
+
+# Get all powered-on virtual machines
+$vms = Get-VM | Where-Object { $_.PowerState -eq 'PoweredOn' }
+
+# Power off all virtual machines
+foreach ($vm in $vms) {
+    Stop-VM -VM $vm -Confirm:$false
+}
+
+# Disconnect all connected users
+Get-VMHost | Foreach-Object { Get-VMHost $_.Name | Foreach-Object { $_ | Disconnect-VMHost } }
+
+# Wait for a few seconds to ensure all users are disconnected
+Start-Sleep -Seconds 10
+
+# Shut down the ESXi host
+Stop-VMHost -VMHost (Get-VMHost) -Confirm:$false
+
+# Disconnect from the vCenter Server or ESXi host
+Disconnect-VIServer -Confirm:$false
+</code></pre><hr></hr><h2>How to Run the Rewritten Script</h2><p>Save the script as <code>Invoke-ESXiShutdown.ps1</code> and call it with parameters:</p><pre><code># Standard run — prompts for credentials, waits 120s for graceful shutdown
+.\Invoke-ESXiShutdown.ps1 -Server &lt;esxi-host&gt;
+
+# Shorter timeout
+.\Invoke-ESXiShutdown.ps1 -Server &lt;esxi-host&gt; -GuestShutdownTimeout 30
+
+# Skip graceful shutdown entirely — hard power-off all VMs immediately
+.\Invoke-ESXiShutdown.ps1 -Server &lt;esxi-host&gt; -HardPowerOff
+
+# Log output to file for audit trail
+.\Invoke-ESXiShutdown.ps1 -Server &lt;esxi-host&gt; *&gt;&amp;1 | Tee-Object -FilePath shutdown.log
+</code></pre><p>For unattended execution (scheduled task, runbook), replace <code>Get-Credential</code> with a credential retrieved from PowerShell SecretManagement:</p><pre><code># Requires Microsoft.PowerShell.SecretManagement + a registered vault
+$cred = Get-Secret -Name "vsphere-svc-account"
+# Get-Secret returns a SecureString by default; -AsPlainText is not needed here
+</code></pre>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-powercli-esxi-shutdown-rewrite",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

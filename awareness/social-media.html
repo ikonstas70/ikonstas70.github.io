@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/social-media">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Using Social Media Without Oversharing — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Privacy</span>
+    <h1>Using Social Media Without Oversharing</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Social media is a highlight reel for your friends and a research file for everyone else. The same posts that keep you connected also feed identity thieves, burglars, social engineers, and the quiz apps that harvest the answers to your security questions. You don't have to leave — you have to post like the audience is bigger and less friendly than it looks.</p>
+
+    <h2>The account is a target</h2>
+    <p>A hijacked social account is used to scam your friends ("I'm stuck abroad, send money"), harvest your contacts, and pivot into your email. Lock it down like it holds money, because socially it does:</p>
+    <ul>
+      <li>Unique password and MFA on every platform (see <a href="/awareness/passwords">Passwords, Passkeys, and MFA</a>).</li>
+      <li>Review connected/third-party apps and revoke ones you don't use — each is a door.</li>
+      <li>Know the platform's account-recovery process <em>before</em> you're locked out.</li>
+    </ul>
+
+    <h2>What not to hand over for free</h2>
+    <p>The classic security questions — first pet, street you grew up on, mother's maiden name, first car — are exactly what those "fun" quizzes and "getting to know you" chains collect. So is your birthday (day, month, <em>and</em> year is a building block of identity theft). Treat any prompt that mines biographical trivia as reconnaissance, because for someone it is.</p>
+
+    <h2>Location and timing: the burglar's feed</h2>
+    <p>Real-time vacation posts announce an empty house. Geotags reveal your home, your gym schedule, your kid's school. The fix costs nothing: post the trip after you're back, turn off automatic geotagging, and scan photos for accidental leaks — house numbers, license plates, mail, the view from your window, screens with visible information.</p>
+
+    <h2>Curate the audience, but assume it leaks</h2>
+    <p>Set profiles to private, review who can see and tag you, and prune your follower list occasionally. But remember what privacy settings actually do: they limit which <em>users</em> see a post — not the platform, not a screenshotting "friend," not a future employer who knows someone. The durable rule is upstream of any setting: if a post would be a problem shared with the whole world, don't post it. The internet's memory is long and its copy button is instant.</p>
+
+    <h2>Spotting manipulation in the feed</h2>
+    <ul>
+      <li><strong>Impersonation and cloned accounts</strong> — a "friend" who suddenly re-adds you and asks for money or a code is a scammer wearing their photo. Verify off-platform.</li>
+      <li><strong>Giveaway and investment scams</strong> — "DM to claim," celebrity crypto doublers, and too-good marketplace deals are phishing with better production values.</li>
+      <li><strong>Emotional bait</strong> — rage-inducing or too-perfect content is engineered to make you share before you think. Pausing is a security skill.</li>
+    </ul>
+
+    <blockquote>Stop feeding the quiz that wants your first pet's name. Think about the burglar, the recruiter, and the scammer reading along. Connect your privacy settings, then post as if they didn't exist.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-social-media",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

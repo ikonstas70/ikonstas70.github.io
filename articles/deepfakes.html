@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/deepfakes">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deepfakes: How They Work and How to Spot Them — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">AI &amp; Security</span>
+    <h1>Deepfakes: How They Work and How to Spot Them</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>A deepfake is synthetic media — video, image, or audio — in which AI convincingly replaces or fabricates a person's likeness or voice. What began as a research curiosity and a novelty app is now a security problem: cloned-voice CEO fraud, fabricated evidence, non-consensual imagery, and disinformation at scale. Understanding how they're made explains both why they've become so good and how to defend against them.</p>
+
+    <h2>How a deepfake is built</h2>
+    <p>The classic pipeline has four stages:</p>
+    <ol>
+      <li><strong>Data collection.</strong> Gather images, video, or audio of the target — historically a lot of it, though modern models need far less.</li>
+      <li><strong>Model training.</strong> A neural network learns the target's facial structure, expressions, and movements (or, for audio, their vocal timbre and cadence).</li>
+      <li><strong>Generation / face swap.</strong> The model synthesizes new frames, mapping the target's likeness onto another performance.</li>
+      <li><strong>Refinement.</strong> Lighting, expression, and lip-sync are tuned to erase the seams.</li>
+    </ol>
+    <p>The engine underneath used to be <strong>Generative Adversarial Networks (GANs)</strong> — two networks in a contest, a generator making fakes and a discriminator trying to catch them, each improving the other until the output fools detection. Today the state of the art has largely shifted to <strong>diffusion models</strong> (the same family behind modern image generators), which produce higher fidelity with less source data. The trajectory is the point: quality up, data and skill required down.</p>
+
+    <h2>Why "spot the glitch" advice is expiring</h2>
+    <p>For years the guidance was to look for artifacts — unnatural blinking, weird teeth, mismatched lighting, blurry face edges, audio that doesn't quite sync. These tells are real but <em>vanishing</em>: each generation of models closes them. Betting your security on catching a rendering glitch is a losing race against the technology. It still helps to look — especially at hands, teeth, reflections, and the boundary where a face meets hair or background — but treat it as a weak signal, not a verdict.</p>
+
+    <h2>The defenses that actually scale</h2>
+    <p>Because you can't reliably detect a good fake by eye, real defense shifts from the artifact to the <em>context and provenance</em>:</p>
+    <ul>
+      <li><strong>Verify through a second channel.</strong> The most robust defense, and the same one that beats phishing. An urgent video or voice request for money or secrets gets confirmed via a channel you initiate — call back on a known number. A deepfake can imitate a face; it can't answer your callback (see <a href="/awareness/phishing">Phishing in the Age of AI</a>).</li>
+      <li><strong>Family and corporate code words.</strong> A shared secret phrase defeats voice cloning instantly. Free, low-tech, effective.</li>
+      <li><strong>Content provenance (C2PA).</strong> The emerging industry answer: cryptographically signed "content credentials" that travel with media to attest how it was captured and edited. Verifying origin scales where spotting fakes does not.</li>
+      <li><strong>Detection tooling</strong> — AI classifiers that flag synthetic media exist and help at platform scale, but they're locked in the same arms race; use them as one input, not proof.</li>
+    </ul>
+
+    <h2>The mindset shift</h2>
+    <p>Deepfakes end the era where "I saw it" or "I heard their voice" was sufficient proof. That's unsettling, but it's the same adjustment society made to Photoshop, only faster and for motion and sound. The practical response isn't paranoia — it's moving trust from the <em>appearance</em> of a message to its <em>provenance and verification</em>. Assume media can be fabricated; trust what you can independently confirm.</p>
+    <p>And a note on ethics: the technology has legitimate uses — film, accessibility, education, satire — but creating deceptive or non-consensual content is harmful and increasingly illegal. Capability is not permission.</p>
+
+    <blockquote>Deepfakes are getting too good to catch by eye, so stop trying to spot the glitch and start verifying the source. A cloned face can't survive a callback, a code word, or a cryptographic provenance check — move your trust there.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=deepfakes",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

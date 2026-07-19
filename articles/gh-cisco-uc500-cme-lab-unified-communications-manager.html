@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-cisco-uc500-cme-lab-unified-communications-manager">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cisco UC500 / CME Lab: Unified Communications Manager Express Configuration — Konstas Engineering Notes</title>
+<meta name="description" content="← All ArticlesArchitecture of CME 8.6 on a UC520, SCCP ephone configuration, FXO/FXS voice ports, DHCP for phones, CUE module, and Python serial console automation.What I">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Networking</span>
+    <h1>Cisco UC500 / CME Lab: Unified Communications Manager Express Configuration</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<a href="../index.html">← All Articles</a><p>Architecture of CME 8.6 on a UC520, SCCP ephone configuration, FXO/FXS voice ports, DHCP for phones, CUE module, and Python serial console automation.</p><h2>What Is Cisco CME</h2><p>Unified Communications Manager Express — a full PBX embedded in a Cisco IOS router.</p><p>Cisco Unified Communications Manager Express (CME) is a PBX system embedded directly in Cisco IOS. Unlike CUCM (which requires dedicated servers), CME runs on a Cisco router — the UC500 series integrates CME, switching, wireless, and analog ports into a single appliance. This makes it ideal for small office deployments (2–50 phones) and lab environments for testing SCCP/SIP phone provisioning, call routing, and IVR.</p><h3>UC500 Hardware Overview</h3><table><thead><tr><th>Component</th><th>Description</th></tr></thead><tbody><tr><td>Platform</td><td>Cisco UC520W (8-user, 4 FXO)</td></tr><tr><td>IOS</td><td>15.1(4)M6 with CME 8.6</td></tr><tr><td>LAN</td><td>8-port 10/100 switch + WiFi (802.11a/b/g/n)</td></tr><tr><td>FXS Ports</td><td>4 × FXS (analog phones, fax machines)</td></tr><tr><td>FXO Ports</td><td>4 × FXO (PSTN analog lines / DID trunks)</td></tr><tr><td>CUE Module</td><td>ISE slot — Cisco Unity Express for voicemail/IVR</td></tr></tbody></table><h2>Network Layout</h2><pre>┌─────────────────────────────────────────┐
+│          Cisco UC500 / CME                 │
+│                                             │
+│  Vlan1 (LAN)     : 192.0.2.50/24           │
+│  FastEthernet0/0 : 192.0.2.2/24 (WAN/P2P)  │
+│  ISE0/0 (CUE)    : 192.0.2.252              │
+│                                             │
+│  DHCP: 192.0.2.60─254 → Option 150 → self  │
+│  FXS  : 0/0/0─0/0/3 (analog phones/fax)    │
+│  FXO  : 0/1/0─0/1/3 (PSTN trunks)          │
+└─────────────────────────────────────────┘
+             │
+             │ Ethernet crossover or PoE switch
+             ▼
+         IP Phones (SCCP)
+         Ext 101, 102, 103...</pre><h2>CME Telephony Service Configuration</h2><p>The <code>telephony-service</code> block is the master configuration for CME — all phone provisioning flows from here.</p><pre>! CME global configuration
+telephony-service
+ ip source-address 192.0.2.50 port 2000    ! IP phones register here
+ max-ephones 48
+ max-dn 96
+ load 7965 SCCP45.9-4-2SR3-1S             ! Firmware version for Cisco 7965
+ auto assign 1 to 48
+ voicemail 999                             ! Extension to reach voicemail
+ transfer-system full-consult
+ create cnf-files version-stamp 7960 Jan 01 2026 00:00:00
+
+! Auto-Attendant pilot number
+ephone-dn 99
+ number 9900
+ description Auto-Attendant
+
+! Extension 101
+ephone-dn 1
+ number 101
+ description Front Desk
+ call-forward busy 999
+ call-forward noan 999 timeout 18
+
+! Extension 102
+ephone-dn 2
+ number 102
+ description Conference Room
+ call-forward busy 999
+ call-forward noan 999 timeout 18</pre><h2>Registering SCCP Phones (ephone)</h2><p>Each physical phone is an ephone entry — identified by MAC address, assigned to an ephone-dn (directory number).</p><pre>! Register a Cisco 7965 phone
+ephone 1
+ mac-address &lt;phone-MAC-address&gt;       ! Found on sticker under the phone
+ type 7965
+ button 1:1                            ! Button 1 = ephone-dn 1 (ext 101)
+
+ephone 2
+ mac-address &lt;second-phone-MAC&gt;
+ type 7965
+ button 1:2                            ! Button 1 = ephone-dn 2 (ext 102)</pre><p>CME auto-generates SCCP XML configuration files (<code>SEP&lt;MAC&gt;.cnf.xml</code>) and serves them from its built-in TFTP server. When a phone boots, it discovers CME via DHCP Option 150, downloads its config, and registers via SCCP on TCP port 2000.</p><h2>DHCP Configuration for Phones</h2><pre>! IOS DHCP pool for IP phones
+ip dhcp pool PHONES
+ network 192.0.2.0 255.255.255.0
+ default-router 192.0.2.50
+ option 150 ip 192.0.2.50              ! TFTP = CME itself
+ dns-server 8.8.8.8
+ lease 0 12
+
+ip dhcp excluded-address 192.0.2.1 192.0.2.59   ! Reserve first 59 addresses</pre><h2>FXO Ports — PSTN Connectivity</h2><p>FXO ports connect to analog PSTN lines — each port is a single telephone line from the telco.</p><pre>! FXO dial-peer — inbound PSTN calls
+dial-peer voice 1001 pots
+ description Inbound PSTN line 1
+ incoming called-number .
+ direct-inward-dial
+ port 0/1/0                            ! FXO port 1
+
+! FXO dial-peer — outbound 7-digit local calls
+dial-peer voice 9000 pots
+ description Outbound 7-digit local
+ destination-pattern 9[2-9]......     ! 9 + 7-digit local number
+ prefix 1&lt;area-code&gt;                  ! Strip 9, add 1+area-code
+ port 0/1/0
+
+! FXO dial-peer — outbound long distance
+dial-peer voice 9001 pots
+ description Outbound long distance
+ destination-pattern 91[2-9]..[2-9]......
+ prefix 1
+ port 0/1/0</pre><h2>CUE Module — Cisco Unity Express</h2><p>The UC500 series includes an ISE (Internal Service Engine) slot for the CUE (Cisco Unity Express) module — a dedicated voicemail, auto-attendant, and IVR processor. CUE runs its own Linux-based OS and connects to CME via SCCP.</p><p>CUE provides: voicemail boxes per extension, spoken name recording, auto-attendant with business hours, after-hours greeting, and a menu-driven IVR. It is accessible via a web browser at its management IP.</p><p>The CUE module requires a separate software image (<code>cue-vm-k9.uc500.x.x.x.pkg</code>) that must be installed via TFTP into the module's flash. The hardware slot may be present but without the software image, no voicemail or auto-attendant functions are available.</p><h2>Python Serial Console Automation</h2><p>When SSH is unavailable (corrupt image, misconfigured access lists), a Python serial library provides console access and command automation.</p><pre>import serial, time
+
+def open_serial(port='/dev/tty.usbserial-XXXX'):
+    s = serial.Serial(port, 9600, bytesize=8, parity='N',
+                      stopbits=1, timeout=2, xonxoff=False, rtscts=False)
+    return s
+
+def send(s, cmd, delay=2):
+    s.write((cmd + '\r\n').encode())
+    time.sleep(delay)
+    return s.read(s.in_waiting).decode(errors='ignore')
+
+def ios_login(s):
+    send(s, '')                # Wake console
+    out = send(s, '&lt;line-password&gt;')
+    if '&gt;' in out or '#' in out:
+        out += send(s, 'enable')
+        out += send(s, '&lt;enable-password&gt;')
+    return s, '#' in out
+
+# Usage
+s = open_serial()
+s, ok = ios_login(s)
+if ok:
+    print(send(s, 'show version'))
+    print(send(s, 'show ephone registered'))
+s.close()</pre><p>This pattern is useful for: bulk configuration pushes across a router fleet, automated config backup, ROMMON recovery via serial when the network interface is unreachable, and programmatic lab setup without CLI fatigue.</p><h2>ROMMON Recovery (Flash Corruption)</h2><p>When IOS cannot boot, the device drops to ROMMON. Recovery requires a network boot via TFTP.</p><pre>! At the rommon&gt; prompt after power cycle:
+rommon 1 &gt; IP_ADDRESS=192.0.2.2
+rommon 2 &gt; IP_SUBNET_MASK=255.255.255.0
+rommon 3 &gt; DEFAULT_GATEWAY=192.0.2.1
+rommon 4 &gt; TFTP_SERVER=192.0.2.1       ! Your TFTP server
+rommon 5 &gt; TFTP_FILE=uc500-advipservicesk9-mz.151-4.M6
+rommon 6 &gt; tftpdnld                    ! Downloads ~42MB, takes 2-3 min
+
+! After booting from RAM, copy IOS to flash permanently:
+copy tftp://&lt;tftp-server&gt;/uc500-advipservicesk9-mz.151-4.M6 flash:
+
+! Set boot variable and reload:
+boot system flash:uc500-advipservicesk9-mz.151-4.M6
+write memory
+reload</pre><p>Always keep a TFTP server on the management LAN with all IOS images for any device in your lab. ROMMON recovery without a TFTP server requires USB or compact flash — far more complex.</p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-cisco-uc500-cme-lab-unified-communications-manager",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

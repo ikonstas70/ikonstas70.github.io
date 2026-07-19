@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/network-automation-netmiko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network Automation with Netmiko — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Automation</span>
+    <h1>Network Automation with Netmiko</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Not every device speaks a clean API. Vast fleets of switches and routers still expose only the CLI over SSH, and the pragmatic bridge to automating them is <strong>Netmiko</strong> — a Python library that wraps SSH, handles the vendor-specific quirks (prompts, paging, enable mode), and lets you script against network gear as if it were a well-behaved tool. It's the workhorse for teams migrating from "log in and type" toward real infrastructure-as-code.</p>
+
+    <h2>Why not just script SSH yourself?</h2>
+    <p>Because raw SSH to a network device is a swamp of edge cases: the <code>--More--</code> pager, per-vendor prompts, enable/config mode transitions, banners, and timing. Netmiko encapsulates all of it behind a consistent interface across dozens of platforms (Cisco IOS/NX-OS, Arista, Juniper, and more), so your logic stays clean.</p>
+
+    <h2>Read state safely</h2>
+    <p>Start with read-only operations — they can't break anything and immediately prove value. Netmiko can even parse output into structured data via TextFSM/Genie, turning screen-scraping into real objects:</p>
+    <pre><code>from netmiko import ConnectHandler
+
+device = {
+    "device_type": "cisco_ios",
+    "host": "10.0.0.1",
+    "username": "admin",
+    "password": get_secret("r1"),     # never hard-code; pull from a vault/env
+    "fast_cli": True,
+}
+
+with ConnectHandler(**device) as conn:      # context manager -> always disconnects
+    # use_textfsm parses the table into a list of dicts, not a blob of text
+    interfaces = conn.send_command("show ip interface brief", use_textfsm=True)
+
+for intf in interfaces:
+    if intf["status"] != "up":
+        print(f"DOWN: {intf['interface']} ({intf['ip_address']})")</code></pre>
+
+    <h2>Push config — with a safety net</h2>
+    <p>Configuration changes are where automation earns trust or loses it. Three disciplines make it safe: send config as a list (Netmiko enters config mode for you), <strong>save explicitly</strong> only after verifying, and — critically — <strong>never lock yourself out.</strong></p>
+    <pre><code>commands = [
+    "interface Loopback100",
+    "description managed-by-automation",
+    "ip address 10.100.0.1 255.255.255.255",
+]
+
+with ConnectHandler(**device) as conn:
+    output = conn.send_config_set(commands)     # enters/exits config mode
+    # Verify the change did what you expected BEFORE persisting it
+    check = conn.send_command("show ip interface brief | include Loopback100")
+    if "10.100.0.1" in check:
+        conn.save_config()                       # write mem / copy run start
+    else:
+        raise RuntimeError(f"change did not apply cleanly: {output}")</code></pre>
+
+    <h2>Scale to a fleet — concurrently</h2>
+    <p>One device at a time is a demo; the point is a hundred at once. Run them in parallel with a thread pool (network I/O is the bottleneck, so threads are ideal), and — the rule that separates professionals from outages — <strong>collect results, don't let one failure abort the batch</strong>:</p>
+    <pre><code>from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def audit(host: str) -&gt; tuple[str, str]:
+    dev = {**base, "host": host}
+    try:
+        with ConnectHandler(**dev) as c:
+            return host, c.send_command("show version | include uptime")
+    except Exception as e:                        # unreachable, auth fail, timeout
+        return host, f"ERROR: {e}"
+
+results = {}
+with ThreadPoolExecutor(max_workers=20) as pool:
+    futures = {pool.submit(audit, h): h for h in inventory}
+    for f in as_completed(futures):
+        host, out = f.result()
+        results[host] = out                       # one bad device can't stop the rest</code></pre>
+
+    <h2>Where Netmiko fits in the bigger picture</h2>
+    <p>Netmiko is the low-level SSH engine. Above it sit richer frameworks — <strong>NAPALM</strong> for vendor-neutral getters and config replace/rollback, and <strong>Nornir</strong> for a pure-Python automation framework with inventory and concurrency built in (it often uses Netmiko underneath). For declarative fleet management, <strong>Ansible</strong>'s network modules cover much of the same ground. The progression is natural: script tasks with Netmiko, graduate to Nornir/NAPALM as your inventory and safety needs grow.</p>
+
+    <h2>Operating rules</h2>
+    <ul>
+      <li><strong>Credentials from a vault or environment</strong>, never in code or version control.</li>
+      <li><strong>Read before you write</strong> — build and trust your read-only automation first.</li>
+      <li><strong>Verify then save</strong> — confirm the change applied before persisting; keep a rollback.</li>
+      <li><strong>Idempotence and dry-runs</strong> — running twice should be safe; preview diffs where the tooling allows.</li>
+      <li><strong>Log everything</strong> — an audit trail of what changed, where, and by whom.</li>
+    </ul>
+
+    <blockquote>Netmiko turns the CLI into an API you can trust — if you read before you write, verify before you save, and let a fleet fail one device at a time. It's the honest bridge from "log in and type" to infrastructure-as-code.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=network-automation-netmiko",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

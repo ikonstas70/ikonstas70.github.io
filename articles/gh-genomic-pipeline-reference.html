@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-genomic-pipeline-reference">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Large-Scale Genomic Data Processing — Konstas Engineering Notes</title>
+<meta name="description" content="Educational Bioinformatics Pipeline Reference · macOS · GRCh37 / GRCh38">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Data Science</span>
+    <h1>Large-Scale Genomic Data Processing</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p class="sub">Educational Bioinformatics Pipeline Reference · macOS · GRCh37 / GRCh38</p>
+  <div class="badges">
+    <span class="badge green">Status: Completed</span>
+    <span class="badge blue">38,603,409 lines processed</span>
+    <span class="badge blue">23 Chromosomes</span>
+    <span class="badge purple">Haplogroup H15a1</span>
+    <span class="badge">macOS Apple Silicon</span>
+    <span class="badge">GIAB · NA12878</span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ NAV ═══════════════════════════════ -->
+
+
+<!-- ═══════════════════════════ MAIN ═══════════════════════════════ -->
+<main>
+
+  <!-- ── EXECUTIVE SUMMARY ── -->
+  <section>
+    <h2>Executive Summary</h2>
+    <p>This project demonstrates a complete personal genome bioinformatics pipeline executed on macOS. The work is centered on <strong>NA12878</strong> — a real woman who donated her genome to science — whose sequencing data is freely available as a gold-standard reference from the <strong>Genome in a Bottle (GIAB)</strong> consortium.</p>
+    <div class="card-grid">
+      <div class="stat-card"><div class="num">38.6M</div><div class="label">Lines in FASTA genome file</div></div>
+      <div class="stat-card"><div class="num">3 GB</div><div class="label">Consensus genome size</div></div>
+      <div class="stat-card"><div class="num">23</div><div class="label">Chromosomes mapped</div></div>
+      <div class="stat-card"><div class="num">4.2M+</div><div class="label">Variant calls in NA12878 VCF</div></div>
+      <div class="stat-card"><div class="num">H15a1</div><div class="label">Mitochondrial haplogroup</div></div>
+      <div class="stat-card"><div class="num">GRCh38</div><div class="label">Reference assembly</div></div>
+    </div>
+  </section>
+
+  <!-- ── INSTALL ── -->
+  <section id="install">
+    <h2>Installation Guide — macOS</h2>
+    <p>Everything below runs on macOS Apple Silicon (M1/M2/M3/M4) or Intel Mac. The only prerequisite is <strong>Homebrew</strong> — macOS's standard package manager.</p>
+
+    <div class="card">
+      <h3>Step 1 — Install Homebrew (if not already installed)</h3>
+      <pre><code><span class="comment"># Paste this into Terminal — it installs Homebrew</span>
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+<span class="comment"># Verify installation</span>
+brew --version</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>Step 2 — Install Core Bioinformatics Tools</h3>
+      <pre><code><span class="comment"># samtools — reads, indexes, and queries genome FASTA and BAM files</span>
+brew install samtools
+
+<span class="comment"># bcftools — reads, queries, and filters VCF variant call files</span>
+brew install bcftools
+
+<span class="comment"># htslib — provides bgzip (block gzip) and tabix (indexed compression)</span>
+brew install htslib
+
+<span class="comment"># bwa — aligns short DNA reads to a reference genome</span>
+brew install bwa
+
+<span class="comment"># Java — required by snpEff (annotation engine)</span>
+brew install openjdk@17
+echo 'export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+<span class="comment"># Verify Java is working</span>
+java -version</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>Step 3 — Install snpEff (Variant Annotator)</h3>
+      <p>snpEff is not on Homebrew — install it manually. It is a Java program distributed as a ZIP file.</p>
+      <pre><code><span class="comment"># Create a working directory</span>
+mkdir -p ~/na12878_pipeline && cd ~/na12878_pipeline
+
+<span class="comment"># Download snpEff</span>
+curl -L https://snpeff.blob.core.windows.net/versions/snpEff_latest_core.zip -o snpEff.zip
+
+<span class="comment"># Unzip it</span>
+unzip snpEff.zip
+
+<span class="comment"># Download the GRCh38 annotation database (one-time, ~3 GB)</span>
+java -jar snpEff/snpEff.jar download GRCh38.109
+
+<span class="comment"># Verify snpEff works</span>
+java -jar snpEff/snpEff.jar -version</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>Step 4 — Install Miniconda (for snpEff conda environment — optional)</h3>
+      <pre><code><span class="comment"># Download Miniconda installer for Apple Silicon</span>
+curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh
+
+<span class="comment"># Run installer</span>
+bash Miniconda3-latest-MacOSX-arm64.sh
+
+<span class="comment"># Restart terminal, then create a dedicated snpEff environment</span>
+conda create -n snpeff_env -c bioconda snpeff -y
+conda activate snpeff_env</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>Step 5 — Install Python Visualization Tools</h3>
+      <pre><code><span class="comment"># Install pip packages for plotting</span>
+pip3 install matplotlib pandas numpy biopython
+
+<span class="comment"># Verify</span>
+python3 -c "import matplotlib; print('matplotlib', matplotlib.__version__)"</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>Full Tool Reference</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tool</th><th>Install Command</th><th>What It Does</th></tr></thead>
+          <tbody>
+            <tr><td><code>samtools</code></td><td><code>brew install samtools</code></td><td>Query, index, and manipulate genome FASTA and aligned BAM files</td></tr>
+            <tr><td><code>bcftools</code></td><td><code>brew install bcftools</code></td><td>Read, filter, and query VCF variant call files</td></tr>
+            <tr><td><code>bgzip</code></td><td><code>brew install htslib</code></td><td>Block-gzip compress large genomic files for indexed random access</td></tr>
+            <tr><td><code>tabix</code></td><td><code>brew install htslib</code></td><td>Index compressed VCF/FASTA so you can jump to any position instantly</td></tr>
+            <tr><td><code>bwa</code></td><td><code>brew install bwa</code></td><td>Align short sequencing reads to a reference genome</td></tr>
+            <tr><td><code>snpEff</code></td><td>Manual ZIP install</td><td>Annotate variants with gene consequences (missense, splice, silent…)</td></tr>
+            <tr><td><code>gzcat</code></td><td>Built into macOS</td><td>Stream a .gz file without extracting it to disk</td></tr>
+            <tr><td><code>grep</code></td><td>Built into macOS</td><td>Search for patterns inside a text stream</td></tr>
+            <tr><td><code>sed</code></td><td>Built into macOS</td><td>Stream editor — filter or transform lines of text</td></tr>
+            <tr><td><code>awk</code></td><td>Built into macOS</td><td>Column-aware text processor — perform calculations on genomic data fields</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── DOWNLOAD GENOME ── -->
+  <section id="download">
+    <h2>Downloading the Human Genome — The Single 3-Billion-Line File</h2>
+    <p>The human genome reference (GRCh38) is a single compressed FASTA file. It contains the complete DNA sequence of a "consensus" human being — all 23 chromosome pairs, roughly 3.1 billion base pairs, written out as A/T/C/G characters and wrapped at 80 characters per line.</p>
+
+    <div class="highlight">
+      <strong>Why 80 characters per line?</strong> A historical computing standard inherited from IBM punch cards (80 columns) and early 80-column terminal screens. When bioinformatics software was first written in the 1980s–90s, this limit ensured files displayed correctly on any machine. The convention stuck and became the universal FASTA standard. Your 38.6 million line file = ~3 billion bases ÷ 80 characters per line.
+    </div>
+
+    <div class="card">
+      <h3>Option A — Download GRCh38 from NCBI (Authoritative Source)</h3>
+      <pre><code>mkdir -p ~/na12878_pipeline && cd ~/na12878_pipeline
+
+<span class="comment"># Full primary assembly — all chromosomes — ~900 MB compressed (~3 GB unzipped)</span>
+curl -O https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_assembly_structure/Primary_Assembly/assembled_chromosomes/FASTA/chroms/GRCh38_major_release_seqs_for_alignment_pipelines.fa.gz
+
+<span class="comment"># OR — faster mirror from Ensembl</span>
+curl -O https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+
+<span class="comment"># OR — UCSC hg38 (same genome, different chromosome naming: chr1 vs 1)</span>
+rsync -avzP rsync://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz .</code></pre>
+      <div class="highlight orange">
+        <strong>NCBI vs Ensembl vs UCSC naming:</strong> These are all GRCh38 but chromosomes are named differently. NCBI/UCSC use <code>chr1, chr2…</code>. Ensembl uses <code>1, 2…</code>. This matters — bcftools and tabix will fail if your VCF uses one naming convention and your reference uses another.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Option B — Download NA12878 Real Variant Calls (GIAB Gold Standard)</h3>
+      <pre><code>cd ~/na12878_pipeline
+
+<span class="comment"># High-confidence variant VCF for NA12878 against GRCh38</span>
+curl -O https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh38/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_PGandRTGphasetransfer.vcf.gz
+
+<span class="comment"># Download the index file too (required for tabix random access)</span>
+curl -O https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh38/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_PGandRTGphasetransfer.vcf.gz.tbi
+
+<span class="comment"># Rename to something shorter for convenience</span>
+mv HG001_GRCh38_GIAB_highconf_*.vcf.gz na12878.vcf.gz
+mv HG001_GRCh38_GIAB_highconf_*.vcf.gz.tbi na12878.vcf.gz.tbi</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>Index the Reference Genome for Fast Querying</h3>
+      <p>Before you can query specific coordinates, the genome file must be indexed. This creates a lookup table so tools can jump directly to any position without reading the entire file.</p>
+      <pre><code><span class="comment"># Step 1 — Block-gzip compress the reference (if not already bgzip'd)</span>
+bgzip -c Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz > ref_grch38.fna.bgz
+
+<span class="comment"># Step 2 — Build the FASTA index (.fai file)</span>
+samtools faidx ref_grch38.fna.bgz
+
+<span class="comment"># This creates ref_grch38.fna.bgz.fai — a lookup table of chromosome positions</span>
+
+<span class="comment"># Step 3 — Index the VCF for random access</span>
+tabix -p vcf na12878.vcf.gz
+
+<span class="comment"># Step 4 — Index VCF with bcftools (alternative, creates .csi index)</span>
+bcftools index na12878.vcf.gz</code></pre>
+      <div class="highlight green">
+        <strong>What indexing does:</strong> Without an index, querying chr17 position 43,000,000 means reading every single line from the start of the file until you reach that position. With an index, the tool opens the file directly at that byte offset — like a book's index vs reading from page 1.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>File Sizes to Expect</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Compressed</th><th>Uncompressed</th><th>Lines</th></tr></thead>
+          <tbody>
+            <tr><td>GRCh38 reference FASTA</td><td>~900 MB</td><td>~3.2 GB</td><td>~38–40 million</td></tr>
+            <tr><td>NA12878 VCF (GIAB)</td><td>~450 MB</td><td>~2.5 GB</td><td>~4.2 million variants</td></tr>
+            <tr><td>NA12878 consensus FASTA</td><td>~800 MB</td><td>~3.1 GB</td><td>~38 million</td></tr>
+            <tr><td>bwa index files (total)</td><td>—</td><td>~8–10 GB</td><td>5 auxiliary files</td></tr>
+            <tr><td>snpEff GRCh38.109 database</td><td>—</td><td>~3 GB</td><td>Gene annotation DB</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="highlight orange">
+        <strong>Total disk space needed:</strong> Plan for ~25–30 GB free before starting the full pipeline.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── QUERY REFERENCE ── -->
+  <section id="queryref">
+    <h2>Complete Query Reference — Every Command Explained</h2>
+    <p>This section covers every tool used to query the 3-billion-line genome file. Each command is broken down: what it does, why you use it, and what output to expect.</p>
+
+    <div class="card">
+      <h3>1. Stream a Compressed File Without Extracting It</h3>
+      <p><code>gzcat</code> reads a .gz file and outputs its contents as a text stream — no decompression to disk. This is the foundation of every genomic query on macOS.</p>
+      <pre><code><span class="comment"># Stream the entire genome into your terminal (DO NOT run alone — will print forever)</span>
+gzcat ref_grch38.fna.bgz
+
+<span class="comment"># Always pipe gzcat into another command that controls the output</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> head -n 5        <span class="comment"># first 5 lines only</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> wc -l             <span class="comment"># count total lines (slow — reads all 38M)</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> grep "^>"         <span class="comment"># show only chromosome headers</span></code></pre>
+    </div>
+
+    <div class="card">
+      <h3>2. Peek at the File Without Opening It</h3>
+      <pre><code><span class="comment"># Show first 10 lines</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> head -n 10
+
+<span class="comment"># Show last 10 lines (reads entire file — slow on 3 GB)</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> tail -n 10
+
+<span class="comment"># Show first 20 lines of a specific chromosome (chr22)</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> sed -n '/^>chr22/,/^>/p' <span class="cmd-pipe">|</span> head -n 20
+
+<span class="comment"># Count how many chromosomes are in the file</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> grep -c "^>"</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>3. samtools faidx — Query Exact Coordinates (Fastest Method)</h3>
+      <p><code>samtools faidx</code> uses the index to jump directly to any genomic coordinate in milliseconds — no reading from the start. This is how you query specific genes or regions.</p>
+      <pre><code><span class="comment"># Pull a single base at a specific position</span>
+samtools faidx ref_grch38.fna.bgz chr17:43094464-43094464
+
+<span class="comment"># Pull the entire BRCA1 gene region</span>
+samtools faidx ref_grch38.fna.bgz chr17:43044295-43125483
+
+<span class="comment"># Pull a region from chromosome 22</span>
+samtools faidx ref_grch38.fna.bgz chr22:1-50000
+
+<span class="comment"># Pull multiple regions at once</span>
+samtools faidx ref_grch38.fna.bgz chr17:43044295-43125483 chr22:1-100000
+
+<span class="comment"># List all chromosomes and their sizes (from the .fai index)</span>
+cut -f1,2 ref_grch38.fna.bgz.fai
+
+<span class="comment"># Output format: FASTA header + sequence</span>
+<span class="comment"># >chr17:43044295-43125483</span>
+<span class="comment"># ATCGATCGATCG...</span></code></pre>
+    </div>
+
+    <div class="card">
+      <h3>4. bcftools — Query the Variant Database (VCF File)</h3>
+      <p>The VCF file contains 4.2 million positions where NA12878's DNA differs from the reference. <code>bcftools</code> is the primary tool for querying it.</p>
+      <pre><code><span class="comment"># ─── BASIC QUERIES ───────────────────────────────</span>
+
+<span class="comment"># Show VCF header (metadata about the file)</span>
+bcftools view -h na12878.vcf.gz <span class="cmd-pipe">|</span> less
+
+<span class="comment"># Show first 10 variant records</span>
+bcftools view na12878.vcf.gz <span class="cmd-pipe">|</span> grep -v "^#" <span class="cmd-pipe">|</span> head -10
+
+<span class="comment"># Count total number of variants</span>
+bcftools view na12878.vcf.gz <span class="cmd-pipe">|</span> grep -vc "^#"
+
+<span class="comment"># ─── FILTER BY CHROMOSOME / REGION ──────────────</span>
+
+<span class="comment"># All variants on chromosome 22</span>
+bcftools view -r chr22 na12878.vcf.gz <span class="cmd-pipe">|</span> less
+
+<span class="comment"># Variants in a specific gene region (BRCA1)</span>
+bcftools view -r chr17:43044295-43125483 na12878.vcf.gz
+
+<span class="comment"># Save region to a new file</span>
+bcftools view -r chr17:43044295-43125483 na12878.vcf.gz -o brca1_variants.vcf
+
+<span class="comment"># Multiple regions at once</span>
+bcftools view -r chr17:43044295-43125483,chr22:1-5000000 na12878.vcf.gz
+
+<span class="comment"># ─── FILTER BY VARIANT TYPE ──────────────────────</span>
+
+<span class="comment"># Show only SNPs (single nucleotide changes)</span>
+bcftools view -v snps na12878.vcf.gz <span class="cmd-pipe">|</span> head -20
+
+<span class="comment"># Show only indels (insertions + deletions)</span>
+bcftools view -v indels na12878.vcf.gz <span class="cmd-pipe">|</span> head -20
+
+<span class="comment"># Count SNPs</span>
+bcftools view -v snps na12878.vcf.gz <span class="cmd-pipe">|</span> grep -vc "^#"
+
+<span class="comment"># Count indels</span>
+bcftools view -v indels na12878.vcf.gz <span class="cmd-pipe">|</span> grep -vc "^#"
+
+<span class="comment"># ─── STATISTICS ──────────────────────────────────</span>
+
+<span class="comment"># Full stats report (ts/tv ratio, indel sizes, quality distribution)</span>
+bcftools stats na12878.vcf.gz > na12878_stats.txt
+less na12878_stats.txt
+
+<span class="comment"># Quick summary stats</span>
+bcftools stats na12878.vcf.gz <span class="cmd-pipe">|</span> grep "^SN"
+
+<span class="comment"># ─── ADVANCED QUERIES ────────────────────────────</span>
+
+<span class="comment"># Extract only the chromosome, position, ref, alt columns</span>
+bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\n' na12878.vcf.gz <span class="cmd-pipe">|</span> head -20
+
+<span class="comment"># Count insertions (ALT longer than REF)</span>
+bcftools view -v indels na12878.vcf.gz <span class="cmd-pipe">|</span> awk '!/^#/ && length($5) > length($4)' <span class="cmd-pipe">|</span> wc -l
+
+<span class="comment"># Count deletions (REF longer than ALT)</span>
+bcftools view -v indels na12878.vcf.gz <span class="cmd-pipe">|</span> awk '!/^#/ && length($4) > length($5)' <span class="cmd-pipe">|</span> wc -l
+
+<span class="comment"># Find the largest indels (most disruptive)</span>
+bcftools view -v indels na12878.vcf.gz <span class="cmd-pipe">|</span> awk '!/^#/ {print length($4)-length($5), $0}' <span class="cmd-pipe">|</span> sort -n <span class="cmd-pipe">|</span> tail -10
+
+<span class="comment"># Check if a specific position has a variant</span>
+bcftools view -r chr17:43094464-43094464 na12878.vcf.gz</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>5. tabix — Indexed Random Access (Jump to Any Position Instantly)</h3>
+      <p><code>tabix</code> is like a GPS for a compressed genomic file. Once a file is indexed, it can seek directly to any chromosome:position without reading from the start.</p>
+      <pre><code><span class="comment"># Build a tabix index on a VCF (creates .tbi file)</span>
+tabix -p vcf na12878.vcf.gz
+
+<span class="comment"># Query a region directly — millisecond access on a 450 MB file</span>
+tabix na12878.vcf.gz chr17:43044295-43125483
+
+<span class="comment"># Query chromosome 22 entirely</span>
+tabix na12878.vcf.gz chr22
+
+<span class="comment"># List all chromosomes in the file</span>
+tabix -l na12878.vcf.gz
+
+<span class="comment"># Build a tabix index on a FASTA file</span>
+tabix -p fasta genome.fasta.gz</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>6. grep — Pattern Search Inside Any Genomic File</h3>
+      <pre><code><span class="comment"># Find all chromosome headers in FASTA</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> grep "^>"
+
+<span class="comment"># Find a specific chromosome header</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> grep "^>chr22"
+
+<span class="comment"># Show chr22 header + the next 5 lines of sequence</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> grep "^>chr22" -A 5
+
+<span class="comment"># Count how many lines contain a specific motif (e.g. BRCA1 gene ID)</span>
+bcftools view na12878.vcf.gz <span class="cmd-pipe">|</span> grep -c "BRCA1"
+
+<span class="comment"># Search VCF for a specific rs-ID (dbSNP variant identifier)</span>
+bcftools view na12878.vcf.gz <span class="cmd-pipe">|</span> grep "rs28897672"
+
+<span class="comment"># Count lines NOT starting with # (count actual variants, skip header)</span>
+bcftools view na12878.vcf.gz <span class="cmd-pipe">|</span> grep -vc "^#"</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>7. sed — Stream Filter by Range</h3>
+      <p><code>sed</code> is the tool that isolates one chromosome from the 38-million-line genome stream.</p>
+      <pre><code><span class="comment"># Isolate chromosome 22 from start to the next chromosome header</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> sed -n '/^>chr22/,/^>chr[^2]/p' <span class="cmd-pipe">|</span> head -20
+
+<span class="comment"># How it works:</span>
+<span class="comment">#   -n          suppress default printing</span>
+<span class="comment">#   /^>chr22/   start printing when this pattern is matched</span>
+<span class="comment">#   ,/^>chr/    stop printing when ANY new chromosome header is matched</span>
+<span class="comment">#   p           print the matching range</span>
+
+<span class="comment"># Isolate lines between two patterns and save to file</span>
+gzcat ref_grch38.fna.bgz <span class="cmd-pipe">|</span> sed -n '/^>chr22/,/^>chrX/p' > chr22_only.fasta</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>8. awk — Column Math on Genomic Data</h3>
+      <p><code>awk</code> treats each line as columns separated by tabs. VCF files have 8+ tab-separated columns — awk lets you calculate on them.</p>
+      <pre><code><span class="comment"># VCF column structure:</span>
+<span class="comment"># $1=CHROM  $2=POS  $3=ID  $4=REF  $5=ALT  $6=QUAL  $7=FILTER  $8=INFO</span>
+
+<span class="comment"># Print chromosome and position of every variant</span>
+bcftools view na12878.vcf.gz <span class="cmd-pipe">|</span> awk '!/^#/ {print $1, $2}'
+
+<span class="comment"># Calculate indel size (positive = deletion, negative = insertion)</span>
+bcftools view -v indels na12878.vcf.gz <span class="cmd-pipe">|</span> awk '!/^#/ {print length($4)-length($5), $1, $2}'
+
+<span class="comment"># Show only variants with quality score above 50</span>
+bcftools view na12878.vcf.gz <span class="cmd-pipe">|</span> awk '!/^#/ && $6 > 50'
+
+<span class="comment"># Count variants per chromosome</span>
+bcftools view na12878.vcf.gz <span class="cmd-pipe">|</span> awk '!/^#/ {count[$1]++} END {for(c in count) print c, count[c]}' <span class="cmd-pipe">|</span> sort -V</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>9. snpEff — Annotate What Variants Actually Do</h3>
+      <pre><code><span class="comment"># Annotate chr22 only (memory-safe, ~3 GB RAM)</span>
+bcftools view -r chr22 na12878.vcf.gz <span class="cmd-pipe">|</span> \
+  java -Xmx8g -jar snpEff/snpEff.jar GRCh38.109 - > chr22_annotated.vcf
+
+<span class="comment"># Annotate full genome (requires 16 GB free RAM)</span>
+java -Xmx16g -jar snpEff/snpEff.jar GRCh38.109 na12878.vcf.gz > na12878_annotated.vcf 2>snpeff.log
+
+<span class="comment"># Monitor progress while running</span>
+tail -f snpeff.log
+
+<span class="comment"># After annotation — compress and index the output</span>
+bgzip na12878_annotated.vcf
+tabix -p vcf na12878_annotated.vcf.gz
+
+<span class="comment"># Query annotated file for missense variants only</span>
+bcftools view na12878_annotated.vcf.gz <span class="cmd-pipe">|</span> grep "missense_variant"
+
+<span class="comment"># Query annotated file for BRCA1 gene</span>
+grep BRCA1 snpEff_genes.txt
+
+<span class="comment"># Open the HTML summary report in browser</span>
+open snpEff_summary.html</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>10. Full Pipeline — From Download to Annotation in One Flow</h3>
+      <pre><code><span class="comment"># ─── COMPLETE PIPELINE ───────────────────────────────────────────</span>
+mkdir -p ~/na12878_pipeline && cd ~/na12878_pipeline
+
+<span class="comment"># 1. Download reference genome</span>
+curl -O https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+
+<span class="comment"># 2. Download NA12878 variant calls</span>
+curl -O https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh38/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_PGandRTGphasetransfer.vcf.gz
+curl -O https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh38/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_PGandRTGphasetransfer.vcf.gz.tbi
+mv HG001_GRCh38_GIAB_highconf_*.vcf.gz na12878.vcf.gz
+mv HG001_GRCh38_GIAB_highconf_*.vcf.gz.tbi na12878.vcf.gz.tbi
+
+<span class="comment"># 3. Compress and index the reference</span>
+bgzip -c Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz > ref_grch38.fna.bgz
+samtools faidx ref_grch38.fna.bgz
+
+<span class="comment"># 4. Index the VCF</span>
+bcftools index na12878.vcf.gz
+
+<span class="comment"># 5. Quick sanity check — list chromosomes, count variants</span>
+tabix -l na12878.vcf.gz
+bcftools view na12878.vcf.gz <span class="cmd-pipe">|</span> grep -vc "^#"
+
+<span class="comment"># 6. Annotate chr22 (memory-safe first run)</span>
+bcftools view -r chr22 na12878.vcf.gz <span class="cmd-pipe">|</span> \
+  java -Xmx8g -jar snpEff/snpEff.jar GRCh38.109 - > chr22_annotated.vcf
+
+<span class="comment"># 7. View results</span>
+open snpEff_summary.html</code></pre>
+    </div>
+  </section>
+
+  <!-- ── THE WOMAN — NA12878 ── -->
+  <section id="na12878">
+    <h2>The Woman Behind the Genome: NA12878</h2>
+
+    <div class="na12878-card">
+      <h3>Who Is NA12878?</h3>
+      <p>NA12878 is the sample identifier assigned to a real woman known within the global genomics community as <strong>HG001</strong>. She is a Utah resident of Northern and Western European ancestry — a mother, grandmother, and one of the most important people in the history of modern genetics. She voluntarily donated a blood sample to science, knowing it would be sequenced and made publicly available for research around the world.</p>
+      <p>Her genome has been sequenced more times than any other human genome in history. It serves as the foundational quality control standard used by every major sequencing center, software developer, and bioinformatics researcher on Earth.</p>
+    </div>
+
+    <div class="card">
+      <h3>The CEPH Collection (1980s)</h3>
+      <p>NA12878's story begins with the <strong>Centre d'Etude du Polymorphisme Humain (CEPH)</strong>, a French genetics institute founded in Paris in 1983. CEPH recruited large three-generation families and collected DNA samples from grandparents, parents, and children. These families, called the <strong>CEPH pedigrees</strong>, gave scientists the ability to track how genetic variants are inherited across generations — a process called <em>linkage analysis</em>.</p>
+      <p>NA12878 belongs to <strong>CEPH family 1463</strong>. The "NA" prefix stands for <em>North American</em>. The "12878" is her permanent, anonymized lab identifier. She is one member of a multi-generation family that donated samples together, allowing scientists to verify which variants she inherited from which parent.</p>
+      <div class="highlight">
+        <strong>Why this matters:</strong> Because three generations of her family donated DNA, researchers can phase NA12878's genome — meaning they can determine which variants came from her mother and which from her father. This is extremely rare and valuable. Most sequencing data cannot do this.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Genome in a Bottle (GIAB) — The Gold Standard</h3>
+      <p>In 2011, the <strong>National Institute of Standards and Technology (NIST)</strong> launched the <strong>Genome in a Bottle Consortium</strong>. Their mission: create a human genome reference so deeply verified that it could be trusted as a universal benchmark. NA12878 was selected as the first subject.</p>
+      <p>Her genome was sequenced using every major sequencing technology available — Illumina short reads, Pacific Biosciences long reads, Oxford Nanopore, Complete Genomics, Ion Torrent, and more — and the results were cross-validated against each other to produce a <strong>high-confidence variant call set</strong>: a list of every position in her genome where she differs from the reference, with the highest confidence rating in the field.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Technology Used</th><th>Coverage Depth</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Illumina (short reads)</td><td>300×</td><td>High-accuracy SNP calling</td></tr>
+            <tr><td>Pacific Biosciences (long reads)</td><td>~60×</td><td>Structural variant resolution</td></tr>
+            <tr><td>Oxford Nanopore</td><td>~30×</td><td>Phasing and long-range context</td></tr>
+            <tr><td>Complete Genomics</td><td>~200×</td><td>Independent SNP validation</td></tr>
+            <tr><td>Ion Torrent</td><td>~150×</td><td>Indel accuracy cross-check</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="highlight green">
+        <strong>What "300× coverage" means:</strong> Every single base in her 3-billion-base genome was read approximately 300 times independently. Normal clinical sequencing is 30×. NA12878 is 10× more deeply verified than clinical standard.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Her Scientific Legacy</h3>
+      <p>NA12878's genome has been downloaded millions of times. It is used to:</p>
+      <ul style="padding-left:20px; margin-top:8px; line-height:2.2;">
+        <li>Validate every new DNA sequencing machine before it goes to market</li>
+        <li>Test and benchmark bioinformatics software (aligners, variant callers, annotation tools)</li>
+        <li>Train machine learning models that detect cancer mutations and rare diseases</li>
+        <li>Calibrate clinical laboratory pipelines before they process real patient samples</li>
+        <li>Serve as a teaching resource — exactly as in this project</li>
+      </ul>
+      <p style="margin-top:14px;">Every time a hospital sequences a cancer patient's tumor to find the right treatment, the pipeline that produced that result was likely validated against NA12878 first. Her contribution is immeasurable.</p>
+      <div class="highlight purple">
+        <strong>NIST Standard Reference Material SRM 8398:</strong> NA12878's DNA is sold as a certified laboratory standard. You can purchase a tube of her DNA from NIST. The proceeds support continued genomic research.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PIPELINE OVERVIEW ── -->
+  <section id="pipeline">
+    <h2>Core Data Pipeline: Stream, Filter, Truncate</h2>
+    <p>The fundamental technique in this project is <strong>Unix piping</strong> — connecting tools so data flows through them sequentially in memory, never touching the disk. This allows processing a multi-gigabyte compressed genome file without ever extracting it.</p>
+
+    <div class="pipeline">
+      <div class="pipe-box">
+        <div class="title">Phase 1 — Stream</div>
+        <div class="cmd">gzcat genome.fasta.gz</div>
+        <div class="desc">Decompresses on the fly, streams raw text into memory — no disk write</div>
+      </div>
+      <div class="pipe-arrow">➔</div>
+      <div class="pipe-box">
+        <div class="title">Phase 2 — Filter</div>
+        <div class="cmd">sed -n '/_chr22_/,/_chrX_/p'</div>
+        <div class="desc">Activates at chr22 header, stops at chrX — isolates one chromosome</div>
+      </div>
+      <div class="pipe-arrow">➔</div>
+      <div class="pipe-box">
+        <div class="title">Phase 3 — Brakes</div>
+        <div class="cmd">head -n 20</div>
+        <div class="desc">Captures 20 lines, sends upstream kill signal — prevents terminal flood</div>
+      </div>
+    </div>
+
+    <pre><code><span class="comment"># Full command — isolate chr22 from a compressed 38M-line genome</span>
+<span class="cmd-kw">gzcat</span> <span class="cmd-str">genome_23chromosomes.fasta.gz</span> <span class="cmd-pipe">|</span> <span class="cmd-kw">sed</span> <span class="cmd-arg">-n</span> <span class="cmd-str">'/_chr22_/,/_chrX_/p'</span> <span class="cmd-pipe">|</span> <span class="cmd-kw">head</span> <span class="cmd-arg">-n</span> 20</code></pre>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Phase</th><th>Command</th><th>Function</th><th>Technical Advantage</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Stream</td>
+            <td><code>gzcat file.fasta.gz</code></td>
+            <td>Reads and decompresses on the fly</td>
+            <td>No disk extraction — saves multi-GB of storage and eliminates I/O bottleneck</td>
+          </tr>
+          <tr>
+            <td>2. Filter</td>
+            <td><code>sed -n '/_chr22_/,/_chrX_/p'</code></td>
+            <td>Suppresses all output until chr22 header is matched; stops at chrX</td>
+            <td>Isolates one chromosome boundary instantly from millions of lines</td>
+          </tr>
+          <tr>
+            <td>3. Halt</td>
+            <td><code>head -n 20</code></td>
+            <td>Captures first 20 lines, sends SIGPIPE upstream to terminate the pipeline</td>
+            <td>Acts as system brakes — prevents flooding from 50M+ base pairs of sequence</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Additional Streaming Commands</h3>
+    <pre><code><span class="comment"># List all chromosome headers (catalog the file contents, no sequence)</span>
+<span class="cmd-kw">gzcat</span> genome_23chromosomes.fasta.gz <span class="cmd-pipe">|</span> <span class="cmd-kw">grep</span> <span class="cmd-str">">"</span>
+
+<span class="comment"># Find chr22 and show 5 lines of sequence context</span>
+<span class="cmd-kw">gzcat</span> genome_23chromosomes.fasta.gz <span class="cmd-pipe">|</span> <span class="cmd-kw">grep</span> <span class="cmd-str">"chr22"</span> <span class="cmd-arg">-A 5</span>
+
+<span class="comment"># Peek at first lines of a gzipped consensus FASTA</span>
+<span class="cmd-kw">zcat</span> na12878_consensus.fa.gz <span class="cmd-pipe">|</span> <span class="cmd-kw">head</span></code></pre>
+  </section>
+
+  <!-- ── GENOME BUILD ── -->
+  <section id="build">
+    <h2>Building the Personal Genome — NA12878 Consensus</h2>
+
+    <p>A "personal genome" is constructed by taking the universal human reference sequence (GRCh38) and applying one individual's specific variant calls on top of it. The result is a FASTA file where every position reflects <em>that person's</em> actual DNA, not the generic average.</p>
+
+    <div class="card">
+      <h3>The Three Build Components</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>File</th><th>Description</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>na12878.vcf.gz</code></td>
+              <td>Real variant calls from the GIAB consortium — 4.2M+ positions where NA12878 differs from reference</td>
+              <td><span class="tag tag-anatolian">Verified</span></td>
+            </tr>
+            <tr>
+              <td><code>na12878_consensus.fa</code></td>
+              <td>3 GB FASTA — GRCh38 reference with all GIAB variants applied. Chromosome lengths are shorter than reference at correct positions, confirming real indels were incorporated.</td>
+              <td><span class="tag tag-anatolian">Verified</span></td>
+            </tr>
+            <tr>
+              <td><code>ref_grch38.fna.bgz</code></td>
+              <td>GRCh38 reference genome (bgzip compressed, samtools indexed)</td>
+              <td><span class="tag tag-wana">Indexed</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="highlight green">
+        <strong>Verification method:</strong> Chromosome lengths in the consensus FASTA are shorter than GRCh38 at specific locations. This is the expected signature when real deletions (indels) are applied — it confirms the pipeline worked correctly and this is genuine NA12878 sequence, not a copy of the reference.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>What the Central Database Contains</h3>
+      <p>The variant calls in <code>na12878.vcf.gz</code> are cross-referenced against major public databases:</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Database</th><th>Host</th><th>Contents</th><th>Used For</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>dbSNP</strong></td>
+              <td>NCBI</td>
+              <td>800M+ SNP records across all known human populations</td>
+              <td>Assigning rs-IDs to NA12878 variants — links each position to global frequency data</td>
+            </tr>
+            <tr>
+              <td><strong>ClinVar</strong></td>
+              <td>NCBI</td>
+              <td>Clinical significance of variants (pathogenic, benign, VUS)</td>
+              <td>Identifying which of NA12878's 4.2M variants have known disease associations</td>
+            </tr>
+            <tr>
+              <td><strong>gnomAD</strong></td>
+              <td>Broad Institute</td>
+              <td>Allele frequencies from 140,000+ humans</td>
+              <td>Population frequency comparison — how common is each variant across humanity</td>
+            </tr>
+            <tr>
+              <td><strong>GIAB Benchmark</strong></td>
+              <td>NIST</td>
+              <td>High-confidence variant calls for NA12878</td>
+              <td>The ground truth — used to validate that our pipeline called variants correctly</td>
+            </tr>
+            <tr>
+              <td><strong>Ensembl / RefSeq</strong></td>
+              <td>EMBL / NCBI</td>
+              <td>Gene annotations on GRCh38</td>
+              <td>Mapping variants to genes (used by snpEff for functional annotation)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── COMMANDS ── -->
+  <section id="commands">
+    <h2>Complete Command Reference</h2>
+
+    <h3>bcftools — Variant Analysis</h3>
+    <pre><code><span class="comment"># Index the VCF file (required before most operations)</span>
+bcftools index -f na12878.vcf.gz
+
+<span class="comment"># Full variant statistics report → save to file</span>
+bcftools stats na12878.vcf.gz > na12878_stats.txt
+
+<span class="comment"># Extract the BRCA1 gene region (chr17:43044295–43125483)</span>
+bcftools view -r chr17:43044295-43125483 na12878.vcf.gz > brca1_variants.vcf
+
+<span class="comment"># Count total SNPs</span>
+bcftools view -v snps na12878.vcf.gz <span class="cmd-pipe">|</span> grep -vc "^#"
+
+<span class="comment"># Count total indels</span>
+bcftools view -v indels na12878.vcf.gz <span class="cmd-pipe">|</span> grep -vc "^#"
+
+<span class="comment"># Count insertions (ALT longer than REF)</span>
+bcftools view -v indels na12878.vcf.gz <span class="cmd-pipe">|</span> awk 'length($5) > length($4)' <span class="cmd-pipe">|</span> wc -l
+
+<span class="comment"># Count deletions (REF longer than ALT)</span>
+bcftools view -v indels na12878.vcf.gz <span class="cmd-pipe">|</span> awk 'length($4) > length($5)' <span class="cmd-pipe">|</span> wc -l
+
+<span class="comment"># Rank indels by size — find the largest structural variants</span>
+bcftools view -v indels na12878.vcf.gz <span class="cmd-pipe">|</span> awk '{print length($4)-length($5), $0}' <span class="cmd-pipe">|</span> sort -n <span class="cmd-pipe">|</span> tail
+
+<span class="comment"># Inspect a specific coordinate</span>
+bcftools view -r chr17:43094464-43094464 na12878.vcf.gz
+
+<span class="comment"># Check for phase set (PS) tags in VCF header</span>
+bcftools view -h na12878.vcf.gz <span class="cmd-pipe">|</span> grep PS</code></pre>
+
+    <h3>snpEff — Functional Annotation</h3>
+    <pre><code><span class="comment"># Annotate VCF with gene consequences against GRCh38 Ensembl 109</span>
+java -Xmx8g -jar snpEff/snpEff.jar GRCh38.109 na12878.vcf.gz > na12878_annotated.vcf
+
+<span class="comment"># Compress and index the annotated output</span>
+bgzip na12878_annotated.vcf
+tabix -p vcf na12878_annotated.vcf.gz
+
+<span class="comment"># Check BRCA1 annotation results</span>
+grep BRCA1 snpEff_genes.txt <span class="cmd-pipe">|</span> head
+
+<span class="comment"># Open HTML summary in browser</span>
+open snpEff_summary.html</code></pre>
+
+    <h3>samtools — Reference Lookup</h3>
+    <pre><code><span class="comment"># Pull a single base from the reference genome at a specific coordinate</span>
+samtools faidx ref_grch38.fna.bgz chr17:43094464-43094464</code></pre>
+
+    <h3>bwa — Alignment Index Build</h3>
+    <pre><code><span class="comment"># Build search index for the consensus genome (~45–90 min for 3 GB)</span>
+<span class="comment"># Produces: .bwt .pac .ann .amb .sa auxiliary files</span>
+bwa index na12878_consensus.fa
+
+<span class="comment"># Build index for GRCh38 reference (same duration)</span>
+bwa index ref_grch38.fna.bgz
+
+<span class="comment"># After indexing: align reads and compare flagstat output between</span>
+<span class="comment"># personalized consensus vs generic reference</span></code></pre>
+
+    <div class="highlight orange">
+      <strong>Educational point of the alignment benchmark:</strong> Aligning NA12878's own sequencing reads to her personalized consensus genome produces slightly better alignment statistics than aligning to the generic GRCh38 reference. This is the scientific argument for personalized reference genomes in clinical settings.
+    </div>
+  </section>
+
+  <!-- ── CHROMOSOMES ── -->
+  <section id="chromosomes">
+    <h2>Chromosomal Ancestry Architecture</h2>
+    <p>Source: 23andMe Ancestry Composition (0.5 confidence phasing threshold) · Reference assembly: GRCh37/hg19.<br>
+    Humans carry two copies of every chromosome — one inherited from each parent. Copy 1 and Copy 2 below represent these independent maternal/paternal inheritances.</p>
+
+    <div class="highlight">
+      <strong>What these coordinates mean:</strong> Each row is a <em>chromosome segment</em> — a contiguous stretch of DNA that matches a specific ancestral reference population with statistical confidence. The coordinates are base-pair positions on the chromosome, measured from the start of the chromosome (position 1).
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Chromosome</th>
+            <th>Copy</th>
+            <th>Start (bp)</th>
+            <th>End (bp)</th>
+            <th>Length (bp)</th>
+            <th>Assigned Panel</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>chr1</td><td>1</td><td>90,013,233</td><td>150,811,446</td><td>60,798,213</td><td><span class="tag tag-wana">West Asian &amp; N. African</span></td></tr>
+          <tr><td>chr2</td><td>1</td><td>52,384,668</td><td>76,488,564</td><td>24,103,896</td><td><span class="tag tag-wana">West Asian &amp; N. African</span></td></tr>
+          <tr><td>chr2</td><td>1</td><td>71,579,697</td><td>76,488,564</td><td>4,908,867</td><td><span class="tag tag-bnwa">Broadly N. West Asian</span></td></tr>
+          <tr><td>chr2</td><td>1</td><td>222,330,122</td><td>243,041,411</td><td>20,711,289</td><td><span class="tag tag-wana">West Asian &amp; N. African</span></td></tr>
+          <tr><td>chr2</td><td>1</td><td>222,330,122</td><td>226,890,057</td><td>4,559,935</td><td><span class="tag tag-bnwa">Broadly N. West Asian</span></td></tr>
+          <tr><td>chr2</td><td>1</td><td>226,890,057</td><td>243,041,411</td><td>16,151,354</td><td><span class="tag tag-anatolian">Anatolian</span></td></tr>
+          <tr><td>chr3</td><td>1</td><td>93,903,807</td><td>96,505,890</td><td>2,602,083</td><td><span class="tag tag-gap">Unassigned — Gap A</span></td></tr>
+          <tr><td>chr3</td><td>1</td><td>137,044,802</td><td>138,933,322</td><td>1,888,520</td><td><span class="tag tag-gap">Unassigned — Gap B</span></td></tr>
+          <tr><td>chr3</td><td>2</td><td>66,206</td><td>173,734,047</td><td>173,667,841</td><td><span class="tag tag-wana">West Asian &amp; N. African</span></td></tr>
+          <tr><td>chr3</td><td>2</td><td>66,206</td><td>2,235,255</td><td>2,169,049</td><td><span class="tag tag-bnwa">Broadly N. West Asian</span></td></tr>
+          <tr><td>chr3</td><td>2</td><td>2,379,000</td><td>173,734,047</td><td>171,355,047</td><td><span class="tag tag-bnwa">Broadly N. West Asian</span></td></tr>
+          <tr><td>chr4</td><td>2</td><td>155,273,743</td><td>156,602,205</td><td>1,328,462</td><td><span class="tag tag-gap">Unassigned — Gap C</span></td></tr>
+          <tr><td>chr4</td><td>2</td><td>156,602,205</td><td>190,125,925</td><td>33,523,720</td><td><span class="tag tag-wana">West Asian &amp; N. African</span></td></tr>
+          <tr><td>chr6</td><td>1</td><td>174,798</td><td>73,493,534</td><td>73,318,736</td><td><span class="tag tag-anatolian">Anatolian</span></td></tr>
+          <tr><td>chr6</td><td>1</td><td>124,264,783</td><td>148,587,096</td><td>24,322,313</td><td><span class="tag tag-anatolian">Anatolian</span></td></tr>
+          <tr><td>chr7</td><td>1</td><td>7,358,814</td><td>104,145,765</td><td>96,786,951</td><td><span class="tag tag-anatolian">Anatolian</span></td></tr>
+          <tr><td>chr8</td><td>1</td><td>103,686,204</td><td>119,113,078</td><td>15,426,874</td><td><span class="tag tag-ael">Arab, Egyptian &amp; Levantine</span></td></tr>
+          <tr><td>chr10</td><td>2</td><td>24,850,941</td><td>102,918,486</td><td>78,067,545</td><td><span class="tag tag-anatolian">Anatolian</span></td></tr>
+          <tr><td>chr13</td><td>1</td><td>49,545,811</td><td>51,272,084</td><td>1,726,273</td><td><span class="tag tag-gap">Unassigned — Gap D</span></td></tr>
+          <tr><td>chr13</td><td>2</td><td>19,503,422</td><td>43,695,449</td><td>24,192,027</td><td><span class="tag tag-anatolian">Anatolian</span></td></tr>
+          <tr><td>chr13</td><td>2</td><td>105,172,434</td><td>106,216,087</td><td>1,043,653</td><td><span class="tag tag-gap">Unassigned — Gap E</span></td></tr>
+          <tr><td>chr18</td><td>2</td><td>51,751,722</td><td>53,824,882</td><td>2,073,160</td><td><span class="tag tag-gap">Unassigned — Gap F</span></td></tr>
+          <tr><td>chr19</td><td>1</td><td>54,085,335</td><td>59,097,933</td><td>5,012,598</td><td><span class="tag tag-anatolian">Anatolian</span></td></tr>
+          <tr><td>chr19</td><td>2</td><td>14,719,254</td><td>15,949,405</td><td>1,230,151</td><td><span class="tag tag-gap">Unassigned — Gap G</span></td></tr>
+          <tr><td>chr21</td><td>1</td><td>21,856,748</td><td>24,719,961</td><td>2,863,213</td><td><span class="tag tag-gap">Unassigned — Gap H</span></td></tr>
+          <tr><td>chr21</td><td>2</td><td>21,856,748</td><td>48,099,610</td><td>26,242,862</td><td><span class="tag tag-anatolian">Anatolian</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── GAP ANALYSIS ── -->
+  <section id="gaps">
+    <h2>Algorithmic Gap Resolution</h2>
+    <p>An <strong>Unassigned</strong> segment does not mean missing DNA. It means those nucleotides match multiple reference panels with equal statistical confidence — the algorithm cannot choose a winner. By examining what flanks the gap on both sides (the flanking context resolution method), the underlying structure becomes clear.</p>
+    <div class="card-grid">
+      <div class="card">
+        <h3>Gaps A &amp; B — Chromosome 3, Copy 1</h3>
+        <p><strong>A:</strong> 93.9M–96.5M (2.60 Mb) &nbsp;|&nbsp; <strong>B:</strong> 137.0M–138.9M (1.88 Mb)</p>
+        <p>Both gaps are embedded inside a dominant long-range Greek &amp; Balkan / Southern European ancestral block. They are small, both flanks carry identical signatures — these are uniform European blocks with common polymorphic variations that the reference panel cannot sub-classify. No lineage break. Continuous Aegean heritage.</p>
+      </div>
+      <div class="card">
+        <h3>Gap C — Chromosome 4, Copy 2</h3>
+        <p><strong>C:</strong> 155.3M–156.6M (1.32 Mb)</p>
+        <p>This is a textbook <strong>meiotic recombination breakpoint</strong>. The DNA upstream of 155,273,743 tracks to the Southern European / Italian reference panel. The DNA immediately downstream of 156,602,205 transitions directly into a West Asian &amp; North African / Cypriot segment. The gap is the precise structural bridge linking the European and Eastern Mediterranean ancestral branches.</p>
+      </div>
+      <div class="card">
+        <h3>Gaps D &amp; E — Chromosome 13</h3>
+        <p><strong>D:</strong> 49.5M–51.2M (1.72 Mb) &nbsp;|&nbsp; <strong>E:</strong> 105.2M–106.2M (1.04 Mb)</p>
+        <p>Gap D is an internal Southern European transition. Gap E is tightly flanked by a general Southern European segment and a Greek &amp; Balkan block, confirming continuous Greek heritage across both boundaries.</p>
+      </div>
+      <div class="card">
+        <h3>Gaps F, G, H — Chr 18, 19, 21</h3>
+        <p><strong>F:</strong> 51.7M–53.8M &nbsp;|&nbsp; <strong>G:</strong> 14.7M–15.9M &nbsp;|&nbsp; <strong>H:</strong> 21.8M–24.7M</p>
+        <p>These are consistently bounded on one side by Anatolian / West Asian blocks and on the other by Southern European / Greek segments. They act as regional transition boundaries — reflecting centuries of historic genetic overlap between the populations of Asia Minor, Cyprus, and the Aegean basin.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HAPLOGROUP ── -->
+  <section id="haplogroup">
+    <h2>Mitochondrial Haplogroup: H15a1</h2>
+    <p>Mitochondrial DNA (mtDNA) is inherited exclusively through the maternal line — mother to child, unchanged except for rare mutations. Every mutation that accumulates in the mtDNA over thousands of generations creates a branch in the maternal family tree. The terminal branch is the <strong>haplogroup</strong>.</p>
+
+    <div class="phylo">
+<span class="clade">[Macro-Haplogroup H]</span>  <span class="geo">— ~20,000 BCE — Europe / Near East (post-Last Glacial Maximum expansion)</span>
+          │
+          └──► <span class="clade">[Sub-Clade H15]</span>  <span class="year">~5,150 BCE</span>  <span class="geo">— Neolithic branching in the Near East / Aegean corridor</span>
+                        │
+                        └──► <span class="clade">[H15a]</span>  <span class="geo">— Sub-branch defined by position 16298 transition</span>
+                                    │
+                                    └──► <span class="terminal">[H15a1]</span>  <span class="year">~3,000 BCE</span>  <span class="geo">— Bronze Age terminal mutation</span>
+                                                  <span class="mut">Defining: pos 1023, 1438, 16298, 8152</span>
+    </div>
+
+    <div class="card-grid" style="margin-top:20px;">
+      <div class="card">
+        <h3>The Four Defining Mutations</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Position</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td>1023 &amp; 1438</td><td>Branch separation within the ancient H15 lineage — splits H15 from other H sub-groups</td></tr>
+              <tr><td>16298</td><td>Establishes the H15a sub-branch — the hypervariable region transition</td></tr>
+              <tr><td>8152</td><td>The definitive mutation locking lineage directly into H15a1 — the terminal identifier</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Modern Geographic Distribution</h3>
+        <p>Unlike broad Western European H branches that dominate the Iberian Peninsula and Atlantic coast, modern H15a1 carriers concentrate specifically around:</p>
+        <ul style="padding-left:18px; line-height:2.2; margin-top:8px;">
+          <li>Greece &amp; the Aegean Islands</li>
+          <li>Cyprus</li>
+          <li>Armenia</li>
+          <li>Iran &amp; northern Iraq</li>
+          <li>Tajikistan &amp; the Caucasus corridor</li>
+        </ul>
+        <p style="margin-top:10px;">This distribution maps directly onto the autosomal chromosome pattern in Section 5 — the same Eastern Mediterranean / Anatolia / Levant signature appears in both independent data streams.</p>
+      </div>
+    </div>
+
+    <div class="highlight purple">
+      <strong>Why H15a1 matters scientifically:</strong> Because mtDNA is non-recombining (it does not shuffle like autosomal DNA), the haplogroup is a pure maternal signal going back 5,000+ years. It tells us about the <em>population</em> your maternal ancestors lived in — their migration routes, climate adaptations, and historical movements — independent of any paternal influence.
+    </div>
+  </section>
+
+  <!-- ── COMPARISON ── -->
+  <section id="comparison">
+    <h2>Comparison: Anonymized Profile vs. Central Reference Database</h2>
+    <p>The following comparison maps the chromosomal ancestry segments from this pipeline against the population panels in the 23andMe reference database (derived from gnomAD, HGDP, 1000 Genomes, and proprietary reference panels). Percentages reflect proportion of assigned base pairs per ancestry cluster.</p>
+
+    <div class="card">
+      <h3>Autosomal Ancestry Distribution (Assigned Segments Only)</h3>
+
+      <div class="compare-row">
+        <span class="compare-label">Anatolian</span>
+        <div class="compare-bar-wrap">
+          <div class="compare-bar" style="width:38%; background: linear-gradient(90deg, #3fb950, #2ea043);"></div>
+        </div>
+        <span class="compare-pct">~38%</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">West Asian &amp; N. African</span>
+        <div class="compare-bar-wrap">
+          <div class="compare-bar" style="width:31%; background: linear-gradient(90deg, #79c0ff, #58a6ff);"></div>
+        </div>
+        <span class="compare-pct">~31%</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">Broadly N. West Asian</span>
+        <div class="compare-bar-wrap">
+          <div class="compare-bar" style="width:16%; background: linear-gradient(90deg, #bc8cff, #9a52ff);"></div>
+        </div>
+        <span class="compare-pct">~16%</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">Arab, Egyptian &amp; Levantine</span>
+        <div class="compare-bar-wrap">
+          <div class="compare-bar" style="width:8%; background: linear-gradient(90deg, #d29922, #b07d10);"></div>
+        </div>
+        <span class="compare-pct">~8%</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">Unassigned Gaps</span>
+        <div class="compare-bar-wrap">
+          <div class="compare-bar" style="width:7%; background: linear-gradient(90deg, #f85149, #cc2929);"></div>
+        </div>
+        <span class="compare-pct">~7%</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>NA12878 vs. Anonymized Profile — Key Differences</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>NA12878 (Reference Standard)</th>
+              <th>Anonymized Profile (This Pipeline)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Primary ancestry</td>
+              <td>Northern &amp; Western European (British Isles / Utah CEPH cohort)</td>
+              <td>Anatolian / Eastern Mediterranean / Aegean</td>
+            </tr>
+            <tr>
+              <td>mtDNA haplogroup</td>
+              <td>H (broad Western European branch)</td>
+              <td>H15a1 (Eastern Mediterranean / Aegean specific)</td>
+            </tr>
+            <tr>
+              <td>Reference assembly</td>
+              <td>GRCh38 (pipeline uses GRCh38 for consensus build)</td>
+              <td>GRCh37/hg19 (23andMe ancestry composition)</td>
+            </tr>
+            <tr>
+              <td>Sequencing depth</td>
+              <td>300× (multiple platforms, GIAB verified)</td>
+              <td>Consumer SNP microarray (~650,000 positions genotyped)</td>
+            </tr>
+            <tr>
+              <td>Total variants vs. reference</td>
+              <td>4.2M+ in high-confidence call set</td>
+              <td>SNP array — subset of common variant positions only</td>
+            </tr>
+            <tr>
+              <td>Phasing</td>
+              <td>Full trio phasing (3-generation family data)</td>
+              <td>Statistical phasing at 0.5 confidence threshold</td>
+            </tr>
+            <tr>
+              <td>Primary ancestral signal</td>
+              <td>Northwestern European — low admixture</td>
+              <td>Deeply admixed Aegean / Asia Minor / Levant — complex mosaic</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>How the Comparison Pipeline Works</h3>
+      <p>When comparing this profile's chromosome segments to the central database, the process follows these steps:</p>
+      <ol style="padding-left:20px; line-height:2.4; margin-top:8px;">
+        <li><strong>Phased segment extraction:</strong> 23andMe's internal algorithm phases the ~650,000 SNP positions into maternal and paternal haplotypes (Copy 1 / Copy 2)</li>
+        <li><strong>Reference panel matching:</strong> Each phased segment is compared against 31 reference populations using a Hidden Markov Model (HMM) — the same statistical method used in scientific population genetics</li>
+        <li><strong>Boundary detection:</strong> Recombination breakpoints are identified where population signatures change — these are the segment boundaries in the coordinate ledger</li>
+        <li><strong>Confidence thresholding:</strong> At 0.5 threshold, segments are only assigned when the top reference panel match has at least 50% posterior probability — tighter than the default 0.3 setting</li>
+        <li><strong>Gap classification:</strong> Regions where no panel exceeds the threshold are marked Unassigned — these are the 8 gap windows in the dataset</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ── PIPELINE RESULTS ── -->
+  <section id="results">
+    <h2>Completed Pipeline Run: snpEff Annotation Results</h2>
+    <p>The following results were produced by running the full annotation pipeline on the NA12878 dataset on macOS Apple Silicon. The full 3.6 million variant run required a memory workaround — details below.</p>
+
+    <div class="highlight orange">
+      <strong>Memory issue resolved:</strong> Running snpEff on all 3.6M variants simultaneously exceeded 8 GB RAM. The fix was to analyze Chromosome 22 alone first (manageable at ~3 GB), then scale to the full genome with <code>-Xmx16g</code>.
+    </div>
+
+    <div class="card-grid">
+      <div class="stat-card"><div class="num">3.6M</div><div class="label">Total variants in full NA12878 VCF</div></div>
+      <div class="stat-card"><div class="num">42,000</div><div class="label">Variants on Chromosome 22 (annotated)</div></div>
+      <div class="stat-card"><div class="num">453</div><div class="label">Missense — actual amino acid changes</div></div>
+      <div class="stat-card"><div class="num">147,704</div><div class="label">Intronic (inside genes, non-coding)</div></div>
+      <div class="stat-card"><div class="num">502</div><div class="label">Synonymous / silent mutations</div></div>
+      <div class="stat-card"><div class="num">159</div><div class="label">Splice region variants</div></div>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <h3>Chromosome 22 Variant Classification — From Least to Most Significant</h3>
+      <p style="margin-bottom:16px; color: var(--muted); font-size:13px;">snpEff assigns each variant a functional consequence based on where it falls in the genome. Severity increases from top to bottom.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Category</th><th>Count</th><th>Location</th><th>Protein Impact</th><th>Significance</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Intergenic / Upstream / Downstream</td>
+              <td>~65,000</td>
+              <td>Outside gene boundaries — the "desert" of the genome</td>
+              <td>None</td>
+              <td><span class="tag" style="background:#1a2040;color:#79c0ff;border:1px solid #2d3a70;">Very Low</span></td>
+            </tr>
+            <tr>
+              <td>Intron variant</td>
+              <td>147,704</td>
+              <td>Inside a gene, in the non-coding "junk" spaces between exons</td>
+              <td>Usually none — introns are spliced out</td>
+              <td><span class="tag" style="background:#1a2040;color:#79c0ff;border:1px solid #2d3a70;">Low</span></td>
+            </tr>
+            <tr>
+              <td>Non-coding exon</td>
+              <td>3,108</td>
+              <td>Inside a functional gene region — but for RNA genes, not protein-coding</td>
+              <td>May affect RNA gene regulation</td>
+              <td><span class="tag" style="background:#251a35;color:#bc8cff;border:1px solid #4a2d6a;">Moderate</span></td>
+            </tr>
+            <tr>
+              <td>Synonymous / Silent</td>
+              <td>502</td>
+              <td>Inside protein-coding gene</td>
+              <td>None — same amino acid due to genetic code redundancy</td>
+              <td><span class="tag" style="background:#251a35;color:#bc8cff;border:1px solid #4a2d6a;">Moderate</span></td>
+            </tr>
+            <tr>
+              <td>Splice region</td>
+              <td>159</td>
+              <td>At the cut-and-paste boundaries where the cell reads gene segments</td>
+              <td>Can break how a gene is assembled — may produce wrong protein</td>
+              <td><span class="tag" style="background:#1f1a0e;color:#d29922;border:1px solid #6a3d10;">High</span></td>
+            </tr>
+            <tr>
+              <td><strong>Missense / Amino acid change</strong></td>
+              <td><strong>453</strong></td>
+              <td>Inside protein-coding gene</td>
+              <td><strong>Changes an amino acid — the protein building block is swapped</strong></td>
+              <td><span class="tag" style="background:#2a1a1a;color:#f85149;border:1px solid #6a2d2d;">Most Significant</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="highlight green" style="margin-top:16px;">
+        <strong>Why missense matters:</strong> Of all 42,000 chr22 variants, only 453 actually swap an amino acid. Those 453 are the candidates researchers examine first when looking for disease associations, trait markers, or drug targets. The rest are either silent or in non-functional regions.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Visual Outputs Generated</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>File</th><th>What It Shows</th><th>How to Open</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>na12878_karyogram.png</code></td>
+              <td>Full genome map showing where mutations are densest across all 23 chromosomes — visually identifies hotspot regions</td>
+              <td rowspan="2" style="vertical-align:middle;"><code>open ~/na12878_pipeline/*.png</code></td>
+            </tr>
+            <tr>
+              <td><code>na12878_indels.png</code></td>
+              <td>Histogram of insertion/deletion lengths — shows whether mutations are small (1–2 bp) or large structural events</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Critical Gene Comparison Results</h3>
+      <p>The pipeline also extracted and compared variants in four clinically significant genes against the reference genome:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Gene</th><th>Full Name</th><th>Clinical Relevance</th><th>Why It Was Analyzed</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>BRCA1</strong></td>
+              <td>Breast Cancer 1</td>
+              <td>Hereditary breast and ovarian cancer risk</td>
+              <td>Most studied cancer-risk gene. Variants here have direct clinical screening implications.</td>
+            </tr>
+            <tr>
+              <td><strong>APOE</strong></td>
+              <td>Apolipoprotein E</td>
+              <td>Alzheimer's disease risk (APOE ε4 allele)</td>
+              <td>The ε4 variant triples Alzheimer's risk. Identifying which allele(s) are present is a major research target.</td>
+            </tr>
+            <tr>
+              <td><strong>TP53</strong></td>
+              <td>Tumor Protein p53</td>
+              <td>Cancer suppressor — "guardian of the genome"</td>
+              <td>Mutated in over 50% of all human cancers. Baseline variant status matters for cancer risk profiling.</td>
+            </tr>
+            <tr>
+              <td><strong>MTHFR</strong></td>
+              <td>Methylenetetrahydrofolate reductase</td>
+              <td>Folate metabolism, cardiovascular and neurological risk</td>
+              <td>Two common variants (C677T, A1298C) affect how the body processes B vitamins and homocysteine.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Commands: View Results &amp; Scale to Full Genome</h3>
+      <pre><code><span class="comment"># Open all generated PNG graphs</span>
+open ~/na12878_pipeline/*.png
+
+<span class="comment"># ─────────────────────────────────────────────────────</span>
+<span class="comment"># To run snpEff on the FULL 3.6M variant dataset:</span>
+<span class="comment"># Restart Mac first to clear RAM, then:</span>
+<span class="comment"># ─────────────────────────────────────────────────────</span>
+cd ~/na12878_pipeline
+
+/opt/homebrew/Caskroom/miniconda/base/bin/conda run -n snpeff_env \
+  snpEff -Xmx16g GRCh38.99 na12878.vcf.gz > na12878_annotated.vcf 2>snpeff.log
+
+<span class="comment"># -Xmx16g = allow snpEff to use up to 16 GB RAM</span>
+<span class="comment"># Requires at least 16 GB free before running</span>
+<span class="comment"># Monitor progress: tail -f snpeff.log</span></code></pre>
+      <div class="highlight">
+        <strong>Scaling note:</strong> Chromosome 22 has ~42,000 variants and used ~3 GB RAM. The full genome has 3.6 million variants — roughly 85× more. Plan for 12–16 GB RAM and 30–60 minutes of processing time on Apple Silicon.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MACOS NOTES ── -->
+  <section id="macos">
+    <h2>macOS Compatibility Notes</h2>
+
+    <div class="card">
+      <h3>The zcat Problem on macOS</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Platform</th><th>Command</th><th>Handles .gz?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>Linux</td><td><code>zcat</code></td><td>Yes</td><td>GNU version handles both .Z and .gz</td></tr>
+            <tr><td>macOS</td><td><code>zcat</code></td><td>No</td><td>BSD version expects legacy .Z (LZW) format only</td></tr>
+            <tr><td>macOS</td><td><code>gzcat</code></td><td>Yes</td><td>Natively handles modern Gzip (DEFLATE) streams</td></tr>
+            <tr><td>macOS</td><td><code>gunzip -c</code></td><td>Yes</td><td>Alternative — decompresses to stdout without saving</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code><span class="comment"># Error you will see on macOS with the wrong command:</span>
+<span class="comment"># zcat: can't stat: genome.fasta.gz (genome.fasta.gz.Z): No such file or directory</span>
+
+<span class="comment"># Correct macOS commands:</span>
+gzcat genome.fasta.gz <span class="cmd-pipe">|</span> head
+gunzip -c genome.fasta.gz <span class="cmd-pipe">|</span> head</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>Convert This Report to PDF</h3>
+      <pre><code><span class="comment"># Install pandoc and a minimal LaTeX engine</span>
+brew install pandoc basictex
+
+<span class="comment"># Convert the Markdown report to a PDF</span>
+pandoc GENOMIC_PIPELINE_REPORT.md -o Genomic_Operations_Report.pdf</code></pre>
+      <p style="margin-top:10px;">Or open this HTML file in any browser and use <strong>Cmd + P → Save as PDF</strong> for a direct PDF export of this full reference page.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
+    <p><a href="/">&#8592; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-genomic-pipeline-reference",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

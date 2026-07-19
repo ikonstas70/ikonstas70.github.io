@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/cisco-ios-recovery">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cisco IOS Survival: Password Recovery, ROMMON, and SSH — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Networking</span>
+    <h1>Cisco IOS Survival: Password Recovery, ROMMON, and SSH</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Every network engineer eventually meets a router they can't log into, or one that won't boot. These aren't disasters — they're routine maintenance if you understand the boot process and the configuration register. This is the field-tested survival kit: recover a lost password, rescue a router with no valid image, and leave SSH configured so you never take console-cable risks again.</p>
+
+    <h2>How a Cisco router boots (and why it matters)</h2>
+    <p>On power-up, a router runs its bootstrap from ROM, reads the <strong>configuration register</strong> (a hex value like <code>0x2102</code>) to decide where to find its OS, loads IOS from flash, then loads the startup configuration from NVRAM into running memory. The recovery tricks all work by <em>interrupting or altering</em> this sequence — usually by changing that config register.</p>
+
+    <h2>Password recovery: skip the startup config</h2>
+    <p>The premise: you have physical/console access but not the password. The move is to tell the router to <em>ignore</em> its startup configuration on boot, log in freely, then copy the real config back — preserving it — and reset the password.</p>
+    <pre><code>! 1. Console in, power-cycle, send BREAK within ~60s to enter ROMMON
+rommon 1 &gt; confreg 0x2142      ! set register to IGNORE startup-config (NVRAM)
+rommon 2 &gt; reset               ! reboot; router comes up with a blank config
+
+! 2. It boots with no config -> skip setup wizard, go enable
+Router&gt; enable
+Router# copy startup-config running-config    ! LOAD the real config (don't erase!)
+Router# configure terminal
+Router(config)# enable secret NEW-STRONG-SECRET
+Router(config)# interface ... / no shutdown   ! interfaces load 'shut'; bring up as needed
+
+! 3. Restore normal boot behavior, then save
+Router(config)# config-register 0x2102
+Router(config)# end
+Router# copy running-config startup-config</code></pre>
+    <p>The single most common mistake: copying <em>running</em> into <em>startup</em> while the config is still blank — that erases the real configuration. Always <code>copy startup-config running-config</code> first to pull the real config in.</p>
+
+    <h2>No valid IOS image: recover from ROMMON</h2>
+    <p>If flash is corrupt or empty, the router drops to ROMMON and can't boot. Two rescue paths. If a valid image still lives in flash, just point the router at it:</p>
+    <pre><code>rommon 1 &gt; dir flash:                 ! is there an image?
+rommon 2 &gt; boot flash:c2900-universalk9-mz.SPA.bin</code></pre>
+    <p>If flash is empty, use ROMMON's minimal TFTP client (xmodem over console is the last resort for tiny images):</p>
+    <pre><code>rommon 1 &gt; set IP_ADDRESS=10.0.0.2
+rommon 2 &gt; set IP_SUBNET_MASK=255.255.255.0
+rommon 3 &gt; set DEFAULT_GATEWAY=10.0.0.1
+rommon 4 &gt; set TFTP_SERVER=10.0.0.1
+rommon 5 &gt; set TFTP_FILE=c2900-universalk9-mz.SPA.bin
+rommon 6 &gt; tftpdnld                   ! pulls the image over the mgmt link</code></pre>
+
+    <h2>Configure SSH so you never console in again</h2>
+    <p>Telnet sends everything in cleartext and has no place on a modern network. Once you have access, set up SSH properly — it takes six lines and requires a hostname, a domain, and RSA keys (the domain feeds the key's fully-qualified name):</p>
+    <pre><code>Router(config)# hostname R1
+R1(config)# ip domain-name lab.example
+R1(config)# crypto key generate rsa modulus 2048     ! 2048-bit minimum
+R1(config)# ip ssh version 2                          ! v2 only; v1 is broken
+R1(config)# username admin privilege 15 secret STRONG-SECRET
+R1(config)# line vty 0 4
+R1(config-line)# transport input ssh                  ! SSH only, no telnet
+R1(config-line)# login local
+R1(config-line)# exec-timeout 10 0</code></pre>
+    <p>Add an ACL on the VTY lines to restrict management access to your jump host, and you've turned a console-cable-dependent box into one you can safely reach — and only from where you should.</p>
+
+    <h2>The mental model to keep</h2>
+    <ul>
+      <li><strong>Config register controls boot behavior</strong> — <code>0x2102</code> normal, <code>0x2142</code> ignore-NVRAM (recovery).</li>
+      <li><strong>ROMMON is the rescue shell</strong> — reachable via BREAK at boot; it can set the register, boot a specific image, or TFTP a new one.</li>
+      <li><strong>Preserve, don't erase</strong> — load the real config before you change anything.</li>
+      <li><strong>Leave it better</strong> — SSHv2, strong secrets, VTY ACL, no Telnet.</li>
+    </ul>
+
+    <blockquote>A router you can't log into or won't boot is a config-register and boot-sequence puzzle, not a brick. Interrupt the boot, load the real config, fix what's wrong — and leave SSH behind so the console cable stays in the drawer.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=cisco-ios-recovery",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

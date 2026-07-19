@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-aes-galois-fields-reference">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galois Fields in AES — Reference — Konstas Engineering Notes</title>
+<meta name="description" content="Mathematical reference for the Galois Field arithmetic that underpins AES encryption. Covers GF(2⁸) structure, polynomial representation, the AES irreducible polynomial, ">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Cryptography</span>
+    <h1>Galois Fields in AES — Reference</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p>Mathematical reference for the Galois Field arithmetic that underpins AES encryption. Covers GF(2⁸) structure, polynomial representation, the AES irreducible polynomial, and the Extended Euclidean Algorithm for computing multiplicative inverses.</p><hr></hr><h2>What is GF(2⁸)?</h2><p>AES operates over <strong>GF(2⁸)</strong> — a Galois Field with 256 elements. Every element in GF(2⁸) is represented as a polynomial of degree ≤ 7 with coefficients in GF(2) (i.e., each coefficient is either 0 or 1).</p><h3>Polynomial Representation</h3><p>An element looks like:</p><pre><code>a₇x⁷ + a₆x⁶ + a₅x⁵ + a₄x⁴ + a₃x³ + a₂x² + a₁x + a₀
+</code></pre><p>where each <code>aᵢ ∈ {0, 1}</code>.</p><p>Each polynomial maps exactly to one <strong>8-bit byte</strong>, with each bit representing a coefficient. This alignment with computer memory is why GF(2⁸) was chosen for AES.</p><h3>Why GF(2⁸)?</h3><table><thead><tr><th>Property</th><th>Benefit</th></tr></thead><tbody><tr><td>Byte alignment</td><td>Each field element = 1 byte — natural fit for CPU architecture</td></tr><tr><td>Closed arithmetic</td><td>Addition, subtraction, multiplication, and division always stay within the field</td></tr><tr><td>Finite and deterministic</td><td>Results are always predictable — essential for a cryptographic standard</td></tr></tbody></table><hr></hr><h2>The Irreducible Polynomial</h2><p>AES uses the following irreducible polynomial as the modulus for all multiplication:</p><pre><code>P(x) = x⁸ + x⁴ + x³ + x + 1
+</code></pre><p><strong>Why irreducible?</strong> Just as prime numbers are the foundation of modular integer arithmetic, irreducible polynomials are the foundation of Galois Field arithmetic. Multiplying two polynomials can produce a result of degree &gt; 7, which falls outside GF(2⁸). The irreducible polynomial is used to reduce that result back into the field via modulo operation — analogous to clock arithmetic (e.g., 10 + 5 = 3 on a 12-hour clock).</p><hr></hr><h2>Extended Euclidean Algorithm — Finding Inverses in GF(2ᵐ)</h2><p>The MixColumns step in AES requires the <strong>multiplicative inverse</strong> of field elements. The Extended Euclidean Algorithm computes these efficiently.</p><h3>Goal</h3><p>Given element A(x) in GF(2ᵐ) and irreducible polynomial P(x), find A⁻¹(x) such that:</p><pre><code>A⁻¹(x) · A(x) ≡ 1  (mod P(x))
+</code></pre><h3>Algorithm</h3><p>The Extended Euclidean Algorithm iteratively applies polynomial division, tracking intermediate values to find polynomials U(x) and V(x) satisfying:</p><pre><code>U(x) · A(x) + V(x) · P(x) = GCD(A(x), P(x))
+</code></pre><p>Since A(x) and P(x) are both elements of a Galois Field built from an irreducible polynomial, their GCD is always 1:</p><pre><code>U(x) · A(x) + V(x) · P(x) = 1
+</code></pre><p>Taking this equation modulo P(x):</p><pre><code>U(x) · A(x) ≡ 1  (mod P(x))
+</code></pre><p>Therefore <strong>U(x) is the multiplicative inverse of A(x)</strong>.</p><hr></hr><h2>Worked Example — GF(2³), P(x) = x³ + x + 1</h2><p>Find the inverse of <strong>A(x) = x² + 1</strong>.</p><h3>Initialization</h3><table><thead><tr><th>Variable</th><th>Value</th></tr></thead><tbody><tr><td>r₀</td><td>x³ + x + 1 (= P(x))</td></tr><tr><td>r₁</td><td>x² + 1 (= A(x))</td></tr><tr><td>s₀</td><td>1</td></tr><tr><td>s₁</td><td>0</td></tr><tr><td>t₀</td><td>0</td></tr><tr><td>t₁</td><td>1</td></tr></tbody></table><h3>Iteration 1 — Divide r₀ by r₁</h3><pre><code>(x³ + x + 1) ÷ (x² + 1)  →  quotient = x,  remainder = x + 1
+</code></pre><pre><code>r₂ = x + 1
+s₂ = s₀ − x · s₁ = 1 − x · 0 = 1
+t₂ = t₀ − x · t₁ = 0 − x · 1 = −x  ≡  x  (in GF(2), −1 = 1)
+</code></pre><h3>Iteration 2 — Divide r₁ by r₂</h3><pre><code>(x² + 1) ÷ (x + 1)  →  quotient = x + 1,  remainder = 0
+</code></pre><p>Remainder is 0 — algorithm terminates.</p><h3>Result</h3><p>The last non-zero remainder is r₂ = x + 1, confirming GCD = 1 (as expected).</p><p>The inverse is:</p><pre><code>A⁻¹(x) = t₂ = x
+</code></pre><p><strong>Verification:</strong></p><pre><code>x · (x² + 1) = x³ + x
+x³ + x  mod  (x³ + x + 1) = (x³ + x) − (x³ + x + 1) = 1  ✓
+</code></pre><hr></hr><h2>Connection to AES</h2><p>The operations described here are used directly in the <strong>SubBytes</strong> and <strong>MixColumns</strong> steps of AES:</p><table><thead><tr><th>AES Step</th><th>GF(2⁸) Operation</th></tr></thead><tbody><tr><td>SubBytes (S-box)</td><td>Compute multiplicative inverse of each byte in GF(2⁸), then apply affine transformation</td></tr><tr><td>MixColumns</td><td>Multiply each column's bytes by a fixed polynomial over GF(2⁸)</td></tr><tr><td>AddRoundKey</td><td>XOR — equivalent to polynomial addition in GF(2⁸)</td></tr></tbody></table><p>The security of AES relies on the non-linearity introduced by S-box inversion in GF(2⁸), making it resistant to linear and differential cryptanalysis.</p><hr></hr><p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-aes-galois-fields-reference",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

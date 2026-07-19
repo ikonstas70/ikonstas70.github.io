@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-rtpengine-media-proxy-for-voip-nat-traversal-trans">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTPEngine: Media Proxy for VoIP — NAT Traversal, Transcoding, and SRTP — Konstas Engineering Notes</title>
+<meta name="description" content="← All ArticlesHow RTPEngine solves NAT, codec mismatches, and media security in a Kamailio-based VoIP platform, with configuration and capacity reference.Why a Media Prox">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Telecom</span>
+    <h1>RTPEngine: Media Proxy for VoIP — NAT Traversal, Transcoding, and SRTP</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<a href="../index.html">← All Articles</a><p>How RTPEngine solves NAT, codec mismatches, and media security in a Kamailio-based VoIP platform, with configuration and capacity reference.</p><h2>Why a Media Proxy Is Required</h2><p>Without a media proxy, audio streams travel directly between devices — creating four classes of problems.</p><p>In a SIP call, the <strong>signaling</strong> (call setup, teardown) and the <strong>media</strong> (RTP audio) travel on separate paths. Without a media proxy, audio goes directly between the calling device and the destination. This causes:</p><ul><li><strong>NAT issues</strong> — devices behind NAT advertise private IPs in SDP; the remote party cannot route audio back</li><li><strong>No call recording</strong> — audio never touches the platform, so it cannot be captured</li><li><strong>No transcoding</strong> — codec mismatches (G.711 vs G.729 vs Opus) cause one-way or silent calls</li><li><strong>Security exposure</strong> — media endpoints are visible on the internet, enabling interception and DoS</li></ul><p>RTPEngine solves all four by being the <strong>anchor point for all audio</strong>.</p><h2>How RTPEngine Works</h2><p>Kamailio rewrites SDP in SIP messages so all audio flows through RTPEngine ports.</p><pre>Caller (SIP Phone)           RTPEngine              Called Party
+       │                         │                       │
+       │── RTP audio (port A) ──►│                       │
+       │                         │── RTP audio (port B) ►│
+       │                         │                       │
+       │◄── RTP audio (port A) ──│                       │
+       │                         │◄── RTP audio (port B) ─│</pre><p>When a SIP INVITE arrives, Kamailio calls RTPEngine's control API. RTPEngine allocates port pairs (A and B) and tells Kamailio to rewrite the SDP so each party sends audio to RTPEngine instead of each other. RTPEngine then relays audio bidirectionally.</p><h2>Key Functions</h2><table><thead><tr><th>Function</th><th>Description</th></tr></thead><tbody><tr><td>NAT traversal</td><td>Anchors media through the platform — eliminates one-way audio behind NAT</td></tr><tr><td>Codec transcoding</td><td>Converts between G.711, G.729, Opus, etc. transparently — caller and called can use different codecs</td></tr><tr><td>SRTP ↔ RTP</td><td>Converts between encrypted (SRTP) and unencrypted (RTP) — enables encryption end-to-end even when one side doesn't support SRTP</td></tr><tr><td>Call recording</td><td>Captures audio streams to disk in real time — both directions, any format</td></tr><tr><td>DTMF handling</td><td>Normalises in-band and RFC 2833 DTMF signals — eliminates DTMF interoperability issues</td></tr><tr><td>RTP statistics</td><td>MOS score, jitter, packet loss per call — exported to monitoring systems</td></tr></tbody></table><h2>Configuration</h2><pre># /etc/rtpengine/rtpengine.conf
+[rtpengine]
+interface = &lt;server-public-ip&gt;
+listen-ng = 127.0.0.1:2223     # Control socket — Kamailio connects here
+port-min = 30000
+port-max = 40000                # 10,000 port pairs = up to 5,000 concurrent calls
+log-level = 6
+recording-dir = /var/spool/rtpengine/recordings</pre><p>RTPEngine uses one port pair per call direction. With a port range of 30000–40000 (10,000 ports), the server can handle up to 5,000 simultaneous calls. Adjust the range based on your expected concurrent call volume.</p><p>Ensure your firewall allows UDP on the port range (30000–40000) from any source. RTP media arrives from diverse client IPs and the exact source port is negotiated per call.</p><h2>Kamailio Integration</h2><pre>modparam("rtpengine", "rtpengine_sock", "udp:127.0.0.1:2223")
+
+route[RTPENGINE] {
+    if (is_method("INVITE")) {
+        # Proxy offer — rewrite SDP to use RTPEngine ports
+        rtpengine_offer("replace-origin replace-session-connection");
+    }
+    if (is_method("BYE") || is_method("CANCEL")) {
+        # Delete the media session when call ends
+        rtpengine_delete();
+    }
+}</pre><p>The <code>replace-origin replace-session-connection</code> flags tell RTPEngine to replace both the <code>o=</code> (origin) and <code>c=</code> (connection) lines in the SDP with its own IP address. This is what forces audio to flow through RTPEngine.</p><h2>Capacity Reference</h2><table><thead><tr><th>Server Spec</th><th>G.711 Pass-through</th><th>With Transcoding</th></tr></thead><tbody><tr><td>4 core / 8 GB</td><td>~1,000 concurrent calls</td><td>~500 concurrent calls</td></tr><tr><td>8 core / 16 GB</td><td>~2,500 concurrent calls</td><td>~1,200 concurrent calls</td></tr><tr><td>16 core / 32 GB</td><td>~5,000+ concurrent calls</td><td>~2,500 concurrent calls</td></tr></tbody></table><p>Transcoding (codec conversion) roughly halves capacity because it requires CPU-intensive audio encoding/decoding for every packet. Use pass-through (same codec both sides) wherever possible and reserve transcoding for endpoints that cannot negotiate a common codec.</p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-rtpengine-media-proxy-for-voip-nat-traversal-trans",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

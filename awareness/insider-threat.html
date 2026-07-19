@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/insider-threat">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Understanding Insider Threats — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Business</span>
+    <h1>Understanding Insider Threats</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Every security control in this collection assumes the threat is outside. The insider threat is the uncomfortable exception: the risk carried by people who already have legitimate access — employees, contractors, partners. It's harder to detect than an external attacker precisely because insiders aren't breaking in; they're already inside, doing things that often look like their job.</p>
+
+    <h2>Three kinds, only one of them villainous</h2>
+    <ul>
+      <li><strong>The negligent insider.</strong> The most common by far. No malice — just the person who emails a file to the wrong address, reuses a password, loses a laptop, or clicks the phish. Most "insider incidents" are ordinary mistakes at scale.</li>
+      <li><strong>The malicious insider.</strong> Rarer, costlier: the departing employee who copies the client list, the administrator who abuses access for theft or sabotage, the person recruited or coerced by an outsider.</li>
+      <li><strong>The compromised insider.</strong> A legitimate account taken over by an external attacker (via phishing or stolen credentials) — from the system's view, an insider, which is why identity-based attacks are so effective.</li>
+    </ul>
+
+    <h2>The warning signs (behavioral, not just technical)</h2>
+    <p>Malicious insider activity usually leaves a trail before the damage: accessing systems or data outside one's role or hours; large or unusual downloads and copies to USB or personal cloud; attempts to bypass controls or escalate privileges; and — the human side security teams underweight — disgruntlement, a sudden resignation, or unexplained financial stress. None of these is proof; together and out of pattern, they're a reason to look.</p>
+
+    <h2>Controls that limit the blast radius</h2>
+    <ul>
+      <li><strong>Least privilege.</strong> People should have exactly the access their role needs, and no more. Over-provisioning turns every account into a bigger potential incident.</li>
+      <li><strong>Separation of duties.</strong> No single person should be able to complete a high-risk action alone — approvals split the power to do harm.</li>
+      <li><strong>Logging and monitoring</strong> of access to sensitive data, with alerts on anomalies (bulk downloads, off-hours access). You can't investigate what you never recorded.</li>
+      <li><strong>Rigorous offboarding.</strong> Access revoked the moment someone leaves — the departed employee whose account still works is a textbook incident.</li>
+      <li><strong>Data loss prevention</strong> to flag or block sensitive data leaving by email, USB, or upload.</li>
+    </ul>
+
+    <h2>Culture is the real control</h2>
+    <p>Heavy-handed surveillance breeds the resentment it's meant to catch. The organizations that manage insider risk well pair sensible technical controls with a culture where people can report mistakes without fear (fast disclosure shrinks damage), where employees are treated fairly (grievance is a root cause), and where "see something, say something" applies to colleagues in genuine distress — support, not just suspicion. The goal isn't to treat everyone as a suspect; it's to make honest mistakes safe to admit and malicious acts hard to complete.</p>
+
+    <blockquote>Stop assuming the threat is only outside. Think in terms of least privilege and blast radius. Connect monitoring with a culture where reporting a mistake is safe — most insider incidents are accidents waiting to be caught early.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-insider-threat",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

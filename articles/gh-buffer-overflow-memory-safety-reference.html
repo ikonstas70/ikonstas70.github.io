@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-buffer-overflow-memory-safety-reference">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memory Safety, Buffer Overflows &amp; Baggy Bounds — Konstas Engineering Notes</title>
+<meta name="description" content="A unified technical reference for system programmers, security engineers, and reverse engineers — from overflow fundamentals through allocator internals, hea…">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Offensive Security</span>
+    <h1>Memory Safety, Buffer Overflows &amp; Baggy Bounds</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p class="header-sub">A unified technical reference for system programmers, security engineers, and reverse engineers — from overflow fundamentals through allocator internals, heap exploitation, and live GDB debugging workflows.</p>
+  <p class="header-meta">Systems Security &nbsp;&middot;&nbsp; C/C++ &nbsp;&middot;&nbsp; x86-64 Linux &nbsp;&middot;&nbsp; Ioannis Alexander Konstas</p>
+  <div class="header-tags">
+    <span class="htag">Buffer Overflow</span>
+    <span class="htag">Baggy Bounds</span>
+    <span class="htag">Stack Smashing</span>
+    <span class="htag">Heap Corruption</span>
+    <span class="htag">ASLR</span>
+    <span class="htag">Stack Canaries</span>
+    <span class="htag">AddressSanitizer</span>
+    <span class="htag">GDB / pwndbg</span>
+    <span class="htag">glibc / jemalloc</span>
+    <span class="htag">Tcache Poisoning</span>
+  </div>
+</header>
+
+<div class="container">
+
+  
+
+  <!-- ═══════════ 1. FUNDAMENTALS ═══════════ -->
+  <div id="fundamentals" class="sec-head">
+    <span class="sec-icon">💥</span>
+    <span class="sec-label">Buffer Overflow Fundamentals</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§1</span>
+  </div>
+
+  <p>A buffer overflow occurs when a program writes more data into a memory region than it was allocated to hold. Languages such as C and C++ expose raw memory through pointer arithmetic and provide no inherent bounds enforcement — making unsafe writes invisible at runtime unless explicit instrumentation is present.</p>
+
+  <p>Classic stack-based exploitation begins with a fixed-size buffer allocated on the stack inside a called function. When unchecked input arrives via APIs such as <code style="font-family:monospace;color:var(--orange)">gets()</code> or <code style="font-family:monospace;color:var(--orange)">strcpy()</code>, excess bytes overflow the buffer and overwrite adjacent stack metadata — including the saved frame pointer and the return address. By controlling the return address, an attacker redirects execution to injected shellcode or reusable code sequences already present in the binary.</p>
+
+  <!-- STACK FRAME SVG DIAGRAM -->
+  <div class="diagram-wrap">
+    <svg width="700" height="420" viewBox="0 0 700 420" style="width:100%;height:auto;">
+      <!-- Background -->
+      <rect width="700" height="420" fill="#0d1117"/>
+
+      <!-- Title -->
+      <text x="350" y="28" text-anchor="middle" fill="#e6edf3" font-size="13" font-family="'Segoe UI',sans-serif" font-weight="600">Stack Frame Layout — Before and After Buffer Overflow</text>
+
+      <!-- BEFORE column -->
+      <text x="175" y="60" text-anchor="middle" fill="#8b949e" font-size="11" font-family="'Segoe UI',sans-serif" font-weight="600" letter-spacing="1">NORMAL STATE</text>
+
+      <!-- Stack grows down arrow -->
+      <text x="50" y="100" fill="#8b949e" font-size="10" font-family="monospace">HIGH ADDR</text>
+      <line x1="50" y1="108" x2="50" y2="360" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="50" y="375" fill="#8b949e" font-size="10" font-family="monospace">LOW ADDR</text>
+
+      <!-- Stack cells BEFORE -->
+      <rect x="90" y="75" width="170" height="38" rx="3" fill="#161b22" stroke="#d29922" stroke-width="1.5"/>
+      <text x="175" y="91" text-anchor="middle" fill="#d29922" font-size="11" font-family="monospace">argc / argv</text>
+      <text x="175" y="106" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">[caller args]</text>
+
+      <rect x="90" y="115" width="170" height="38" rx="3" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="175" y="131" text-anchor="middle" fill="#58a6ff" font-size="11" font-family="monospace">Return Address</text>
+      <text x="175" y="146" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">0x555555555219</text>
+
+      <rect x="90" y="155" width="170" height="38" rx="3" fill="#161b22" stroke="#58a6ff" stroke-width="1"/>
+      <text x="175" y="171" text-anchor="middle" fill="#8b949e" font-size="11" font-family="monospace">Saved RBP</text>
+      <text x="175" y="186" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">0x7fffffffe2a0</text>
+
+      <rect x="90" y="195" width="170" height="38" rx="3" fill="#161b22" stroke="#3fb950" stroke-width="1"/>
+      <text x="175" y="211" text-anchor="middle" fill="#3fb950" font-size="11" font-family="monospace">Stack Canary</text>
+      <text x="175" y="226" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">0xdeadbeef…</text>
+
+      <rect x="90" y="235" width="170" height="80" rx="3" fill="#0d1117" stroke="#30363d" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="175" y="270" text-anchor="middle" fill="#3fb950" font-size="11" font-family="monospace">char buf[64]</text>
+      <text x="175" y="287" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">[safe input]</text>
+      <text x="90" y="326" fill="#8b949e" font-size="9" font-family="monospace">↑ RSP (stack top)</text>
+
+      <!-- RSP marker -->
+      <line x1="82" y1="316" x2="90" y2="316" stroke="#3fb950" stroke-width="1.5"/>
+
+      <!-- AFTER column -->
+      <text x="525" y="60" text-anchor="middle" fill="#8b949e" font-size="11" font-family="'Segoe UI',sans-serif" font-weight="600" letter-spacing="1">AFTER OVERFLOW (700+ bytes of 0x41)</text>
+
+      <rect x="440" y="75" width="210" height="38" rx="3" fill="#1a0a0a" stroke="#d29922" stroke-width="1.5"/>
+      <text x="545" y="91" text-anchor="middle" fill="#d29922" font-size="11" font-family="monospace">argc / argv</text>
+      <text x="545" y="106" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">[caller args]</text>
+
+      <rect x="440" y="115" width="210" height="38" rx="3" fill="#2a0a0a" stroke="#f85149" stroke-width="2"/>
+      <text x="545" y="131" text-anchor="middle" fill="#f85149" font-size="11" font-family="monospace">Return Address ← SMASHED</text>
+      <text x="545" y="146" text-anchor="middle" fill="#f85149" font-size="10" font-family="monospace">0x4141414141414141</text>
+
+      <rect x="440" y="155" width="210" height="38" rx="3" fill="#2a0a0a" stroke="#f85149" stroke-width="1.5"/>
+      <text x="545" y="171" text-anchor="middle" fill="#f85149" font-size="11" font-family="monospace">Saved RBP ← OVERWRITTEN</text>
+      <text x="545" y="186" text-anchor="middle" fill="#f85149" font-size="10" font-family="monospace">0x4141414141414141</text>
+
+      <rect x="440" y="195" width="210" height="38" rx="3" fill="#2a0a0a" stroke="#f85149" stroke-width="1.5"/>
+      <text x="545" y="211" text-anchor="middle" fill="#f85149" font-size="11" font-family="monospace">Stack Canary ← CORRUPTED</text>
+      <text x="545" y="226" text-anchor="middle" fill="#f85149" font-size="10" font-family="monospace">0x4141414141414141</text>
+
+      <rect x="440" y="235" width="210" height="80" rx="3" fill="#1a1000" stroke="#d29922" stroke-width="1.5"/>
+      <text x="545" y="265" text-anchor="middle" fill="#d29922" font-size="11" font-family="monospace">char buf[64]</text>
+      <text x="545" y="282" text-anchor="middle" fill="#d29922" font-size="10" font-family="monospace">AAAA AAAA AAAA AAAA…</text>
+      <text x="545" y="299" text-anchor="middle" fill="#d29922" font-size="10" font-family="monospace">0x41414141 × 16 dwords</text>
+
+      <!-- Arrow showing overflow direction -->
+      <text x="545" y="340" text-anchor="middle" fill="#f85149" font-size="11" font-family="'Segoe UI',sans-serif">⬆ overflow grows up the stack</text>
+
+      <!-- Divider -->
+      <line x1="350" y1="60" x2="350" y2="380" stroke="#30363d" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="350" y="400" text-anchor="middle" fill="#8b949e" font-size="10" font-family="'Segoe UI',sans-serif">SIGABRT triggered when corrupted canary detected on function return</text>
+    </svg>
+    <div class="diagram-caption">Figure 1 — Stack frame before and after a buffer overflow. 0x41 = ASCII 'A'. Canary corruption triggers <code style="font-family:monospace">*** stack smashing detected ***</code> before the corrupted return address executes.</div>
+  </div>
+
+  <div class="callout warn">
+    The OS cannot prevent intra-process memory corruption. OS protections isolate processes from each other — not from their own logic errors. All buffer overflow exploitation happens entirely within the victim process's address space.
+  </div>
+
+  <!-- ═══════════ 2. MITIGATIONS ═══════════ -->
+  <div id="mitigations" class="sec-head">
+    <span class="sec-icon">🛡</span>
+    <span class="sec-label">Standard Mitigations &amp; Their Limits</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§2</span>
+  </div>
+
+  <p>No single mitigation eliminates memory corruption. Each defense addresses a specific attack vector while leaving others exposed. Understanding the limits of each control is as important as deploying it.</p>
+
+  <table class="ref-table">
+    <thead><tr><th>Mitigation</th><th>What It Protects</th><th>Bypass / Limit</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Stack Canaries</strong></td><td>Return address overwrite on stack</td><td>Does not protect heap metadata. Bypassable with information leak of canary value.</td></tr>
+      <tr><td><strong>Non-Executable Memory (NX/DEP)</strong></td><td>Code injection via stack/heap shellcode</td><td>Does not prevent ROP (Return-Oriented Programming) — attacker reuses existing code.</td></tr>
+      <tr><td><strong>ASLR</strong></td><td>Predictable addresses for gadgets, libc, heap</td><td>Entropy is limited. Bypassable via format string leaks, side channels, or heap spraying.</td></tr>
+      <tr><td><strong>Control Flow Integrity (CFI)</strong></td><td>Indirect control-flow hijacking</td><td>Overhead and deployment complexity. Does not protect data-only attacks.</td></tr>
+      <tr><td><strong>Safe APIs</strong> (strncpy, snprintf)</td><td>Common unsafe function calls</td><td>Requires disciplined developer adoption across all code paths. Legacy code resists.</td></tr>
+      <tr><td><strong>Memory-Safe Languages</strong> (Rust, Go)</td><td>Most classes of memory corruption</td><td>Impractical for performance-critical, hardware-adjacent, or legacy code paths.</td></tr>
+      <tr><td><strong>AddressSanitizer</strong></td><td>Heap/stack out-of-bounds, use-after-free</td><td>2–3× slowdown. Not suitable for production. Changes memory layout; can mask bugs.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    Defense in depth is the only realistic strategy. Layer canaries, NX, ASLR, CFI, sanitizers in development, and bounds checking together. No single mechanism is sufficient.
+  </div>
+
+  <!-- ═══════════ 3. BOUNDS CHECKING ═══════════ -->
+  <div id="bounds" class="sec-head">
+    <span class="sec-icon">📏</span>
+    <span class="sec-label">Approaches to Bounds Checking</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§3</span>
+  </div>
+
+  <h3>Guard Pages (Electric Fence)</h3>
+  <p>Unmapped pages placed adjacent to allocations cause an immediate segfault on overflow. Highly effective for debugging — every overflow is caught at the exact offending instruction. Too memory-intensive for production: each allocation requires a full page of guard space.</p>
+
+  <h3>Fat Pointers</h3>
+  <p>Bounds metadata (base, size) is stored inside the pointer itself, enabling exact per-pointer bounds checking at every dereference. Requires ABI changes — fat pointers are wider than regular pointers, breaking interoperability with unmodified libraries and system interfaces. Performance overhead on every pointer operation.</p>
+
+  <h3>Shadow Metadata (Baggy Bounds, ASan)</h3>
+  <p>Bounds information is stored in a separate, compact side table indexed by memory address or slot number. Avoids ABI changes — existing pointer widths are preserved. Checking uses constant-time table lookups. Granularity is coarser than fat pointers (slot-sized, not byte-exact), introducing some internal fragmentation.</p>
+
+  <!-- ═══════════ 4. BAGGY BOUNDS ═══════════ -->
+  <div id="baggy" class="sec-head">
+    <span class="sec-icon">⚡</span>
+    <span class="sec-label">Baggy Bounds — Design &amp; Tradeoffs</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§4</span>
+  </div>
+
+  <p>Baggy Bounds (Akritidis et al., USENIX Security 2009) rounds every allocation up to the nearest power of two and aligns the block accordingly. A compact side table stores the <em>logarithm</em> of the block size for each slot — one byte per slot, enabling O(1) lookup via bit shifts and masks.</p>
+
+  <!-- BAGGY BOUNDS DIAGRAM -->
+  <div class="diagram-wrap">
+    <svg width="680" height="360" viewBox="0 0 680 360" style="width:100%;height:auto;">
+      <rect width="680" height="360" fill="#0d1117"/>
+      <text x="340" y="26" text-anchor="middle" fill="#e6edf3" font-size="13" font-family="'Segoe UI',sans-serif" font-weight="600">Baggy Bounds — Slot Table &amp; Bounds Check</text>
+
+      <!-- Allocation examples -->
+      <text x="30" y="60" fill="#8b949e" font-size="11" font-family="'Segoe UI',sans-serif">Memory Slots (each = 16 bytes)</text>
+
+      <!-- Slot 0 — malloc(20) → rounds to 32 = 2^5 -->
+      <rect x="30" y="70" width="32" height="22" rx="2" fill="#1a1000" stroke="#d29922" stroke-width="1.5"/>
+      <rect x="62" y="70" width="32" height="22" rx="2" fill="#1a1000" stroke="#d29922" stroke-width="1"/>
+      <text x="78" y="86" text-anchor="middle" fill="#d29922" font-size="9" font-family="monospace">malloc(20)</text>
+      <text x="30" y="108" fill="#d29922" font-size="9" font-family="monospace">→ rounded to 32 (2⁵)</text>
+      <text x="30" y="120" fill="#8b949e" font-size="9" font-family="monospace">table[slot] = 5</text>
+
+      <!-- Slot 2 — malloc(100) → rounds to 128 = 2^7 -->
+      <rect x="200" y="70" width="32" height="22" rx="2" fill="#0a1a10" stroke="#3fb950" stroke-width="1.5"/>
+      <rect x="232" y="70" width="32" height="22" rx="2" fill="#0a1a10" stroke="#3fb950" stroke-width="1"/>
+      <rect x="264" y="70" width="32" height="22" rx="2" fill="#0a1a10" stroke="#3fb950" stroke-width="1"/>
+      <rect x="296" y="70" width="32" height="22" rx="2" fill="#0a1a10" stroke="#3fb950" stroke-width="1"/>
+      <rect x="328" y="70" width="32" height="22" rx="2" fill="#0a1a10" stroke="#3fb950" stroke-width="1"/>
+      <rect x="360" y="70" width="32" height="22" rx="2" fill="#0a1a10" stroke="#3fb950" stroke-width="1"/>
+      <rect x="392" y="70" width="32" height="22" rx="2" fill="#0a1a10" stroke="#3fb950" stroke-width="1"/>
+      <rect x="424" y="70" width="32" height="22" rx="2" fill="#0a1a10" stroke="#3fb950" stroke-width="1"/>
+      <text x="312" y="86" text-anchor="middle" fill="#3fb950" font-size="9" font-family="monospace">malloc(100) → rounded to 128 (2⁷), table[slot] = 7</text>
+
+      <!-- Side table -->
+      <text x="30" y="160" fill="#8b949e" font-size="11" font-family="'Segoe UI',sans-serif">Side Table (1 byte per slot)</text>
+
+      <rect x="30" y="170" width="30" height="26" rx="2" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+      <text x="45" y="188" text-anchor="middle" fill="#d29922" font-size="13" font-family="monospace" font-weight="600">5</text>
+
+      <rect x="62" y="170" width="30" height="26" rx="2" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+      <text x="77" y="188" text-anchor="middle" fill="#d29922" font-size="13" font-family="monospace" font-weight="600">5</text>
+
+      <rect x="94" y="170" width="30" height="26" rx="2" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+      <text x="109" y="188" text-anchor="middle" fill="#8b949e" font-size="13" font-family="monospace">0</text>
+
+      <rect x="126" y="170" width="30" height="26" rx="2" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+      <text x="141" y="188" text-anchor="middle" fill="#8b949e" font-size="13" font-family="monospace">0</text>
+
+      <rect x="158" y="170" width="30" height="26" rx="2" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+      <text x="173" y="188" text-anchor="middle" fill="#3fb950" font-size="13" font-family="monospace" font-weight="600">7</text>
+      <text x="173" y="215" text-anchor="middle" fill="#3fb950" font-size="9" font-family="monospace">slot 4</text>
+      <text x="173" y="227" text-anchor="middle" fill="#8b949e" font-size="9" font-family="monospace">base of 128-byte block</text>
+
+      <!-- Bounds check explanation -->
+      <rect x="30" y="250" width="620" height="90" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+      <text x="50" y="272" fill="#e6edf3" font-size="12" font-family="'Segoe UI',sans-serif" font-weight="600">Bounds Check (constant time — no loop, no metadata traversal):</text>
+      <text x="50" y="294" fill="#58a6ff" font-size="11.5" font-family="monospace">slot  = ptr &gt;&gt; SLOT_SHIFT                 // which slot does this pointer land in?</text>
+      <text x="50" y="311" fill="#58a6ff" font-size="11.5" font-family="monospace">size  = 1 &lt;&lt; table[slot]                   // recover block size from log₂ value</text>
+      <text x="50" y="328" fill="#3fb950" font-size="11.5" font-family="monospace">valid = (ptr ^ base) &lt; size                // still inside the power-of-two block?</text>
+    </svg>
+    <div class="diagram-caption">Figure 2 — Baggy Bounds slot table. Each allocation is rounded to the next power of 2. The side table stores log₂(size) per slot (1 byte). Bounds checking is three bitwise operations — no metadata traversal required.</div>
+  </div>
+
+  <h3>Key Tradeoffs</h3>
+  <table class="ref-table">
+    <thead><tr><th>Property</th><th>Baggy Bounds</th><th>Fat Pointers</th><th>ASan Shadow</th></tr></thead>
+    <tbody>
+      <tr><td>ABI compatibility</td><td class="ok">✅ Unchanged</td><td style="color:var(--red)">❌ Incompatible</td><td class="ok">✅ Unchanged</td></tr>
+      <tr><td>Check cost</td><td class="ok">✅ O(1) bitwise</td><td style="color:var(--yellow)">⚠️ Per-deref</td><td style="color:var(--yellow)">⚠️ Shadow lookup</td></tr>
+      <tr><td>Granularity</td><td style="color:var(--yellow)">⚠️ Power-of-2 slot</td><td class="ok">✅ Exact byte</td><td class="ok">✅ 8-byte aligned</td></tr>
+      <tr><td>Memory overhead</td><td style="color:var(--yellow)">⚠️ Fragmentation</td><td style="color:var(--red)">❌ 2–3× pointer size</td><td style="color:var(--red)">❌ 1:8 shadow ratio</td></tr>
+      <tr><td>Production-safe</td><td class="ok">✅ Yes</td><td style="color:var(--red)">❌ Overhead too high</td><td style="color:var(--red)">❌ 2–3× slowdown</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ═══════════ 5. MEMORY LAYOUT ═══════════ -->
+  <div id="layout" class="sec-head">
+    <span class="sec-icon">🗺</span>
+    <span class="sec-label">Process Memory Layout</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§5</span>
+  </div>
+
+  <!-- PROCESS MEMORY MAP SVG -->
+  <div class="diagram-wrap">
+    <svg width="680" height="440" viewBox="0 0 680 440" style="width:100%;height:auto;">
+      <rect width="680" height="440" fill="#0d1117"/>
+      <text x="340" y="26" text-anchor="middle" fill="#e6edf3" font-size="13" font-family="'Segoe UI',sans-serif" font-weight="600">x86-64 Linux Process Virtual Address Space</text>
+
+      <!-- Address markers left -->
+      <text x="10" y="56" fill="#8b949e" font-size="9" font-family="monospace">0xFFFFFFFF</text>
+      <text x="10" y="410" fill="#8b949e" font-size="9" font-family="monospace">0x00000000</text>
+
+      <!-- Kernel space -->
+      <rect x="100" y="40" width="400" height="36" rx="3" fill="#1a0a0a" stroke="#f85149" stroke-width="1.5"/>
+      <text x="300" y="63" text-anchor="middle" fill="#f85149" font-size="12" font-family="'Segoe UI',sans-serif" font-weight="600">Kernel Space [inaccessible from userland]</text>
+
+      <!-- vDSO / vsyscall -->
+      <rect x="100" y="80" width="400" height="24" rx="2" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+      <text x="300" y="97" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">vDSO / vsyscall  [0xffff…]</text>
+
+      <!-- Stack -->
+      <rect x="100" y="108" width="400" height="46" rx="3" fill="#0a1018" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="300" y="127" text-anchor="middle" fill="#58a6ff" font-size="12" font-family="'Segoe UI',sans-serif" font-weight="600">Stack  ↓ grows down</text>
+      <text x="300" y="144" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">0x7fff… — frames, locals, return addresses, canaries</text>
+
+      <!-- gap -->
+      <text x="510" y="166" fill="#30363d" font-size="10" font-family="monospace">↕ ASLR gap</text>
+
+      <!-- mmap / libs -->
+      <rect x="100" y="172" width="400" height="46" rx="3" fill="#100a18" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="300" y="191" text-anchor="middle" fill="#bc8cff" font-size="12" font-family="'Segoe UI',sans-serif" font-weight="600">Memory-Mapped Segments</text>
+      <text x="300" y="207" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">libc.so, ld.so, anonymous mappings, file-backed pages</text>
+
+      <!-- Heap -->
+      <rect x="100" y="222" width="400" height="46" rx="3" fill="#0a180a" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="300" y="241" text-anchor="middle" fill="#3fb950" font-size="12" font-family="'Segoe UI',sans-serif" font-weight="600">Heap  ↑ grows up</text>
+      <text x="300" y="257" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">0x555…9000 — malloc/free managed; chunk headers adjacent to data</text>
+
+      <!-- BSS -->
+      <rect x="100" y="272" width="400" height="30" rx="3" fill="#18180a" stroke="#d29922" stroke-width="1"/>
+      <text x="300" y="292" text-anchor="middle" fill="#d29922" font-size="11" font-family="monospace">BSS — zero-initialized global &amp; static data</text>
+
+      <!-- Data -->
+      <rect x="100" y="305" width="400" height="30" rx="3" fill="#18180a" stroke="#d29922" stroke-width="1"/>
+      <text x="300" y="325" text-anchor="middle" fill="#d29922" font-size="11" font-family="monospace">Data — initialized global &amp; static data</text>
+
+      <!-- Text -->
+      <rect x="100" y="338" width="400" height="46" rx="3" fill="#0a0a18" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="300" y="357" text-anchor="middle" fill="#58a6ff" font-size="12" font-family="'Segoe UI',sans-serif" font-weight="600">Text (Code) Segment  [r-xp]</text>
+      <text x="300" y="373" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">0x555555554000 — executable instructions, read-only</text>
+
+      <!-- NULL page -->
+      <rect x="100" y="388" width="400" height="28" rx="2" fill="#161b22" stroke="#30363d" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="300" y="406" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">NULL page [0x0 — unmapped, traps null dereferences]</text>
+
+      <!-- info proc mappings annotation -->
+      <text x="512" y="130" fill="#58a6ff" font-size="9" font-family="monospace">← 0x7fff…de000</text>
+      <text x="512" y="200" fill="#bc8cff" font-size="9" font-family="monospace">← 0x7fff…c00000</text>
+      <text x="512" y="244" fill="#3fb950" font-size="9" font-family="monospace">← 0x5555…9000 [heap]</text>
+      <text x="512" y="357" fill="#58a6ff" font-size="9" font-family="monospace">← 0x5555…4000</text>
+    </svg>
+    <div class="diagram-caption">Figure 3 — x86-64 Linux virtual address space. Addresses from the GDB <code style="font-family:monospace">info proc mappings</code> output in §12. ASLR randomizes the gaps between segments at each exec().</div>
+  </div>
+
+  <p>When <code style="font-family:monospace;color:var(--orange)">malloc()</code> is called, the allocator selects a strategy based on size. Small allocations come from thread-local caches (tcache in glibc) or size-class bins. Large allocations use <code style="font-family:monospace;color:var(--cyan)">mmap()</code>. Each allocated chunk stores metadata in the bytes immediately preceding the returned user pointer — making adjacent overflows directly dangerous to allocator state.</p>
+
+  <!-- ═══════════ 6. MEMORY MOVEMENT ═══════════ -->
+  <div id="movement" class="sec-head">
+    <span class="sec-icon">🔀</span>
+    <span class="sec-label">How Memory Is Moved</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§6</span>
+  </div>
+
+  <table class="ref-table">
+    <thead><tr><th>Operation</th><th>Behavior</th><th>Overlap Safe?</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>memcpy(dst, src, n)</code></td><td>Copies n bytes src→dst</td><td style="color:var(--red)">❌ UB on overlap</td><td>Fastest; compiler may emit SIMD. Never use on overlapping regions.</td></tr>
+      <tr><td><code>memmove(dst, src, n)</code></td><td>Copies n bytes, handles overlap</td><td class="ok">✅ Yes</td><td>Detects and handles forward/backward copy direction.</td></tr>
+      <tr><td><code>realloc(ptr, size)</code></td><td>Resize allocation</td><td>N/A</td><td>May allocate new block, copy, free old. Old pointer becomes invalid — use-after-free risk.</td></tr>
+      <tr><td><code>mremap(old, old_sz, new_sz)</code></td><td>Kernel: resize VM region</td><td>N/A</td><td>May avoid copy by remapping page tables. Syscall only.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    After <code style="font-family:monospace">realloc()</code>, the original pointer is invalidated — even if the address did not change. Any code retaining the old pointer commits use-after-free.
+  </div>
+
+  <!-- ═══════════ 7. ALLOCATORS ═══════════ -->
+  <div id="allocators" class="sec-head">
+    <span class="sec-icon">⚙️</span>
+    <span class="sec-label">Allocator Internals</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§7</span>
+  </div>
+
+  <h3>glibc — ptmalloc2</h3>
+  <p>Each chunk has a header storing size and state flags in the 8–16 bytes preceding the user data pointer. Free chunks are stored in doubly-linked bins sorted by size. Historically, corrupted list pointers in free chunks enabled "unlink attacks" — arbitrary writes during the coalescing operation. Modern glibc adds pointer integrity checks, but metadata corruption remains a powerful primitive when those checks can be bypassed.</p>
+
+  <div class="snippet">
+    <div class="snip-label">glibc chunk layout (64-bit)</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt">/*   8 bytes  */ </span>prev_size   <span class="cmt">// size of previous chunk (if free)</span>
+<span class="cmt">/*   8 bytes  */ </span>size        <span class="cmt">// size of THIS chunk | flags (P=prev_in_use, M=mmap, A=arena)</span>
+<span class="cmt">/* user data  */ </span>&lt;returned pointer starts here&gt;
+<span class="cmt">/* (if free)  */ </span>fd, bk      <span class="cmt">// forward/backward links in free bin</span>
+<span class="cmt">/* (if free)  */ </span>fd_nextsize, bk_nextsize  <span class="cmt">// for large bin skip lists</span></pre>
+  </div>
+
+  <h3>jemalloc</h3>
+  <p>Separates metadata from user data via extents and runs. Uses multiple arenas for concurrency, fine-grained size classes, and thread caches. Profile-friendly: built-in allocation profiling via <code style="font-family:monospace;color:var(--cyan)">MALLOC_CONF=prof:true</code>. Less vulnerable to traditional heap overflows because metadata is not adjacent to user data.</p>
+
+  <h3>Hardened Allocators (Scudo, dlmalloc-hardened)</h3>
+  <p>Add integrity-protected chunk headers (checksummed), randomized allocation ordering, and stack canary-like values inside chunk metadata. Dramatically reduce exploitability of heap corruption — attackers cannot reliably predict or forge the protected header values without a separate leak.</p>
+
+  <!-- ═══════════ 8. HEAP EXPLOITS ═══════════ -->
+  <div id="heap" class="sec-head">
+    <span class="sec-icon">☠️</span>
+    <span class="sec-label">Heap Metadata Corruption Primitives</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§8</span>
+  </div>
+
+  <table class="ref-table">
+    <thead><tr><th>Technique</th><th>Mechanism</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Unlink Attack</strong></td><td>Forge prev/next pointers in a free chunk's fd/bk fields</td><td>Arbitrary write during free() coalescing</td></tr>
+      <tr><td><strong>Off-by-One</strong></td><td>Write one byte past allocation boundary, corrupt PREV_INUSE flag or size of next chunk</td><td>Overlapping chunks; controlled allocation reuse</td></tr>
+      <tr><td><strong>Double Free</strong></td><td>Free same pointer twice, inserting chunk twice into free list</td><td>Next malloc returns same address twice; write-after-free</td></tr>
+      <tr><td><strong>Tcache Poisoning</strong></td><td>Corrupt tcache next pointer after freeing chunk</td><td>malloc() returns arbitrary address; write primitive</td></tr>
+      <tr><td><strong>Heap Feng Shui</strong></td><td>Shape heap layout via controlled allocation/free patterns so target chunk ends up adjacent to attacker-controlled data</td><td>Deterministic corruption of target object</td></tr>
+      <tr><td><strong>Use-After-Free</strong></td><td>Access freed chunk after allocator reuses its memory</td><td>Type confusion, stale pointer reads, arbitrary write if attacker controls reallocated data</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ═══════════ 9. DEBUGGING ═══════════ -->
+  <div id="debugging" class="sec-head">
+    <span class="sec-icon">🔬</span>
+    <span class="sec-label">Debugging &amp; Inspection Techniques</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§9</span>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label asan">AddressSanitizer — build and run</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Compile with ASan instrumentation</span>
+gcc -fsanitize=address -fsanitize=undefined -g -O1 -o target target.c
+
+<span class="cmt"># Run — ASan intercepts the process and reports:</span>
+<span class="cmt">#   ==PID==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x…</span>
+<span class="cmt">#   READ of size 4 at 0x… thread T0</span>
+<span class="cmt">#       #0 0x… in vulnerable_function target.c:42</span>
+./target</pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label asan">Valgrind — memory error detection</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Full error detection with call stacks</span>
+valgrind --leak-check=full --show-leak-kinds=all \
+         --track-origins=yes --verbose ./target
+
+<span class="cmt"># Track file descriptors too</span>
+valgrind --track-fds=yes ./target</pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label gdb">GDB — heap inspection workflow</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Break on malloc/free to trace allocations</span>
+<span class="kw">break</span> malloc
+<span class="kw">break</span> free
+<span class="kw">commands 1</span>
+  silent
+  printf <span class="str">"malloc(%ld) = %p\n"</span>, $rdi, $rax
+  <span class="kw">continue</span>
+<span class="kw">end</span>
+
+<span class="cmt"># Watchpoint — halt when specific memory is written</span>
+<span class="kw">watch</span> *0x555555559010   <span class="cmt"># chunk header address</span>
+
+<span class="cmt"># pwndbg — heap state visualization</span>
+heap           <span class="cmt"># list all chunks</span>
+bins           <span class="cmt"># show tcache/fastbins/smallbins</span>
+vis_heap_chunks <span class="cmt"># color-coded heap map</span>
+arena          <span class="cmt"># main_arena struct</span>
+
+<span class="cmt"># Inspect chunk header manually</span>
+x/4gx 0x555555559000   <span class="cmt"># prev_size, size, fd, bk</span></pre>
+  </div>
+
+  <!-- ═══════════ 10. CHECKLIST ═══════════ -->
+  <div id="checklist" class="sec-head">
+    <span class="sec-icon">✅</span>
+    <span class="sec-label">Heap Corruption Investigation Checklist</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§10</span>
+  </div>
+
+  <div class="callout purple">
+    Work smallest-to-largest: minimize the test case first, then apply tools in order of overhead. Never modify source data during investigation — always work from a reproducible copy.
+  </div>
+
+  <ol style="padding-left:24px;color:var(--text);line-height:2.2;max-width:780px;">
+    <li><strong>Minimize the reproducing test case</strong> — smallest input that reliably triggers the crash</li>
+    <li><strong>Run under AddressSanitizer</strong> — catches most heap/stack issues with precise attribution</li>
+    <li><strong>Run under Valgrind</strong> if ASan unavailable or doesn't catch it — slower but more exhaustive</li>
+    <li><strong>Break on malloc/free in GDB</strong> — build a timeline of all allocations and frees</li>
+    <li><strong>Set watchpoints on chunk headers</strong> — catch the exact write that corrupts metadata</li>
+    <li><strong>Inspect tcache lists</strong> for duplicates, impossible pointers, or out-of-range values</li>
+    <li><strong>Examine free list bins</strong> — coalescing bugs show up as corrupted fd/bk pointers</li>
+    <li><strong>Run a fuzzer</strong> (AFL++, libFuzzer) against the component — surface hidden paths</li>
+    <li><strong>Goal: identify the corrupting instruction</strong>, not just the downstream crash site</li>
+  </ol>
+
+  <!-- ═══════════ 11. TROUBLESHOOTING ═══════════ -->
+  <div id="troubleshooting" class="sec-head">
+    <span class="sec-icon">🩺</span>
+    <span class="sec-label">Troubleshooting Guide — Common Scenarios</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§11</span>
+  </div>
+
+  <h2>Scenario 1 — Crash Inside free()</h2>
+  <p>Symptom: <code style="font-family:monospace;color:var(--red)">*** Error in 'a.out': free(): invalid pointer ***</code> or <code style="font-family:monospace;color:var(--red)">double free or corruption</code></p>
+  <div class="snippet">
+    <div class="snip-label gdb">Workflow</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">break</span> free
+<span class="kw">run</span>
+<span class="cmt"># When free() is hit, inspect the pointer in $rdi:</span>
+<span class="kw">info</span> registers rdi
+x/4gx ($rdi - 16)     <span class="cmt"># examine chunk header: prev_size, size flags</span>
+<span class="cmt"># If size field has garbage: a previous write corrupted this chunk's header</span>
+<span class="cmt"># Set watchpoint on the header to find who wrote it:</span>
+<span class="kw">watch</span> *($rdi - 8)
+<span class="kw">run</span>                   <span class="cmt"># re-run; GDB will stop at the corrupting instruction</span></pre>
+  </div>
+
+  <h2>Scenario 2 — Stack Buffer Overflow (our GDB session case)</h2>
+  <p>Symptom: <code style="font-family:monospace;color:var(--red)">*** stack smashing detected ***: terminated</code> + SIGABRT</p>
+  <div class="snippet">
+    <div class="snip-label gdb">Workflow</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">break</span> vulnerable_function   <span class="cmt"># break before overflow</span>
+<span class="kw">run</span>
+<span class="kw">info</span> frame                  <span class="cmt"># show saved RIP, saved RBP</span>
+x/64x $rsp                  <span class="cmt"># dump stack — look for 0x41414141 fill pattern</span>
+<span class="cmt"># Note where 0x41 bytes stop: offset from RSP = required padding to reach return address</span>
+<span class="kw">watch</span> *(char*)($rbp + 8)    <span class="cmt"># watchpoint on return address slot</span>
+<span class="kw">continue</span></pre>
+  </div>
+
+  <h2>Scenario 3 — Use-After-Free</h2>
+  <div class="snippet">
+    <div class="snip-label asan">ASan report + GDB workflow</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Step 1: ASan identifies UAF immediately with allocation/free/access stacks</span>
+gcc -fsanitize=address -g -O0 -o target target.c &amp;&amp; ./target
+<span class="cmt"># ==PID==ERROR: AddressSanitizer: heap-use-after-free</span>
+<span class="cmt"># READ of size 8 at 0x... — this is the stale pointer access</span>
+<span class="cmt"># freed by thread T0 here: — this is the free()</span>
+<span class="cmt"># previously allocated by thread T0 here: — this is the malloc()</span>
+
+<span class="cmt"># Step 2: In GDB without ASan, poison freed memory to catch stale pointers</span>
+<span class="kw">break</span> free
+<span class="kw">commands</span>
+  memset($rdi, 0xde, &lt;size&gt;)   <span class="cmt"># fill freed region with 0xde = dead sentinel</span>
+  <span class="kw">continue</span>
+<span class="kw">end</span>
+<span class="cmt"># Crash will now occur much closer to the stale access</span></pre>
+  </div>
+
+  <h2>Scenario 4 — Tcache Poisoning / Double Free</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">pwndbg workflow</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># After suspected double free:</span>
+tcache_entries   <span class="cmt"># pwndbg: list all tcache bins and their entries</span>
+<span class="cmt"># Look for: same address appearing twice in the same bin</span>
+<span class="cmt"># Look for: next pointer pointing outside heap range</span>
+<span class="cmt"># Look for: count field mismatching actual number of entries</span>
+
+<span class="kw">break</span> __libc_malloc
+<span class="kw">commands</span>
+  printf <span class="str">"malloc(%ld) returning %p\n"</span>, $rdi, $rax
+  <span class="kw">continue</span>
+<span class="kw">end</span>
+<span class="cmt"># If malloc returns 0x0 or an invalid address: tcache is poisoned</span></pre>
+  </div>
+
+  <h2>Scenario 5 — Crash After realloc()</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Track old pointer invalidation</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">break</span> realloc
+<span class="kw">run</span>
+<span class="cmt"># Save the old pointer before call:</span>
+set $old_ptr = $rdi
+<span class="cmt"># After realloc returns ($rax = new pointer):</span>
+<span class="kw">finish</span>
+set $new_ptr = $rax
+<span class="cmt"># Set watchpoint on old pointer to catch any post-realloc access:</span>
+<span class="kw">watch</span> -l *$old_ptr
+<span class="kw">continue</span>
+<span class="cmt"># Any access to old_ptr after this point is a use-after-realloc bug</span></pre>
+  </div>
+
+  <!-- ═══════════ 12. ANNOTATED GDB SESSION ═══════════ -->
+  <div id="gdb" class="sec-head">
+    <span class="sec-icon">🖥</span>
+    <span class="sec-label">Annotated GDB Session — Live Buffer Overflow</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§12</span>
+  </div>
+
+  <div class="callout">
+    This is a real GDB session on Ubuntu 22.04 debugging a compiled <code style="font-family:monospace">buffer_overflow</code> binary. The binary was compiled without debug symbols (stripped). Annotations explain what each output reveals.
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label shell">1. Load binary and execute</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="addr">$ gdb ./buffer_overflow</span>
+Reading symbols from ./buffer_overflow...
+<span class="cmt">(No debugging symbols found in ./buffer_overflow)</span>
+<span class="cmt">↑ Binary is stripped — no function names or line numbers available.</span>
+<span class="cmt">  This limits GDB visibility but we can still inspect registers, stack, and memory.</span>
+
+(gdb) run
+Starting program: /root/buffer_overflow
+[Thread debugging using libthread_db enabled]</pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label gdb">2. Overflow detected — SIGABRT triggered</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="smash">AAAAAAAAAA…AAAAAAAAA</span>  <span class="cmt">← 700+ bytes of 'A' (0x41) fed to stdin</span>
+<span class="smash">*** stack smashing detected ***: terminated</span>
+<span class="cmt">↑ Stack canary was corrupted. glibc's __stack_chk_fail() raised SIGABRT</span>
+<span class="cmt">  before the corrupted return address could execute.</span>
+<span class="cmt">  This is the canary protection working as designed.</span>
+
+Program received signal SIGABRT, Aborted.
+__pthread_kill_implementation (...) at ./nptl/pthread_kill.c:44
+<span class="cmt">↑ We are paused inside the SIGABRT handler — deep in pthread/libc internals.</span>
+<span class="cmt">  The actual overflow site is much earlier in the call stack.</span></pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label gdb">3. Inspect process memory map</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre>(gdb) info proc mappings
+
+<span class="addr">0x555555554000</span>–<span class="addr">0x555555555000</span>  r--p  <span class="cmt">← ELF headers (read-only)</span>
+<span class="addr">0x555555555000</span>–<span class="addr">0x555555556000</span>  <span class="ok">r-xp</span>  <span class="cmt">← .text: executable code</span>
+<span class="addr">0x555555557000</span>–<span class="addr">0x555555558000</span>  r--p  <span class="cmt">← .rodata: read-only data</span>
+<span class="addr">0x555555558000</span>–<span class="addr">0x555555559000</span>  rw-p  <span class="cmt">← .data / .bss: writable globals</span>
+<span class="addr">0x555555559000</span>–<span class="addr">0x55555557a000</span>  rw-p  <span class="cmt">← [heap] ~132KB, grows upward</span>
+<span class="addr">0x7ffff7c00000</span>–<span class="addr">0x7ffff7dbd000</span>  r-xp  <span class="cmt">← libc.so.6 text (no write, no exec for data pages)</span>
+<span class="addr">0x7ffff7fc1000</span>–<span class="addr">0x7ffff7fc3000</span>  r-xp  <span class="cmt">← [vdso]: kernel-provided fast syscalls</span>
+<span class="addr">0x7ffffffde000</span>–<span class="addr">0x7ffffffff000</span>  rw-p  <span class="cmt">← [stack]: ~132KB, grows downward</span>
+<span class="addr">0xffffffffff600000</span>             --xp  <span class="cmt">← [vsyscall]: legacy compat page</span>
+
+<span class="cmt">Note: NX is active — no segment is both writable AND executable.</span>
+<span class="cmt">      This prevents direct shellcode injection into the stack or heap.</span></pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label gdb">4. Registers at SIGABRT time</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre>(gdb) info registers
+rax  0x0       <span class="cmt">← syscall return value (0 = pending)</span>
+rdi  0x1740f   <span class="cmt">← thread ID (pthread_kill arg)</span>
+rsi  0x1740f   <span class="cmt">← also thread ID</span>
+rdx  0x6       <span class="cmt">← signal number 6 = SIGABRT</span>
+<span class="smash">rbp  0x1740f</span>   <span class="cmt">← CORRUPTED: RBP should be a stack address (0x7fff…), not 0x1740f</span>
+<span class="cmt">               ↑ We are deep in libc signal handling — this is not the overflow frame's RBP</span>
+rsp  0x7fffffffdf60   <span class="cmt">← current stack pointer (in signal handler frame)</span>
+<span class="ok">rip</span>  0x7ffff7c969fc   <span class="cmt">← executing inside __GI___pthread_kill+300 (libc)</span>
+r12  0x6       <span class="cmt">← signal number preserved</span></pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label gdb">5. Stack memory dump — finding the 0x41 fill</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre>(gdb) x/64x $rsp
+<span class="cmt">↑ Dump 64 dwords starting at current stack pointer</span>
+
+<span class="cmt">0x7fffffffe2f0 → 0x7fffffffe560:  ← region filled with 'A' bytes</span>
+<span class="smash">0x41414141  0x41414141  0x41414141  0x41414141</span>  <span class="cmt">← AAAA AAAA AAAA AAAA</span>
+<span class="smash">0x41414141  0x41414141  ...</span>                       <span class="cmt">← 700+ bytes of attacker input</span>
+<span class="cmt">...</span>
+<span class="addr">0x7fffffffe570</span>: <span class="smash">0x00414141</span> 0x00007fff <span class="cmt">← fill ends here (null terminator from input)</span>
+<span class="cmt">                             ↑ 0x00007fff = environment pointer — not part of overflow</span>
+
+<span class="cmt">The overflow started at 0x7fffffffe2f0 (buf[]) and grew upward.</span>
+<span class="cmt">Offset from RSP to the 0x41 region = return address + saved RBP were overwritten</span>
+<span class="cmt">before the canary check fired.</span>
+
+<span class="cmt">Beyond the fill: ASCII-encoded environment variables (PATH, SHELL, TERM…)</span>
+<span class="cmt">visible as readable strings at higher stack addresses — useful for ROP gadget leaks.</span></pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label gdb">6. Breakpoint on main and stack frame inspection</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre>(gdb) break main
+Breakpoint 3 at <span class="addr">0x555555555219</span>   <span class="cmt">← main+8 (entry point after prologue)</span>
+
+(gdb) info breakpoints
+Num  Type        Enb  Address              What
+1    breakpoint  y    &lt;PENDING&gt;  point     <span class="cmt">← function "point" not found (stripped binary)</span>
+3    breakpoint  y    0x555555555219       &lt;main+8&gt;
+
+<span class="cmt">With stripped binaries:</span>
+<span class="cmt">  - Use: break *0x&lt;address&gt;  instead of break function_name</span>
+<span class="cmt">  - Use: disassemble $pc, +100  to read instructions around crash</span>
+<span class="cmt">  - Use: x/20i 0x555555555219  to examine main's disassembly</span></pre>
+  </div>
+
+  <!-- ═══════════ 13. COMMAND REFERENCE ═══════════ -->
+  <div id="commands" class="sec-head">
+    <span class="sec-icon">📋</span>
+    <span class="sec-label">Command Reference</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§13</span>
+  </div>
+
+  <h3>GDB Essentials</h3>
+  <table class="ref-table">
+    <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>info proc mappings</code></td><td>Print full virtual memory map — all segments, permissions, file backing</td></tr>
+      <tr><td><code>info registers</code></td><td>All general-purpose registers + flags at current execution point</td></tr>
+      <tr><td><code>info registers rsp</code></td><td>Single register — quick stack pointer check</td></tr>
+      <tr><td><code>x/64x $rsp</code></td><td>Hex dump: 64 dwords from RSP — find overflow fill pattern</td></tr>
+      <tr><td><code>x/20i $pc</code></td><td>Disassemble 20 instructions from current IP — works on stripped binaries</td></tr>
+      <tr><td><code>info frame</code></td><td>Current stack frame: saved RIP, saved RBP, local variable sizes</td></tr>
+      <tr><td><code>backtrace</code></td><td>Call stack at time of crash</td></tr>
+      <tr><td><code>watch *address</code></td><td>Hardware watchpoint — halt when that memory address is written</td></tr>
+      <tr><td><code>break *0xaddr</code></td><td>Set breakpoint at raw address (essential for stripped binaries)</td></tr>
+      <tr><td><code>finish</code></td><td>Run until current function returns; show return value in RAX</td></tr>
+      <tr><td><code>set $var = value</code></td><td>Define convenience variable (save pointer for later comparison)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>ASan Flags</h3>
+  <table class="ref-table">
+    <thead><tr><th>Flag</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><code>ASAN_OPTIONS=detect_leaks=1</code></td><td>Enable LeakSanitizer integration (default on Linux)</td></tr>
+      <tr><td><code>ASAN_OPTIONS=halt_on_error=0</code></td><td>Continue after first error — find all bugs in one run</td></tr>
+      <tr><td><code>ASAN_OPTIONS=log_path=/tmp/asan.log</code></td><td>Write ASan report to file instead of stderr</td></tr>
+      <tr><td><code>-fsanitize=address,undefined</code></td><td>Combine ASan + UBSan — catches integer overflow, null deref, misaligned access</td></tr>
+      <tr><td><code>-g -O1</code></td><td>Debug symbols + light optimization — best ASan call stack quality</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Valgrind Options</h3>
+  <table class="ref-table">
+    <thead><tr><th>Option</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><code>--leak-check=full</code></td><td>Full leak report including indirect/reachable leaks</td></tr>
+      <tr><td><code>--show-leak-kinds=all</code></td><td>Include definitely/indirectly/possibly lost</td></tr>
+      <tr><td><code>--track-origins=yes</code></td><td>Show where uninitialized values were created (high overhead)</td></tr>
+      <tr><td><code>--error-limit=no</code></td><td>Don't stop after 100 errors</td></tr>
+      <tr><td><code>--gen-suppressions=all</code></td><td>Generate suppression file for known false positives</td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ═══════════ 14. BUFFER TOPOLOGY ═══════════ -->
+  <div id="buftopo" class="sec-head">
+    <span class="sec-icon">🗺</span>
+    <span class="sec-label">Buffer &amp; Memory Topology</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§14</span>
+  </div>
+
+  <h2>Stack Frame Buffer Layout</h2>
+  <p>When a function is called, the compiler allocates a stack frame. Buffers live at the lowest addresses (highest numeric distance from RSP in typical layouts). An overflow grows toward the canary, saved RBP, and finally the return address.</p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:680px;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 Z" fill="#58a6ff"/></marker>
+        <marker id="rarr" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto"><path d="M8,0 L8,6 L0,3 Z" fill="#f85149"/></marker>
+      </defs>
+      <!-- Background -->
+      <rect width="680" height="420" fill="#0d1117"/>
+
+      <!-- Title -->
+      <text x="340" y="22" fill="#8b949e" font-size="11" text-anchor="middle" letter-spacing="2">STACK FRAME MEMORY LAYOUT (x86-64, grows downward ↓)</text>
+
+      <!-- High address label -->
+      <text x="12" y="55" fill="#8b949e" font-size="10">HIGH ADDR</text>
+      <text x="12" y="390" fill="#8b949e" font-size="10">LOW ADDR</text>
+      <line x1="60" y1="40" x2="60" y2="400" stroke="#30363d" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- Caller frame -->
+      <rect x="80" y="38" width="280" height="34" fill="#161b22" stroke="#3fb950" stroke-width="1"/>
+      <text x="220" y="59" fill="#3fb950" font-size="12" text-anchor="middle">Caller's Stack Frame</text>
+
+      <!-- Return address -->
+      <rect x="80" y="74" width="280" height="34" fill="#2d1b1b" stroke="#f85149" stroke-width="1.5"/>
+      <text x="220" y="95" fill="#f85149" font-size="12" text-anchor="middle" font-weight="bold">Saved Return Address (RIP)</text>
+      <text x="390" y="95" fill="#f85149" font-size="10">← overflow target</text>
+
+      <!-- Saved RBP -->
+      <rect x="80" y="110" width="280" height="34" fill="#1f1b2d" stroke="#bc8cff" stroke-width="1"/>
+      <text x="220" y="131" fill="#bc8cff" font-size="12" text-anchor="middle">Saved Base Pointer (RBP)</text>
+
+      <!-- Canary -->
+      <rect x="80" y="146" width="280" height="34" fill="#1d2b1d" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="220" y="167" fill="#3fb950" font-size="12" text-anchor="middle" font-weight="bold">Stack Canary (random 8 bytes)</text>
+      <text x="390" y="160" fill="#3fb950" font-size="10">checked on return</text>
+      <text x="390" y="175" fill="#8b949e" font-size="10">SIGABRT if corrupted</text>
+
+      <!-- Local variables -->
+      <rect x="80" y="182" width="280" height="34" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+      <text x="220" y="203" fill="#8b949e" font-size="12" text-anchor="middle">Local Variables (int, pointers…)</text>
+
+      <!-- Buffer -->
+      <rect x="80" y="218" width="280" height="100" fill="#1a1a0a" stroke="#d29922" stroke-width="1.5"/>
+      <text x="220" y="244" fill="#d29922" font-size="12" text-anchor="middle" font-weight="bold">char buf[256]</text>
+      <text x="220" y="262" fill="#d29922" font-size="11" text-anchor="middle">← attacker-controlled input</text>
+      <text x="220" y="282" fill="#d29922" font-size="10" text-anchor="middle">buf[0] at RSP+offset</text>
+      <text x="220" y="300" fill="#d29922" font-size="10" text-anchor="middle">buf[255] = last safe byte</text>
+      <text x="220" y="315" fill="#f85149" font-size="10" text-anchor="middle">buf[256+] = OVERFLOW ZONE</text>
+
+      <!-- RSP arrow -->
+      <line x1="370" y1="318" x2="370" y2="220" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="375" y="310" fill="#58a6ff" font-size="10">RSP</text>
+
+      <!-- Overflow arrow -->
+      <line x1="44" y1="318" x2="44" y2="75" stroke="#f85149" stroke-width="1.5" marker-end="url(#rarr)"/>
+      <text x="4" y="205" fill="#f85149" font-size="9" writing-mode="vertical-rl" text-anchor="middle">OVERFLOW DIRECTION</text>
+
+      <!-- Pattern bytes annotation -->
+      <text x="80" y="355" fill="#f85149" font-size="11">0x41414141  0x41414141  0x41414141…   ← 'AAAA' fill pattern</text>
+      <text x="80" y="372" fill="#8b949e" font-size="11">cyclic pattern: Aa0Aa1Aa2…              ← pwntools cyclic(300)</text>
+      <text x="80" y="389" fill="#8b949e" font-size="11">offset found when saved RIP = pattern   ← cyclic_find($rip_value)</text>
+    </svg>
+    <p class="diagram-caption">Figure: Stack frame layout — overflow grows from buf[] upward through canary → RBP → return address</p>
+  </div>
+
+  <h2>Heap Chunk Topology (glibc ptmalloc)</h2>
+  <p>Every malloc'd region is wrapped in a <strong>chunk header</strong>. Corrupting the <code style="font-family:monospace;color:var(--cyan)">size</code> field or <code style="font-family:monospace;color:var(--cyan)">fd/bk</code> pointers gives an allocator primitive — read or write anywhere in the process.</p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:680px;font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;">
+      <rect width="680" height="300" fill="#0d1117"/>
+      <text x="340" y="22" fill="#8b949e" font-size="11" text-anchor="middle" letter-spacing="2">GLIBC PTMALLOC CHUNK LAYOUT (64-bit)</text>
+
+      <!-- Chunk A -->
+      <text x="80" y="50" fill="#8b949e" font-size="10">malloc() returns →</text>
+      <!-- prev_size -->
+      <rect x="180" y="35" width="320" height="30" fill="#161b22" stroke="#30363d"/>
+      <text x="340" y="55" fill="#8b949e" font-size="11" text-anchor="middle">prev_size  (8 bytes — used if prev chunk is free)</text>
+      <!-- size -->
+      <rect x="180" y="65" width="320" height="30" fill="#1f1b2d" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="340" y="85" fill="#bc8cff" font-size="11" text-anchor="middle" font-weight="bold">size | flags  (8 bytes)  [P|M|A bits]</text>
+      <!-- user data arrow -->
+      <line x1="160" y1="96" x2="160" y2="100" stroke="#3fb950" stroke-width="1"/>
+      <text x="80" y="113" fill="#3fb950" font-size="10">user data →</text>
+      <!-- user data -->
+      <rect x="180" y="95" width="320" height="60" fill="#1a2a1a" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="340" y="120" fill="#3fb950" font-size="11" text-anchor="middle" font-weight="bold">User data  (malloc'd bytes)</text>
+      <text x="340" y="138" fill="#3fb950" font-size="10" text-anchor="middle">fd / bk pointers live here when chunk is FREE</text>
+      <!-- Next chunk -->
+      <rect x="180" y="155" width="320" height="30" fill="#161b22" stroke="#30363d"/>
+      <text x="340" y="175" fill="#8b949e" font-size="11" text-anchor="middle">Next chunk: prev_size  (8 bytes)</text>
+      <rect x="180" y="185" width="320" height="30" fill="#1f1b2d" stroke="#30363d"/>
+      <text x="340" y="205" fill="#8b949e" font-size="11" text-anchor="middle">Next chunk: size | flags</text>
+
+      <!-- Annotations right side -->
+      <text x="520" y="52" fill="#8b949e" font-size="10">0x0 if prev in use</text>
+      <text x="520" y="80" fill="#bc8cff" font-size="10">P=prev_in_use</text>
+      <text x="520" y="92" fill="#bc8cff" font-size="10">M=mmap'd  A=non-main</text>
+      <text x="520" y="130" fill="#d29922" font-size="10">fd → next free chunk</text>
+      <text x="520" y="145" fill="#d29922" font-size="10">bk → prev free chunk</text>
+
+      <!-- Off-by-one annotation -->
+      <line x1="180" y1="155" x2="180" y2="155" stroke="#f85149"/>
+      <text x="30" y="165" fill="#f85149" font-size="10">off-by-one</text>
+      <text x="30" y="178" fill="#f85149" font-size="10">corruption →</text>
+      <line x1="100" y1="172" x2="178" y2="172" stroke="#f85149" stroke-width="1" marker-end="url(#arr)"/>
+
+      <!-- Sizes -->
+      <text x="80" y="240" fill="#8b949e" font-size="11">x/4gx (ptr - 0x10)        ← examine chunk header: prev_size, size, fd, bk</text>
+      <text x="80" y="258" fill="#8b949e" font-size="11">x/4gx ptr                 ← user data start (fd/bk visible when freed)</text>
+      <text x="80" y="276" fill="#d29922" font-size="11">size field = actual_size | flags   ← mask: size &amp; ~0x7 = real size</text>
+    </svg>
+    <p class="diagram-caption">Figure: ptmalloc chunk — user pointer is 16 bytes past chunk start; fd/bk overlay user data when freed</p>
+  </div>
+
+  <!-- ═══════════ 15. GDB COMPLETE REFERENCE ═══════════ -->
+  <div id="gdbref" class="sec-head">
+    <span class="sec-icon">🛠</span>
+    <span class="sec-label">GDB Debugging Workflows — Complete Reference</span>
+    <div class="sec-line"></div>
+    <span class="sec-count">§15</span>
+  </div>
+
+  <h2>Launch &amp; Attach</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Starting GDB</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Load binary</span>
+gdb ./target
+
+<span class="cmt"># Load with arguments</span>
+gdb --args ./target arg1 arg2
+
+<span class="cmt"># Attach to running process</span>
+gdb -p &lt;PID&gt;
+
+<span class="cmt"># Open core dump</span>
+gdb ./target core
+
+<span class="cmt"># Batch mode — run script and exit (no interactive prompt)</span>
+gdb -batch -ex "run" -ex "bt" ./target
+
+<span class="cmt"># With init file override</span>
+gdb -x /path/to/script.gdb ./target
+
+<span class="cmt"># Quiet startup (suppress banner)</span>
+gdb -q ./target
+
+<span class="cmt"># Pass stdin payload</span>
+gdb -q ./target &lt;&lt;&lt; $(python3 -c "print('A'*300)")</pre>
+  </div>
+
+  <h2>Breakpoints — Full Syntax</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Setting, managing, and scripting breakpoints</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># By function name</span>
+<span class="kw">break</span> main
+<span class="kw">break</span> vulnerable_function
+
+<span class="cmt"># By raw address (required on stripped binaries)</span>
+<span class="kw">break</span> *0x555555555219
+
+<span class="cmt"># By file and line</span>
+<span class="kw">break</span> target.c:42
+
+<span class="cmt"># Temporary breakpoint (auto-deletes after first hit)</span>
+<span class="kw">tbreak</span> main
+
+<span class="cmt"># Conditional breakpoint</span>
+<span class="kw">break</span> malloc <span class="kw">if</span> $rdi &gt; 1024
+<span class="kw">break</span> target.c:42 <span class="kw">if</span> i == 0
+
+<span class="cmt"># Regex breakpoint — set on every function matching pattern</span>
+<span class="kw">rbreak</span> ^str.*        <span class="cmt"># breaks on strcat, strcpy, strlen, etc.</span>
+
+<span class="cmt"># Break on every function in a file</span>
+<span class="kw">rbreak</span> target.c:.
+
+<span class="cmt"># Disable / enable / delete</span>
+<span class="kw">info</span> breakpoints        <span class="cmt"># list all — shows Num column</span>
+<span class="kw">disable</span> 2               <span class="cmt"># disable breakpoint #2</span>
+<span class="kw">enable</span>  2
+<span class="kw">delete</span>  2               <span class="cmt"># permanently remove</span>
+<span class="kw">delete</span>                  <span class="cmt"># delete ALL breakpoints (confirms)</span>
+
+<span class="cmt"># Skip N hits before stopping</span>
+<span class="kw">ignore</span> 1 10             <span class="cmt"># ignore breakpoint #1 for next 10 hits</span>
+
+<span class="cmt"># Run commands automatically when breakpoint fires</span>
+<span class="kw">break</span> malloc
+<span class="kw">commands</span> 1              <span class="cmt"># enter command sequence for BP #1</span>
+  silent
+  printf <span class="str">"malloc(%ld) → %p\n"</span>, $rdi, $rax
+  <span class="kw">continue</span>
+<span class="kw">end</span>
+
+<span class="cmt"># Add condition to existing BP</span>
+<span class="kw">condition</span> 1 $rdi == 512</pre>
+  </div>
+
+  <h2>Execution Control</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Navigate program flow</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">run</span>                     <span class="cmt"># start/restart from beginning</span>
+<span class="kw">run</span> arg1 arg2           <span class="cmt"># with arguments</span>
+<span class="kw">run</span> &lt; /tmp/payload.bin  <span class="cmt"># redirect stdin from file</span>
+
+<span class="kw">continue</span>  <span class="cmt">(or c)</span>       <span class="cmt"># resume until next BP/signal</span>
+<span class="kw">step</span>      <span class="cmt">(or s)</span>       <span class="cmt"># source line step — enters functions</span>
+<span class="kw">next</span>      <span class="cmt">(or n)</span>       <span class="cmt"># source line step — steps OVER function calls</span>
+<span class="kw">stepi</span>     <span class="cmt">(or si)</span>      <span class="cmt"># single machine instruction — enters calls</span>
+<span class="kw">nexti</span>     <span class="cmt">(or ni)</span>      <span class="cmt"># single machine instruction — steps over calls</span>
+<span class="kw">finish</span>                  <span class="cmt"># run until function returns; prints return value</span>
+<span class="kw">until</span>     addr          <span class="cmt"># run until reaching address (useful for loops)</span>
+<span class="kw">jump</span>      *0xaddr       <span class="cmt"># move RIP to address without executing (skip code)</span>
+<span class="kw">signal</span>    SIGINT        <span class="cmt"># inject signal into process</span>
+<span class="kw">kill</span>                    <span class="cmt"># kill inferior (stop without exiting GDB)</span>
+<span class="kw">quit</span>                    <span class="cmt"># exit GDB</span>
+
+<span class="cmt"># Reverse execution (requires: target record)</span>
+<span class="kw">record</span>                  <span class="cmt"># begin recording execution for replay</span>
+<span class="kw">reverse-continue</span>  <span class="cmt">(rc)</span> <span class="cmt"># run backward to previous BP</span>
+<span class="kw">reverse-step</span>      <span class="cmt">(rs)</span> <span class="cmt"># one source line backward</span>
+<span class="kw">reverse-stepi</span>     <span class="cmt">(rsi)</span><span class="cmt"># one instruction backward</span>
+<span class="kw">reverse-next</span>      <span class="cmt">(rn)</span> <span class="cmt"># one source line backward, step over</span></pre>
+  </div>
+
+  <h2>Memory Examination — x Command Deep Dive</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">x/NuF — count, unit, format</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Syntax: x/NuF  where N=count  u=unit  F=format</span>
+<span class="cmt"># Units:  b=byte  h=halfword(2)  w=word(4)  g=giant(8)</span>
+<span class="cmt"># Format: x=hex  d=decimal  u=unsigned  o=octal  t=binary  s=string  i=instruction  a=address  c=char</span>
+
+x/64xb $rsp            <span class="cmt"># 64 bytes in hex — byte-by-byte</span>
+x/32xw $rsp            <span class="cmt"># 32 dwords (4 bytes each) in hex</span>
+x/16xg $rsp            <span class="cmt"># 16 qwords (8 bytes each) in hex</span>
+x/4gx  $rbp-0x20      <span class="cmt"># 4 qwords starting at rbp-32</span>
+
+x/s    0x555555557000  <span class="cmt"># print as C string</span>
+x/20i  $pc             <span class="cmt"># disassemble 20 instructions from RIP</span>
+x/20i  0x555555555219  <span class="cmt"># disassemble from absolute address</span>
+x/i    $pc             <span class="cmt"># just the current instruction</span>
+
+x/4gx  ($rdi-16)       <span class="cmt"># chunk header (prev_size, size, fd, bk) — malloc pointer</span>
+x/40xb $rsp            <span class="cmt"># find null terminator after overflow fill</span>
+x/64xg 0x555555559000  <span class="cmt"># raw heap region scan</span>
+
+<span class="cmt"># Examine after last x command — "." repeats with next address</span>
+x/16gx 0x7ffff7c00000  <span class="cmt"># start of libc — scan for ROP gadgets</span>
+
+<span class="cmt"># Search memory for a byte pattern (requires pwndbg or GDB 7.5+)</span>
+<span class="kw">find</span> /b 0x555555554000, 0x555555558000, 0x41, 0x41, 0x41, 0x41
+
+<span class="cmt"># search for a string</span>
+<span class="kw">find</span> /s 0x7ffffffde000, 0x7ffffffff000, "AAAA"</pre>
+  </div>
+
+  <h2>Registers &amp; Stack Inspection</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Registers, frames, locals, args</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="kw">info</span> registers            <span class="cmt"># all general-purpose + eflags</span>
+<span class="kw">info</span> registers rsp rip rbp <span class="cmt"># just these three</span>
+<span class="kw">info</span> registers eflags      <span class="cmt"># flags register (ZF CF OF SF)</span>
+<span class="kw">info</span> all-registers         <span class="cmt"># includes SSE/AVX/FP registers</span>
+
+<span class="kw">info</span> frame                 <span class="cmt"># current frame: saved RIP, RBP, size</span>
+<span class="kw">info</span> args                  <span class="cmt"># function arguments (requires symbols)</span>
+<span class="kw">info</span> locals                <span class="cmt"># local variables (requires symbols)</span>
+
+<span class="kw">backtrace</span>       <span class="cmt">(bt)</span>       <span class="cmt"># call stack</span>
+<span class="kw">backtrace</span> full             <span class="cmt"># call stack + locals at each frame</span>
+<span class="kw">backtrace</span> 5                <span class="cmt"># top 5 frames only</span>
+<span class="kw">frame</span> 3                    <span class="cmt"># switch to frame #3</span>
+<span class="kw">up</span>                         <span class="cmt"># move to caller frame</span>
+<span class="kw">down</span>                       <span class="cmt"># move to callee frame</span>
+
+<span class="cmt"># Modify a register</span>
+set $rip = 0x555555555219   <span class="cmt"># redirect execution</span>
+set $rsp = $rsp - 8         <span class="cmt"># adjust stack pointer</span>
+set $rax = 0                <span class="cmt"># override return value</span>
+
+<span class="cmt"># Print register value as address symbol</span>
+<span class="kw">info</span> symbol $rip           <span class="cmt"># resolve address to nearest symbol</span></pre>
+  </div>
+
+  <h2>Watchpoints &amp; Catchpoints</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Stop on memory access, syscalls, exceptions</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Watchpoints — stop when memory is accessed</span>
+<span class="kw">watch</span>   *0x555555559010     <span class="cmt"># stop on WRITE to this address</span>
+<span class="kw">rwatch</span>  *0x555555559010     <span class="cmt"># stop on READ</span>
+<span class="kw">awatch</span>  *0x555555559010     <span class="cmt"># stop on READ or WRITE</span>
+<span class="kw">watch</span>   -l *$rdi            <span class="cmt"># watch location (follows pointer if it moves)</span>
+<span class="kw">watch</span>   buf[0]              <span class="cmt"># watch named variable (requires symbols)</span>
+<span class="kw">watch</span>   *($rbp - 0x8)       <span class="cmt"># watch canary slot</span>
+
+<span class="cmt"># Catchpoints — stop on events</span>
+<span class="kw">catch</span> syscall               <span class="cmt"># stop on EVERY syscall</span>
+<span class="kw">catch</span> syscall write         <span class="cmt"># stop only on write(2)</span>
+<span class="kw">catch</span> syscall mmap brk      <span class="cmt"># memory allocation syscalls</span>
+<span class="kw">catch</span> throw                 <span class="cmt"># C++ exceptions thrown</span>
+<span class="kw">catch</span> catch                 <span class="cmt"># C++ exceptions caught</span>
+<span class="kw">catch</span> exec                  <span class="cmt"># stop when execve() is called</span>
+<span class="kw">catch</span> fork                  <span class="cmt"># stop when fork() is called</span>
+<span class="kw">catch</span> signal SIGSEGV        <span class="cmt"># stop on segfault before handler</span>
+<span class="kw">catch</span> signal all            <span class="cmt"># stop on any signal</span>
+
+<span class="cmt"># Signal handling config</span>
+<span class="kw">handle</span> SIGSEGV stop print   <span class="cmt"># stop and print on segfault (default)</span>
+<span class="kw">handle</span> SIGPIPE nostop pass  <span class="cmt"># ignore SIGPIPE, pass to program</span>
+<span class="kw">info</span> signals                <span class="cmt"># show all signal handling config</span></pre>
+  </div>
+
+  <h2>Disassembly &amp; Symbols</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Reverse engineer stripped binaries</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Disassemble</span>
+<span class="kw">disassemble</span> main            <span class="cmt"># named function (needs symbols)</span>
+<span class="kw">disassemble</span> $pc, +64        <span class="cmt"># 64 bytes from current IP</span>
+<span class="kw">disassemble</span> 0x555555555219, 0x555555555280
+<span class="kw">disassemble</span> /r main         <span class="cmt"># include raw hex bytes</span>
+<span class="kw">disassemble</span> /m main         <span class="cmt"># interleave source lines</span>
+x/20i $pc                   <span class="cmt"># works on stripped — no symbol needed</span>
+
+<span class="cmt"># Set disassembly flavor</span>
+set disassembly-flavor intel <span class="cmt"># Intel syntax (default AT&amp;T is confusing)</span>
+set disassembly-flavor att
+
+<span class="cmt"># Symbol resolution</span>
+<span class="kw">info</span> functions              <span class="cmt"># list all known functions</span>
+<span class="kw">info</span> functions malloc       <span class="cmt"># filter by name</span>
+<span class="kw">info</span> variables              <span class="cmt"># global/static variables</span>
+<span class="kw">info</span> symbol 0x7ffff7c4b6d0  <span class="cmt"># resolve address → symbol name</span>
+<span class="kw">info</span> address malloc         <span class="cmt"># resolve symbol → address</span>
+
+<span class="cmt"># PLT / GOT inspection (pwndbg)</span>
+plt                          <span class="cmt"># print PLT entries</span>
+got                          <span class="cmt"># print GOT entries + resolved addresses</span>
+
+<span class="cmt"># Examine PLT manually</span>
+x/3i 0x555555555090          <span class="cmt"># PLT stub: jmp [GOT], push index, jmp resolver</span>
+x/gx 0x555555558020          <span class="cmt"># GOT entry — address after first resolution</span></pre>
+  </div>
+
+  <h2>Convenience Variables &amp; Expressions</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Scripting inside GDB</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Define variables</span>
+set $buf  = $rsp + 0x10
+set $canary = *((long*)($rbp - 0x8))
+set $retaddr = *((long*)($rbp + 0x8))
+
+<span class="cmt"># Print expressions</span>
+<span class="kw">print</span>   $retaddr            <span class="cmt"># print value</span>
+<span class="kw">print</span>   /x $retaddr        <span class="cmt"># in hex</span>
+<span class="kw">print</span>   (int)$rax          <span class="cmt"># cast to int</span>
+<span class="kw">print</span>   (char*)$rdi        <span class="cmt"># interpret as string pointer</span>
+<span class="kw">print</span>   sizeof(long)       <span class="cmt"># 8 on x86-64</span>
+
+<span class="cmt"># Arithmetic</span>
+<span class="kw">print</span>   $rbp - $rsp        <span class="cmt"># frame size in bytes</span>
+<span class="kw">print</span>   0x41414141 &lt;&lt; 32 | 0x41414141
+
+<span class="cmt"># Modify memory directly</span>
+set *((int*)0x555555559010) = 0xdeadbeef
+set {char[8]}$rsp = "BBBBBBBB"
+
+<span class="cmt"># Call functions mid-session</span>
+<span class="kw">call</span> (int) printf("rsp=%p\n", $rsp)
+<span class="kw">call</span> malloc(256)           <span class="cmt"># allocate and see address returned</span>
+<span class="kw">call</span> system("id")          <span class="cmt"># inject command if NX bypassed</span></pre>
+  </div>
+
+  <h2>Finding Offset to RIP (Exploit Development)</h2>
+  <div class="snippet">
+    <div class="snip-label shell">Pattern workflow — from overflow to offset</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Step 1: generate cyclic pattern (pwntools)</span>
+python3 -c "from pwn import *; print(cyclic(400))" &gt; /tmp/pattern.txt
+
+<span class="cmt"># Step 2: run in GDB with pattern as input</span>
+gdb -q ./target
+(gdb) run &lt; /tmp/pattern.txt
+
+<span class="cmt"># Step 3: crash — check what landed in RIP / RSP</span>
+(gdb) x/gx $rsp            <span class="cmt"># value of [RSP] at crash = overwritten ret addr</span>
+(gdb) info registers rip   <span class="cmt"># or check RIP directly</span>
+
+<span class="cmt"># Step 4: find offset</span>
+python3 -c "from pwn import *; print(cyclic_find(0x6161616c))"   <span class="cmt"># → offset</span>
+
+<span class="cmt"># Alternative: msf pattern (Metasploit not required — script it)</span>
+python3 -c "
+import string
+chars = string.ascii_letters + string.digits
+pat = ''.join(chars[i%len(chars)] for i in range(400))
+print(pat)
+" &gt; /tmp/msf_pattern.txt</pre>
+  </div>
+
+  <div class="snippet">
+    <div class="snip-label gdb">Manual offset calculation in GDB</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># After crash on stack smash — we are in SIGABRT handler</span>
+<span class="cmt"># Go to frame where overflow happened</span>
+(gdb) backtrace             <span class="cmt"># find the vulnerable function frame #</span>
+(gdb) frame 5               <span class="cmt"># switch to it</span>
+(gdb) info frame            <span class="cmt"># shows: saved rip = 0x4141414141414141</span>
+
+<span class="cmt"># Compute: offset = &amp;saved_rip - buf_start</span>
+(gdb) x/gx $rbp+8          <span class="cmt"># saved RIP slot address</span>
+(gdb) print $rbp + 8 - &lt;buf_addr&gt;   <span class="cmt"># = number of bytes to reach RIP</span>
+
+<span class="cmt"># Verify offset</span>
+python3 -c "
+from pwn import *
+p = process('./target')
+payload = b'A' * &lt;offset&gt; + p64(0xdeadbeefcafebabe)
+p.sendline(payload)
+p.wait()
+"</pre>
+  </div>
+
+  <h2>ASLR &amp; Library Base Leaks</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Defeating ASLR in GDB + live binary</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Disable ASLR for GDB session only (easier testing)</span>
+(gdb) set disable-randomization on    <span class="cmt"># default in GDB</span>
+(gdb) set disable-randomization off   <span class="cmt"># test with ASLR on</span>
+
+<span class="cmt"># Find libc base in running process</span>
+(gdb) info proc mappings
+<span class="cmt"># look for libc-2.35.so — the r-xp segment start address = libc base</span>
+
+<span class="cmt"># Compute offset to target gadget</span>
+<span class="cmt"># libc_base = 0x7ffff7c00000 (from mappings)</span>
+<span class="cmt"># system@libc = base + offset_from_readelf</span>
+python3 -c "
+import subprocess, re
+out = subprocess.check_output('readelf -s /lib/x86_64-linux-gnu/libc.so.6', shell=True).decode()
+for line in out.splitlines():
+    if ' system@@' in line or ' system@' in line:
+        print(line)
+"
+<span class="cmt"># system offset → add to libc_base → call address</span>
+
+<span class="cmt"># Find /bin/sh string in libc</span>
+(gdb) find 0x7ffff7c00000, 0x7ffff7dbd000, "/bin/sh"
+<span class="cmt"># → 0x7ffff7d8c678  (use as RDI in ret2libc)</span></pre>
+  </div>
+
+  <h2>ROP Chain Validation</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Verify gadgets execute correctly</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Find gadget addresses with ROPgadget (external tool)</span>
+ROPgadget --binary ./target --rop | grep "pop rdi"
+<span class="cmt"># → 0x000000000040118b : pop rdi ; ret</span>
+
+<span class="cmt"># Confirm gadget in GDB</span>
+(gdb) x/3i 0x40118b
+<span class="cmt"># 0x40118b:  pop    %rdi</span>
+<span class="cmt"># 0x40118c:  ret</span>
+
+<span class="cmt"># Set RIP to gadget manually and step through</span>
+(gdb) break *0x40118b
+(gdb) set $rip = 0x40118b
+(gdb) set $rsp = &lt;stack_containing_rop_chain&gt;
+(gdb) stepi                   <span class="cmt"># pop rdi — watch $rdi change</span>
+(gdb) stepi                   <span class="cmt"># ret — watch $rip = next gadget</span>
+
+<span class="cmt"># Inspect full ROP chain on stack</span>
+(gdb) x/20gx $rsp             <span class="cmt"># each 8-byte entry = one gadget/value</span></pre>
+  </div>
+
+  <h2>GDB Scripting &amp; .gdbinit Automation</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Automate workflows with scripts</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># ~/.gdbinit — runs on every GDB start</span>
+set disassembly-flavor intel
+set print pretty on
+set print array on
+set pagination off           <span class="cmt"># no "--More--" prompts</span>
+set confirm off              <span class="cmt"># no "delete all breakpoints?" prompt</span>
+set follow-fork-mode child   <span class="cmt"># follow child process on fork</span>
+
+<span class="cmt"># Define a custom command</span>
+define hexdump
+  x/64xb $arg0
+end
+<span class="cmt"># Usage: hexdump $rsp</span>
+
+define stackdump
+  x/32gx $rsp
+  info frame
+end
+
+<span class="cmt"># Hook — run automatically before every step/next</span>
+define hook-stop
+  x/i $pc
+end
+
+<span class="cmt"># Python scripting inside GDB</span>
+python
+import gdb
+
+def on_stop(event):
+    frame = gdb.selected_frame()
+    pc    = frame.pc()
+    print(f"[stop] RIP=0x{pc:016x}")
+
+gdb.events.stop.connect(on_stop)
+end</pre>
+  </div>
+
+  <h2>pwndbg / GEF Extensions</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">pwndbg — install and key commands</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Install pwndbg</span>
+git clone https://github.com/pwndbg/pwndbg &amp;&amp; cd pwndbg &amp;&amp; ./setup.sh
+
+<span class="cmt"># Heap visualization</span>
+heap                         <span class="cmt"># all malloc chunks in main arena</span>
+heap --all                   <span class="cmt"># including all arenas</span>
+bins                         <span class="cmt"># tcache, fast, small, large, unsorted bins</span>
+tcache                       <span class="cmt"># tcache bins only with counts</span>
+vis_heap_chunks              <span class="cmt"># color-coded ASCII heap map</span>
+vis_heap_chunks --resolve    <span class="cmt"># resolve pointers to symbols</span>
+arena                        <span class="cmt"># main_arena internal struct</span>
+malloc_chunk 0x555555559010  <span class="cmt"># parse one chunk's header</span>
+
+<span class="cmt"># Memory &amp; mappings</span>
+vmmap                        <span class="cmt"># virtual memory map (prettier than info proc)</span>
+vmmap libc                   <span class="cmt"># filter to libc mappings only</span>
+search -x 41414141           <span class="cmt"># search all writable regions for 0x41414141</span>
+search -s "/bin/sh"          <span class="cmt"># find string in memory</span>
+
+<span class="cmt"># Binary info</span>
+checksec                     <span class="cmt"># NX, PIE, RELRO, canary, FORTIFY state</span>
+got                          <span class="cmt"># GOT entries + current resolved addresses</span>
+plt                          <span class="cmt"># PLT stubs</span>
+rop                          <span class="cmt"># ROP gadgets in binary</span>
+
+<span class="cmt"># Exploit helpers</span>
+cyclic 200                   <span class="cmt"># generate cyclic pattern</span>
+cyclic -l 0x6161616c         <span class="cmt"># find offset for that 4-byte value</span>
+distance $rsp $rbp           <span class="cmt"># compute distance between two addresses</span></pre>
+  </div>
+
+  <h2>TUI Mode — Terminal UI</h2>
+  <div class="snippet">
+    <div class="snip-label gdb">Split-screen debugging in the terminal</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># Enable TUI</span>
+tui enable                   <span class="cmt"># or press Ctrl-X Ctrl-A</span>
+<span class="kw">layout</span> asm                  <span class="cmt"># top pane: disassembly</span>
+<span class="kw">layout</span> reg                  <span class="cmt"># top pane: registers</span>
+<span class="kw">layout</span> src                  <span class="cmt"># top pane: source (needs debug symbols)</span>
+<span class="kw">layout</span> split                <span class="cmt"># source + asm both visible</span>
+<span class="kw">layout</span> next                 <span class="cmt"># cycle through layouts</span>
+
+<span class="cmt"># Focus between panes</span>
+<span class="kw">focus</span> cmd                   <span class="cmt"># focus on command pane (for input)</span>
+<span class="kw">focus</span> asm                   <span class="cmt"># focus on assembly pane (for scrolling)</span>
+<span class="kw">focus</span> reg                   <span class="cmt"># focus on register pane</span>
+
+<span class="cmt"># Refresh if display corrupts</span>
+<span class="kw">refresh</span>                     <span class="cmt"># redraw TUI</span>
+tui disable                  <span class="cmt"># back to text mode</span>
+
+<span class="cmt"># Keyboard shortcuts in TUI</span>
+<span class="cmt"># Ctrl-X 1   — single window mode</span>
+<span class="cmt"># Ctrl-X 2   — two window mode</span>
+<span class="cmt"># Ctrl-X A   — toggle TUI on/off</span>
+<span class="cmt"># PageUp/Down — scroll active pane</span></pre>
+  </div>
+
+  <h2>Remote Debugging &amp; QEMU</h2>
+  <div class="snippet">
+    <div class="snip-label shell">gdbserver + cross-arch debugging</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="cmt"># On the TARGET machine (ARM, MIPS, embedded, etc.)</span>
+gdbserver :1234 ./target                   <span class="cmt"># listen on port 1234</span>
+gdbserver :1234 --attach &lt;PID&gt;            <span class="cmt"># attach to running process</span>
+
+<span class="cmt"># On the ANALYSIS machine</span>
+gdb-multiarch ./target
+(gdb) target remote &lt;target_ip&gt;:1234
+(gdb) continue
+
+<span class="cmt"># QEMU user-mode (single binary, no VM)</span>
+qemu-x86_64 -g 1234 ./target              <span class="cmt"># start with GDB stub on port 1234</span>
+gdb ./target
+(gdb) target remote localhost:1234
+
+<span class="cmt"># QEMU system-mode (full VM)</span>
+qemu-system-x86_64 -s -S -kernel vmlinuz … <span class="cmt"># -s = :1234 stub, -S = pause at start</span>
+gdb
+(gdb) target remote localhost:1234
+(gdb) set architecture i386:x86-64
+(gdb) continue</pre>
+  </div>
+
+  <h3>Quick Reference Card</h3>
+  <table class="ref-table">
+    <thead><tr><th>Command</th><th>What it does</th><th>When to use</th></tr></thead>
+    <tbody>
+      <tr><td><code>break *0xaddr</code></td><td>BP at raw address</td><td>Stripped binaries — no symbol names</td></tr>
+      <tr><td><code>x/64xb $rsp</code></td><td>64 bytes from RSP</td><td>Spot overflow fill pattern (0x41)</td></tr>
+      <tr><td><code>x/20i $pc</code></td><td>Disassemble from RIP</td><td>See what instruction is about to execute</td></tr>
+      <tr><td><code>info proc mappings</code></td><td>Virtual memory map</td><td>Find libc base, stack bounds, heap range</td></tr>
+      <tr><td><code>watch *($rbp-8)</code></td><td>Watch canary slot</td><td>Catch the exact write that corrupts canary</td></tr>
+      <tr><td><code>catch syscall write</code></td><td>Break on write()</td><td>Intercept output — trace exploitation</td></tr>
+      <tr><td><code>find /b start, end, bytes</code></td><td>Search memory</td><td>Locate shellcode, strings, gadgets</td></tr>
+      <tr><td><code>set $rip = 0xaddr</code></td><td>Redirect execution</td><td>Skip code, test gadgets interactively</td></tr>
+      <tr><td><code>call malloc(256)</code></td><td>Allocate mid-session</td><td>Test heap state without restarting</td></tr>
+      <tr><td><code>disas /r main</code></td><td>Disassemble + raw bytes</td><td>Compare opcodes against known gadgets</td></tr>
+      <tr><td><code>backtrace full</code></td><td>Stack + locals</td><td>See variable values at every frame</td></tr>
+      <tr><td><code>record + rc</code></td><td>Reverse execution</td><td>Step backward to the corrupting instruction</td></tr>
+      <tr><td><code>layout split</code></td><td>TUI asm + src</td><td>Visual debugging with source and disasm</td></tr>
+      <tr><td><code>rbreak ^__libc_</code></td><td>BP on all libc fns</td><td>Trace every libc call in sequence</td></tr>
+      <tr><td><code>ignore 1 99</code></td><td>Skip 99 BP hits</td><td>Break on the 100th malloc — skip early ones</td></tr>
+    </tbody>
+  </table>
+
+</div>
+    <p><a href="/">&#8592; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-buffer-overflow-memory-safety-reference",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

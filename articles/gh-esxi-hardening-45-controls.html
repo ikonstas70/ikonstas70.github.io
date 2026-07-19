@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-esxi-hardening-45-controls">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VMware ESXi Hardening: A 45-Control Security Configuration Assessment — Konstas Engineering Notes</title>
+<meta name="description" content="ESXi hypervisors are the foundation of every virtual infrastructure — and because every workload runs on top of them, a misconfigured host is a single point of failure fo">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Virtualization</span>
+    <h1>VMware ESXi Hardening: A 45-Control Security Configuration Assessment</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+</hr><p>ESXi hypervisors are the foundation of every virtual infrastructure — and because every workload runs on top of them, a misconfigured host is a single point of failure for your entire security posture. This assessment reviews 45 controls drawn from VMware's Security Configuration Guide, organized into actionable categories with PowerCLI audit and remediation commands for each.</p><hr></hr><h2>Scope and Assessment Approach</h2><p>The controls in this guide span authentication, system services, management-plane security, network segmentation, logging, hardware trust mechanisms, and software integrity. Each control is graded by the action required:</p><ul><li><strong>Modify</strong> — non-compliant by default; change the value.</li><li><strong>Audit</strong> — verify current state; correct if it deviates.</li><li><strong>Add</strong> — setting absent by default; add it explicitly.</li></ul><p>PowerCLI commands are provided for both audit and remediation throughout. The latest VMware Security Configuration Guide introduces a priority-based model for remediation: <strong>High-priority</strong> controls should be remediated immediately via Host Profiles; <strong>Medium</strong> controls should be reviewed and planned; <strong>Strategic</strong> controls require hardware coordination or phased rollout.</p><hr></hr><h2>1. Authentication Controls</h2><table><thead><tr><th>ID</th><th>Parameter</th><th>Desired</th><th>Default</th><th>Action</th><th>Risk</th></tr></thead><tbody><tr><td>AccountLockFailures</td><td>Security.AccountLockFailures</td><td>3</td><td>10</td><td>Modify</td><td>Default of 10 gives attackers far too many brute-force attempts before lockout.</td></tr><tr><td>AccountUnlockTime</td><td>Security.AccountUnlockTime</td><td>900 s</td><td>120 s</td><td>Modify</td><td>2-minute auto-unlock is too short; raises brute-force risk while still blocking legitimate users.</td></tr><tr><td>PasswordHistory</td><td>Security.PasswordHistory</td><td>5</td><td>0</td><td>Modify</td><td>No history tracking lets users immediately cycle back to compromised passwords.</td></tr><tr><td>PasswordQualityControl</td><td>Security.PasswordQualityControl</td><td>Site-specific</td><td>Varies</td><td>Modify</td><td>Weak complexity rules allow easily guessable credentials.</td></tr></tbody></table><hr></hr><h2>2. Service Controls</h2><table><thead><tr><th>Service</th><th>Key</th><th>Default</th><th>Action</th><th>Risk</th></tr></thead><tbody><tr><td>CIM (sfcbd-watchdog)</td><td>sfcbd-watchdog</td><td>Enabled</td><td>Disable</td><td>Exposes hardware/management info; enlarges attack surface.</td></tr><tr><td>SLP (slpd)</td><td>slpd</td><td>Disabled (patched ESXi 7.0 U3c+); Enabled (older)</td><td>Disable/Audit</td><td>Unused discovery service; actively exploited in ESXiArgs ransomware campaign (CVE-2021-21974). VMware changed the default to disabled in ESXi 7.0 U3c and later patches — verify your patch level.</td></tr><tr><td>SNMP (snmpd)</td><td>snmpd</td><td>Stopped (not running by default in ESXi 7.x unless configured)</td><td>Disable/Audit</td><td>Leaks host inventory data if community strings are weak or default.</td></tr><tr><td>SSH (TSM-SSH)</td><td>TSM-SSH</td><td>Stopped</td><td>Audit/Keep Off</td><td>Interactive shell; only enable for maintenance windows, then disable immediately.</td></tr><tr><td>ESXi Shell (TSM)</td><td>TSM</td><td>Stopped</td><td>Audit/Keep Off</td><td>Low-level shell access; keep disabled in production at all times.</td></tr><tr><td>MOB (enableMob)</td><td>Config.HostAgent.plugins.solo.enableMob</td><td>False</td><td>Audit</td><td>If enabled, attackers can manipulate internal ESXi APIs.</td></tr></tbody></table><hr></hr><h2>3. Lockdown Mode &amp; Access Control</h2><p>Lockdown Mode forces all ESXi management traffic through vCenter, preventing direct host login and circumvention of RBAC. It should be enabled as <strong>Normal</strong> (not Strict, which disables DCUI entirely) on all production hosts.</p><p>Key lockdown mode considerations:
+- Normal lockdown allows DCUI access for emergency recovery; Strict removes it entirely.
+- Exception users list should contain only break-glass accounts.
+- Audit regularly — lockdown mode can be quietly disabled by an administrator with direct host access.</p><hr></hr><h2>4. Network Controls</h2><table><thead><tr><th>Control</th><th>Parameter</th><th>Desired</th><th>Default</th><th>Risk</th></tr></thead><tbody><tr><td>Block Guest BPDU</td><td>Net.BlockGuestBPDU</td><td>1</td><td>0</td><td>VM-generated BPDUs can corrupt spanning-tree topology and drop uplinks.</td></tr><tr><td>Reject Forged Transmits</td><td>vSwitch SecurityPolicy</td><td>Reject</td><td>Accept</td><td>Allows VMs to spoof MAC addresses and impersonate other devices.</td></tr><tr><td>Reject MAC Changes</td><td>vSwitch SecurityPolicy</td><td>Reject</td><td>Accept</td><td>Enables VMs to impersonate other network nodes by changing their MAC.</td></tr><tr><td>Disable Promiscuous Mode</td><td>vSwitch SecurityPolicy</td><td>Reject</td><td>Reject</td><td>Promiscuous mode lets VMs capture all traffic on a port group.</td></tr><tr><td>dvFilter Bind IP</td><td>Net.DVFilterBindIpAddress</td><td>Null</td><td>Null/Site</td><td>If bound to an untrusted IP, dvfilter can leak or expose traffic.</td></tr><tr><td>Firewall — Mgmt Subnets Only</td><td>VMHostFirewallException</td><td>Restricted</td><td>All IPs</td><td>Open firewall allows any host to attempt management-plane access.</td></tr></tbody></table><hr></hr><h2>5. Logging Controls</h2><table><thead><tr><th>Control</th><th>Parameter</th><th>Desired</th><th>Default</th><th>Action</th><th>Notes</th></tr></thead><tbody><tr><td>Log Level</td><td>Config.HostAgent.log.level</td><td>info</td><td>info</td><td>Audit</td><td>Keep at Info. Verbose fills disks; too low misses critical events.</td></tr><tr><td>Persistent Log Dir</td><td>Syslog.global.logDir</td><td>/vmfs/volumes/…</td><td>[] /scratch (RAM)</td><td>Modify</td><td>In-memory logs are lost on reboot, destroying the forensic audit trail.</td></tr><tr><td>Remote Syslog</td><td>Syslog.global.logHost</td><td>tcp://syslog-host:514</td><td>None</td><td>Add</td><td>Central log store prevents tampering and enables SIEM correlation.</td></tr></tbody></table><hr></hr><h2>6. Shell Timeout Controls</h2><table><thead><tr><th>Control</th><th>Parameter</th><th>Desired</th><th>Default</th><th>Action</th></tr></thead><tbody><tr><td>Interactive Timeout</td><td>UserVars.ESXiShellInteractiveTimeOut</td><td>600 s</td><td>0 (none)</td><td>Modify</td></tr><tr><td>Session Timeout</td><td>UserVars.ESXiShellTimeOut</td><td>600 s</td><td>0 (none)</td><td>Modify</td></tr><tr><td>DCUI Timeout</td><td>UserVars.DcuiTimeOut</td><td>600 s</td><td>600 s</td><td>Audit</td></tr><tr><td>Suppress Shell Warning</td><td>UserVars.SuppressShellWarning</td><td>0</td><td>0</td><td>Audit</td></tr><tr><td>Suppress HT Warning</td><td>UserVars.SuppressHyperthreadWarning</td><td>0</td><td>0</td><td>Audit</td></tr></tbody></table><hr></hr><h2>7. Hardware Trust &amp; Software Integrity</h2><p>This category covers controls that require coordination with your hardware and infrastructure teams, or that carry risk during enablement and need phased rollout.</p><p><strong>High-priority items:</strong>
+- Enable hardware TPM 2.0 — prerequisite for vSphere Trust Authority and Secure Boot attestation.
+- Enable Secure Boot on ESXi hosts — prevents unsigned VIBs from loading.
+- Enable virtual TPM (vTPM) for VMs — required for Windows 11 and enhanced guest OS integrity.</p><p><strong>Medium-priority items:</strong>
+- Enable vSphere Trust Authority (vTA) — attested boot chain from hardware to hypervisor.
+- Review VIB acceptance levels — set to <code>PartnerSupported</code> or <code>VMwareCertified</code> minimum.</p><p><strong>Strategic items:</strong>
+- Hardware lifecycle planning — ensure servers remain under vendor support for firmware updates.
+- Side-channel mitigation review — validate CPU microcode patches for Spectre/Meltdown variants are applied.</p><hr></hr><h2>8. Protocol Hygiene &amp; Miscellaneous Controls</h2><p>Additional controls covering protocol-level risk reduction:</p><ul><li><strong>Disable DCUI access for non-root users</strong> — restrict DCUI to the root account only.</li><li><strong>Set NTP servers</strong> — time synchronisation is required for Kerberos authentication and log correlation.</li><li><strong>Disable SFCBD</strong> — the CIM broker service is rarely needed and exposes unnecessary API surface.</li><li><strong>Configure host-based firewall rules</strong> — restrict management plane access to defined management subnets.</li><li><strong>Review VIB third-party acceptance</strong> — third-party VIBs at <code>CommunitySupported</code> level bypass VMware signing validation.</li></ul><hr></hr><h2>Recommended Next Steps</h2><p>This assessment is most effective when operationalised, not just read. A practical five-step approach:</p><ol><li><strong>Baseline audit</strong> — run PowerCLI against all hosts to document current deviation from SCG defaults.</li><li><strong>Prioritise by risk</strong> — address High-priority items first via Host Profiles for consistency.</li><li><strong>Test in nested environment</strong> — validate changes in a nested ESXi lab before production rollout.</li><li><strong>Automate remediation</strong> — encode compliant settings into Host Profiles; enforce via vCenter.</li><li><strong>Schedule re-assessment</strong> — re-audit after every major vSphere upgrade and annually at minimum.</li></ol>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-esxi-hardening-45-controls",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

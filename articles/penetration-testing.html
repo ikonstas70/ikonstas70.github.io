@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/penetration-testing">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Penetration Testing, End to End — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Offensive Security</span>
+    <h1>Penetration Testing, End to End</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>A penetration test is authorized, goal-oriented adversary simulation: with written permission and a defined scope, you attack a system the way a real attacker would, then hand back a report the defenders can act on. The value isn't the exploit — it's the evidence and the fix. Automated scanners find known issues; a pentest chains them, adds business context, and answers the question a vulnerability list can't: <em>what could actually happen here?</em></p>
+
+    <h2>Authorization first, always</h2>
+    <p>The line between penetration testing and a felony is a signed scope document. Before a single packet: rules of engagement, in-scope targets and explicitly out-of-scope systems, testing windows, data-handling rules, and emergency contacts. No authorization, no test — this is professional and legal bedrock, not paperwork to rush.</p>
+
+    <h2>The engagement lifecycle</h2>
+    <h3>1. Reconnaissance</h3>
+    <p>Map the attack surface. Passive first (OSINT, certificate transparency logs, DNS, public breach data) to avoid touching the target; then active enumeration within scope.</p>
+    <pre><code># Subdomain surface from certificate transparency + resolution
+subfinder -d target.com -silent | httpx -silent -title -tech-detect
+
+# Service discovery, then targeted follow-up (not one giant noisy scan)
+nmap -sS -p- --min-rate 2000 -oA sweep target-host
+nmap -sCV -p "$(open_ports_from sweep)" -oA deep target-host</code></pre>
+    <h3>2. Vulnerability analysis</h3>
+    <p>Correlate what you found against known weaknesses — but treat scanner output as leads, not findings. The scanner says "outdated library"; the pentester asks "is it reachable, exploitable, and does it matter here?" False positives waste the client's time and your credibility.</p>
+    <h3>3. Exploitation</h3>
+    <p>Prove impact by gaining the access the vulnerability allows — carefully, within scope, avoiding anything that risks availability unless explicitly authorized. Modern web work leans on Burp Suite; infrastructure work on targeted, understood exploits rather than spray-and-pray. The goal is a demonstrated foothold, not maximum carnage.</p>
+    <h3>4. Post-exploitation</h3>
+    <p>This is where a test earns its fee. From the foothold: escalate privileges, move laterally, and pursue the defined objective (domain admin, the customer database, the crown-jewel system). Chaining three "medium" issues into full compromise is the finding that changes budgets — and it's exactly what scanners miss.</p>
+    <h3>5. Reporting</h3>
+    <p>The only deliverable that matters. More below.</p>
+    <h3>6. Retest</h3>
+    <p>Verify the fixes actually closed the holes. A finding isn't resolved until it's confirmed resolved.</p>
+
+    <h2>The 2026 toolchain, briefly</h2>
+    <table>
+      <tr><th>Phase</th><th>Representative tools</th></tr>
+      <tr><td>Recon</td><td>subfinder, amass, httpx, nmap, Shodan</td></tr>
+      <tr><td>Web</td><td>Burp Suite, ffuf, nuclei, sqlmap</td></tr>
+      <tr><td>Infra / AD</td><td>BloodHound, NetExec (the maintained CrackMapExec successor), Impacket, Responder</td></tr>
+      <tr><td>Exploitation</td><td>Metasploit, targeted public PoCs (read before running)</td></tr>
+      <tr><td>Cloud</td><td>ScoutSuite, Prowler, Pacu, cloud-native IAM analysis</td></tr>
+    </table>
+    <p>Cloud and identity are where the interesting work has moved: misconfigured IAM roles, over-permissioned service accounts, and token theft matter more than a missing patch on a hardened host. AI has entered the toolchain too — accelerating recon and payload crafting — but the judgment about what to chain and what it means remains human.</p>
+
+    <h2>A finding a scanner can't produce</h2>
+    <p>The reporting difference in one example. A scanner emits three separate rows:</p>
+    <pre><code>- MEDIUM  Password policy allows short passwords
+- MEDIUM  SMB signing not required on file server
+- LOW     Service account has local admin on 40 hosts</code></pre>
+    <p>The pentester writes the story: <em>"Password spraying against the weak policy recovered one help-desk credential. That account could relay to the file server (no SMB signing), where the over-permissioned service account's cached credential was harvested — granting local admin across 40 hosts and a direct path to domain compromise. Individually medium; together, full estate takeover in under an hour."</em> That paragraph gets funded; the three rows get triaged into next quarter.</p>
+
+    <h2>Writing a report people act on</h2>
+    <ul>
+      <li><strong>Executive summary in business terms</strong> — risk to the business, not CVSS trivia. This is the page leadership reads.</li>
+      <li><strong>Findings ranked by real risk</strong> — likelihood × impact <em>in this environment</em>, not the generic score.</li>
+      <li><strong>Reproduction steps</strong> — enough for the team to see it themselves; evidence, not assertion.</li>
+      <li><strong>Concrete remediation</strong> — specific fixes with effort estimates, prioritized. "Enable SMB signing via GPO" beats "improve security posture."</li>
+      <li><strong>A retest offer.</strong> Findings closed and confirmed are the actual product.</li>
+    </ul>
+
+    <blockquote>A penetration test converts a list of weaknesses into a story of consequences. The exploit is the easy part; the authorization, the chaining, and the report a defender can act on are the profession.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=penetration-testing",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

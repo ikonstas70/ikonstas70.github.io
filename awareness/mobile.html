@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/mobile">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Phone Is Your Perimeter — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Devices</span>
+    <h1>Your Phone Is Your Perimeter</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Your phone holds your email, your bank, your photos, your messages, and — critically — the second factor protecting everything else. In enterprise terms, it is your identity provider, and it lives in your back pocket, gets left in taxis, and runs whatever you installed at midnight. It deserves enterprise-grade habits.</p>
+
+    <h2>The two attacks that matter most</h2>
+    <h3>Shoulder-surfed PIN, then everything</h3>
+    <p>The devastating low-tech attack: someone watches you type your PIN in a bar, then lifts the phone. With PIN in hand they reset your cloud password, lock you out of your own account, and drain what the phone can reach. Defend accordingly: use biometrics in public so there is nothing to observe, set an alphanumeric passcode rather than four digits, and enable the anti-theft protections modern platforms added for exactly this scenario (delayed security changes away from trusted locations).</p>
+    <h3>SIM swapping</h3>
+    <p>An attacker convinces your carrier to move your number to their SIM; every SMS code now goes to them. Add a PIN or port-freeze to your carrier account, and migrate important accounts from SMS codes to app-based MFA or passkeys, which don't care what SIM you have.</p>
+
+    <h2>The hardening pass</h2>
+    <ul>
+      <li><strong>Update automatically.</strong> A phone that no longer receives security updates is expired hardware, whatever its battery says.</li>
+      <li><strong>Install from official stores only</strong> — and sideload nothing you wouldn't defend in a job interview. On both platforms, review the permission prompts: a flashlight app has no business reading your contacts.</li>
+      <li><strong>Audit permissions twice a year.</strong> Location, microphone, camera, photos: set to "while using," revoke what you can't justify.</li>
+      <li><strong>Enable find-and-wipe.</strong> Find My / Find My Device turns a lost phone from a breach into an expense.</li>
+      <li><strong>Back it up.</strong> Encrypted cloud or local backups mean theft costs you hardware, not history.</li>
+      <li><strong>Turn off what broadcasts.</strong> AirDrop to contacts-only; Bluetooth pairing requests from strangers get declined, not investigated.</li>
+    </ul>
+
+    <h2>Messaging and calls</h2>
+    <p>Prefer end-to-end encrypted messengers for anything you'd mind reading in court. Treat unexpected links identically whether they arrive by SMS, WhatsApp, or email — "smishing" is just phishing with worse spelling of the URL. And a call from "your bank's fraud department" asking you to read back a one-time code is the fraud itself; banks never ask for codes.</p>
+
+    <h2>When the phone leaves your control</h2>
+    <ul>
+      <li>Lost or stolen: lock it remotely, mark as lost, call the carrier, then change email and banking passwords from another device.</li>
+      <li>Selling or trading in: sign out of the cloud account first (to release activation lock), then factory-reset. A reset alone, while signed in, strands the buyer and can leave your data linked.</li>
+    </ul>
+
+    <blockquote>Stop treating your phone as a gadget. Think of it as the keys to every other lock you own. Connect biometrics, long passcodes, and app-based MFA before you need them.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-mobile",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/ccie-advanced-lab/labs/01-mpls-core-ldp/lab">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab 01 — MPLS Core LDP | CCIE Advanced Lab</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--green:#3fb950;--cyan:#58a6ff;--purple:#bc8cff;--orange:#f0883e;--red:#f85149;--yellow:#d29922;--text:#e6edf3;--muted:#8b949e;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;}
+a{color:var(--cyan);text-decoration:none;}a:hover{text-decoration:underline;}
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;}
+.nav-brand{color:var(--cyan);font-weight:bold;font-size:14px;}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:16px;}
+.hero{padding:32px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;}
+.hero-left{flex:1;min-width:300px;}
+.lab-num{display:inline-block;background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:2px 10px;border-radius:12px;margin-bottom:10px;}
+.hero h1{font-size:24px;color:#e6edf3;margin-bottom:8px;}
+.meta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;align-items:center;}
+.diff-badge{padding:3px 12px;border-radius:12px;font-size:11px;font-weight:bold;}
+.diff-inter{background:#3fb95033;color:#3fb950;border:1px solid #3fb950;}
+.diff-adv{background:#d2992233;color:#d29922;border:1px solid #d29922;}
+.diff-exp{background:#f8514933;color:#f85149;border:1px solid #f85149;}
+.time-tag{background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:3px 10px;border-radius:10px;}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.badge{padding:2px 10px;border-radius:10px;font-size:10px;font-weight:bold;}
+.badge-blue{background:#1f6feb33;color:#58a6ff;border:1px solid #1f6feb55;}
+.badge-green{background:#3fb95033;color:#3fb950;border:1px solid #3fb95055;}
+.badge-purple{background:#bc8cff33;color:#bc8cff;border:1px solid #bc8cff55;}
+.badge-yellow{background:#d2992233;color:#d29922;border:1px solid #d2992255;}
+
+/* Timer */
+.timer-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;min-width:220px;text-align:center;}
+.timer-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.timer-display{font-size:28px;font-weight:bold;color:var(--cyan);font-family:'Courier New',monospace;margin-bottom:10px;}
+.timer-display.warn{color:var(--yellow);}
+.timer-display.danger{color:var(--red);}
+.timer-btn{padding:5px 14px;border-radius:6px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text);margin:2px;}
+.timer-btn:hover{background:var(--bg);}
+.progress-ring{font-size:11px;color:var(--muted);}
+
+.content{max-width:1100px;margin:0 auto;padding:32px;}
+.section{margin-bottom:36px;}
+.section-title{font-size:14px;color:var(--cyan);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.section-title .s-icon{font-size:16px;}
+
+/* Prerequisites */
+.prereq-box{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--cyan);border-radius:0 8px 8px 0;padding:16px 20px;}
+.prereq-box ul{list-style:none;padding:0;}
+.prereq-box li{color:var(--muted);font-size:13px;padding:3px 0;}
+.prereq-box li::before{content:"→ ";color:var(--cyan);}
+
+/* Address table */
+.addr-table{width:100%;border-collapse:collapse;font-size:13px;}
+.addr-table th{background:var(--bg3);color:var(--cyan);padding:8px 12px;text-align:left;border:1px solid var(--border);}
+.addr-table td{padding:7px 12px;border:1px solid var(--border);color:var(--text);}
+.addr-table tr:nth-child(even) td{background:#0a0e13;}
+.addr-table code{color:var(--green);font-size:12px;}
+
+/* Topology */
+.topology-container{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;}
+
+/* TASK SHEET */
+.task-sheet{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.task-sheet-header{background:#1f6feb22;border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.task-sheet-title{color:var(--cyan);font-weight:bold;font-size:14px;}
+.task-block{border-bottom:1px solid var(--border);padding:20px;}
+.task-block:last-child{border-bottom:none;}
+.task-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.task-num{background:var(--cyan);color:#0d1117;font-weight:bold;font-size:11px;padding:2px 10px;border-radius:10px;}
+.task-title{font-size:14px;color:#e6edf3;font-weight:bold;}
+.task-diff{padding:2px 8px;border-radius:8px;font-size:10px;font-weight:bold;}
+.td-easy{background:#3fb95022;color:#3fb950;border:1px solid #3fb95044;}
+.td-medium{background:#d2992222;color:#d29922;border:1px solid #d2992244;}
+.td-hard{background:#f0883e22;color:#f0883e;border:1px solid #f0883e44;}
+.td-expert{background:#f8514922;color:#f85149;border:1px solid #f8514944;}
+.subtasks{list-style:none;padding:0;}
+.subtasks li{padding:6px 0 6px 16px;color:var(--muted);font-size:13px;border-left:2px solid var(--border);margin:4px 0;position:relative;}
+.subtasks li::before{content:counter(sub) ". ";counter-increment:sub;color:var(--cyan);font-weight:bold;}
+.subtasks{counter-reset:sub;}
+.task-verify{background:#3fb95011;border:1px solid #3fb95033;border-radius:6px;padding:10px 14px;margin-top:10px;font-size:12px;color:var(--green);}
+.task-verify strong{display:block;margin-bottom:4px;}
+.task-check{margin-right:8px;width:14px;height:14px;accent-color:var(--green);}
+
+/* Verification commands */
+.verify-block{background:var(--bg2);border-left:3px solid var(--green);padding:14px 18px;margin:10px 0;border-radius:0 6px 6px 0;}
+.verify-cmd{color:var(--green);font-weight:bold;font-size:13px;display:block;margin-bottom:6px;}
+.verify-output{background:#010409;padding:10px 14px;border-radius:4px;font-size:11px;color:#79c0ff;line-height:1.7;overflow-x:auto;}
+.verify-note{color:var(--muted);font-size:12px;margin-top:6px;}
+
+/* Concept boxes */
+.concept-box{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;padding:16px 20px;margin:12px 0;}
+.concept-box h4{color:var(--purple);margin-bottom:8px;font-size:13px;}
+.concept-box p{font-size:13px;color:var(--muted);}
+
+/* Troubleshooting */
+.trouble-block{background:var(--bg2);border:1px solid #f8514933;border-left:3px solid var(--red);border-radius:0 8px 8px 0;padding:14px 18px;margin:10px 0;}
+.trouble-block h4{color:var(--red);font-size:13px;margin-bottom:6px;}
+.trouble-block p{font-size:12px;color:var(--muted);}
+.trouble-fix{color:var(--green);font-size:12px;margin-top:6px;}
+
+/* Solution toggle */
+.solution-gate{background:var(--bg2);border:1px solid #f8514933;border-radius:8px;padding:24px;text-align:center;margin:16px 0;}
+.solution-gate-title{font-size:14px;color:var(--red);margin-bottom:8px;font-weight:bold;}
+.solution-gate p{color:var(--muted);font-size:12px;margin-bottom:16px;}
+.solution-input{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-family:'Courier New',monospace;font-size:13px;text-align:center;letter-spacing:2px;width:200px;outline:none;}
+.solution-btn{background:var(--red);color:#fff;border:none;border-radius:6px;padding:10px 20px;font-family:'Courier New',monospace;font-weight:bold;cursor:pointer;margin-left:8px;}
+.solution-err{color:var(--red);font-size:11px;margin-top:8px;}
+.solution-content{display:none;}
+.solution-content.visible{display:block;}
+.router-block{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden;}
+.router-header{background:var(--bg3);padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);}
+.router-name{color:#e6edf3;font-weight:bold;font-size:13px;}
+.router-role{color:var(--muted);font-size:11px;}
+.router-ip{color:var(--green);font-size:11px;margin-left:auto;}
+pre{background:#010409;padding:18px;overflow-x:auto;font-size:11.5px;color:#c9d1d9;line-height:1.5;border:none;}
+
+.progress-bar-outer{background:var(--bg3);border-radius:4px;height:6px;margin-top:10px;}
+.progress-bar-inner{background:var(--green);border-radius:4px;height:6px;transition:width 0.3s;}
+
+.footer{border-top:1px solid var(--border);padding:24px 32px;text-align:center;color:var(--muted);font-size:12px;}
+</style>
+</head>
+<body>
+<script>
+
+var timerSeconds = 45 * 60;
+var timerRunning = false;
+var timerInterval = null;
+
+function startTimer(){
+  if(timerRunning) return;
+  timerRunning = true;
+  timerInterval = setInterval(function(){
+    timerSeconds--;
+    updateTimerDisplay();
+    if(timerSeconds <= 0){ clearInterval(timerInterval); timerRunning = false; }
+  }, 1000);
+}
+
+function pauseTimer(){
+  clearInterval(timerInterval);
+  timerRunning = false;
+}
+
+function resetTimer(){
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = 45 * 60;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay(){
+  var m = Math.floor(Math.abs(timerSeconds) / 60);
+  var s = Math.abs(timerSeconds) % 60;
+  var str = (timerSeconds < 0 ? "-" : "") + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+  var el = document.getElementById('timer-display');
+  if(el){
+    el.textContent = str;
+    el.className = 'timer-display' + (timerSeconds < 300 && timerSeconds >= 0 ? ' warn' : '') + (timerSeconds < 0 ? ' danger' : '');
+  }
+}
+
+function checkSolution(){
+  var val = document.getElementById('solution-code').value.trim().toUpperCase();
+  if(val === 'SOLUTION'){
+    document.getElementById('solution-content').classList.add('visible');
+    document.getElementById('solution-gate-area').style.display = 'none';
+  } else {
+    document.getElementById('solution-err').textContent = 'Type SOLUTION (all caps) to reveal';
+    setTimeout(function(){ document.getElementById('solution-err').textContent = ''; }, 2000);
+  }
+}
+
+function saveProgress(){
+  var checks = document.querySelectorAll('.task-check');
+  var state = [];
+  checks.forEach(function(c){ state.push(c.checked ? 1 : 0); });
+  localStorage.setItem('lab01-progress', JSON.stringify(state));
+  updateProgressBar();
+}
+
+function loadProgress(){
+  var saved = localStorage.getItem('lab01-progress');
+  if(!saved) return;
+  var state = JSON.parse(saved);
+  var checks = document.querySelectorAll('.task-check');
+  checks.forEach(function(c, i){ if(state[i]) c.checked = true; });
+  updateProgressBar();
+}
+
+function updateProgressBar(){
+  var checks = document.querySelectorAll('.task-check');
+  var done = 0;
+  checks.forEach(function(c){ if(c.checked) done++; });
+  var pct = checks.length ? Math.round(done / checks.length * 100) : 0;
+  var bar = document.getElementById('progress-bar');
+  var pct_text = document.getElementById('progress-pct');
+  if(bar) bar.style.width = pct + '%';
+  if(pct_text) pct_text.textContent = pct + '%';
+  // Update global progress
+  var labs = JSON.parse(localStorage.getItem('ccie-lab-progress') || '{}');
+  labs['lab01'] = pct;
+  localStorage.setItem('ccie-lab-progress', JSON.stringify(labs));
+}
+
+window.onload = function(){
+  updateTimerDisplay();
+  loadProgress();
+  document.querySelectorAll('.task-check').forEach(function(c){
+    c.addEventListener('change', saveProgress);
+  });
+};
+</script>
+
+<nav class="nav">
+  <span class="nav-brand">CCIE ADVANCED LAB</span>
+  <a href="../../index.html" style="color:var(--muted);font-size:12px;">← Lab Index</a>
+  <div class="nav-right">
+    <span style="font-size:11px;color:var(--muted);">Lab Progress: <span id="progress-pct">0%</span></span>
+    <div class="progress-bar-outer" style="width:120px;">
+      <div class="progress-bar-inner" id="progress-bar" style="width:0%;"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-left">
+    <span class="lab-num">LAB 01 / 20</span>
+    <h1>MPLS Core LDP Label Distribution</h1>
+    <div class="meta-row">
+      <span class="diff-badge diff-inter">INTERMEDIATE</span>
+      <span class="time-tag">⏱ Estimated: 45 min</span>
+    </div>
+    <div class="badges" style="margin-top:10px;">
+      <span class="badge badge-blue">MPLS</span>
+      <span class="badge badge-blue">LDP</span>
+      <span class="badge badge-green">OSPF Area 0</span>
+      <span class="badge badge-purple">BFD</span>
+      <span class="badge badge-yellow">Label Range</span>
+    </div>
+    <p style="margin-top:12px;font-size:13px;color:var(--muted);">Build the MPLS core backbone: configure OSPF area 0 with MD5 auth, enable LDP with neighbor authentication and custom label range, add BFD for sub-second failure detection. Verify label distribution end-to-end.</p>
+  </div>
+  <div class="timer-box">
+    <div class="timer-label">Lab Timer</div>
+    <div class="timer-display" id="timer-display">45:00</div>
+    <div>
+      <button class="timer-btn" onclick="startTimer()">▶ Start</button>
+      <button class="timer-btn" onclick="pauseTimer()">⏸ Pause</button>
+      <button class="timer-btn" onclick="resetTimer()">↺ Reset</button>
+    </div>
+    <div class="progress-ring" style="margin-top:8px;">CCIE Lab: 8hr total · this lab: 45min</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- PREREQUISITES -->
+  <div class="section">
+    <div class="section-title"><span class="s-icon">📋</span> Prerequisites</div>
+    <div class="prereq-box">
+      <ul>
+        <li>Understand OSPF neighbor states (Init → 2-Way → ExStart → Exchange → Loading → Full)</li>
+        <li>Know IPv4 /31 subnets and point-to-point link addressing</li>
+        <li>Understand MPLS forwarding fundamentals: FIB, LFIB, label swap, PHP</li>
+        <li>Understand LDP session establishment (TCP 646) and label space types</li>
+        <li>Know MD5 authentication for OSPF and LDP</li>
+        <li>Complete: Lab environment has GNS3/EVE-NG with IOS 15.2+ images loaded</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TOPOLOGY -->
+  <div class="section">
+    <div class="section-title"><span class="s-icon">🗺</span> Topology — Active Nodes</div>
+    <div class="topology-container">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"  style="width:100%;height:auto;display:block;" style="background:#0d1117;font-family:'Courier New',monospace;">
+  <rect x="0" y="0" width="800" height="500" fill="#0d1117"/>
+  <text x="400" y="28" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="bold">01 MPLS CORE LDP</text>
+  <text x="400" y="46" text-anchor="middle" fill="#1f6feb" font-size="11">MPLS P Routers — LDP Core — Active: CORE-1,CORE-2,CORE-3,CORE-4</text>
+
+  <!-- Reference topology note -->
+  <rect x="40" y="70" width="720" height="370" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="400" y="130" text-anchor="middle" fill="#8b949e" font-size="12">See master topology for full 20-router diagram</text>
+  <text x="400" y="155" text-anchor="middle" fill="#1f6feb" font-size="14" font-weight="bold">Active Nodes: CORE-1,CORE-2,CORE-3,CORE-4</text>
+
+  <!-- Color coded zone boxes -->
+  <rect x="80" y="175" width="620" height="200" rx="6" fill="#0d1117" stroke="#1f6feb" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="400" y="200" text-anchor="middle" fill="#1f6feb" font-size="11" font-weight="bold">MPLS P Routers — LDP Core</text>
+
+  <!-- Router nodes listed -->
+  <text x="400" y="240" text-anchor="middle" fill="#e6edf3" font-size="12">CORE-1,CORE-2,CORE-3,CORE-4</text>
+
+  <!-- Protocol info -->
+  <text x="400" y="290" text-anchor="middle" fill="#8b949e" font-size="10">Refer to lab.html for complete step-by-step configuration</text>
+  <text x="400" y="310" text-anchor="middle" fill="#8b949e" font-size="10">and verification commands for each active router</text>
+
+  <!-- Legend strip -->
+  <rect x="40" y="455" width="720" height="28" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="60" y="462" width="14" height="14" rx="2" fill="#1f6feb"/>
+  <text x="82" y="473" fill="#8b949e" font-size="10">Active Zone</text>
+  <rect x="200" y="462" width="14" height="14" rx="2" fill="#21262d"/>
+  <text x="222" y="473" fill="#8b949e" font-size="10">Inactive (dimmed)</text>
+  <text x="680" y="473" text-anchor="end" fill="#6e7681" font-size="9">Ioannis Alexander Konstas</text>
+</svg>
+
+    </div>
+  </div>
+
+  <!-- IP ADDRESSING -->
+  <div class="section">
+    <div class="section-title"><span class="s-icon">📡</span> IP Addressing — Pre-configured on Initial Configs</div>
+    <table class="addr-table">
+      <thead><tr><th>Router</th><th>Interface</th><th>IPv4 Address</th><th>IPv6 Address</th><th>Connected To</th></tr></thead>
+      <tbody>
+        <tr><td>CORE-1</td><td>Lo0</td><td><code>10.255.1.1/32</code></td><td><code>2001:db8:ff:1::1/128</code></td><td>LDP Router-ID</td></tr>
+        <tr><td>CORE-1</td><td>Gi0/0</td><td><code>10.0.12.0/31</code></td><td><code>2001:db8:0:12::1/64</code></td><td>CORE-2 Gi0/0</td></tr>
+        <tr><td>CORE-1</td><td>Gi0/1</td><td><code>10.0.13.0/31</code></td><td><code>2001:db8:0:13::1/64</code></td><td>CORE-3 Gi0/0</td></tr>
+        <tr><td>CORE-1</td><td>Gi0/2</td><td><code>10.0.101.0/31</code></td><td><code>2001:db8:0:101::1/64</code></td><td>EDGE-1 Gi0/0</td></tr>
+        <tr><td>CORE-2</td><td>Lo0</td><td><code>10.255.1.2/32</code></td><td><code>2001:db8:ff:1::2/128</code></td><td>LDP Router-ID</td></tr>
+        <tr><td>CORE-2</td><td>Gi0/0</td><td><code>10.0.12.1/31</code></td><td><code>2001:db8:0:12::2/64</code></td><td>CORE-1 Gi0/0</td></tr>
+        <tr><td>CORE-2</td><td>Gi0/1</td><td><code>10.0.24.0/31</code></td><td><code>2001:db8:0:24::2/64</code></td><td>CORE-4 Gi0/0</td></tr>
+        <tr><td>CORE-3</td><td>Lo0</td><td><code>10.255.1.3/32</code></td><td><code>2001:db8:ff:1::3/128</code></td><td>LDP Router-ID</td></tr>
+        <tr><td>CORE-3</td><td>Gi0/0</td><td><code>10.0.13.1/31</code></td><td><code>2001:db8:0:13::3/64</code></td><td>CORE-1 Gi0/1</td></tr>
+        <tr><td>CORE-3</td><td>Gi0/1</td><td><code>10.0.34.0/31</code></td><td><code>2001:db8:0:34::3/64</code></td><td>CORE-4 Gi0/1</td></tr>
+        <tr><td>CORE-4</td><td>Lo0</td><td><code>10.255.1.4/32</code></td><td><code>2001:db8:ff:1::4/128</code></td><td>LDP Router-ID</td></tr>
+        <tr><td>CORE-4</td><td>Gi0/0</td><td><code>10.0.24.1/31</code></td><td><code>2001:db8:0:24::4/64</code></td><td>CORE-2 Gi0/1</td></tr>
+        <tr><td>CORE-4</td><td>Gi0/1</td><td><code>10.0.34.1/31</code></td><td><code>2001:db8:0:34::4/64</code></td><td>CORE-3 Gi0/1</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TASK SHEET -->
+  <div class="section">
+    <div class="section-title"><span class="s-icon">📝</span> Task Sheet</div>
+    <div class="task-sheet">
+      <div class="task-sheet-header">
+        <span class="task-sheet-title">Lab 01 — MPLS Core LDP Tasks</span>
+        <span style="font-size:11px;color:var(--muted);">Check tasks as you complete them</span>
+      </div>
+
+      <!-- TASK 1 -->
+      <div class="task-block">
+        <div class="task-header">
+          <span class="task-num">TASK 1</span>
+          <span class="task-title">Configure OSPF Area 0 on All CORE Routers</span>
+          <span class="task-diff td-easy">EASY</span>
+        </div>
+        <ol class="subtasks">
+          <li><input type="checkbox" class="task-check"> Enable OSPF process 1 on <strong>CORE-1, CORE-2, CORE-3, CORE-4</strong>. Use each router's Loopback0 IP as the router-ID (e.g., CORE-1: <code>router-id 10.255.1.1</code>).</li>
+          <li><input type="checkbox" class="task-check"> Advertise all Loopback0 addresses into OSPF area 0 as host routes (<code>/32</code>).</li>
+          <li><input type="checkbox" class="task-check"> Advertise all P2P backbone links (10.0.12.0/31, 10.0.13.0/31, 10.0.24.0/31, 10.0.34.0/31) into OSPF area 0.</li>
+          <li><input type="checkbox" class="task-check"> Set all P2P interfaces as <code>ip ospf network point-to-point</code> to eliminate DR/BDR election.</li>
+          <li><input type="checkbox" class="task-check"> Set Loopback0 as passive-interface on all routers (prevent OSPF hellos on loopbacks).</li>
+        </ol>
+        <div class="task-verify">
+          <strong>Verify Task 1:</strong>
+          Run <code>show ip ospf neighbor</code> on CORE-1. You must see CORE-2 and CORE-3 in <strong>FULL</strong> state. If any neighbor shows Init or 2-Way, check network statements and passive-interface settings.
+        </div>
+      </div>
+
+      <!-- TASK 2 -->
+      <div class="task-block">
+        <div class="task-header">
+          <span class="task-num">TASK 2</span>
+          <span class="task-title">Enable OSPF MD5 Authentication on All Backbone Interfaces</span>
+          <span class="task-diff td-medium">MEDIUM</span>
+        </div>
+        <ol class="subtasks">
+          <li><input type="checkbox" class="task-check"> Configure area-wide MD5 authentication under OSPF process 1: <code>area 0 authentication message-digest</code> on all CORE routers.</li>
+          <li><input type="checkbox" class="task-check"> On each backbone interface, set: <code>ip ospf message-digest-key 7 md5 Nx9#mP2@qK</code>. Key ID must be 7 on all routers — mismatched key IDs cause adjacency failure.</li>
+          <li><input type="checkbox" class="task-check"> Verify adjacencies reform after authentication is enabled. OSPF should drop and re-establish all neighbors within 40 seconds (dead interval × 4).</li>
+        </ol>
+        <div class="task-verify">
+          <strong>Verify Task 2:</strong>
+          Run <code>show ip ospf interface GigabitEthernet0/0</code> and confirm: "Message digest authentication enabled" with "Key ID 7". Run <code>show ip ospf neighbor</code> — all neighbors must be FULL again.
+        </div>
+      </div>
+
+      <!-- TASK 3 -->
+      <div class="task-block">
+        <div class="task-header">
+          <span class="task-num">TASK 3</span>
+          <span class="task-title">Enable MPLS LDP on All CORE Routers</span>
+          <span class="task-diff td-medium">MEDIUM</span>
+        </div>
+        <ol class="subtasks">
+          <li><input type="checkbox" class="task-check"> Set the global MPLS label range: <code>mpls label range 1000 9999</code> on all CORE routers. This prevents label collisions with other MPLS applications.</li>
+          <li><input type="checkbox" class="task-check"> Force LDP to use Loopback0 as transport address: <code>mpls ldp router-id Loopback0 force</code>. The "force" keyword overrides any existing LDP sessions immediately.</li>
+          <li><input type="checkbox" class="task-check"> Enable LDP autoconfig under OSPF: <code>mpls ldp autoconfig area 0</code> inside <code>router ospf 1</code>. This enables LDP on all interfaces in OSPF area 0 automatically.</li>
+          <li><input type="checkbox" class="task-check"> Verify LDP discovers peers by checking <code>show mpls ldp discovery</code> — all backbone interfaces should appear.</li>
+        </ol>
+        <div class="task-verify">
+          <strong>Verify Task 3:</strong>
+          Run <code>show mpls ldp neighbor</code>. You must see all adjacent P router loopbacks in <strong>Oper</strong> state. The "Transport" address should be the loopback (10.255.1.x), NOT a physical interface.
+        </div>
+      </div>
+
+      <!-- TASK 4 -->
+      <div class="task-block">
+        <div class="task-header">
+          <span class="task-num">TASK 4</span>
+          <span class="task-title">Configure LDP MD5 Neighbor Authentication</span>
+          <span class="task-diff td-hard">HARD</span>
+        </div>
+        <ol class="subtasks">
+          <li><input type="checkbox" class="task-check"> On CORE-1, configure LDP password for each adjacent P router: <code>mpls ldp neighbor 10.255.1.2 password Fp6&amp;kN3@sX</code> and <code>mpls ldp neighbor 10.255.1.3 password Fp6&amp;kN3@sX</code>.</li>
+          <li><input type="checkbox" class="task-check"> Apply matching passwords on ALL peer routers (CORE-2 toward CORE-1 and CORE-4; CORE-3 toward CORE-1 and CORE-4; CORE-4 toward CORE-2 and CORE-3). LDP authentication is bidirectional — both sides must match.</li>
+          <li><input type="checkbox" class="task-check"> After authentication is configured, verify LDP sessions drop and re-establish (TCP connection reset on port 646). This may take 15–30 seconds.</li>
+        </ol>
+        <div class="task-verify">
+          <strong>Verify Task 4:</strong>
+          Run <code>show mpls ldp neighbor detail</code> and confirm "TCP MD5 auth: enabled" appears for each session. If a session stays in "Non Existent" or "Initialized" state, check that passwords match exactly on both peers.
+        </div>
+      </div>
+
+      <!-- TASK 5 -->
+      <div class="task-block">
+        <div class="task-header">
+          <span class="task-num">TASK 5</span>
+          <span class="task-title">Configure BFD for Sub-Second OSPF Failure Detection</span>
+          <span class="task-diff td-hard">HARD</span>
+        </div>
+        <ol class="subtasks">
+          <li><input type="checkbox" class="task-check"> On each backbone interface of all CORE routers, enable BFD: <code>bfd interval 300 min_rx 300 multiplier 3</code>. This gives 900ms detection (300ms × 3 missed packets).</li>
+          <li><input type="checkbox" class="task-check"> Enable BFD for OSPF globally: <code>bfd all-interfaces</code> under <code>router ospf 1</code>. OSPF will now use BFD instead of hello/dead timers for failure detection.</li>
+          <li><input type="checkbox" class="task-check"> Also add <code>ip ospf bfd</code> directly on each backbone interface as a backup method.</li>
+        </ol>
+        <div class="task-verify">
+          <strong>Verify Task 5:</strong>
+          Run <code>show bfd neighbors</code>. All sessions must show <strong>St=Up</strong> and <strong>Diag=No Diagnostic</strong>. Run <code>show ip ospf interface Gi0/0</code> and confirm BFD is shown as "enabled". Failure detection is now &lt;1 second instead of 40 seconds.
+        </div>
+      </div>
+
+      <!-- TASK 6 -->
+      <div class="task-block">
+        <div class="task-header">
+          <span class="task-num">TASK 6</span>
+          <span class="task-title">Verify End-to-End Label Switched Path</span>
+          <span class="task-diff td-expert">EXPERT</span>
+        </div>
+        <ol class="subtasks">
+          <li><input type="checkbox" class="task-check"> From CORE-1, run <code>show mpls forwarding-table</code> and verify labels are assigned for CORE-4's loopback (10.255.1.4/32). The "Outgoing label" should NOT be "Untagged" for transit paths.</li>
+          <li><input type="checkbox" class="task-check"> Run <code>traceroute mpls ipv4 10.255.1.4/32 origin 10.255.1.1</code> from CORE-1. Verify MPLS LSP trace succeeds and shows label stack at each hop.</li>
+          <li><input type="checkbox" class="task-check"> Check PHP (Penultimate Hop Popping): the router directly connected to CORE-4 (e.g., CORE-2 or CORE-3) should show "Pop Tag" as the outgoing label for 10.255.1.4/32. This is correct behavior — do NOT change it.</li>
+          <li><input type="checkbox" class="task-check"> Verify label range: run <code>show mpls label range</code> on any CORE router. Should show "Configured range: 1000-9999 Static range: none".</li>
+        </ol>
+        <div class="task-verify">
+          <strong>Verify Task 6 (PASS/FAIL Criteria):</strong>
+          PASS = traceroute mpls shows "! ! ! ! !" (5 successes), all OSPF neighbors FULL, all LDP sessions Oper with MD5, BFD Up on all sessions, label range 1000–9999 confirmed. Any deviation = FAIL — check troubleshooting below.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- VERIFICATION COMMANDS -->
+  <div class="section">
+    <div class="section-title"><span class="s-icon">✅</span> Verification Commands with Expected Output</div>
+
+    <div class="verify-block">
+      <span class="verify-cmd">show ip ospf neighbor</span>
+      <div class="verify-output">CORE-1# show ip ospf neighbor
+
+Neighbor ID    Pri   State         Dead Time   Address       Interface
+10.255.1.2       0   FULL/  -      00:00:35    10.0.12.1     GigabitEthernet0/0
+10.255.1.3       0   FULL/  -      00:00:38    10.0.13.1     GigabitEthernet0/1</div>
+      <div class="verify-note">State must be FULL/- (hyphen = no DR/BDR = point-to-point network type is correct)</div>
+    </div>
+
+    <div class="verify-block">
+      <span class="verify-cmd">show mpls ldp neighbor</span>
+      <div class="verify-output">CORE-1# show mpls ldp neighbor
+
+    Peer LDP Ident: 10.255.1.2:0; Local LDP Ident 10.255.1.1:0
+        TCP connection: 10.255.1.2.28312 - 10.255.1.1.646
+        State: Oper; Msgs sent/rcvd: 52/51; Downstream
+        Up time: 00:15:32
+        LDP discovery sources:
+          GigabitEthernet0/0, Src IP addr: 10.0.12.1
+        Addresses bound to peer LDP Ident:
+          10.0.12.1   10.0.24.0   10.255.1.2</div>
+      <div class="verify-note">State MUST be "Oper". TCP MD5 auth enabled = look for "TCP MD5" in detailed output</div>
+    </div>
+
+    <div class="verify-block">
+      <span class="verify-cmd">show mpls forwarding-table 10.255.1.4/32 detail</span>
+      <div class="verify-output">CORE-1# show mpls forwarding-table 10.255.1.4/32 detail
+
+Local  Outgoing   Prefix           Bytes Label    Outgoing   Next Hop
+Label  Label      or Tunnel Id     Switched       interface
+1025   1048       10.255.1.4/32    0              Gi0/0      10.0.12.1
+        MAC/Encaps=14/18, MRU=1500, Label Stack{1048}
+        GigabitEthernet0/0, Next Hop 10.0.12.1</div>
+      <div class="verify-note">Both local and outgoing labels must be in range 1000–9999. "Bytes Label Switched" will increment as traffic flows.</div>
+    </div>
+
+    <div class="verify-block">
+      <span class="verify-cmd">show bfd neighbors</span>
+      <div class="verify-output">CORE-1# show bfd neighbors
+
+NeighAddr      LD/RD         RH/RS   State     Int
+10.0.12.1      4097/4097     Up      Up        Gi0/0
+10.0.13.1      4098/4098     Up      Up        Gi0/1</div>
+      <div class="verify-note">State=Up required. If Down, check bfd interval matching on both sides and that ip ospf bfd is on the interface.</div>
+    </div>
+
+    <div class="verify-block">
+      <span class="verify-cmd">traceroute mpls ipv4 10.255.1.4/32</span>
+      <div class="verify-output">CORE-1# traceroute mpls ipv4 10.255.1.4/32
+
+Tracing MPLS Label Switched Path to 10.255.1.4/32, timeout is 2 seconds
+
+Codes: '!' success, 'Q' request not sent, '.' timeout,
+       'L' labeled output interface, 'B' unlabeled output interface,
+       'D' DS Map mismatch, 'F' no FEC mapping, 'f' FEC mismatch
+
+Type escape sequence to abort.
+  0 10.0.12.0 MRU 1500 [Labels: 1048 Exp: 0]
+L 1 10.0.12.1 MRU 1500 [Labels: implicit-null Exp: 0] 1 ms
+! 2 10.0.24.1 1 ms</div>
+      <div class="verify-note">"!" at final hop = MPLS LSP complete. "L" = labeled forwarding at intermediate hop. PHP visible at penultimate hop (implicit-null).</div>
+    </div>
+  </div>
+
+  <!-- KEY CONCEPTS -->
+  <div class="section">
+    <div class="section-title"><span class="s-icon">💡</span> Key Concepts</div>
+
+    <div class="concept-box">
+      <h4>LDP Router-ID and Transport Address</h4>
+      <p>The LDP Router-ID determines the LDP Identifier (RouterID:0 for platform-wide label space). More importantly, it sets the transport address — the IP used to establish the TCP-646 session between LDP peers. Without <code>force</code>, the router may choose a physical interface address, which can cause session flaps if that interface goes down. Using <code>Loopback0 force</code> anchors LDP to the stable loopback. Both peers must be able to reach each other's LDP transport address via the IP routing table — which OSPF provides via the loopback advertisements.</p>
+    </div>
+
+    <div class="concept-box">
+      <h4>LDP Autoconfig vs Manual Interface Configuration</h4>
+      <p>Without <code>mpls ldp autoconfig area 0</code>, you must add <code>mpls ip</code> to each interface individually. Autoconfig automatically enables LDP on every interface participating in the specified OSPF area. This is preferred in production because adding a new link to OSPF area 0 automatically gets LDP — you cannot forget. However, be careful: if you have an interface in OSPF area 0 that should NOT run MPLS (e.g., a management link), you must explicitly exclude it with <code>no mpls ip</code> on that interface after autoconfig enables it.</p>
+    </div>
+
+    <div class="concept-box">
+      <h4>PHP — Penultimate Hop Popping</h4>
+      <p>PHP occurs when the penultimate (second-to-last) router on an LSP pops the label before forwarding to the final router. The final router (egress PE or CORE router) advertises the "implicit-null" label (3) for its own prefixes, signaling to the penultimate hop: "pop the label and send me native IP." This saves one lookup at the egress — it does not need to check the LFIB. You will see "Pop Tag" or "implicit-null" as the outgoing label at the penultimate hop in <code>show mpls forwarding-table</code>. This is correct — do NOT configure <code>no mpls ip propagate-ttl</code> unless specifically required.</p>
+    </div>
+  </div>
+
+  <!-- TROUBLESHOOTING -->
+  <div class="section">
+    <div class="section-title"><span class="s-icon">🔧</span> Troubleshooting — Common Mistakes</div>
+
+    <div class="trouble-block">
+      <h4>Problem: LDP session stays in "Non Existent" after authentication</h4>
+      <p>Cause: Password mismatch — one side has authentication configured, the other does not, OR key strings differ (case-sensitive). LDP drops the TCP session immediately on auth failure. Check with <code>debug mpls ldp transport events</code> — you'll see "MD5 authentication check failed".</p>
+      <div class="trouble-fix">Fix: Verify exact password string (case-sensitive) on both peers with <code>show run | include ldp neighbor</code>. Remove and re-add if unsure. LDP will auto-reconnect within 15 seconds.</div>
+    </div>
+
+    <div class="trouble-block">
+      <h4>Problem: OSPF neighbors drop after enabling MD5 authentication</h4>
+      <p>Cause: Authentication was enabled on the area but the key is not configured on one or more interfaces, OR different key IDs are used on the two ends of a link. Key ID 7 on one side and key ID 1 on the other = OSPF drops the neighbor. Check: <code>show ip ospf interface Gi0/0</code> — it shows the key IDs in use.</p>
+      <div class="trouble-fix">Fix: Ensure key-id 7 and exact same key-string on BOTH interfaces of each link. Run <code>clear ip ospf process</code> after fixing to force re-establishment. The neighbor should reform within 40 seconds.</div>
+    </div>
+
+    <div class="trouble-block">
+      <h4>Problem: MPLS labels assigned are outside 1000–9999 range</h4>
+      <p>Cause: <code>mpls label range 1000 9999</code> was configured AFTER LDP sessions were already established. The router continues using previously assigned labels until sessions are cleared.</p>
+      <div class="trouble-fix">Fix: After configuring the label range, run <code>clear mpls ldp neighbor *</code> to force all LDP sessions to reset and re-negotiate labels within the new range. Verify with <code>show mpls label range</code> and <code>show mpls forwarding-table</code>.</div>
+    </div>
+  </div>
+
+  <!-- SOLUTION SECTION -->
+  <div class="section">
+    <div class="section-title"><span class="s-icon">🔑</span> Solution Configurations</div>
+
+    <div id="solution-gate-area">
+      <div class="solution-gate">
+        <div class="solution-gate-title">Solution Hidden</div>
+        <p>Try completing the tasks first. Only reveal when truly stuck or to verify your work after completion.<br>Type <strong>SOLUTION</strong> below to unlock the full configurations.</p>
+        <input type="text" id="solution-code" class="solution-input" placeholder="Type SOLUTION" autocomplete="off">
+        <button class="solution-btn" onclick="checkSolution()">Reveal</button>
+        <div class="solution-err" id="solution-err"></div>
+      </div>
+    </div>
+
+    <div class="solution-content" id="solution-content">
+      <div style="background:#3fb95011;border:1px solid #3fb95033;border-radius:6px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:var(--green);">
+        ✓ Solution revealed. Compare your config with these — differences indicate learning opportunities, not just errors.
+      </div>
+
+      <div class="router-block">
+        <div class="router-header">
+          <span class="router-name">CORE-1</span>
+          <span class="router-role">P Router · RR · LDP</span>
+          <span class="router-ip">10.255.1.1/32</span>
+        </div>
+<pre>mpls label range 1000 9999
+mpls ldp router-id Loopback0 force
+mpls ldp neighbor 10.255.1.2 password Fp6&kN3@sX
+mpls ldp neighbor 10.255.1.3 password Fp6&kN3@sX
+
+interface GigabitEthernet0/0
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 7 md5 Nx9#mP2@qK
+ ip ospf network point-to-point
+ ip ospf bfd
+ mpls ip
+ bfd interval 300 min_rx 300 multiplier 3
+
+interface GigabitEthernet0/1
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 7 md5 Nx9#mP2@qK
+ ip ospf network point-to-point
+ ip ospf bfd
+ mpls ip
+ bfd interval 300 min_rx 300 multiplier 3
+
+interface GigabitEthernet0/2
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 7 md5 Nx9#mP2@qK
+ ip ospf network point-to-point
+ ip ospf bfd
+ mpls ip
+ bfd interval 300 min_rx 300 multiplier 3
+
+router ospf 1
+ router-id 10.255.1.1
+ area 0 authentication message-digest
+ passive-interface Loopback0
+ network 10.255.1.1 0.0.0.0 area 0
+ network 10.0.12.0 0.0.0.1 area 0
+ network 10.0.13.0 0.0.0.1 area 0
+ network 10.0.101.0 0.0.0.1 area 0
+ mpls ldp autoconfig area 0
+ bfd all-interfaces</pre>
+      </div>
+
+      <div class="router-block">
+        <div class="router-header">
+          <span class="router-name">CORE-2</span>
+          <span class="router-role">P Router · RR · LDP</span>
+          <span class="router-ip">10.255.1.2/32</span>
+        </div>
+<pre>mpls label range 1000 9999
+mpls ldp router-id Loopback0 force
+mpls ldp neighbor 10.255.1.1 password Fp6&kN3@sX
+mpls ldp neighbor 10.255.1.4 password Fp6&kN3@sX
+
+interface GigabitEthernet0/0
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 7 md5 Nx9#mP2@qK
+ ip ospf network point-to-point
+ ip ospf bfd
+ mpls ip
+ bfd interval 300 min_rx 300 multiplier 3
+
+interface GigabitEthernet0/1
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 7 md5 Nx9#mP2@qK
+ ip ospf network point-to-point
+ ip ospf bfd
+ mpls ip
+ bfd interval 300 min_rx 300 multiplier 3
+
+interface GigabitEthernet0/2
+ ip ospf authentication message-digest
+ ip ospf message-digest-key 7 md5 Nx9#mP2@qK
+ ip ospf network point-to-point
+ ip ospf bfd
+ mpls ip
+ bfd interval 300 min_rx 300 multiplier 3
+
+router ospf 1
+ router-id 10.255.1.2
+ area 0 authentication message-digest
+ passive-interface Loopback0
+ network 10.255.1.2 0.0.0.0 area 0
+ network 10.0.12.0 0.0.0.1 area 0
+ network 10.0.24.0 0.0.0.1 area 0
+ network 10.0.102.0 0.0.0.1 area 0
+ mpls ldp autoconfig area 0
+ bfd all-interfaces</pre>
+      </div>
+
+      <div class="router-block">
+        <div class="router-header">
+          <span class="router-name">CORE-3 / CORE-4</span>
+          <span class="router-role">P Routers — same pattern, different neighbors</span>
+        </div>
+<pre>! CORE-3 specific:
+mpls ldp neighbor 10.255.1.1 password Fp6&kN3@sX
+mpls ldp neighbor 10.255.1.4 password Fp6&kN3@sX
+
+router ospf 1
+ router-id 10.255.1.3   ! (or 10.255.1.4 for CORE-4)
+ area 0 authentication message-digest
+ network 10.255.1.3 0.0.0.0 area 0   ! adjust per router
+ network 10.0.13.0 0.0.0.1 area 0    ! adjust per router
+ network 10.0.34.0 0.0.0.1 area 0
+ mpls ldp autoconfig area 0
+ bfd all-interfaces
+
+! CORE-4 neighbors:
+! mpls ldp neighbor 10.255.1.2 password Fp6&kN3@sX
+! mpls ldp neighbor 10.255.1.3 password Fp6&kN3@sX</pre>
+      </div>
+
+      <div style="margin-top:16px;">
+        
+<div class="cfg-section">
+  <div class="cfg-section-title">Initial Configs — Load These First</div>
+  <div class="cfg-links"><a href="initial-configs/CORE-1-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-1-initial.cfg</a>
+<a href="initial-configs/CORE-2-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-2-initial.cfg</a>
+<a href="initial-configs/CORE-3-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-3-initial.cfg</a>
+<a href="initial-configs/CORE-4-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-4-initial.cfg</a></div>
+</div>
+<a href="solution-configs/CORE-1.cfg" download style="color:var(--cyan);font-size:12px;margin-right:16px;">↓ CORE-1.cfg</a>
+        <a href="solution-configs/CORE-2.cfg" download style="color:var(--cyan);font-size:12px;margin-right:16px;">↓ CORE-2.cfg</a>
+        <a href="solution-configs/CORE-3.cfg" download style="color:var(--cyan);font-size:12px;margin-right:16px;">↓ CORE-3.cfg</a>
+        <a href="solution-configs/CORE-4.cfg" download style="color:var(--cyan);font-size:12px;">↓ CORE-4.cfg</a>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .content -->
+
+<footer class="footer">
+  Ioannis Alexander Konstas — Cybersecurity &amp; Infrastructure Engineer · Miami, FL<br>
+  Advanced CCIE RS Lab — Educational/Reference Use Only
+</footer>
+</body>
+</html>

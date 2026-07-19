@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/security-models">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formal Security Models: Bell-LaPadula and Biba — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Foundations</span>
+    <h1>Formal Security Models: Bell-LaPadula and Biba</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Before "zero trust" and "least privilege" were slogans, they were theorems. In the 1970s, researchers tried to state access control with mathematical precision so that a system's security properties could be <em>proven</em>, not merely asserted. Two models from that era — Bell-LaPadula and Biba — still underpin how we reason about confidentiality and integrity, and they remain fixtures of the CISSP body of knowledge for good reason: they teach you to think in properties.</p>
+
+    <h2>Bell-LaPadula: protecting confidentiality</h2>
+    <p>Developed for the U.S. military, Bell-LaPadula (BLP) answers one question: how do you stop secret information from flowing to those not cleared to see it? It assigns security levels (Unclassified, Confidential, Secret, Top Secret) to both subjects (users) and objects (data), and enforces two famous rules:</p>
+    <ul>
+      <li><strong>Simple Security Property — "no read up."</strong> A subject may not read an object at a higher level. A Confidential user cannot read Top Secret data. Obvious.</li>
+      <li><strong>Star (*) Property — "no write down."</strong> A subject may not write to an object at a <em>lower</em> level. This is the subtle, brilliant one: it stops a Top Secret user from copying secrets into a Confidential file where a lower-cleared user could read them — closing the leak that "no read up" alone misses.</li>
+    </ul>
+    <p>Read down, write up. BLP is about <strong>confidentiality only</strong> — it says nothing about whether data is correct.</p>
+
+    <h2>Biba: protecting integrity</h2>
+    <p>Biba is BLP turned upside down. Where BLP guards secrets, Biba guards <em>trustworthiness</em> — it keeps low-integrity (untrusted) data from corrupting high-integrity systems. Its rules invert BLP's:</p>
+    <ul>
+      <li><strong>Simple Integrity Property — "no read down."</strong> A high-integrity subject may not read low-integrity data, lest bad input taint good process.</li>
+      <li><strong>Star Integrity Property — "no write up."</strong> A low-integrity subject may not write to a high-integrity object — untrusted sources can't modify trusted data.</li>
+    </ul>
+    <p>Read up, write down. You already live inside a Biba-like model: your operating system won't let an unprivileged app overwrite system binaries — low integrity cannot write up to high.</p>
+
+    <h2>Why they conflict, and what that teaches</h2>
+    <table>
+      <tr><th></th><th>Bell-LaPadula</th><th>Biba</th></tr>
+      <tr><td>Protects</td><td>Confidentiality</td><td>Integrity</td></tr>
+      <tr><td>Read</td><td>No read up</td><td>No read down</td></tr>
+      <tr><td>Write</td><td>No write down</td><td>No write up</td></tr>
+    </table>
+    <p>They pull in opposite directions — you cannot naively enforce both with one lattice, which is precisely the lesson: <strong>confidentiality and integrity are distinct goals requiring distinct controls.</strong> Real systems apply each where it belongs, or reach for richer models.</p>
+
+    <h2>Known limitations</h2>
+    <p>BLP is famously static — it doesn't address how classifications change, and the "tranquility principle" was bolted on to handle relabeling. Neither model addresses availability (the third leg of the CIA triad), covert channels, or the messy realities of modern dynamic systems. Later models answered specific gaps: <strong>Clark-Wilson</strong> for commercial integrity through well-formed transactions and separation of duties; <strong>Brewer-Nash (the Chinese Wall)</strong> for conflict-of-interest access that changes based on what you've already seen.</p>
+
+    <h2>Why bother in 2026</h2>
+    <p>You will not configure a Bell-LaPadula lattice this quarter. But you will design access control, and these models give you the vocabulary and the discipline: separate confidentiality from integrity, think in provable properties rather than ad-hoc rules, and notice that "no write down" and "no write up" are the ancestors of the mandatory access controls (SELinux, AppArmor) and multi-level security running quietly in the systems you use today.</p>
+
+    <blockquote>Bell-LaPadula keeps secrets from leaking down; Biba keeps corruption from creeping up. They contradict each other on purpose — teaching the enduring lesson that confidentiality and integrity are different problems.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=security-models",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

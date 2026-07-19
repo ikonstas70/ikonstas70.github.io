@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/data-science/visualization">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visualization and Storytelling — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/" class="active">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Core Skills</span>
+    <h1>Visualization and Storytelling</h1>
+    <p class="meta">Data Science Series &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>A chart is an argument. It claims "this pattern exists and matters," and it either persuades an audience or wastes their attention. The craft has two halves — encoding data honestly, and knowing what your audience needs to decide — and the second half is where most technical people underinvest.</p>
+
+    <h2>Encoding: match the chart to the question</h2>
+    <ul>
+      <li><strong>Comparison across categories</strong> → bar chart. Horizontal when labels are long. Sorted by value, not alphabet — alphabetical order is a fact about spelling, not about your data.</li>
+      <li><strong>Change over time</strong> → line chart. Points imply discrete samples; lines imply continuity; don't lie with either.</li>
+      <li><strong>Relationship between two variables</strong> → scatter, with a trend line only if you mean it.</li>
+      <li><strong>Distribution</strong> → histogram or ECDF (box plots hide bimodality; violin plots confuse executives — know your room).</li>
+      <li><strong>Part-to-whole</strong> → stacked bars used sparingly. Pie charts get one job: two or three slices, one obvious winner.</li>
+    </ul>
+
+    <h2>The honesty rules</h2>
+    <ul>
+      <li><strong>Bar charts start at zero.</strong> Bars encode length; truncating the axis fabricates a difference. (Line charts may zoom — they encode slope — but say so.)</li>
+      <li><strong>One y-axis.</strong> Dual axes let you "prove" any correlation by stretching until the lines kiss.</li>
+      <li><strong>Label the units, date range, and denominator.</strong> "Attacks up 40%" means nothing without "of what, since when, out of how many."</li>
+      <li><strong>Don't encode with area or color intensity what you could encode with position.</strong> Humans compare positions superbly, areas poorly, color barely.</li>
+    </ul>
+
+    <h2>Declutter like you mean it</h2>
+    <p>Default chart output is noise: borders, gridlines, legends, ten colors fighting. My working method is subtraction: remove every element that isn't carrying information, mute what remains to gray, then spend color on exactly one thing: the point. If everything is highlighted, nothing is. A chart is finished when its title can be the sentence you'd say aloud — "Failed logins spike every Monday at 6 a.m." — and the ink underneath merely proves it.</p>
+
+    <h2>Tools, briefly</h2>
+    <p><strong>matplotlib</strong> for control and publication output; <strong>seaborn</strong> for statistical plots with sane defaults; <strong>plotly</strong> when interaction genuinely helps (large scatters, drill-downs). For dashboards, Streamlit turns a Python script into an app in an afternoon. The tool matters far less than the editing.</p>
+
+    <h2>The narrative frame</h2>
+    <p>Reports and readouts fail from structure, not charts. The structure that works is a pyramid: <strong>answer first</strong> ("we should throttle at the edge; here's why"), evidence second, methodology in the appendix for the two people who'll ask. Write for the executive who reads only the first paragraph, the manager who reads the charts, and the engineer who reads the footnotes — in that order, in one document.</p>
+
+    <h2>Checkpoint</h2>
+    <p>Take a chart you've already made. Rewrite its title as the claim it proves, strip every non-load-bearing element, gray the context, color the point. Show both versions to someone and watch which one they understand in five seconds. That five seconds is the whole discipline.</p>
+
+    <p><a href="/data-science/classical-ml">Next: Classical Machine Learning →</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=data-science-visualization",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

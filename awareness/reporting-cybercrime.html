@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/reporting-cybercrime">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reporting a Cybercrime — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Response</span>
+    <h1>Reporting a Cybercrime</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Most cybercrime goes unreported, usually out of embarrassment or a belief that nothing will come of it. Both are mistakes. Reporting feeds the investigations that dismantle criminal infrastructure, it's often required to recover money or dispute fraud, and — for wire fraud especially — a fast report is sometimes the only thing that gets funds back. Here's where to go and what to have ready.</p>
+
+    <h2>Where to report (United States)</h2>
+    <table>
+      <tr><th>Situation</th><th>Where</th></tr>
+      <tr><td>Most cybercrime, online fraud, wire/BEC fraud</td><td><strong>IC3.gov</strong> — the FBI's Internet Crime Complaint Center</td></tr>
+      <tr><td>Scams, deceptive business, fraud (general)</td><td><strong>ReportFraud.ftc.gov</strong> — Federal Trade Commission</td></tr>
+      <tr><td>Identity theft (recovery plan + affidavit)</td><td><strong>IdentityTheft.gov</strong> — FTC</td></tr>
+      <tr><td>Money already sent by wire / BEC</td><td>Your bank <em>immediately</em>, then IC3 (ask about the Financial Fraud Kill Chain)</td></tr>
+      <tr><td>Immediate danger, in-progress crime</td><td>Local police / 911</td></tr>
+    </table>
+    <p>Outside the U.S., report to your national cybercrime unit (for example, Action Fraud in the UK) and your bank. When in doubt, local police can route you.</p>
+
+    <h2>Speed matters most for stolen money</h2>
+    <p>If you've wired money to a fraudster — a fake invoice, a spoofed executive, a bogus home-closing — call your bank <em>right now</em>, before anything else. Banks and the FBI can sometimes freeze or recall funds through the Financial Fraud Kill Chain, but only within a short window, often measured in hours. Every minute of hesitation lowers the odds. Report to IC3 in parallel and reference the transfer details.</p>
+
+    <h2>What to gather before you file</h2>
+    <ul>
+      <li>Dates, times, and amounts.</li>
+      <li>The scammer's contact details — email addresses, phone numbers, usernames, websites, wallet or account numbers.</li>
+      <li>Transaction records: confirmation numbers, receipts, bank references.</li>
+      <li>The original messages — keep the emails and texts; don't delete them. Screenshots help.</li>
+      <li>Any names, titles, or organizations the scammer impersonated.</li>
+    </ul>
+
+    <h2>Also worth doing</h2>
+    <ul>
+      <li><strong>Report phishing</strong> to your email provider and, at work, to your IT/security team — you're rarely the only target.</li>
+      <li><strong>Notify affected institutions</strong> — banks, the impersonated company — so they can warn others and lock accounts.</li>
+      <li><strong>Keep a log.</strong> Case numbers and dated records make disputes and reimbursements far easier.</li>
+    </ul>
+
+    <p>You will not be judged for reporting, and you're not "wasting their time." Aggregated reports are how patterns get spotted and networks get taken down — your one complaint may be the data point that connects a case.</p>
+
+    <blockquote>Stop staying silent out of embarrassment. Think of your report as evidence in a bigger case. Connect with your bank first when money moved — the recovery window is measured in hours.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-reporting-cybercrime",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

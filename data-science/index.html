@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/data-science/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Science — Konstas Engineering Notes</title>
+<meta name="description" content="A practical data science guide — from the modern Python stack through classical ML, deep learning, LLMs, and security analytics.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/" class="active">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1 style="text-align:center">Data Science</h1>
+    <p class="section-intro">A working engineer's guide: no ceremony, current tooling, and every topic ends with something running on your machine. Written for practitioners coming from infrastructure and security who want data skills that survive contact with production.</p>
+
+    <a class="card" href="/data-science/the-field">
+      <h3>The Field, Mapped</h3>
+      <p>Analytics, machine learning, and AI engineering are three different jobs. What each one actually does in 2026, and where to aim.</p>
+      <span class="date">Foundations</span>
+    </a>
+    <a class="card" href="/data-science/python-stack">
+      <h3>The Modern Python Stack</h3>
+      <p>uv for environments, notebooks vs. scripts, and a project layout that won't embarrass you in six months.</p>
+      <span class="date">Foundations</span>
+    </a>
+    <a class="card" href="/data-science/data-wrangling">
+      <h3>Data Wrangling: Polars, Pandas, and Parquet</h3>
+      <p>Eighty percent of the job is shaping data. The split-apply-combine mindset, columnar formats, and when DuckDB replaces a cluster.</p>
+      <span class="date">Core Skills</span>
+    </a>
+    <a class="card" href="/data-science/statistics">
+      <h3>Statistics That Earn Their Keep</h3>
+      <p>Distributions, uncertainty, hypothesis tests, and the Bayesian intuition — the minimum honest toolkit for claims about data.</p>
+      <span class="date">Core Skills</span>
+    </a>
+    <a class="card" href="/data-science/visualization">
+      <h3>Visualization and Storytelling</h3>
+      <p>Charts are arguments. Making ones that persuade without lying, and dashboards that people actually read.</p>
+      <span class="date">Core Skills</span>
+    </a>
+    <a class="card" href="/data-science/classical-ml">
+      <h3>Classical Machine Learning Still Wins on Tables</h3>
+      <p>scikit-learn, gradient-boosted trees, cross-validation done honestly, and why boosted trees outlive every hype cycle on tabular data.</p>
+      <span class="date">Machine Learning</span>
+    </a>
+    <a class="card" href="/data-science/deep-learning">
+      <h3>Deep Learning with PyTorch</h3>
+      <p>Tensors, autograd, and training loops from first principles — plus when deep learning is the wrong tool and a boosted tree would do.</p>
+      <span class="date">Machine Learning</span>
+    </a>
+    <a class="card" href="/data-science/llms">
+      <h3>Working with Large Language Models</h3>
+      <p>Prompting as engineering, retrieval-augmented generation, fine-tuning vs. context, local models, and evaluation that isn't vibes.</p>
+      <span class="date">AI Engineering</span>
+    </a>
+    <a class="card" href="/data-science/security-analytics">
+      <h3>Data Science for Security Operations</h3>
+      <p>Anomaly detection on network telemetry, log analytics at scale, and why precision beats recall when every alert costs an analyst's hour.</p>
+      <span class="date">Applied</span>
+    </a>
+    <a class="card" href="/data-science/mlops">
+      <h3>Shipping It: MLOps Without the Buzzwords</h3>
+      <p>Versioning data and models, monitoring drift, and the boring reliability engineering that separates a demo from a product.</p>
+      <span class="date">Production</span>
+    </a>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=data-science",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

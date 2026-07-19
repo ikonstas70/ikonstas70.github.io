@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-cisco-csr1000v-serial-to-api">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cisco CSR1000v: Converting Serial Consoles to a Secure REST API — Konstas Engineering Notes</title>
+<meta name="description" content="Cisco CSR1000v instances running on ESXi expose their consoles via serial-over-network — Telnet sessions mapped to incremented ports (2301–2320). This is functional for m">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Networking</span>
+    <h1>Cisco CSR1000v: Converting Serial Consoles to a Secure REST API</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+</hr><p>Cisco CSR1000v instances running on ESXi expose their consoles via serial-over-network — Telnet sessions mapped to incremented ports (2301–2320). This is functional for manual access but completely incompatible with automation workflows. You cannot script reliably against raw Telnet: timing is unpredictable, output is noisy with escape characters, and there is no authentication or structured response format.</p><p>The goal was clear: abstract these legacy serial interfaces into a modern, programmatic API without introducing any external exposure to the underlying infrastructure.</p><hr></hr><h2>Infrastructure Foundation: Total Isolation</h2><p>The architecture is built on a "Total Isolation" principle. The ESXi hypervisor has no default gateway — it connects exclusively to a management host via a Layer 3 Point-to-Point link. This means the router fleet cannot be reached from the public internet by any direct path. All management traffic stays within a controlled, bounded network segment.</p><p>The routers themselves are addressed through ESXi's serial-over-network feature, with each CSR1000v mapped to a specific Telnet port in the 2301–2320 range. This is the physical foundation everything else builds on.</p><hr></hr><h2>The Automation Stack: How It Works</h2><p>The stack is a multi-tier bridge that converts stateless HTTP requests into stateful terminal sessions. It has three core components working in sequence.</p><h3>Flask API — The Security and Logic Layer</h3><p>A Python Flask service running on port 8080 acts as the entry point. It validates the <code>X-API-KEY</code> header, checks that the requested port falls within the <code>ALLOWED_PORTS</code> list, parses the JSON payload, and triggers the automation engine.</p><h3>csr_api_secure.py — The Timing Controller</h3><p>The core automation engine manages the inherent fragility of virtual serial consoles through a precisely timed execution sequence: <strong>Connect → Sleep → Wake → Sleep → Execute → Sleep → Exit</strong>. This timing prevents the ESXi serial buffer from dropping characters.</p><pre><code>shell_cmd = f'(sleep 1; printf "\\r\\n"; sleep 1; \
+  printf "terminal length 0\\r\\n"; sleep 1; \
+  printf "{command}\\r\\n"; sleep 2; \
+  printf "exit\\r\\n") | telnet {ROUTER_IP} {port}'
+</code></pre><h3>socat — The Transport Bridge</h3><p>A dedicated <code>telnet.sh</code> script uses socat to relay TCP traffic from local ports (2301–2310) to the corresponding ports on the ESXi hypervisor at <code>&lt;esxi-host-ip&gt;</code>. The <code>fork</code> option handles multiple simultaneous sessions without crashing.</p><hr></hr><h2>Three Operational Modes</h2><p>The socat gateway supports three distinct modes to balance accessibility with security requirements:</p><ul><li><strong>Direct</strong> — raw Telnet relay over the Point-to-Point link, for local management only.</li><li><strong>Cloudflare</strong> — HTTPS tunnel for global API access via the Flask service.</li><li><strong>Tailscale</strong> — WireGuard mesh VPN for private, out-of-band engineering access.</li></ul><hr></hr><h2>External Access: Cloudflare Tunnel</h2><p>The final piece of the stack enables global management without opening a single inbound firewall port. A Cloudflare Tunnel creates a secure, outbound-only connection from the Mac Mini to Cloudflare's edge, assigning a public HTTPS URL to the local Flask service.</p><p>This means an engineer anywhere in the world can reach the API through a single curl command:</p><pre><code>curl -X POST https://your-tunnel.trycloudflare.com/telnet \
+     -H "X-API-KEY: YOUR_SECRET_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"port": 2301, "command": "show ip int brief"}'
+</code></pre><p>The response comes back as clean, structured JSON — the raw Telnet noise stripped by the <code>scrub_output()</code> function:</p><pre><code>{
+  "port": 2301,
+  "router": "R1",
+  "output": "Interface   IP-Address  OK? Method Status  Protocol\n
+             GigabitEth0 10.0.0.1    YES NVRAM  up      up"
+}
+</code></pre><hr></hr><h2>Cloudflare vs. Tailscale: Two Complementary Layers</h2><p>A critical design distinction: Cloudflare and Tailscale solve different problems in this stack and do not overlap.</p><p><strong>Cloudflare Tunnel — Public Web Access Layer</strong>
+Targets the Flask API at <code>localhost:8080</code>. Forwards HTTPS from Cloudflare's global edge to the local service. Adds WAF and Zero Trust protection.</p><p><strong>Tailscale / WireGuard — Private Network Fabric</strong>
+Targets raw console ports (2301–2310) via socat. Provides out-of-band engineering access across the private mesh VPN without touching the public API path.</p><p>Together they provide defense-in-depth: an encrypted, authenticated public surface for automated operations, and an encrypted, private surface for direct engineering access.</p><hr></hr><h2>AI and Orchestration: The Next Layer</h2><p>Because the router fleet is now exposed as a set of RESTful endpoints, it becomes immediately compatible with modern automation and AI tooling — without any modification to the underlying stack.</p><p>Compatible integrations include:
+- <strong>Ansible</strong> — inventory-driven playbooks calling the Flask API.
+- <strong>Python scripts</strong> — standard <code>requests</code> library, no Telnet libraries required.
+- <strong>AI agents</strong> — LLM-driven network operations using the REST API as a tool.
+- <strong>Monitoring platforms</strong> — polling router state via scheduled API calls.</p><hr></hr><h2>Conclusion: Consoles Are Now Endpoints</h2><p>The Alexander Full-Stack Project successfully solves the "last mile" automation problem for virtualized Cisco hardware. By layering Flask (logic), socat (transport), Cloudflare (global access), and Tailscale (private fabric), it transforms 20 legacy serial consoles into a secure, scalable, API-driven fleet.</p><p>The architecture is deliberately modular. Adding a new router means updating a port in the socat range and a value in the Flask allowlist. Changing the physical transport — from Telnet to SSH, or from a Point-to-Point link to a VPN — means editing <code>telnet.sh</code> without touching the core API. This separation of concerns is what makes it a professional-grade template rather than a one-off script.</p><p>You no longer manage consoles — you manage API endpoints. The routers are serverless.</p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-cisco-csr1000v-serial-to-api",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

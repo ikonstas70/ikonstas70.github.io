@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-bitcoin-lxd-sandbox-network-isolation">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitcoin LXD Sandbox — Network Isolation Analysis — Konstas Engineering Notes</title>
+<meta name="description" content="Analysis of a Bitcoin node running inside an LXD container (bitcoin-sandbox) on Ubuntu 24.04, confirming correct network isolation from the host LAN.Container Statuslxc l">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Systems</span>
+    <h1>Bitcoin LXD Sandbox — Network Isolation Analysis</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p>Analysis of a Bitcoin node running inside an LXD container (<code>bitcoin-sandbox</code>) on Ubuntu 24.04, confirming correct network isolation from the host LAN.</p><hr></hr><h2>Container Status</h2><pre><code>lxc list
++-----------------+---------+--------------------+-----------------------------------------------+
+|      NAME       |  STATE  |        IPV4        |                     IPV6                      |
++-----------------+---------+--------------------+-----------------------------------------------+
+| bitcoin-sandbox | RUNNING | 10.76.85.28 (eth0) | fd42:378b:51f4:dbd1:216:3eff:fea5:503c (eth0)|
++-----------------+---------+--------------------+-----------------------------------------------+
+</code></pre><ul><li>Container is RUNNING with a private internal IP (<code>10.76.85.28</code>)</li><li>IPv6 is a Unique Local Address (ULA) — not publicly routable</li></ul><hr></hr><h2>Listening Ports</h2><pre><code>lxc exec bitcoin-sandbox -- ss -tuln
+</code></pre><table><thead><tr><th>Port</th><th>Protocol</th><th>Service</th></tr></thead><tbody><tr><td>8333</td><td>TCP (0.0.0.0 + [::])</td><td>Bitcoin P2P — accepts inbound connections</td></tr><tr><td>8332</td><td>TCP (127.0.0.1 only)</td><td>Bitcoin RPC — localhost only, not exposed externally</td></tr><tr><td>8334</td><td>TCP (127.0.0.1 only)</td><td>ZMQ / internal Bitcoin service</td></tr><tr><td>22</td><td>TCP</td><td>SSH — container management</td></tr><tr><td>53</td><td>UDP/TCP</td><td>Local DNS resolver</td></tr></tbody></table><p><strong>Key finding:</strong> RPC (8332) is bound to <code>127.0.0.1</code> only — it cannot be reached from outside the container.</p><hr></hr><h2>LAN Isolation Test</h2><pre><code>lxc exec bitcoin-sandbox -- ping -c 3 192.168.1.1
+# Result: 100% packet loss
+</code></pre><p>The container <strong>cannot reach your internal LAN</strong>. Isolation is confirmed.</p><hr></hr><h2>LXD Bridge Configuration</h2><pre><code>name: lxdbr0
+config:
+  ipv4.address: 10.76.85.1/24
+  ipv4.nat: "true"
+  ipv6.address: fd42:378b:51f4:dbd1::1/64
+  ipv6.nat: "true"
+</code></pre><ul><li>NAT is enabled on both IPv4 and IPv6</li><li>The container <strong>can reach the Internet</strong> (Bitcoin P2P needs outbound connectivity)</li><li>The container <strong>cannot reach your private LAN</strong> (192.168.x.x)</li><li>Host machine routes traffic via <code>lxdbr0</code> bridge — full control</li></ul><hr></hr><h2>Security Assessment</h2><table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody><tr><td>Container isolated from LAN</td><td>✅ Confirmed (100% packet loss to 192.168.1.1)</td></tr><tr><td>RPC port externally accessible</td><td>✅ No — bound to 127.0.0.1 only</td></tr><tr><td>Only expected ports open</td><td>✅ 8333 (P2P), 8332 (RPC local), 22 (SSH)</td></tr><tr><td>Internet access for P2P</td><td>✅ Enabled via NAT</td></tr><tr><td>IPv6 ULA (not publicly routable)</td><td>✅ fd42::/7 prefix — unique local only</td></tr></tbody></table><hr></hr><h2>Useful Commands</h2><pre><code># Enter the container
+lxc exec bitcoin-sandbox -- bash
+
+# Check container network
+lxc exec bitcoin-sandbox -- ip addr show eth0
+
+# Monitor open ports
+lxc exec bitcoin-sandbox -- ss -tuln
+
+# Check Bitcoin node status from host
+lxc exec bitcoin-sandbox -- bitcoin-cli getblockchaininfo
+
+# Stop the container
+lxc stop bitcoin-sandbox
+
+# Start the container
+lxc start bitcoin-sandbox
+</code></pre><hr></hr><h2>Conclusion</h2><p>The sandbox is operating correctly. Bitcoin P2P traffic flows through NAT to the Internet while the internal LAN remains fully protected. All RPC endpoints are localhost-only. The container cannot be used as a pivot point to reach internal network devices.</p><hr></hr><p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-bitcoin-lxd-sandbox-network-isolation",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

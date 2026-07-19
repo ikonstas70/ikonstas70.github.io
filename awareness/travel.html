@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/travel">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Traveling with Technology — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Field Guide</span>
+    <h1>Traveling with Technology</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Travel compresses your attack surface problems into two weeks: unfamiliar networks, physical theft opportunities, border inspections, and the loud fact that your house is empty. Most travel-security advice oscillates between paranoia and myth. Here is the field-tested middle.</p>
+
+    <h2>Before you leave</h2>
+    <ul>
+      <li><strong>Update everything.</strong> Patches installed at home beat patches downloaded over hotel Wi-Fi.</li>
+      <li><strong>Back up everything.</strong> If the trip goes badly, devices should be replaceable objects, not sole copies of your life.</li>
+      <li><strong>Enable find-and-wipe</strong> on each device, and confirm you can actually trigger it from another one.</li>
+      <li><strong>Travel light on data.</strong> Take the device you need, not the archive you own. For high-stakes destinations, a travel phone with only what the trip requires turns a seizure or theft into an inconvenience.</li>
+      <li><strong>Save the quiet flex for later.</strong> Real-time vacation posts advertise an empty home to anyone watching. Post the album when you're back.</li>
+    </ul>
+
+    <h2>On the road</h2>
+    <h3>Networks</h3>
+    <p>Hotel and airport Wi-Fi deserve the full public-network treatment (see <a href="/awareness/wifi">the Wi-Fi guide</a>): sharing off, no real credentials into captive portals, sensitive work over your phone's hotspot or a VPN. Assume conference and hotel networks are observed; in some jurisdictions, that is not a metaphor.</p>
+    <h3>The juice-jacking question</h3>
+    <p>Malicious public USB ports are rare in practice — but the countermeasure is so cheap it's silly to skip: carry your own wall charger and cable, or a data-blocking adapter. Power outlets can't negotiate a data connection. Problem retired.</p>
+    <h3>Physical custody</h3>
+    <p>More laptops are lost than hacked. Keep devices on your person or in the room safe; lock screens with short timeouts; use a privacy screen if you work sensitive material in economy class. The person beside you doesn't need your quarterly numbers, and cameras above ATMs don't need your PIN — shield it.</p>
+
+    <h2>Borders</h2>
+    <p>Many countries, including the U.S., assert authority to inspect devices at the border, and your options differ by citizenship and destination. The practical stance: cross with less. Data that isn't on the device can't be casually browsed; a signed-out cloud account is a locked door rather than an open folder. Power devices fully off before crossing — encryption is strongest before first unlock. If a device is taken out of your sight and returned, treat it as untrusted until wiped.</p>
+
+    <h2>When you return</h2>
+    <ul>
+      <li>Change passwords for anything you logged into from shared or borrowed machines. Better: never log into anything from a hotel business center — those keyboards have long memories.</li>
+      <li>Review account activity on email and banking for sessions you don't recognize.</li>
+      <li>If any device left your custody, back up the data and rebuild it clean.</li>
+    </ul>
+
+    <blockquote>Stop packing your whole digital life. Think about what each border, network, and hotel room can see. Connect through infrastructure you carry, not infrastructure you find.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-travel",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

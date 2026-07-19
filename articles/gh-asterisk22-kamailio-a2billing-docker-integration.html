@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-asterisk22-kamailio-a2billing-docker-integration">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building a Production CLEC Stack: Asterisk 22 + Kamailio 5 + A2Billing on Docker — Konstas Engineering Notes</title>
+<meta name="description" content="This article documents the full integration of a production-grade Competitive Local Exchange Carrier (CLEC) platform using Asterisk 22, Kamailio 5, and A2Billing 2.x depl">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Telecom</span>
+    <h1>Building a Production CLEC Stack: Asterisk 22 + Kamailio 5 + A2Billing on Docker</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p>This article documents the full integration of a production-grade Competitive Local Exchange Carrier (CLEC) platform using <strong>Asterisk 22</strong>, <strong>Kamailio 5</strong>, and <strong>A2Billing 2.x</strong> deployed as a containerized Docker Compose stack. Particular focus is given to twelve integration bugs encountered during the build — most of which are entirely undocumented in official resources — along with their root causes and confirmed fixes.</p><blockquote>Asterisk 22 completely removed <code>chan_sip</code>. A2Billing's dashboard, AMI integration, and AGI pipeline all assumed <code>chan_sip</code> was present. None of this is documented in A2Billing's official resources. Every failure described here required original root-cause analysis.</blockquote><h2>Architecture</h2>INTERNET / PSTN CARRIERSSIP port 15060Kamailio SBCSIP Proxy · Pike Rate Limiter · Dispatcher · Load Balancerport 15060 UDP/TCP · sip-external networksip-plane · internal Docker networkAsterisk PBX — Node 1wts-pbx-mac-01PJSIP · Extensions · Dialplan · AGIport 5060 · 105 extensionsAsterisk PBX — Node 2wts-pbx-mac-02PJSIP · Extensions · Dialplan · AGIport 5060 · 105 extensionsdata-plane · internal Docker networkMySQL 8.4wts-db-mac-01 · CDR + A2Billing database · data-planeA2Billingwts-billing-mac-01 · Billing portal · AMI · AGI · port 8081Grafana + Prometheus — Monitoring · observability network<p><strong>Docker networks:</strong></p><ul><li><code>sip-plane</code> — SIP signalling between Kamailio and Asterisk (internal only)</li><li><code>data-plane</code> — Database access between Asterisk, MySQL, A2Billing (internal only)</li><li><code>sip-external</code> — Internet-facing SIP traffic (Kamailio only)</li><li><code>observability</code> — Metrics collection across all containers</li></ul><hr><h2>Issue 1 — Kamailio Pike Rate Limiter Blocking Load Tests</h2><h3>Pike module throttled all SIPp traffic from 127.0.0.1</h3>Symptom<p>Load test at 50+ cps showed only ~22 cps effective throughput. Kamailio logs: <code>FLOOD from 127.0.0.1 blocked</code>. Approximately 50% of INVITE requests returned 503.</p>Root Cause<p>All SIPp load-test processes originate from <code>127.0.0.1</code>. Pike applies rate limiting per source IP without distinguishing localhost from external traffic. Multiple SIPp processes hit the threshold in the first 100ms and were blocked for the remainder of the sampling window.</p>Fix<pre><code>request_route {
+    if ($si != "127.0.0.1") {
+        if (!pike_check_req()) {
+            sl_send_reply("503","Service Unavailable");
+            exit;
+        }
+    }
+}</code></pre><h2>Issue 2 — RTP Port Range Mismatch: Silent Calls</h2><h3>Asterisk assigned RTP ports outside Docker's published range — no audio</h3>Symptom<p>SIP signalling completed successfully (INVITE → 200 OK → ACK) but all calls were silent in both directions.</p>Root Cause<p>Asterisk's default <code>rtp.conf</code> uses ports 10000–20000. Docker Compose only published 10000–10099. Asterisk assigned RTP sessions above port 10099, which Docker silently dropped. No error was logged anywhere.</p>Fix<pre><code># rtp.conf — cap range to match Docker port mapping exactly
+[general]
+rtpstart=10000
+rtpend=10099
+strictrtp=yes
+icesupport=no</code></pre><pre><code># docker-compose.yml
+volumes:
+  - ./asterisk/rtp.conf:/etc/asterisk/rtp.conf:ro
+ports:
+  - "10000-10099:10000-10099/udp"</code></pre><h2>Issue 3 — Asterisk Does Not Expand Shell Variables in Config Files</h2><h3><code>password=${PASS1001}</code> treated as a literal string</h3>Symptom<p>Extension 1001 always returned 401 Unauthorized regardless of the password entered in the phone.</p>Root Cause<p>Asterisk does not expand shell environment variables in configuration files. The literal string <code>${PASS1001}</code> was set as the password.</p>Fix<p>Generate passwords at provisioning time and write them as literal values. Example auto-provisioning script:</p><pre><code>PASS=$(openssl rand -base64 16 | tr -d '+/=' | head -c 16)
+
+cat &gt;&gt; /etc/asterisk/pjsip.conf &lt;&lt; EOF
+[auth${EXT}]
+type=auth
+auth_type=userpass
+username=${EXT}
+password=${PASS}
+EOF</code></pre><h2>Issue 4 — PJSIP Identify <code>match=0.0.0.0/0</code> Blocks Phone Registration</h2><h3>All SIP traffic matched to trunk endpoint — phones could never register</h3>Symptom<p>Phone REGISTER requests returned 401 or were silently rejected regardless of credentials.</p>Root Cause<p>The PJSIP identify block matched every source IP to the Kamailio trunk endpoint. Individual phone extension endpoints were never evaluated because the catch-all matched first.</p><pre><code>[kamailio]
+type=identify
+endpoint=kamailio
+match=0.0.0.0/0   ; ← This matches phones too</code></pre>Fix<p>Restrict the identify match to Kamailio's actual internal IP on the sip-plane network:</p><pre><code>[kamailio]
+type=identify
+endpoint=kamailio
+match=&lt;kamailio_internal_ip&gt;</code></pre><p>Expose Asterisk's SIP port (5060) directly for phone registration, keeping the SBC port (15060) for trunk traffic only.</p><h2>Issue 5 — Missing <code>[from-phones]</code> Dialplan Context</h2><h3>All calls from registered phones rejected immediately</h3>Symptom<p>Phones registered successfully but dialing any number caused immediate rejection. Asterisk log: <code>No such context 'from-phones'</code>.</p>Root Cause<p>The PJSIP phone template sets <code>context=from-phones</code>, but that context was never added to <code>extensions.conf</code>.</p>Fix<pre><code>[from-phones]
+exten =&gt; _1[0-9][0-9][0-9],1,Dial(PJSIP/${EXTEN},30,rT)
+exten =&gt; _1[0-9][0-9][0-9],n,VoiceMail(${EXTEN}@default,u)
+exten =&gt; _1[0-9][0-9][0-9],n,Hangup()
+
+exten =&gt; _NXXNXXXXXX,1,Dial(PJSIP/+1${EXTEN}@kamailio,60,rT)
+exten =&gt; _NXXNXXXXXX,n,Hangup()
+
+exten =&gt; *43,1,Echo()          ; Echo test
+exten =&gt; *98,1,VoiceMailMain() ; Voicemail</code></pre><h2>Issue 6 — A2Billing Config Written to Wrong Path</h2><h3><code>Error: A2Billing configuration file is missing!</code> on every page</h3>Symptom<p>A2Billing showed the "configuration file is missing" error despite the config existing in the container.</p>Root Cause<p>A2Billing's PHP source hardcodes the config path to <code>/etc/a2billing.conf</code>:</p><pre><code>define('A2B_CONFIG_DIR', '/etc/');
+define('DEFAULT_A2BILLING_CONFIG', A2B_CONFIG_DIR . 'a2billing.conf');</code></pre><p>The Dockerfile was writing the config to <code>/var/www/html/a2billing.conf</code> — the location of the A2Billing source template. The actual read path <code>/etc/a2billing.conf</code> did not exist.</p>Fix<p>Use a Docker entrypoint script to write the config to the correct path at container startup, reading the database password from a Docker secret at runtime:</p><pre><code>#!/bin/bash
+DB_PASS=$(cat /run/secrets/mysql_a2billing_password | tr -d '\n')
+
+cat &gt; /etc/a2billing.conf &lt;&lt; EOF
+[database]
+hostname = mysql
+user     = a2billing
+password = ${DB_PASS}
+dbname   = a2billing
+dbtype   = mysql
+EOF
+
+exec apache2-foreground</code></pre><h2>Issue 7 — A2Billing Wrong Config Key Names</h2><h3>"Connection failed" — <code>dbuser</code>/<code>dbpassword</code> vs <code>user</code>/<code>password</code></h3>Symptom<p>"Connection failed" on every page after fixing the config path. ADOdb built the DSN as <code>mysqli://:@mysql/a2billing</code> — empty credentials.</p>Root Cause<p>A2Billing's <code>DbConnect()</code> reads <code>$this-&gt;config['database']['user']</code> and <code>$this-&gt;config['database']['password']</code>. Using keys <code>dbuser</code> and <code>dbpassword</code> causes both to resolve to null.</p>Fix<pre><code>; WRONG              CORRECT
+dbuser   = ...  →  user     = ...
+dbpassword = ... →  password = ...</code></pre><p>Verify with ADOdb directly inside the container:</p><pre><code>php -r "require 'vendor/autoload.php';
+\$db = NewADOConnection('mysqli://user:pass@mysql/a2billing');
+echo \$db ? 'OK' : 'FAIL';"</code></pre><h2>Issue 8 — MySQL 8.4 Removed <code>mysql_native_password</code></h2><h3>Attempting to re-enable native_password crashed MySQL entirely</h3>Symptom<p>MySQL 8.4 refused to start after adding <code>mysql_native_password=ON</code> to the config:</p><pre><code>ERROR [MY-000067] unknown variable 'default_authentication_plugin=mysql_native_password'</code></pre>Root Cause<p>MySQL 8.4 completely removed <code>mysql_native_password</code> and the <code>default_authentication_plugin</code> system variable. Both were deprecated in 8.0 and fully removed in 8.4.</p>Resolution<p>PHP 7.4's <code>mysqli</code> extension supports <code>caching_sha2_password</code> (MySQL 8.4 default) natively. No plugin change is required. The actual problem was wrong config key names (Issue 7). Revert any <code>mysql_native_password</code> configuration and fix the application config instead.</p><h2>Issue 9 — Asterisk AMI Disabled by Default</h2><h3>A2Billing had no AMI connection — call origination non-functional</h3>Symptom<p>A2Billing web UI loaded but could not originate calls, run callbacks, or display live call data.</p>Root Cause<p>Asterisk ships with AMI disabled (<code>enabled = no</code>). No <code>manager.conf</code> was mounted in Docker Compose. A2Billing's database still held default placeholder credentials (<code>manager_host=localhost</code>, <code>manager_username=myasterisk</code>).</p>Fix<pre><code># manager.conf
+[general]
+enabled   = yes
+port      = 5038
+bindaddr  = 0.0.0.0
+
+[a2billing]
+secret  = &lt;strong_random_password&gt;
+permit  = 172.16.0.0/255.240.0.0
+read    = system,call,log,agent,reporting,cdr,dialplan
+write   = system,call,agent,originate</code></pre><p>For clustered deployments, register all nodes in <code>cc_server_manager</code>:</p><pre><code>INSERT INTO cc_server_manager (id_group, manager_host, manager_username, manager_secret)
+VALUES (1, 'asterisk-node-1', 'a2billing', '&lt;password&gt;'),
+       (1, 'asterisk-node-2', 'a2billing', '&lt;password&gt;');</code></pre><h2>Issue 10 — A2Billing AGI Scripts Not Accessible to Asterisk</h2><h3>AGI Script <code>a2billing.php</code> not found — no call billing</h3>Symptom<p>Calls routed to <code>[a2billing]</code> context failed. No call detail records were created in the A2Billing database.</p>Root Cause<p>A2Billing's AGI scripts live at <code>/var/www/html/AGI/</code> inside the A2Billing container. Asterisk looks for AGI scripts in <code>/var/lib/asterisk/agi-bin/</code> inside its own container. In a containerized deployment these are separate filesystems — the scripts are invisible to Asterisk.</p>Fix<p>Share the Asterisk data volume with A2Billing in <code>docker-compose.yml</code>, then copy scripts at container startup:</p><pre><code># docker-compose.yml
+a2billing:
+  volumes:
+    - asterisk-data:/var/lib/asterisk  # shared with asterisk service</code></pre><pre><code># entrypoint.sh
+cp /var/www/html/AGI/a2billing.php /var/lib/asterisk/agi-bin/
+cp -r /var/www/html/AGI/lib /var/lib/asterisk/agi-bin/
+chmod 755 /var/lib/asterisk/agi-bin/a2billing.php</code></pre><pre><code># extensions.conf
+[a2billing]
+exten =&gt; _X.,1,AGI(a2billing.php,1)
+exten =&gt; _X.,n,Hangup()
+
+[a2billing-did]
+exten =&gt; _X.,1,AGI(a2billing.php,1,did)
+exten =&gt; _X.,n,Hangup()</code></pre><h2>Issue 11 — A2Billing Dashboard Uses Removed <code>chan_sip</code> Commands</h2><h3>Asterisk Summary shows <code>SIP Registrations: -2</code>, blank peer lists</h3>Symptom<p>A2Billing's Asterisk Summary page showed <code>SIP Registrations: -2</code> and empty channel/peer counts on Asterisk 22.</p>Root Cause<p>A2Billing's dashboard (<code>A2B_asteriskinfo.php</code>) was written for Asterisk 1.4–1.8. It issues AMI commands that were removed in Asterisk 18+:</p><pre><code>"sip show channels"   // removed — chan_sip no longer exists
+"sip show registry"   // removed
+"sip show peers"      // removed
+"iax2 show peers"     // chan_iax2 not loaded</code></pre><p>When these return nothing, the parser computes <code>array_count - 3</code>, producing <code>-2</code>.</p>Fix<p>Replace all <code>chan_sip</code> and <code>iax2</code> commands with PJSIP equivalents:</p><pre><code>"pjsip show endpoints"     // replaces sip show peers
+"pjsip show registrations" // replaces sip show registry
+"pjsip show channels"      // replaces sip show channels
+"core show channels"       // active call count
+"core show version"
+"core show uptime"</code></pre><h2>Issue 12 — Asterisk 22 AMI Response Format Changed: phpagi Captures No Data</h2><h3>All PJSIP command results showed 0 — phpagi discarded all output lines</h3>Symptom<p>After replacing commands with PJSIP equivalents, all counts still showed 0. <code>phpagi</code>'s <code>send_request()</code> returned an empty <code>data</code> field.</p>Root Cause<p>Asterisk 22 AMI changed the <code>Command</code> action response format. Older Asterisk sent a multi-line block terminated with <code>--END COMMAND--</code>. Asterisk 22 sends each output line as a separate <code>Output:</code> header:</p><pre><code>Response: Success
+Message: Command output follows
+Output: &lt;line 1&gt;
+Output: &lt;line 2&gt;
+Output: &lt;line 3&gt;
+                    &lt;— blank line terminates packet</code></pre><p>The <code>phpagi</code> library stores key-value pairs in a PHP array. Since PHP arrays cannot have duplicate keys, only the <strong>last</strong> <code>Output:</code> line is retained. For <code>pjsip show endpoints</code> returning 400+ lines, 399 were silently discarded. Additionally, phpagi waited for <code>--END COMMAND--</code> which never arrives — causing a timeout on every call.</p>Fix<p>Bypass phpagi for <code>Command</code> actions. Use a raw socket that reads all <code>Output:</code> lines until the blank-line packet terminator. Use a single persistent connection per page load to avoid repeated login overhead (which caused ~15 second page loads):</p><pre><code>class AMISession {
+    private $s = null;
+
+    public function connect() {
+        $this-&gt;s = fsockopen(MANAGER_HOST, 5038, $e, $m, 2);
+        stream_set_timeout($this-&gt;s, 2);
+        fread($this-&gt;s, 256); // banner
+        fputs($this-&gt;s, "Action: Login\r\nUsername: " . MANAGER_USERNAME .
+                        "\r\nSecret: " . MANAGER_SECRET . "\r\n\r\n");
+        $buf = '';
+        while (!feof($this-&gt;s) &amp;&amp; strpos($buf, 'Authentication accepted') === false)
+            $buf .= fread($this-&gt;s, 512);
+        return strpos($buf, 'Authentication accepted') !== false;
+    }
+
+    public function command($cmd) {
+        fputs($this-&gt;s, "Action: Command\r\nCommand: {$cmd}\r\n\r\n");
+        $data = ''; $t = 0;
+        while (!feof($this-&gt;s) &amp;&amp; $t++ &lt; 30) {
+            $chunk = fread($this-&gt;s, 8192);
+            $data .= $chunk;
+            // Packet ends with \r\n\r\n in Asterisk 22
+            if (strlen($chunk) === 0 || substr($data, -4) === "\r\n\r\n") break;
+            usleep(100000);
+        }
+        // Extract all Output: lines
+        $lines = explode("\r\n", $data);
+        $out = [];
+        foreach ($lines as $l)
+            if (strpos($l, 'Output:') === 0) $out[] = ltrim(substr($l, 7));
+        return implode("\n", $out);
+    }
+}</code></pre><p>This reduced the Asterisk Summary page load time from <strong>~15 seconds to under 1 second</strong>.</p><hr><h2>Performance Reference</h2><table><tr><th>Platform</th><th>Realistic CPS</th><th>Concurrent Calls</th><th>Notes</th></tr><tr><td>Mac Mini M4 Pro (Docker, ARM)</td><td>50–100</td><td>~150</td><td>ARM emulation overhead, shared resources</td></tr><tr><td>x86 bare metal (single node)</td><td>400–500</td><td>2,000+</td><td>Dedicated cores, no virtualization overhead</td></tr><tr><td>x86 bare metal (3-node cluster)</td><td>1,200+</td><td>5,000+</td><td>Kamailio dispatcher across 3 Asterisk nodes</td></tr></table><p>Load testing with SIPp: the Mac Mini Docker environment correctly validated cluster logic, failover behavior, and the full call flow — but reached a hardware ceiling around 50 cps due to ARM emulation. Bare-metal x86 ESXi is required for production load targets.</p><hr><h2>Key Takeaways</h2><ol><li><strong>A2Billing requires patching for Asterisk 18+.</strong> It was written for Asterisk 1.4–1.8 and no official migration guide exists for PJSIP. Every interface — dashboard, AMI, AGI — needs updating.</li><li><strong>Asterisk 22 completely removed <code>chan_sip</code>.</strong> Any tooling referencing <code>sip show *</code> commands will silently fail with no meaningful error.</li><li><strong>Asterisk 22 AMI changed the <code>Command</code> response format.</strong> Code waiting for <code>--END COMMAND--</code> will hang. Code reading the <code>data</code> field from phpagi will get empty results. Read <code>Output:</code> headers directly via raw socket.</li><li><strong>MySQL 8.4 removed <code>mysql_native_password</code> entirely.</strong> Do not attempt to re-enable it — fix the application's authentication approach instead.</li><li><strong>In containerized deployments, no two services share a filesystem.</strong> AGI scripts, configuration files, and TLS certificates must be explicitly shared via Docker volumes or copied at startup.</li><li><strong>Docker port ranges have a hard boundary.</strong> Asterisk's RTP range must exactly match what Docker publishes — a mismatch produces silent one-way audio with no error messages anywhere in the stack.</li><li><strong>A single AMI connection per page load is critical.</strong> Opening a new TCP connection and authenticating for each AMI command produces ~3 second overhead per command. Five commands per page = 15 second page loads. Reuse one session object.</li></ol><hr><h2>References</h2><ul><li>Asterisk PJSIP Configuration: <a href="https://wiki.asterisk.org/wiki/display/AST/PJSIP">wiki.asterisk.org</a></li><li>Kamailio Dispatcher Module: <a href="https://kamailio.org/docs/modules/stable/modules/dispatcher.html">kamailio.org</a></li><li>A2Billing Source: <a href="https://github.com/Star2Billing/a2billing">github.com/Star2Billing/a2billing</a></li><li>Asterisk AMI v2 Specification: <a href="https://wiki.asterisk.org/wiki/display/AST/AMI+v2+Specification">wiki.asterisk.org</a></li></ul><p>Ioannis Alexander Konstas — Founder &amp; Managing Principal, </p><p>Cybersecurity · Enterprise Infrastructure · Telecommunications Engineering</p><p> · </p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-asterisk22-kamailio-a2billing-docker-integration",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

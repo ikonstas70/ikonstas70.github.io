@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/gaming">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Online Gaming Without the Griefers — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Family</span>
+    <h1>Online Gaming Without the Griefers</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Gaming is the most social software on earth — billions of players, real friendships, real economies. Where there's a real economy there's real crime, and game accounts are stolen, scammed, and resold at industrial scale, because a decade of purchases and rare items has genuine market value. The good news: gaming security is ordinary security wearing a headset.</p>
+
+    <h2>The account is the loot</h2>
+    <ul>
+      <li><strong>Unique password + MFA</strong> on every gaming platform, full stop. Most platforms hand out free cosmetics for enabling it — take the bribe.</li>
+      <li><strong>The email behind the account matters more than the account.</strong> It's the recovery path; protect it hardest (see <a href="/awareness/passwords">Passwords, Passkeys, and MFA</a>).</li>
+      <li><strong>Nobody legitimate asks for your login.</strong> Not a teammate boosting you, not "support" in a DM, not a site checking if your skin is rare. Account sharing is how most youth account theft begins.</li>
+      <li><strong>Beware the free-currency economy.</strong> Generators, giveaways, and too-cheap marketplaces for V-Bucks, Robux, and skins are phishing with extra steps. Buy only in-platform.</li>
+    </ul>
+
+    <h2>Scams with a controller</h2>
+    <p>Trade scams (item vanishes mid-swap), fake tournaments with "registration fees," streamers-you-know running "giveaways" from hijacked channels, and cheat downloads that are simply malware — a perennial favorite, since cheaters willingly disable their antivirus to install their own infection. If a game modification asks you to turn off protection, it has told you what it is.</p>
+
+    <h2>Voice chat, doxxing, and heat-of-the-moment</h2>
+    <p>Treat every lobby as a public place: whatever is said in voice or text is effectively said to the internet, possibly recorded. The durable rules:</p>
+    <ul>
+      <li>Gamertags contain no real name, age, school, or location — and don't reuse the same handle everywhere if you value unlinkability.</li>
+      <li>Streaming? Scrub the frame: no mail on the desk, no street view out the window, no discord notifications with real names.</li>
+      <li>Mute and report generously; arguing with a griefer is feeding a business model.</li>
+      <li>Swatting is rare but real for visible players: if you stream competitively, consider registering with your local police's anti-swatting program where available.</li>
+    </ul>
+
+    <h2>For parents</h2>
+    <p>Play the games your kids play, at least once — credibility is the whole ballgame. Enable platform family controls together and openly: spending limits and purchase approval prevent both scams and $400 surprises; chat controls fit the kid's age, then relax as they earn it. The one rule that matters most: <em>weird interactions get reported to you, no blame attached</em>. Groomers exploit games precisely because kids fear losing access if they tell (more in <a href="/awareness/family">Raising Digital Natives</a>).</p>
+
+    <blockquote>Stop treating game accounts as toys. Think of them as bank accounts denominated in hours. Connect with MFA before queueing.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-gaming",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

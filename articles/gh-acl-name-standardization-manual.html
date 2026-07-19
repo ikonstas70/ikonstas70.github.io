@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-acl-name-standardization-manual">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name Standardization &amp; Filtering — Konstas Engineering Notes</title>
+<meta name="description" content="Reusable ACL Analytics patterns for text normalization, structured key generation, multi-segment name codes, and exclusion filters for audit-ready datasets.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Analytics</span>
+    <h1>Name Standardization &amp; Filtering</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p class="header-sub">Reusable ACL Analytics patterns for text normalization, structured key generation, multi-segment name codes, and exclusion filters for audit-ready datasets.</p>
+</header>
+
+<div class="container">
+
+  <!-- 1. CORE FUNCTIONS -->
+  <div class="sec-head">
+    <span class="sec-label">Core ACL Functions</span>
+    <div class="sec-line"></div>
+    <span class="sec-num">§1</span>
+  </div>
+
+  <table class="ref-table">
+    <thead><tr><th>Function</th><th>Syntax</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>UPPER()</code></td><td><code>UPPER(Name)</code></td><td>Convert all characters to uppercase — required before any matching or comparison</td></tr>
+      <tr><td><code>INCLUDE()</code></td><td><code>INCLUDE(str, charset)</code></td><td>Keep only characters that appear in the character set — strips numbers, spaces, punctuation</td></tr>
+      <tr><td><code>SUBSTR()</code></td><td><code>SUBSTR(str, start, length)</code></td><td>Extract a fixed-length segment starting at position <em>start</em> (1-based)</td></tr>
+      <tr><td><code>ALLTRIM()</code></td><td><code>ALLTRIM(Name)</code></td><td>Remove all leading and trailing whitespace</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>Rule:</strong> Always apply <code>UPPER()</code> and <code>INCLUDE()</code> <em>before</em> <code>SUBSTR()</code>. Cleaning must happen before extraction — never extract from dirty data.
+  </div>
+
+  <!-- 2. STANDARD NAME CLEANING -->
+  <div class="sec-head">
+    <span class="sec-label">Standard Name Cleaning</span>
+    <div class="sec-line"></div>
+    <span class="sec-num">§2</span>
+  </div>
+
+  <div class="grid">
+    <div class="snippet">
+      <div class="snip-label">Single name field — 33-char clean key</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="fn">SUBSTR</span>(
+  <span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Name),
+    <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>),
+  <span class="num">1</span>, <span class="num">33</span>)</pre>
+    </div>
+
+    <div class="snippet">
+      <div class="snip-label">Full name field — same logic, explicit field name</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="fn">SUBSTR</span>(
+  <span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Full_Name),
+    <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>),
+  <span class="num">1</span>, <span class="num">33</span>)</pre>
+    </div>
+
+    <div class="snippet">
+      <div class="snip-label">Define as computed field for reuse</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="kw">DEFINE FIELD</span> Clean_Name <span class="kw">COMPUTED</span>
+  <span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(
+    <span class="fn">ALLTRIM</span>(Name)),
+    <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>),
+  <span class="num">1</span>, <span class="num">33</span>)</pre>
+    </div>
+  </div>
+
+  <!-- 3. NAME COMBINATION FORMATS -->
+  <div class="sec-head">
+    <span class="sec-label">Name Combination Formats</span>
+    <div class="sec-line"></div>
+    <span class="sec-num">§3</span>
+  </div>
+
+  <p>Combining fields before cleaning is intentional — concatenation first, then INCLUDE strips any space between the two values, producing a compact joined key.</p>
+
+  <div class="grid">
+    <div class="snippet">
+      <div class="snip-label">First + Last name key</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="fn">SUBSTR</span>(
+  <span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(First_Name + Last_Name),
+    <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>),
+  <span class="num">1</span>, <span class="num">33</span>)</pre>
+    </div>
+
+    <div class="snippet">
+      <div class="snip-label">Last + First name key (surname-first matching)</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="fn">SUBSTR</span>(
+  <span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Last_Name + First_Name),
+    <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>),
+  <span class="num">1</span>, <span class="num">33</span>)</pre>
+    </div>
+  </div>
+
+  <!-- 4. INITIAL-BASED FORMATS -->
+  <div class="sec-head">
+    <span class="sec-label">Initial-Based &amp; Positional Formats</span>
+    <div class="sec-line"></div>
+    <span class="sec-num">§4</span>
+  </div>
+
+  <p>These patterns extract specific character positions after cleaning — useful when target systems use fixed-position codes rather than full-name keys.</p>
+
+  <div class="grid">
+    <div class="snippet">
+      <div class="snip-label">Last initial (2 chars) + full first name</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Last_Name),
+  <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">2</span>)
++
+<span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(First_Name),
+  <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">33</span>)</pre>
+    </div>
+
+    <div class="snippet">
+      <div class="snip-label">FL field — positions 1-2 and 5-6</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(FL),
+  <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">2</span>)
++
+<span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(FL),
+  <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">5</span>, <span class="num">2</span>)</pre>
+    </div>
+  </div>
+
+  <!-- 5. STRUCTURED ID PATTERNS -->
+  <div class="sec-head">
+    <span class="sec-label">Structured ID Patterns</span>
+    <div class="sec-line"></div>
+    <span class="sec-num">§5</span>
+  </div>
+
+  <div class="grid">
+    <div class="snippet">
+      <div class="snip-label">Last (4) + First (3) — compact 7-char key</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Last_Name),
+  <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">4</span>)
++
+<span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(First_Name),
+  <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">3</span>)</pre>
+    </div>
+
+    <div class="snippet">
+      <div class="snip-label">Multi-segment — First[1-2]+First[5-6]+Last[1-2]+Last[4-5]</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(First_Name),<span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">2</span>)
++<span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(First_Name),<span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">5</span>, <span class="num">2</span>)
++<span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Last_Name), <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">2</span>)
++<span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Last_Name), <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">4</span>, <span class="num">2</span>)</pre>
+    </div>
+
+    <div class="snippet">
+      <div class="snip-label">Name + Title code — 8-char compound key</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(First_Name),<span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">2</span>)
++<span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Last_Name), <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">2</span>)
++<span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Title),      <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">1</span>, <span class="num">2</span>)
++<span class="fn">SUBSTR</span>(<span class="fn">INCLUDE</span>(<span class="fn">UPPER</span>(Title),      <span class="str">"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>), <span class="num">8</span>, <span class="num">2</span>)</pre>
+    </div>
+  </div>
+
+  <!-- 6. EXCLUSION FILTERS -->
+  <div class="sec-head">
+    <span class="sec-label">Record Exclusion Filter</span>
+    <div class="sec-line"></div>
+    <span class="sec-num">§6</span>
+  </div>
+
+  <p>Use in an ACL WHERE clause or EXTRACT IF condition to exclude known non-target descriptions before analysis. Place exclusions at the top of your script to reduce dataset size early.</p>
+
+  <div class="snippet">
+    <div class="snip-label filter">Exclusion filter — WHERE / EXTRACT IF clause</div>
+    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    <pre><span class="fn">EXTRACT</span> <span class="kw">RECORD IF</span>
+  Description <span class="kw">&lt;&gt;</span> <span class="str">"Name Siemens"</span>
+  <span class="kw">AND</span> Description <span class="kw">&lt;&gt;</span> <span class="str">"Metro Police Department"</span>
+  <span class="kw">AND</span> Description <span class="kw">&lt;&gt;</span> <span class="str">"Metro Fire Rescue"</span>
+  <span class="kw">AND</span> Description <span class="kw">&lt;&gt;</span> <span class="str">"Facility Contractors"</span>
+  <span class="kw">AND</span> Description <span class="kw">&lt;&gt;</span> <span class="str">"Resort Spa"</span>
+  <span class="kw">AND</span> Description <span class="kw">&lt;&gt;</span> <span class="str">"Resort Cafe"</span>
+  <span class="kw">AND</span> Description <span class="kw">&lt;&gt;</span> <span class="str">"Uniform Cleaners"</span>
+  <span class="kw">AND</span> Description <span class="kw">&lt;&gt;</span> <span class="str">"Contractor Visitor Vendor"</span>
+  <span class="kw">AND</span> Description <span class="kw">&lt;&gt;</span> <span class="str">"Noodle Bar"</span>
+  <span class="kw">AND</span> Description <span class="kw">&lt;&gt;</span> <span class="str">"Food Court Vendors"</span>
+  <span class="kw">AND</span> Description <span class="kw">&lt;&gt;</span> <span class="str">"Emergency Management"</span>
+  <span class="kw">TO</span> <span class="str">"Filtered_Records"</span></pre>
+  </div>
+
+  <div class="callout tip">
+    For longer exclusion lists, maintain a secondary table of excluded descriptions and use a JOIN UNMATCH instead of hard-coded &lt;&gt; conditions. This makes the list maintainable without script edits.
+  </div>
+
+  <!-- 7. BEST PRACTICES -->
+  <div class="sec-head">
+    <span class="sec-label">Best Practices &amp; Common Use Cases</span>
+    <div class="sec-line"></div>
+    <span class="sec-num">§7</span>
+  </div>
+
+  <h3>Rules</h3>
+  <ul>
+    <li>Always run <code style="font-family:monospace;color:var(--cyan)">INCLUDE()</code> before <code style="font-family:monospace;color:var(--cyan)">SUBSTR()</code> — extract from clean data only</li>
+    <li>Always apply <code style="font-family:monospace;color:var(--cyan)">UPPER()</code> before any text matching, join, or duplicate check</li>
+    <li>Use fixed-length <code style="font-family:monospace;color:var(--cyan)">SUBSTR()</code> widths — variable keys cause join failures</li>
+    <li>Define cleaned fields with <code style="font-family:monospace;color:var(--cyan)">DEFINE FIELD … COMPUTED</code> so the logic runs once and is reused</li>
+    <li>Apply exclusion filters early — reduce the working dataset before any heavy operations</li>
+    <li>Test key uniqueness with <code style="font-family:monospace;color:var(--cyan)">DUPLICATES ON key_field</code> before using keys in joins</li>
+  </ul>
+
+  <h3>Common Use Cases</h3>
+  <ul>
+    <li>Duplicate employee or vendor detection across datasets with inconsistent name formatting</li>
+    <li>Employee/vendor ID generation for cross-system matching (HR vs. payroll vs. ERP)</li>
+    <li>Normalizing import data before joining to master tables</li>
+    <li>Cleaning access logs or transaction descriptions before frequency analysis</li>
+    <li>Fuzzy-match preparation — generate multiple key variants (First+Last, Last+First) and join on all of them</li>
+  </ul>
+
+</div>
+    <p><a href="/">&#8592; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-acl-name-standardization-manual",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

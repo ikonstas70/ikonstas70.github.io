@@ -1,0 +1,89 @@
+<!DOCTYPE html><html lang="en"><head>
+<link rel="canonical" href="https://blog.konstas.us/articles/ccie-advanced-lab/labs/20-full-integration/lab"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab 20 — Full Integration — All Protocols Simultaneously | CCIE Advanced Lab</title>
+<style>:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--green:#3fb950;--cyan:#58a6ff;--purple:#bc8cff;--orange:#f0883e;--red:#f85149;--yellow:#d29922;--text:#e6edf3;--muted:#8b949e;}
+*{box-sizing:border-box;margin:0;padding:0;}body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;}
+a{color:var(--cyan);text-decoration:none;}a:hover{text-decoration:underline;}
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:24px;position:sticky;top:0;z-index:100;}
+.nav-brand{color:var(--cyan);font-weight:bold;font-size:14px;}.hero{padding:40px 32px 24px;border-bottom:1px solid var(--border);}
+.lab-num{display:inline-block;background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:2px 10px;border-radius:12px;margin-bottom:12px;}
+.hero h1{font-size:26px;color:#e6edf3;margin-bottom:8px;}.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.badge{padding:3px 12px;border-radius:12px;font-size:11px;font-weight:bold;}
+.badge-blue{background:#1f6feb33;color:#58a6ff;border:1px solid #1f6feb;}.badge-green{background:#3fb95033;color:#3fb950;border:1px solid #3fb950;}
+.badge-purple{background:#bc8cff33;color:#bc8cff;border:1px solid #bc8cff;}.badge-yellow{background:#d2992233;color:#d29922;border:1px solid #d29922;}
+.badge-red{background:#f8514933;color:#f85149;border:1px solid #f85149;}.badge-orange{background:#f0883e33;color:#f0883e;border:1px solid #f0883e;}
+.content{max-width:1100px;margin:0 auto;padding:32px;}.section{margin-bottom:40px;}
+.section h2{font-size:16px;color:var(--cyan);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;}
+p{color:var(--muted);margin-bottom:12px;font-size:14px;}
+.topology-container{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px;overflow-x:auto;}
+.router-block{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:20px;overflow:hidden;}
+.router-header{background:var(--bg3);padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);}
+.router-name{color:#e6edf3;font-weight:bold;font-size:14px;}.router-role{color:var(--muted);font-size:12px;}.router-ip{color:var(--green);font-size:12px;margin-left:auto;}
+pre{background:#010409;border:none;padding:20px;overflow-x:auto;font-size:12px;color:#c9d1d9;line-height:1.5;}
+.verify-block{background:var(--bg2);border-left:3px solid var(--green);padding:16px 20px;margin:12px 0;border-radius:0 6px 6px 0;}
+.verify-block .cmd{color:var(--green);font-weight:bold;font-size:13px;}.verify-block .expected{color:var(--muted);font-size:12px;margin-top:6px;}
+.concept-box{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;padding:16px 20px;margin:12px 0;}
+.concept-box h4{color:var(--purple);margin-bottom:8px;font-size:13px;}.concept-box p{font-size:13px;color:var(--muted);}
+.footer{border-top:1px solid var(--border);padding:24px 32px;text-align:center;color:var(--muted);font-size:12px;}</style>
+</head><body>
+<nav class="nav"><span class="nav-brand">CCIE ADVANCED LAB</span><a href="../../index.html">← Back to Lab Index</a></nav>
+<div class="hero"><span class="lab-num">LAB 20 / 20</span><h1>Full Integration — All Protocols Simultaneously</h1><div class="badges"><span class="badge badge-blue">MPLS VPN</span><span class="badge badge-green">DMVPN Phase 3</span><span class="badge badge-purple">MP-BGP</span><span class="badge badge-orange">Multicast</span><span class="badge badge-yellow">IPv6 / 6PE</span><span class="badge badge-red">QoS</span></div></div>
+<div class="content">
+<div class="section"><h2>Active Nodes</h2>
+<div class="topology-container"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"  style="width:100%;height:auto;display:block;" style="background:#0d1117;font-family:'Courier New',monospace;">
+  <rect x="0" y="0" width="800" height="500" fill="#0d1117"/>
+  <text x="400" y="28" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="bold">20 FULL INTEGRATION</text>
+  <text x="400" y="46" text-anchor="middle" fill="#3fb950" font-size="11">Full Integration — Active: ALL 20 ROUTERS</text>
+
+  <!-- Reference topology note -->
+  <rect x="40" y="70" width="720" height="370" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="400" y="130" text-anchor="middle" fill="#8b949e" font-size="12">See master topology for full 20-router diagram</text>
+  <text x="400" y="155" text-anchor="middle" fill="#3fb950" font-size="14" font-weight="bold">Active Nodes: ALL 20 ROUTERS</text>
+
+  <!-- Color coded zone boxes -->
+  <rect x="80" y="175" width="620" height="200" rx="6" fill="#0d1117" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="400" y="200" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="bold">Full Integration</text>
+
+  <!-- Router nodes listed -->
+  <text x="400" y="240" text-anchor="middle" fill="#e6edf3" font-size="12">ALL 20 ROUTERS</text>
+
+  <!-- Protocol info -->
+  <text x="400" y="290" text-anchor="middle" fill="#8b949e" font-size="10">Refer to lab.html for complete step-by-step configuration</text>
+  <text x="400" y="310" text-anchor="middle" fill="#8b949e" font-size="10">and verification commands for each active router</text>
+
+  <!-- Legend strip -->
+  <rect x="40" y="455" width="720" height="28" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="60" y="462" width="14" height="14" rx="2" fill="#3fb950"/>
+  <text x="82" y="473" fill="#8b949e" font-size="10">Active Zone</text>
+  <rect x="200" y="462" width="14" height="14" rx="2" fill="#21262d"/>
+  <text x="222" y="473" fill="#8b949e" font-size="10">Inactive (dimmed)</text>
+  <text x="680" y="473" text-anchor="end" fill="#6e7681" font-size="9">Ioannis Alexander Konstas</text>
+</svg>
+</div>
+<p>Active routers: <strong style="color:#58a6ff">ALL 20 ROUTERS</strong></p></div>
+<div class="section"><h2>Key Concepts</h2>
+<div class="concept-box"><h4>Integration Architecture</h4><p>This final lab runs all 20 protocols simultaneously on the full topology. The MPLS backbone (Labs 01-05) provides VPN services to CE sites. Dual DMVPN regions (Labs 06-08) connect branch offices through MPLS-attached PE routers. BGP route reflection (Lab 09) scales iBGP. Communities and prefix filtering (Labs 11-12) control policy. OSPF multi-area (Lab 13) and OSPFv3 (Lab 14) run concurrently. EIGRP named mode (Lab 15) handles DMVPN routing. MPLS-TE tunnels (Lab 16) steer core traffic. Multicast (Lab 17) runs over both MPLS and DMVPN. QoS (Lab 18) marks and queues traffic end-to-end. 6PE (Lab 19) extends IPv6 across the IPv4 MPLS backbone.</p></div>
+<div class="concept-box"><h4>Troubleshooting Methodology</h4><p>In a full-integration scenario, troubleshoot from bottom up: Layer 1/2 physical connectivity → OSPF adjacencies (IGP) → LDP sessions (MPLS) → BGP sessions (overlay) → VRF routing (VPN) → DMVPN NHRP (overlay tunnels) → EIGRP over tunnels (dynamic routing) → Application reachability. Use structured isolation: ping from PE Loopback to PE Loopback (tests MPLS core), then VRF ping PE-to-CE (tests VPN), then CE-to-CE (tests end-to-end VPN). Each layer confirms the one below is working.</p></div>
+<div class="concept-box"><h4>Verification Checklist</h4><p>Complete verification requires confirming each protocol independently before testing integration points. The checklist below covers all 20 routers across all protocol domains. Run each command systematically and record expected vs actual output. Document any discrepancies — in the CCIE lab exam, partial credit is awarded per verified protocol, so thorough verification maximizes the score even if one subsystem has issues.</p></div></div>
+<div class="section"><h2>Full Integration Verification Checklist</h2>
+<div class="verify-block"><div class="cmd">show ip ospf neighbor — ALL CORE and EDGE routers</div><div class="expected">All adjacencies FULL. BFD Up. 8 OSPF neighbors total in backbone (4 CORE + 4 EDGE loopbacks).</div></div>
+<div class="verify-block"><div class="cmd">show mpls ldp neighbor — ALL CORE and EDGE</div><div class="expected">All LDP sessions Operational. Label range 1000-9999 confirmed. MD5 auth on all sessions.</div></div>
+<div class="verify-block"><div class="cmd">show ip bgp vpnv4 all summary</div><div class="expected">All PE routers (EDGE-1/2/3/4) and BORDER routers in Established state to RR (CORE-1/2). VPNv4 prefixes exchanged.</div></div>
+<div class="verify-block"><div class="cmd">show ip nhrp — HUB-WC-1, HUB-EC-1</div><div class="expected">All 3 spokes per hub registered. Dynamic mappings with NBMA addresses of all spokes.</div></div>
+<div class="verify-block"><div class="cmd">show ip eigrp neighbors — all HUB and SPK routers</div><div class="expected">Hub-to-spoke EIGRP adjacencies Up. After Phase 3 shortcuts: spoke-to-spoke neighbors may appear.</div></div>
+<div class="verify-block"><div class="cmd">ping vrf CORP 192.168.200.1 source 192.168.100.1 — from CE-CORP-1</div><div class="expected">CE-to-CE end-to-end VPN ping success. Traffic path: CE1 → PE1 → MPLS core → PE4 → CE2.</div></div>
+<div class="verify-block"><div class="cmd">ping 10.10.12.1 source 10.10.11.1 — from SPK-WC-1</div><div class="expected">Spoke-to-spoke via DMVPN. Initially 5 hops via hub; after Phase 3 shortcut: 2 hops direct.</div></div>
+<div class="verify-block"><div class="cmd">show ip pim rp mapping — all routers</div><div class="expected">Consistent RP mapping across all routers. RP 10.255.1.2 for 239.0.0.0/8.</div></div>
+<div class="verify-block"><div class="cmd">show bgp ipv6 unicast — PE routers</div><div class="expected">IPv6 prefixes from both CE sites present with labels. 6PE forwarding active.</div></div>
+<div class="verify-block"><div class="cmd">show policy-map interface Tunnel0 — SPK-WC-1</div><div class="expected">QoS policy active. Voice priority queue showing traffic. No tail drops in priority class.</div></div></div>
+</div>
+<footer class="footer">Ioannis Alexander Konstas — Cybersecurity &amp; Infrastructure Engineer · Miami, FL<br>Advanced CCIE RS Lab — Educational/Reference Use Only</footer>
+
+<div class="cfg-section">
+  <div class="cfg-section-title">Initial Configs — Load These First</div>
+  <div class="cfg-links"><a href="initial-configs/CORE-1-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-1-initial.cfg</a>
+<a href="initial-configs/CORE-2-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-2-initial.cfg</a>
+<a href="initial-configs/CORE-3-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-3-initial.cfg</a>
+<a href="initial-configs/CORE-4-initial.cfg" download class="cfg-dl-btn cfg-init">⬇ CORE-4-initial.cfg</a></div>
+</div>
+</body></html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/security-monitoring-stack">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building an Open-Source Security Monitoring Stack — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Security Operations</span>
+    <h1>Building an Open-Source Security Monitoring Stack</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>You don't need a six-figure SIEM to have real visibility. A capable open-source monitoring stack — network detection, host detection, traffic analytics, and a place to correlate it all — runs on modest hardware and teaches you more about your environment than any appliance. The trick is understanding what each tool sees, because they watch different things and the value is in combining them.</p>
+
+    <h2>Two vantage points: network and host</h2>
+    <p>Detection happens at two levels, and you want both:</p>
+    <ul>
+      <li><strong>Network (NIDS)</strong> — watches traffic on the wire. Sees scans, exploit attempts, C2 beacons, and lateral movement between hosts. Blind to anything encrypted or anything that never touches the monitored segment.</li>
+      <li><strong>Host (HIDS)</strong> — watches what happens on a machine: file changes, log events, new processes, privilege use. Sees what the network can't, but only on hosts running the agent.</li>
+    </ul>
+
+    <h2>The components</h2>
+    <h3>Suricata — network detection and traffic analysis</h3>
+    <p>Suricata is the modern NIDS/IPS: multi-threaded, rule-driven (compatible with the widely used ET/Snort rule ecosystems), and — underrated — a superb passive traffic logger, emitting structured JSON (EVE) for flows, DNS, TLS, and HTTP. Even before a single alert fires, that metadata is gold for hunting.</p>
+    <pre><code># Run Suricata on a mirror/SPAN port or tap; emit JSON for everything
+suricata -i eth1 -c /etc/suricata/suricata.yaml
+# Rules auto-updated via suricata-update; ET Open is free and strong
+suricata-update &amp;&amp; systemctl restart suricata
+# eve.json now streams flow/dns/tls/http/alert records -> ship to your log store</code></pre>
+
+    <h3>Wazuh — host detection, the maintained OSSEC successor</h3>
+    <p>OSSEC pioneered open-source HIDS — file integrity monitoring, log analysis, rootkit checks. Its actively developed successor, <strong>Wazuh</strong>, is what to deploy today: agents on every host feed a central manager doing file-integrity monitoring, log analysis, vulnerability detection, and compliance checks, with its own dashboard. Where the network stack sees the exploit attempt, Wazuh sees whether it landed.</p>
+
+    <h3>ntopng — real-time traffic visibility</h3>
+    <p>Suricata tells you about <em>bad</em> traffic; <strong>ntopng</strong> shows you <em>all</em> traffic — top talkers, per-host bandwidth, application breakdown, and historical flows. It's how you answer "what is this host suddenly sending 40 GB to?" and how you learn the baseline that makes anomalies visible.</p>
+    <pre><code># brew install ntopng   (or apt); point it at the same tap/SPAN
+ntopng -i eth1 -w 3000        # web UI on :3000, drill into any host/flow</code></pre>
+
+    <h3>A place to correlate: the log layer</h3>
+    <p>Detection tools are only as good as your ability to search and correlate across them. Ship Suricata's EVE JSON and Wazuh alerts into a log platform — the classic open choice is an Elasticsearch/OpenSearch + dashboards stack (Graylog is a lighter, friendlier alternative). Now a single timeline shows the network alert, the host that received it, and the traffic that followed.</p>
+
+    <h2>How the pieces reinforce each other</h2>
+    <p>The stack's power is correlation. A realistic detection chain:</p>
+    <ol>
+      <li><strong>Suricata</strong> alerts on an exploit attempt against a web server from an external IP.</li>
+      <li><strong>Wazuh</strong> on that server shows a new process spawned and a modified binary seconds later — the exploit landed.</li>
+      <li><strong>ntopng</strong> reveals the server now beaconing to an unfamiliar host on a regular interval — C2.</li>
+      <li>Your <strong>log platform</strong> ties the three events into one incident timeline for response.</li>
+    </ol>
+    <p>No single tool tells that story; together they do.</p>
+
+    <h2>Deployment notes</h2>
+    <ul>
+      <li><strong>Get the traffic.</strong> NIDS needs a SPAN/mirror port or a network tap at a chokepoint (internet edge, inter-VLAN). You can't detect what you can't see.</li>
+      <li><strong>Start in detection, not prevention.</strong> Run Suricata as IDS first; only move to inline IPS once you trust the rules and won't block legitimate traffic.</li>
+      <li><strong>Tune relentlessly.</strong> An untuned stack drowns you in false positives (see the base-rate problem in <a href="/data-science/security-analytics">security analytics</a>). Suppress noise, keep signal.</li>
+      <li><strong>Protect the monitoring plane.</strong> Your SIEM holds the evidence; segment and harden it — it's a prime target.</li>
+    </ul>
+
+    <blockquote>Real visibility comes from combining vantage points: Suricata on the wire, Wazuh on the host, ntopng for the baseline, and a log layer to correlate. Each is blind alone; together they tell the whole story of an intrusion.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=security-monitoring-stack",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

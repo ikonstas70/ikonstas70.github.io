@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/data-science/classical-ml">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classical Machine Learning Still Wins on Tables — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/" class="active">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Machine Learning</span>
+    <h1>Classical Machine Learning Still Wins on Tables</h1>
+    <p class="meta">Data Science Series &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Through every hype cycle, one result keeps replicating: on tabular business data — churn, fraud, risk, demand — gradient-boosted trees match or beat deep learning while training in minutes on a laptop and explaining themselves afterward. Classical ML isn't the beginner track; for most structured-data problems it is the destination.</p>
+
+    <h2>The supervised learning loop</h2>
+    <p>Everything in this part is one loop: split data honestly, fit on train, tune on validation, report on a test set touched exactly once.</p>
+    <pre><code>from sklearn.model_selection import train_test_split
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.metrics import average_precision_score
+
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42)
+
+model = HistGradientBoostingClassifier(max_iter=300)
+model.fit(X_tr, y_tr)
+print(average_precision_score(y_te, model.predict_proba(X_te)[:, 1]))</code></pre>
+    <p>Baseline first, always: a majority-class guesser or single-feature rule. A model that can't visibly beat the dumb baseline is a rumor with a pipeline.</p>
+
+    <h2>Where models actually fail: leakage</h2>
+    <p>Data leakage — information from the future or the label sneaking into features — is the most expensive bug in applied ML, because it makes offline results spectacular and production results imaginary. The classics:</p>
+    <ul>
+      <li>A feature computed <em>after</em> the outcome ("account_closed_date" predicting churn — flawlessly).</li>
+      <li>Preprocessing fit on the full dataset before splitting (the test set contaminates the scaler). Fix: put every transform inside a scikit-learn <code>Pipeline</code>, so fitting happens only on training folds.</li>
+      <li>Random splits on time-ordered data — training on Tuesday to predict Monday. Time-based data gets time-based splits, full stop.</li>
+      <li>Duplicate or near-duplicate rows straddling the split.</li>
+    </ul>
+    <p>The smell test: if results look too good, they are. Investigate before celebrating.</p>
+
+    <h2>Metrics that match reality</h2>
+    <p>Accuracy dies on imbalance — 99.9% accuracy on 0.1% fraud is the model saying "nothing is fraud" with confidence. Use precision/recall and the precision-recall curve for rare classes; pick the operating threshold by the actual cost of each error (a missed fraud vs. a blocked customer are not symmetric). And calibrate: <code>predict_proba</code> is only a probability if you've checked it against reality (<code>sklearn.calibration</code>).</p>
+
+    <h2>The tabular pecking order</h2>
+    <ul>
+      <li><strong>Logistic/linear regression</strong> — the interpretable baseline; sometimes it just wins, and it always explains itself.</li>
+      <li><strong>Gradient-boosted trees</strong> (scikit-learn's HistGB, XGBoost, LightGBM) — the workhorse. Handles mixed types, missing values, and nonlinearity without ceremony.</li>
+      <li><strong>Everything else</strong> — earns its place only by beating the boosted baseline in honest cross-validation, by more than the bootstrap noise (Part 4).</li>
+    </ul>
+    <p>For explanations, SHAP values show which features drove each prediction — increasingly a compliance requirement, not a courtesy.</p>
+
+    <h2>Checkpoint</h2>
+    <p>Pick a real binary-outcome dataset. Build: baseline → logistic regression in a Pipeline → boosted trees, with stratified cross-validation, PR-AUC, a leakage audit written down, and one paragraph on which errors cost what. That artifact is a portfolio piece; most production models are exactly this, done carefully.</p>
+
+    <p><a href="/data-science/deep-learning">Next: Deep Learning with PyTorch →</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=data-science-classical-ml",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

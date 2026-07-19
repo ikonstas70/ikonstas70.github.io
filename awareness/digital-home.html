@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/digital-home">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Securing the Connected Home — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Home</span>
+    <h1>Securing the Connected Home</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>The average home now runs more networked computers than a 1990s small business: cameras, TVs, doorbells, speakers, thermostats, plugs, vacuum robots, sometimes the washing machine. Each is a full computer with a network stack, a cloud account, and a firmware team of unknown ambition. You are, whether you enjoy it or not, the administrator of a small enterprise. Administer it like one — it takes an afternoon.</p>
+
+    <h2>Why anyone would hack a lightbulb</h2>
+    <p>Nobody wants your lightbulb. They want what it's connected to: a foothold <em>inside</em> your network to reach real devices, a residential IP to launder traffic through, a node for a botnet, or — for cameras and microphones — your actual home life. IoT devices are targeted precisely because they're numerous, unpatched, and forgotten.</p>
+
+    <h2>The five-step pass</h2>
+    <h3>1. Start at the router</h3>
+    <p>Everything flows through it, so harden it first: change default admin credentials, update firmware, disable WPS and remote administration, use WPA3 or WPA2 with a long passphrase. Full detail in <a href="/awareness/wifi">the Wi-Fi guide</a>.</p>
+    <h3>2. Segment: gadgets on the guest network</h3>
+    <p>The single highest-value move in home security. Put every IoT device on the guest network (or an IoT VLAN if your gear speaks that language), isolated from laptops and phones. When the discount camera turns hostile, it finds itself alone in a room with other appliances instead of beside your tax documents. Client isolation on, if the router offers it.</p>
+    <h3>3. Change every default password</h3>
+    <p>Default credentials are public knowledge — literally scripted into scanning tools. Any device with an admin page or cloud account gets a unique generated password in your password manager, and MFA on the cloud account if offered. Cameras first: they are the devices with eyes.</p>
+    <h3>4. Update, or admit it's abandoned</h3>
+    <p>Enable auto-update on everything that supports it. Twice a year, check the stragglers. A device whose manufacturer stopped shipping security updates — or went out of business — is not vintage, it is unguarded. Replace it or wall it off.</p>
+    <h3>5. Buy like an administrator</h3>
+    <p>Before the next gadget: does the vendor publish security updates, and for how long? Does it work without a cloud account? Is the company likely to exist in five years? A no-name camera that's $20 cheaper is subsidized by someone — usually your network.</p>
+
+    <h2>Cameras and microphones, specifically</h2>
+    <ul>
+      <li>Point cameras at entry points, not living spaces. What the camera can't see can't leak.</li>
+      <li>MFA on the camera cloud account is non-negotiable — most "camera hacks" are just credential stuffing against reused passwords.</li>
+      <li>Know your mute switches, and use the physical ones; software mute is a promise, hardware mute is a fact.</li>
+    </ul>
+
+    <blockquote>Stop plugging in and forgetting. Think of every gadget as an employee with a network badge. Connect them in their own room, not yours.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-digital-home",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

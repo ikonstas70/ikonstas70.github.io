@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/ransomware-defense">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ransomware Defense in 2026 — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Cybersecurity</span>
+    <h1>Ransomware Defense in 2026</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Ransomware stopped being a malware problem and became a business model years ago. Today's operators run affiliate programs, help desks, and leak sites; they buy access from initial-access brokers rather than writing droppers; and they steal your data <em>before</em> they encrypt it, so that clean backups — still essential — no longer end the negotiation. Defending against it means thinking about the whole intrusion lifecycle, not just the moment files start turning into gibberish.</p>
+
+    <h2>How organizations actually get hit</h2>
+    <p>The forensic reports are monotonous, which is good news — monotony is defensible:</p>
+    <ul>
+      <li><strong>Valid credentials.</strong> Phished, purchased, or sprayed against an exposed VPN or RDP portal without MFA. This is the leading initial vector, and it's a login, not an exploit.</li>
+      <li><strong>Unpatched external services.</strong> Edge devices — VPN concentrators, firewalls, file-transfer appliances — with an n-day vulnerability, exploited within hours of disclosure.</li>
+      <li><strong>Phishing to execution.</strong> A user runs an attachment or a malicious installer delivered by search-ad malvertising.</li>
+    </ul>
+    <p>After entry, the pattern is consistent: establish persistence, dump credentials, move laterally, find and exfiltrate the crown-jewel data, delete backups, then detonate encryption — often on a weekend. The dwell time between entry and encryption is where defense lives.</p>
+
+    <h2>The controls that break the chain</h2>
+    <h3>Identity first</h3>
+    <p>Phishing-resistant MFA (passkeys or FIDO2 hardware keys) on every external entry point and every privileged account is the single highest-value control, because it defeats the leading initial vector outright. Pair it with least privilege — no daily-driver domain admins — so one stolen credential doesn't unlock the estate.</p>
+    <h3>Backups that survive the attacker</h3>
+    <p>The 3-2-1-1-0 rule is the modern standard: three copies, two media, one offsite, <strong>one immutable or offline</strong>, and <strong>zero errors on a tested restore</strong>. Immutability is the point — object-lock or air-gapped backups that the ransomware operator cannot delete even with domain admin. A backup you have never restored is a hypothesis, not a plan.</p>
+    <h3>Detection at the endpoint and in identity</h3>
+    <p>EDR/XDR watches for the <em>behavior</em> of an intrusion — credential dumping, suspicious lateral movement, shadow-copy deletion — rather than known file signatures. Just as important in 2026: identity-threat detection, because the attacker who logged in with valid credentials leaves no malware to find, only anomalous authentication.</p>
+
+    <h2>Catch the tell: shadow-copy deletion</h2>
+    <p>A near-universal precursor to encryption on Windows is the destruction of volume shadow copies and backup catalogs. Alerting on it buys precious minutes. A minimal Sysmon-plus-PowerShell watch:</p>
+    <pre><code># Alert on the classic "destroy the safety net" commands.
+# Wire this to your SIEM via Sysmon Event ID 1 (process creation).
+$suspicious = @(
+    'vssadmin(\.exe)?\s+delete\s+shadows',
+    'wmic\s+shadowcopy\s+delete',
+    'wbadmin\s+delete\s+catalog',
+    'bcdedit.*recoveryenabled\s+no',
+    'Set-MpPreference\s+-Disable'   # tampering with Defender
+) -join '|'
+
+Get-WinEvent -FilterHashtable @{ LogName='Microsoft-Windows-Sysmon/Operational'; Id=1 } |
+    Where-Object { $_.Message -match $suspicious } |
+    ForEach-Object {
+        # Ship a high-severity alert; every second counts here.
+        Send-SecurityAlert -Severity Critical -Source $env:COMPUTERNAME -Detail $_.Message
+    }</code></pre>
+    <p>Better still, block it: modern EDR and Windows' own controlled-folder-access and tamper-protection features can deny these operations rather than merely log them.</p>
+
+    <h2>Assume-breach detection with canaries</h2>
+    <p>Encryption is loud once it starts. Canary files — decoy documents seeded across shares — turn "loud" into "instant": a process touching them is almost certainly ransomware sweeping the filesystem. A lightweight watcher:</p>
+    <pre><code>import time
+from pathlib import Path
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+CANARIES = {p.resolve() for p in Path("/srv/share").rglob(".~canary_*.docx")}
+
+class Tripwire(FileSystemEventHandler):
+    def on_any_event(self, event):
+        if Path(event.src_path).resolve() in CANARIES:
+            # A legitimate user never opens these. Isolate the host now.
+            isolate_host(reason=f"canary tripped: {event.src_path}")
+
+obs = Observer()
+obs.schedule(Tripwire(), "/srv/share", recursive=True)
+obs.start()
+while True:
+    time.sleep(1)</code></pre>
+    <p>Hook <code>isolate_host()</code> into your EDR's network-quarantine API so a trip pulls the machine off the network in seconds — faster than a human can read the alert.</p>
+
+    <h2>The response plan you write before you need it</h2>
+    <ul>
+      <li><strong>Isolate, don't power off</strong> — pulling the network stops spread and exfiltration while preserving memory forensics.</li>
+      <li><strong>Know who decides.</strong> Paying is a business, legal, and possibly sanctions decision (paying certain sanctioned groups is itself unlawful). That conversation cannot start at 3 a.m.</li>
+      <li><strong>Assume data was stolen.</strong> Plan breach notification in parallel with recovery; disclosure clocks start regardless of your readiness.</li>
+      <li><strong>Restore from immutable backups</strong> to clean, rebuilt hosts — never onto the compromised estate.</li>
+      <li><strong>Run a tabletop twice a year.</strong> The cheapest control in this article.</li>
+    </ul>
+
+    <blockquote>Ransomware is extortion with good UX. Beat it with identity you can't phish, backups it can't reach, and detection that fires on behavior — then rehearse the bad day before it arrives.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=ransomware-defense",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

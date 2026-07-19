@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/post-quantum-cryptography">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Post-Quantum Cryptography Is Now a Deadline — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Cryptography</span>
+    <h1>Post-Quantum Cryptography Is Now a Deadline</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>For thirty years, "quantum computers will break RSA" was a slide at the end of a talk. It has now moved into the migration column of real roadmaps — not because a cryptographically relevant quantum computer exists yet, but because the standards are final, the browsers already shipped it, and the data you encrypt today can be stolen today and decrypted later. Post-quantum cryptography stopped being a research topic and became a program-management problem.</p>
+
+    <h2>Why the clock is already running</h2>
+    <p>A sufficiently large quantum computer can factor integers and solve discrete logarithms efficiently — which breaks RSA, Diffie-Hellman, and elliptic-curve cryptography, the asymmetric backbone of nearly everything. The threat isn't only future traffic. Under <strong>harvest-now, decrypt-later</strong>, an adversary records your encrypted data now and waits for the hardware. Anything that must stay confidential past the arrival of quantum computers is <em>already</em> at risk. Symmetric crypto (AES) and hashes (SHA-2/3) are far less affected — Grover's algorithm only halves their effective strength, answered by using AES-256.</p>
+
+    <h2>The standards are done</h2>
+    <p>After a multi-year competition, NIST finalized its first post-quantum standards in 2024. The names you'll actually type:</p>
+    <table>
+      <tr><th>Standard</th><th>Algorithm</th><th>Role</th></tr>
+      <tr><td>FIPS 203</td><td>ML-KEM (formerly CRYSTALS-Kyber)</td><td>Key encapsulation — replaces ECDH key exchange</td></tr>
+      <tr><td>FIPS 204</td><td>ML-DSA (formerly CRYSTALS-Dilithium)</td><td>Digital signatures — general-purpose</td></tr>
+      <tr><td>FIPS 205</td><td>SLH-DSA (SPHINCS+)</td><td>Hash-based signatures — conservative backup</td></tr>
+    </table>
+    <p>ML-KEM and ML-DSA are lattice-based, resting on problems like Learning With Errors that resist both classical and quantum attack. SLH-DSA trades size and speed for security resting only on hash functions — the hedge in case a lattice weakness is ever found. A further signature standard (FN-DSA/Falcon) is finalizing for size-constrained uses.</p>
+
+    <h2>The migration principle: hybrid, not replacement</h2>
+    <p>Nobody sane rips out battle-tested ECDH on faith in a new algorithm. The deployed answer — already the default in major browsers and TLS libraries — is <strong>hybrid key exchange</strong>: run a classical curve (X25519) and ML-KEM together and combine both shared secrets, so the connection is safe unless <em>both</em> are broken. The most widely deployed instance is <code>X25519MLKEM768</code>. You are very likely already negotiating it without noticing.</p>
+
+    <h2>Doing it in code today</h2>
+    <p>Hybrid TLS is largely a matter of enabling the group. With OpenSSL 3.5+ (which ships ML-KEM natively):</p>
+    <pre><code># Server or client: prefer the hybrid group, fall back to classical
+openssl s_client -connect example.com:443 \
+    -groups X25519MLKEM768:X25519:P-256
+
+# Inspect what was negotiated
+openssl s_client -connect example.com:443 -groups X25519MLKEM768 \
+    2>/dev/null | grep -i "Negotiated TLS.*group"</code></pre>
+    <p>Directly exercising the KEM — encapsulate to a public key, decapsulate with the private key, both sides derive the same secret:</p>
+    <pre><code>from cryptography.hazmat.primitives.asymmetric import mlkem  # OpenSSL 3.5-backed
+
+# Recipient generates a keypair; publishes the public key
+private_key = mlkem.MLKEM768.generate()
+public_key = private_key.public_key()
+
+# Sender encapsulates: gets a shared secret + a ciphertext to send
+ciphertext, sender_secret = public_key.encapsulate()
+
+# Recipient decapsulates the ciphertext back to the same secret
+recipient_secret = private_key.decapsulate(ciphertext)
+assert sender_secret == recipient_secret          # now key AES-256-GCM with it</code></pre>
+    <p>For signatures, ML-DSA drops into the same libraries; the practical cost is larger keys and signatures (kilobytes, not bytes), which matters for certificate chains and constrained links but not for most application traffic.</p>
+
+    <h2>A migration you can actually run</h2>
+    <ul>
+      <li><strong>Inventory your cryptography.</strong> You cannot migrate what you can't find. Catalogue where RSA/ECC live — TLS endpoints, VPNs, code signing, secrets management, embedded devices. This <em>is</em> the hard part.</li>
+      <li><strong>Prioritize by data lifetime.</strong> Long-lived secrets and anything subject to harvest-now-decrypt-later go first.</li>
+      <li><strong>Turn on hybrid TLS</strong> where your stack supports it — often just a library upgrade and a config line.</li>
+      <li><strong>Demand crypto-agility from vendors.</strong> The device that can't have its algorithms updated is the one you'll be fighting in 2030.</li>
+      <li><strong>Keep AES-256 and SHA-384/512</strong> on the symmetric side and you're already quantum-resistant there.</li>
+    </ul>
+
+    <blockquote>The quantum computer that breaks RSA may be a decade away, but the data you must protect for a decade is being encrypted today. Standards are final, hybrid is shipping — the only wrong move left is waiting.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=post-quantum-cryptography",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

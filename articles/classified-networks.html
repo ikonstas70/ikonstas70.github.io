@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/classified-networks">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inside Classified Networks: NIPRNet, SIPRNet, and JWICS — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Networking</span>
+    <h1>Inside Classified Networks: NIPRNet, SIPRNet, and JWICS</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Most people picture "government networks" as one thing. In reality, sensitive communications run on a tiered set of physically and logically separated networks, each matched to a classification level. Understanding this architecture is a masterclass in the security principle that matters most when the stakes are highest: <strong>separation by classification</strong>. You don't protect Secret data by putting a better firewall on the public internet — you build a different network entirely.</p>
+
+    <h2>The three tiers</h2>
+    <table>
+      <tr><th>Network</th><th>Level</th><th>Purpose</th></tr>
+      <tr><td>NIPRNet</td><td>Unclassified (sensitive)</td><td>Day-to-day non-classified operations, internet access</td></tr>
+      <tr><td>SIPRNet</td><td>Secret</td><td>Classified operational and warfighting traffic up to Secret</td></tr>
+      <tr><td>JWICS</td><td>Top Secret / SCI</td><td>Intelligence community, the most sensitive material</td></tr>
+    </table>
+    <p>The core idea: these are <strong>separate networks</strong>, not different permission levels on one network. Data at each classification lives on infrastructure built for that classification, and moving information between them is a deliberate, controlled, audited act — never a casual copy-paste.</p>
+
+    <h2>SIPRNet in focus</h2>
+    <p>The Secret Internet Protocol Router Network is the classified counterpart to the civilian internet at the Secret level — a global, packet-switched data network carrying command-and-control, messaging, web services, email, and file transfer for classified operations. It provides secure, interoperable connectivity to mission partners across a wide range of access speeds, and connects into tactical environments through dedicated gateway sites. Functionally it behaves like the internet you know — you browse classified web pages and send email — but everything about how it's built is shaped by one requirement: keep Secret information inside the boundary.</p>
+
+    <h2>How separation is actually enforced</h2>
+    <p>The architecture rests on a few uncompromising principles worth studying because they generalize:</p>
+    <ul>
+      <li><strong>Physical and cryptographic isolation.</strong> Classified networks are air-gapped or separated from lower networks, and traffic riding shared transport is protected by strong, government-grade encryption (Type 1 cryptographic devices). The wire may be shared; the plaintext never crosses the boundary.</li>
+      <li><strong>Classification segmentation.</strong> Each network handles exactly one classification level. A machine on the Secret network is a Secret machine, full stop — it doesn't also touch Unclassified, because that adjacency is exactly where leaks happen.</li>
+      <li><strong>Controlled cross-domain transfer.</strong> Moving data between tiers requires a Cross-Domain Solution — a hardened, heavily audited guard that enforces policy on what may pass, in which direction. This is the technical embodiment of "no write down" from formal security models (see <a href="/articles/security-models">Formal Security Models</a>): high-side data cannot casually flow to the low side.</li>
+      <li><strong>Customer-provided encryption and strict accreditation.</strong> Connecting to these networks demands approved crypto equipment and passing a rigorous accreditation process — you don't just plug in.</li>
+    </ul>
+
+    <h2>The lesson for every network</h2>
+    <p>You will likely never touch SIPRNet, but its design teaches the most durable idea in security: <strong>when data is sensitive enough, the answer is separation, not just protection.</strong> The same logic scales down to any environment. Put your industrial control systems on their own segment. Isolate your IoT devices from your workstations (see <a href="/awareness/digital-home">Securing the Connected Home</a>). Keep your crown-jewel database off the network that runs the coffee-machine firmware. Microsegmentation and zero-trust architectures (see <a href="/articles/firewall-architectures">Firewall Architectures</a>) are the commercial world independently rediscovering what classified networks institutionalized decades ago: the strongest boundary is the one the data never crosses.</p>
+
+    <h2>The tradeoff, stated honestly</h2>
+    <p>Separation buys security at the cost of convenience and interoperability — moving information between tiers is deliberately hard, which is both the point and the friction. Every architecture that takes classification seriously accepts that tax. The engineering question is never "how do we make it seamless," but "how do we make the necessary crossings controlled, minimal, and auditable."</p>
+
+    <blockquote>Sensitive networks aren't one network with permissions — they're separate networks by classification, bridged only through hardened, audited guards. When data matters enough, you don't protect the boundary better; you build a boundary the data can't cross.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=classified-networks",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

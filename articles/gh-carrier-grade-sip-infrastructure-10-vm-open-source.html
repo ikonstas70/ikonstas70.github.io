@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-carrier-grade-sip-infrastructure-10-vm-open-source">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carrier-Grade SIP Infrastructure: 10-VM Open Source Telecom Stack Architecture — Konstas Engineering Notes</title>
+<meta name="description" content="← All ArticlesArchitecture, network segmentation, jumbo frames, and call flow for a production VoIP carrier stack built entirely on open source software.OverviewA product">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Telecom</span>
+    <h1>Carrier-Grade SIP Infrastructure: 10-VM Open Source Telecom Stack Architecture</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<a href="../index.html">← All Articles</a><p>Architecture, network segmentation, jumbo frames, and call flow for a production VoIP carrier stack built entirely on open source software.</p><h2>Overview</h2><p>A production-grade carrier telecom infrastructure built from the ground up on a local virtualization platform.</p><p>This article documents the design and implementation of a <strong>10-virtual-machine carrier telecom stack</strong> using only open source software. The platform is capable of handling carrier-grade voice traffic, billing, and monitoring — with zero proprietary licensing costs on the core stack.</p><p>Platform-agnostic design: everything here maps to any hypervisor or cloud provider. The IPs, hostnames, and sizing are illustrative.</p><h2>VM Roles and Network Assignments</h2><p>Ten Ubuntu 22.04 LTS VMs across five functional roles — each with 8 GB RAM, 4 vCPU, 30 GB thin-provisioned disk.</p><table><thead><tr><th>VM</th><th>Role</th><th>Networks</th></tr></thead><tbody><tr><td>kamailio-01</td><td>SIP Proxy — primary</td><td>External + Voice + Sync</td></tr><tr><td>kamailio-02</td><td>SIP Proxy — secondary</td><td>External + Voice + Sync</td></tr><tr><td>asterisk-01</td><td>PBX — primary</td><td>External + Voice + Data</td></tr><tr><td>asterisk-02</td><td>PBX — secondary</td><td>External + Voice + Data</td></tr><tr><td>asterisk-03</td><td>PBX — tertiary</td><td>External + Voice + Data</td></tr><tr><td>a2billing-01</td><td>Billing — primary</td><td>External + Data</td></tr><tr><td>a2billing-02</td><td>Billing — secondary</td><td>External + Data</td></tr><tr><td>mariadb-01</td><td>Database — primary</td><td>Data + Sync only</td></tr><tr><td>mariadb-02</td><td>Database — secondary</td><td>Data + Sync only</td></tr><tr><td>monitor-01</td><td>Security + Monitoring</td><td>External + Voice + Data</td></tr></tbody></table><h2>Network Segmentation: Five Isolated Virtual Networks</h2><p>Five virtual networks serve distinct traffic types — three of them have no physical NIC attachment at all.</p><table><thead><tr><th>Network</th><th>Physical Uplink</th><th>MTU</th><th>Purpose</th></tr></thead><tbody><tr><td>Management</td><td>Yes</td><td>1500</td><td>Hypervisor management — not visible to VMs</td></tr><tr><td>External</td><td>Yes</td><td>1500</td><td>SIP trunks, internet, web portals</td></tr><tr><td>Voice</td><td>None</td><td>9000</td><td>Kamailio ↔ Asterisk internal SIP/RTP</td></tr><tr><td>Data</td><td>None</td><td>9000</td><td>MariaDB ↔ A2Billing ↔ Asterisk</td></tr><tr><td>Sync</td><td>None</td><td>9000</td><td>DB replication + cluster heartbeat</td></tr></tbody></table><h3>Why No Physical Uplink on Internal Networks?</h3><p>Voice, Data, and Sync have no physical NIC attached. This is a <strong>hypervisor-level air gap</strong> — not a firewall rule, not an ACL. There is literally no wire connecting these networks to the outside world. MariaDB nodes are physically unreachable from the internet regardless of firewall configuration.</p><p>This is the correct approach for database servers in any multi-tier VoIP architecture. A firewall can be misconfigured. An air gap cannot.</p><h3>Why MTU 9000 (Jumbo Frames) on Internal Networks?</h3><p>Standard MTU 1500 was designed for shared Ethernet in the 1980s. On an internal virtual switch with no physical limitations, jumbo frames deliver:</p><ul><li>6× more payload per packet</li><li>Fewer interrupts and context switches per MB transferred</li><li>Measurable improvement on MariaDB replication streams, CDR writes, and SIP/RTP inter-service flows</li></ul><p>No routing or firewall changes needed — jumbo frames apply only within the isolated virtual switch.</p><h2>Call Flow Architecture</h2><p>Every call traverses the stack in a defined, auditable sequence.</p><pre>Internet / SIP Carrier
+        │
+        ▼
+┌──────────────────────────────────────┐
+│  Kamailio-01 │ Kamailio-02           │
+│  SIP Proxy + Load Balancer + SBC     │  ← All SIP enters and exits here
+│  STIR/SHAKEN + Fraud Protection      │
+└──────────────┬───────────────────────┘
+               │ Voice network (MTU 9000, isolated, no uplink)
+        ┌──────┴───────────────────────────────────┐
+        │  Asterisk-01 · Asterisk-02 · Asterisk-03  │
+        │  PBX + Dialplan + AGI + CDR               │
+        └──────────────────┬───────────────────────┘
+                           │ Data network (MTU 9000, isolated)
+        ┌──────────────────┴───────────────────────┐
+        │  A2Billing-01 │ A2Billing-02              │
+        │  Real-time billing, rate decks, IVR       │
+        └──────────────────┬───────────────────────┘
+                           │
+        ┌──────────────────┴───────────────────────┐
+        │  MariaDB-01 │ MariaDB-02                  │
+        │  CDRs, accounts, rates, DIDs (Sync net)   │
+        └───────────────────────────────────────────┘</pre><h3>Least-Cost Routing</h3><p>Kamailio's <code>carrierroute</code> module selects the cheapest SIP trunk per destination prefix before dispatching to Asterisk. Multiple trunk providers can be configured with per-prefix rate comparisons updated in real time.</p><h2>Technology Stack</h2><table><thead><tr><th>Layer</th><th>Software</th><th>License</th></tr></thead><tbody><tr><td>OS</td><td>Ubuntu 22.04 LTS</td><td>Free</td></tr><tr><td>PBX Engine</td><td>Asterisk 20 LTS</td><td>GPLv2</td></tr><tr><td>SIP Proxy / LB</td><td>Kamailio</td><td>GPLv2</td></tr><tr><td>Media Proxy</td><td>RTPEngine</td><td>GPLv2</td></tr><tr><td>Billing Engine</td><td>A2Billing</td><td>AGPLv3</td></tr><tr><td>Database</td><td>MySQL 8 / MariaDB</td><td>GPLv2</td></tr><tr><td>Monitoring</td><td>Grafana + Prometheus</td><td>Apache 2.0</td></tr></tbody></table><p>Total software licensing cost for this stack: $0. All components are open source and production-proven at carrier scale.</p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-carrier-grade-sip-infrastructure-10-vm-open-source",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

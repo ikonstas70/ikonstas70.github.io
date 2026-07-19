@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-layered-security-stack">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layered Security Stack — Konstas Engineering Notes</title>
+<meta name="description" content="A privacy-first, full-tunnel architecture combining WireGuard, encrypted DNS, network IDS, and SIEM — deployed on a client/server model.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Architecture</span>
+    <h1>Layered Security Stack</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<p>A privacy-first, full-tunnel architecture combining WireGuard, encrypted DNS, network IDS, and SIEM — deployed on a client/server model.</p>
+  <div class="header-tags">
+    <span class="tag">WireGuard</span>
+    <span class="tag">Snort IDS</span>
+    <span class="tag">Wazuh SIEM</span>
+    <span class="tag">dnscrypt-proxy</span>
+    <span class="tag">iptables</span>
+    <span class="tag">fail2ban</span>
+    <span class="tag">Cloudflare Tunnel</span>
+    <span class="tag">OSSEC</span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- TOPOLOGY -->
+<section>
+  <h2><span class="icon">🗺</span>Architecture Overview</h2>
+  <p class="section-sub">Full-tunnel VPN exit node with layered defense — IDS, SIEM, encrypted DNS, and blocklists.</p>
+
+  <div class="topo-shell">
+    <div class="topo-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="topo-label">network-topology · layered-security-stack</span>
+    </div>
+    <div class="topo-body">
+
+      <div class="tier tier-client">
+        <div class="tier-head">Client Machine</div>
+        <div class="tier-nodes">
+          <div class="node"><span class="node-icon">🔐</span><div class="node-info"><span class="node-name">WireGuard</span><span class="node-sub">Full Tunnel · 0.0.0.0/0</span></div></div>
+          <div class="node"><span class="node-icon">📊</span><div class="node-info"><span class="node-name">Wazuh Agent</span><span class="node-sub">SIEM · FIM · Events</span></div></div>
+          <div class="node"><span class="node-icon">👁</span><div class="node-info"><span class="node-name">Snort IDS</span><span class="node-sub">Passive · local tap</span></div></div>
+          <div class="node"><span class="node-icon">🏠</span><div class="node-info"><span class="node-name">OSSEC Agent</span><span class="node-sub">HIDS · auth logs</span></div></div>
+          <div class="node"><span class="node-icon">☁️</span><div class="node-info"><span class="node-name">cloudflared</span><span class="node-sub">QUIC · no open ports</span></div></div>
+        </div>
+      </div>
+
+      <div class="topo-conn">
+        <div class="conn-stem"></div>
+        <div class="conn-pill">UDP · ChaCha20-Poly1305 · port 51820 · PersistentKeepalive 25s</div>
+        <div class="conn-arrow">▼</div>
+      </div>
+
+      <div class="tier tier-vps">
+        <div class="tier-head">VPS / Exit Node · 150.x.x.x</div>
+        <div class="tier-nodes">
+          <div class="node"><span class="node-icon">🔐</span><div class="node-info"><span class="node-name">WireGuard Server</span><span class="node-sub">:51820 · VPN endpoint</span></div></div>
+          <div class="node"><span class="node-icon">🌐</span><div class="node-info"><span class="node-name">dnscrypt-proxy</span><span class="node-sub">DoH · :53 · VPN only</span></div></div>
+          <div class="node"><span class="node-icon">👁</span><div class="node-info"><span class="node-name">Snort IDS</span><span class="node-sub">WAN + VPN taps</span></div></div>
+          <div class="node"><span class="node-icon">🧱</span><div class="node-info"><span class="node-name">iptables + ipset</span><span class="node-sub">NAT · 1,800+ blocks</span></div></div>
+          <div class="node"><span class="node-icon">🚫</span><div class="node-info"><span class="node-name">fail2ban</span><span class="node-sub">SSH guard · auto-ban</span></div></div>
+          <div class="node"><span class="node-icon">📊</span><div class="node-info"><span class="node-name">Wazuh Manager</span><span class="node-sub">Correlation · alerts</span></div></div>
+          <div class="node"><span class="node-icon">🔒</span><div class="node-info"><span class="node-name">nginx</span><span class="node-sub">TLS 1.2/1.3 · HSTS</span></div></div>
+        </div>
+      </div>
+
+      <div class="topo-conn">
+        <div class="conn-stem"></div>
+        <div class="conn-pill">NAT MASQUERADE · iptables POSTROUTING · client IP hidden</div>
+        <div class="conn-arrow">▼</div>
+      </div>
+
+      <div class="tier tier-internet">
+        <div class="tier-head">Internet</div>
+        <div class="tier-nodes">
+          <div class="node"><span class="node-icon">🌍</span><div class="node-info"><span class="node-name">Public Internet</span><span class="node-sub">Exit IP = VPS · real IP hidden</span></div></div>
+          <div class="node"><span class="node-icon">🔒</span><div class="node-info"><span class="node-name">Cloudflare Edge</span><span class="node-sub">DDoS · WAF · TLS</span></div></div>
+          <div class="node"><span class="node-icon">🛡</span><div class="node-info"><span class="node-name">Threat Feeds</span><span class="node-sub">Feodo · ET · Tor · daily</span></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- COMPONENTS -->
+<section>
+  <h2><span class="icon">⚙️</span>Stack Components</h2>
+  <p class="section-sub">Each layer has a specific responsibility. Defense in depth — no single point of failure.</p>
+  <div class="grid">
+    <div class="card"><span class="card-icon">🔐</span><h3>WireGuard VPN</h3><p>Full-tunnel client/server. All traffic — IPv4 and IPv6 — encrypted and routed through the VPS. Client real IP never reaches the destination.</p><div class="tech">ChaCha20-Poly1305 · UDP · AllowedIPs 0/0</div></div>
+    <div class="card"><span class="card-icon">🌐</span><h3>dnscrypt-proxy</h3><p>DNS-over-HTTPS server running on the VPS, served only to VPN clients. All DNS queries are encrypted inside the tunnel before leaving the VPS.</p><div class="tech">DoH · 1.1.1.1 · 9.9.9.9 · no plain-text DNS</div></div>
+    <div class="card"><span class="card-icon">👁</span><h3>Snort IDS</h3><p>Passive packet inspection on WAN, VPN, and container interfaces. Custom rules detect SSH brute force, web shells, SQLi, path traversal, and recon.</p><div class="tech">SID 9000001–9000008 · fast alert mode</div></div>
+    <div class="card"><span class="card-icon">📊</span><h3>Wazuh SIEM</h3><p>Centralized log and event collection. Agent on client ships FIM alerts, vulnerability data, and auth events to the manager for correlation and alerting.</p><div class="tech">FIM · Vuln detection · Active response</div></div>
+    <div class="card"><span class="card-icon">🏠</span><h3>OSSEC</h3><p>Host-based IDS running alongside Wazuh. Monitors system files, auth logs, and processes. Active response can ban IPs or kill processes on detection.</p><div class="tech">HIDS · log analysis · file integrity</div></div>
+    <div class="card"><span class="card-icon">🧱</span><h3>iptables + ipset</h3><p>NAT masquerade for VPN forwarding. ipset blocklists updated daily from Feodo, Emerging Threats, and Tor exit feeds. Zero-downtime atomic swaps.</p><div class="tech">ipset hash:ip · 1,800+ blocked IPs</div></div>
+    <div class="card"><span class="card-icon">🚫</span><h3>fail2ban</h3><p>SSH brute-force protection. Monitors auth logs and inserts iptables DROP rules after N failed attempts. Automatically expires bans.</p><div class="tech">sshd jail · iptables · auto-expire</div></div>
+    <div class="card"><span class="card-icon">☁️</span><h3>Cloudflare Tunnel</h3><p>Exposes internal web services without opening any inbound ports. Traffic arrives encrypted from Cloudflare's edge — no public IP exposure of origin.</p><div class="tech">QUIC/H2 · zero open ports · DDoS shielded</div></div>
+  </div>
+</section>
+
+<!-- FLOWS -->
+<section>
+  <h2><span class="icon">🔄</span>Network Flows</h2>
+  <p class="section-sub">How traffic moves through each path in the stack.</p>
+  <div class="flows">
+    <div class="flow-card"><div class="flow-title">FLOW 1 — Full Tunnel (all outbound)</div><pre class="flow">CLIENT
+  │ AllowedIPs = 0.0.0.0/0, ::/0
+  │ ALL traffic enters tunnel
+  │
+  │──► UDP encrypted ──────────► VPS:51820
+  │    ChaCha20-Poly1305         │
+  │    PersistentKeepalive=25s   │
+  │                             ▼
+  │                  iptables FORWARD (pos 1)
+  │                  NAT POSTROUTING MASQUERADE
+  │                             │
+  │◄── return traffic ──────────│
+  │                             ▼
+  │                        INTERNET
+  │
+  └── Your visible IP = VPS IP ✓
+      Real IP = hidden ✓</pre></div>
+    <div class="flow-card"><div class="flow-title">FLOW 2 — DNS (encrypted, no leaks)</div><pre class="flow">Client app queries DNS
+  └─► OS stub resolver
+        └─► VPN_SERVER:53
+            (inside encrypted tunnel)
+              └─► dnscrypt-proxy
+                    │
+                    ├─► 1.1.1.1 over HTTPS
+                    └─► 9.9.9.9 over HTTPS
+
+DNS never leaves tunnel unencrypted.
+DNS server only reachable via VPN.
+
+Verify:
+  dig google.com | grep SERVER
+  → should show VPN server IP</pre></div>
+    <div class="flow-card"><div class="flow-title">FLOW 3 — Inbound Web (Cloudflare)</div><pre class="flow">Browser
+  └─► Cloudflare Edge
+        │  TLS termination
+        │  DDoS / bot filtering
+        │
+        │  Cloudflare Tunnel (QUIC)
+        │  No inbound ports open
+        ▼
+  cloudflared daemon (client)
+        │
+        ▼
+  Security Proxy (localhost)
+        │ Blocks: SQLi, SSRF,
+        │  path traversal, scanners
+        ▼
+  Backend (localhost only)</pre></div>
+    <div class="flow-card"><div class="flow-title">FLOW 4 — Attack Detection</div><pre class="flow">Network traffic
+  └─► Snort IDS (passive tap)
+        │  WAN + VPN + docker
+        │  Custom rules SID 9000001–8
+        └─► snort.alert.fast
+              └─► Wazuh / OSSEC
+                    └─► Correlation
+                          └─► Active response
+
+iptables blocklists (daily update):
+  ├─► Feodo C2 IPs
+  ├─► ET compromised hosts
+  └─► Tor exit nodes
+
+fail2ban: auth.log → >5 fails → DROP</pre></div>
+  </div>
+</section>
+
+<!-- DECISIONS -->
+<section>
+  <h2><span class="icon">🏗</span>Key Design Decisions</h2>
+  <p class="section-sub">Non-obvious choices and the reasoning behind them.</p>
+  <div class="decision"><h3>WireGuard: INSERT not APPEND to FORWARD chain</h3><p>Docker adds a REJECT rule to the iptables FORWARD chain. Using <code>-A</code> (append) places your WireGuard ACCEPT rule after Docker's REJECT — VPN traffic is silently dropped.</p><pre class="code-inline"># Wrong — sits after Docker's REJECT
+iptables -A FORWARD -i wg0 -j ACCEPT
+
+# Correct — inserted at position 1, before Docker
+iptables -I FORWARD 1 -i wg0 -j ACCEPT</pre></div>
+  <div class="decision"><h3>IPv6 ULA prefix prevents ISP address leaks</h3><p>A full tunnel with only <code>AllowedIPs = 0.0.0.0/0</code> still leaves IPv6 exposed. Assign a ULA prefix (<code>fd00::/8</code>) to the VPN interface and include <code>::/0</code> in AllowedIPs.</p></div>
+  <div class="decision"><h3>Multiple tunnels: specific host route wins over subnet route</h3><p>When two WireGuard tunnels claim overlapping subnets, the secondary tunnel's route blackholes traffic to the VPN server's internal IP.</p><pre class="code-inline">IFACE=$(route -n get 8.8.8.8 | awk '/interface:/{print $2}')
+route add -host VPN_INTERNAL_IP -interface "$IFACE"</pre></div>
+  <div class="decision"><h3>TLS: enforce 1.2/1.3, remove legacy from default config</h3><p>nginx ships a global <code>ssl_protocols</code> directive that includes TLS 1.0/1.1. Remove it at the global level.</p><pre class="code-inline">ssl_protocols TLSv1.2 TLSv1.3;
+ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:...";
+ssl_prefer_server_ciphers off;</pre></div>
+  <div class="decision"><h3>SSH: always maintain a tunnel-based alias</h3><p>Cloud firewall rules may block port 22 from unknown source IPs. The VPN server's internal IP is only reachable through the tunnel — bypassing external firewall rules entirely.</p></div>
+</section>
+
+<!-- FIXES -->
+<section>
+  <h2><span class="icon">🔧</span>Operational Fixes</h2>
+  <p class="section-sub">Real issues encountered in production and how they were resolved.</p>
+  <div class="fix"><div class="fix-header"><span class="fix-num solved">RESOLVED</span><h3>Full tunnel + unreachable VPN server = total internet loss</h3></div><p>AllowedIPs 0.0.0.0/0 routes all traffic into the tunnel. If the VPN server goes down, all traffic disappears. Fix: bring down the tunnel to restore the default gateway.</p><pre class="code-inline">sudo wg-quick down /path/to/client.conf</pre></div>
+  <div class="fix"><div class="fix-header"><span class="fix-num solved">RESOLVED</span><h3>Two active tunnels blackhole traffic to VPN server internal IP</h3></div><p>Secondary tunnel claims the VPN subnet. SSH and DNS to the VPN server stop working. Fix: add a specific /32 host route through the primary tunnel interface.</p></div>
+  <div class="fix"><div class="fix-header"><span class="fix-num solved">RESOLVED</span><h3>DNS leaking to public fallback due to routing conflict</h3></div><p>Same routing bug causes DNS queries to VPN server to be blackholed. OS falls back to secondary public DNS — queries are unencrypted and outside the tunnel.</p></div>
+  <div class="fix"><div class="fix-header"><span class="fix-num solved">RESOLVED</span><h3>nginx serving TLS 1.0/1.1 — SSLv2 exploit attempt detected</h3></div><p>Snort detected an SSLv2 Client_Hello overflow attempt. Removed legacy protocols from global nginx config, enforced TLS 1.2/1.3 only, reloaded zero-downtime.</p></div>
+</section>
+
+<!-- ALTERNATIVES -->
+<section>
+  <h2><span class="icon">🔀</span>Technology Alternatives</h2>
+  <p class="section-sub">This architecture is implementation-agnostic. Swap components to suit your environment.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Layer</th><th>This Stack</th><th>Alternatives</th></tr></thead>
+    <tbody>
+      <tr><td>VPN</td><td>WireGuard</td><td>OpenVPN, IPSec/IKEv2, Tailscale, Nebula</td></tr>
+      <tr><td>Network IDS</td><td>Snort</td><td>Suricata, Zeek, Arkime</td></tr>
+      <tr><td>SIEM</td><td>Wazuh</td><td>Elastic SIEM, Splunk, Graylog</td></tr>
+      <tr><td>Host IDS</td><td>OSSEC</td><td>Tripwire, AIDE, Falco, Samhain</td></tr>
+      <tr><td>DNS</td><td>dnscrypt-proxy</td><td>Pi-hole + DoH, Unbound, AdGuard Home</td></tr>
+      <tr><td>Firewall</td><td>iptables + ipset</td><td>nftables, pf (BSD/macOS), ufw + ipset</td></tr>
+      <tr><td>Brute-force</td><td>fail2ban</td><td>CrowdSec, DenyHosts, SSHGuard</td></tr>
+      <tr><td>Reverse proxy</td><td>nginx</td><td>Caddy, HAProxy, Traefik, Envoy</td></tr>
+      <tr><td>Tunnel / Ingress</td><td>Cloudflare Tunnel</td><td>ngrok, frp, Tailscale Funnel, bore</td></tr>
+      <tr><td>Threat Intel</td><td>Feodo + ET + Tor</td><td>AbuseIPDB, Spamhaus, AlienVault OTX</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</div>
+    <p><a href="/">&#8592; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-layered-security-stack",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

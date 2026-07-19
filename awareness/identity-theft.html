@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/identity-theft">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Identity Theft and Internet Scams — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Threats</span>
+    <h1>Identity Theft and Internet Scams</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Identity theft is the quiet disaster: by the time you notice, someone has already opened accounts, filed a tax return, or drained a card in your name. It rarely involves a dramatic hack — it's assembled from data you leaked, breaches you were caught in, and scams you almost didn't fall for. The defense is partly prevention and partly speed, because the difference between an annoyance and a year of cleanup is how fast you catch it.</p>
+
+    <h2>How your identity gets taken</h2>
+    <ul>
+      <li><strong>Data breaches.</strong> Your details sit in dumps traded among criminals; you can't undo a breach, only limit what it unlocks.</li>
+      <li><strong>Phishing and scams.</strong> You're persuaded to hand over the details directly (see <a href="/awareness/phishing">Phishing in the Age of AI</a>).</li>
+      <li><strong>Account takeover.</strong> A reused password from one breach opens ten other accounts.</li>
+      <li><strong>Physical theft.</strong> Mail, wallets, and the photo of your license you texted someone.</li>
+    </ul>
+
+    <h2>The scams that lead the pack</h2>
+    <p>Most identity theft starts as a scam. The current heavy hitters: the <strong>imposter scam</strong> (a "government agency," "bank fraud department," or "tech support" creating panic), the <strong>romance scam</strong> (months of trust, then an emergency that needs money), the <strong>job/overpayment scam</strong> (a check that bounces after you've wired the difference), and the <strong>investment/crypto scam</strong> ("pig butchering," where a long grooming period ends in a fake trading platform). The common thread is manufactured urgency or manufactured intimacy — both designed to switch off your skepticism.</p>
+
+    <h2>Prevention that actually moves the needle</h2>
+    <ul>
+      <li><strong>Freeze your credit.</strong> The single most effective control, and it's free. A credit freeze at each of the three major bureaus stops new accounts from being opened in your name; thaw it briefly when you actually apply for credit. Do this even if you've never been a victim.</li>
+      <li><strong>Unique passwords + MFA</strong> so one breach doesn't cascade (see <a href="/awareness/passwords">Passwords, Passkeys, and MFA</a>).</li>
+      <li><strong>Guard the identity trifecta</strong> — full Social Security number, date of birth, and mother's maiden name. Question anyone who asks; most who "need" it don't.</li>
+      <li><strong>Shred</strong> financial mail; opt out of pre-approved credit offers.</li>
+      <li><strong>Reduce your exposure</strong> at data brokers (see <a href="/awareness/privacy">Reclaiming Your Privacy</a>).</li>
+    </ul>
+
+    <h2>Catch it early: monitoring</h2>
+    <p>Prevention leaks, so watch for the aftermath. Review bank and card statements for small "test" charges. Read the free annual credit reports (stagger the three bureaus across the year for rolling coverage). Turn on transaction alerts. And treat any bill, collection notice, or tax rejection for something you didn't do as a fire alarm, not junk mail.</p>
+
+    <h2>If it happens — the exact steps</h2>
+    <ol>
+      <li>Go to <strong>IdentityTheft.gov</strong> (the FTC's official recovery site). It generates a personal recovery plan and an official affidavit — start here.</li>
+      <li>Place a fraud alert and, ideally, a freeze with the three credit bureaus.</li>
+      <li>Contact the fraud department of each affected bank or creditor; close or lock compromised accounts.</li>
+      <li>Change passwords, starting with email and financial accounts.</li>
+      <li>File a police report if there are known transactions or if a creditor requires one.</li>
+      <li>Keep a dated log of every call and letter — recovery is a paperwork marathon, and records win disputes.</li>
+    </ol>
+
+    <blockquote>Stop before you give up the identity trifecta. Think of a credit freeze as a lock you leave on by default. Connect your accounts to alerts, so theft announces itself instead of hiding.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-identity-theft",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

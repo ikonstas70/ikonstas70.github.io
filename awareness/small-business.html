@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/small-business">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cybersecurity for Small Business — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Business</span>
+    <h1>Cybersecurity for Small Business</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>"We're too small to be a target" is the belief that gets small businesses breached. Attacks are automated and indiscriminate; small firms are hit <em>more</em> often because they pay ransoms faster, litigate less, and rarely have dedicated security. The good news is that you don't need an enterprise budget — a handful of fundamentals stops the overwhelming majority of what actually happens.</p>
+
+    <h2>The short list that does the heavy lifting</h2>
+    <ul>
+      <li><strong>MFA everywhere it's offered</strong> — email, banking, cloud apps, remote access. Phishing-resistant (passkeys/security keys) on the accounts that matter. This single control defeats the leading cause of small-business compromise.</li>
+      <li><strong>Backups, offline and tested.</strong> Follow 3-2-1 with at least one copy the ransomware can't reach, and prove it by actually restoring. Backups are what turn a ransomware attack from an extinction event into a bad week.</li>
+      <li><strong>Patch and auto-update</strong> everything — computers, phones, the router, and especially anything reachable from the internet.</li>
+      <li><strong>Use business-grade tools.</strong> A password manager for the team, reputable endpoint protection, and separate accounts per employee (no shared logins). Standard user accounts for daily work, admin only when needed.</li>
+    </ul>
+
+    <h2>The scam that targets small businesses specifically</h2>
+    <p><strong>Business email compromise (BEC)</strong> is the most expensive threat most small firms will face, and it's not technical. A criminal spoofs or hijacks an executive's or vendor's email and asks for an urgent wire transfer or a change of payment details. No malware, just a convincing message. The defense is a rule, not a product: <strong>verify any payment or banking-detail change by calling a known number</strong> — never the number in the email. Make it policy, and make it un-embarrassing for staff to slow down and confirm.</p>
+
+    <h2>People are your perimeter</h2>
+    <p>Your employees decide most outcomes. Train them briefly and regularly to recognize phishing, to report anything suspicious without fear of blame, and to know who to call when something feels wrong. A short quarterly conversation beats a thick annual policy nobody reads. Cover the basics from this collection — <a href="/awareness/passwords">passwords</a>, <a href="/awareness/phishing">phishing</a>, <a href="/awareness/wifi">Wi-Fi</a>.</p>
+
+    <h2>Plan for the bad day</h2>
+    <ul>
+      <li><strong>Write down what to do</strong> if you're breached: who to call (IT/MSP, bank, insurer, lawyer), how to isolate systems, how to restore. One page, printed.</li>
+      <li><strong>Know your obligations.</strong> Breaches involving customer data trigger notification duties — understand yours before you need them.</li>
+      <li><strong>Consider cyber insurance</strong>, and read the exclusions — many require MFA and backups to pay out, which is another reason to have them.</li>
+      <li><strong>Vet your vendors and MSP.</strong> Their security is your security; ask how they protect your data and access.</li>
+    </ul>
+
+
+    <blockquote>Stop believing you're too small to target. Think of MFA and tested backups as the seatbelt and airbag — cheap, boring, and the difference between a scare and a catastrophe. Connect a "call to verify" rule to every payment, and you've closed the most expensive door.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-small-business",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/data-science/statistics">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Statistics That Earn Their Keep — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/" class="active">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Core Skills</span>
+    <h1>Statistics That Earn Their Keep</h1>
+    <p class="meta">Data Science Series &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>You don't need a statistics degree. You need enough statistical honesty to stop yourself — and your stakeholders — from believing things the data doesn't say. That's a shorter list than the textbooks suggest, but every item on it gets used weekly.</p>
+
+    <h2>Look before you summarize</h2>
+    <p>Means and standard deviations describe well-behaved data, and real data is rarely well-behaved. Network traffic, incomes, response times, alert volumes — heavy-tailed, all of them, where the mean is a rumor started by outliers. Plot the distribution first (histogram, or ECDF when tails matter), then choose summaries that fit: medians and percentiles for skewed data, and p95/p99 — not averages — for anything a user waits on.</p>
+
+    <h2>Uncertainty is part of the answer</h2>
+    <p>"Conversion rose from 3.1% to 3.4%" is an incomplete sentence — on how many observations? The working tools:</p>
+    <ul>
+      <li><strong>Standard error intuition:</strong> uncertainty shrinks with √n. Quadrupling data halves the noise; this single fact calibrates most "is this real?" questions.</li>
+      <li><strong>The bootstrap:</strong> resample your data 10,000 times, recompute the statistic, read the spread. No formulas to misremember, works for medians and weird metrics, ten lines of NumPy. When in doubt, bootstrap.</li>
+    </ul>
+
+    <h2>Hypothesis tests, without the cargo cult</h2>
+    <p>A p-value answers one narrow question: <em>if there were truly no effect, how surprising is this data?</em> It is not the probability you're right, and p &lt; 0.05 is a social convention, not a law of nature. The failure modes that actually burn people:</p>
+    <ul>
+      <li><strong>Peeking:</strong> checking an experiment daily and stopping when it hits significance manufactures false wins. Fix the sample size (or use a sequential method) before starting.</li>
+      <li><strong>Multiple comparisons:</strong> test twenty metrics and one will "win" by chance. Correct for it, or pre-register the one metric that matters.</li>
+      <li><strong>Significance ≠ size:</strong> with enough data, a 0.01% difference is "significant." Report the effect size and its interval; let the business judge whether it's worth anything.</li>
+    </ul>
+
+    <h2>The Bayesian posture</h2>
+    <p>You don't have to convert. But two Bayesian habits repay learning them: state your prior (extraordinary claims — "this one weird trick doubled retention" — need extraordinary evidence), and think in updated beliefs rather than binary verdicts. For security work, the base-rate lesson is mandatory: a 99%-accurate detector on events that are 1-in-10,000 produces ~99% false positives. That arithmetic, not model quality, is why alert fatigue exists (Part 9 builds on this).</p>
+
+    <h2>Correlation, causation, and the confounder you didn't measure</h2>
+    <p>Observational data can whisper causality but rarely prove it. Ice cream doesn't cause drownings; summer causes both. Before shipping a causal claim, ask: what third factor could drive both? Could the arrow point backward? Randomized experiments (A/B tests) exist because they answer these by construction — which is why companies run thousands of them a year rather than trusting dashboards.</p>
+
+    <h2>Checkpoint</h2>
+    <p>Take a real metric you care about. Plot its distribution, report the honest summary (median + p95, if skewed), bootstrap a confidence interval, and write one paragraph a non-statistician could read without being misled. That paragraph is the deliverable statistics exists for.</p>
+
+    <p><a href="/data-science/visualization">Next: Visualization and Storytelling →</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=data-science-statistics",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

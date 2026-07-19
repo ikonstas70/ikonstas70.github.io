@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/online-payments">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banking and Paying Safely Online — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Money</span>
+    <h1>Banking and Paying Safely Online</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Your money moves through your phone now — banking apps, tap-to-pay, peer-to-peer transfers, one-click checkout. That convenience is genuinely safer than mailing checks in most respects, but it concentrates risk: the device in your pocket is now the vault door. A few habits keep the convenience without the exposure.</p>
+
+    <h2>Protect the accounts that hold money</h2>
+    <ul>
+      <li><strong>Strongest authentication you have</strong> on banking and payment apps — a unique password and app-based MFA or a passkey, never SMS codes for your primary bank (SIM-swapping targets exactly these; see <a href="/awareness/mobile">Your Phone Is Your Perimeter</a>).</li>
+      <li><strong>Turn on transaction alerts.</strong> A push for every charge turns fraud detection from a monthly chore into a real-time reflex.</li>
+      <li><strong>Lock the device.</strong> Biometrics plus a strong passcode; a banking app is only as safe as the phone it lives on.</li>
+    </ul>
+
+    <h2>Credit beats debit online</h2>
+    <p>For online and unfamiliar purchases, a credit card is safer than a debit card — not because it's harder to steal, but because of what happens after. Credit fraud is the bank's money until resolved; debit fraud is <em>your</em> money, gone from your checking account while you dispute it. Better still, use a mobile wallet (Apple Pay, Google Pay) or virtual card numbers: they hand the merchant a one-time token, so a breach at the store never exposes your real card.</p>
+
+    <h2>Shop like the store might be fake</h2>
+    <ul>
+      <li><strong>Type the address yourself</strong> or use a bookmark; don't chase a "50% off" link from an email or social ad to a lookalike storefront.</li>
+      <li><strong>Be suspicious of impossible deals.</strong> The sought-after item at half price from a site you've never heard of is bait.</li>
+      <li><strong>Look for real contact details and reviews off-site.</strong> Fake shops are cheap to spin up and vanish after collecting cards.</li>
+      <li><strong>Never pay a "business" by gift card, wire, or crypto.</strong> Those are the irreversible rails scammers demand precisely because you can't claw the money back.</li>
+    </ul>
+
+    <h2>Peer-to-peer apps: treat like cash</h2>
+    <p>Zelle, Venmo, Cash App and the like move money instantly and, crucially, irreversibly. Send only to people you know and have verified — a scammer posing as your landlord or a marketplace seller relies on that finality. Banks generally won't refund a payment <em>you</em> authorized, even to a fraudster. Double-check the handle; confirm big transfers through a second channel.</p>
+
+    <h2>Where you bank matters as much as how</h2>
+    <p>Do sensitive banking on a network you trust — your home Wi-Fi or your cellular connection — not the coffee-shop network, and never after typing your password into a captive portal (see <a href="/awareness/wifi">the Wi-Fi guide</a>). The bank's own app over cellular is the safest combination on offer.</p>
+
+    <blockquote>Stop paying strangers on irreversible rails. Think of your phone as the vault door and lock it accordingly. Connect through your own network, with a credit card or a tokenized wallet, and let alerts watch your back.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-online-payments",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-voice-vlan-design-poe-switch-configuration-and-cis">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice VLAN Design: PoE Switch Configuration and Cisco IP Phone Provisioning — Konstas Engineering Notes</title>
+<meta name="description" content="← All ArticlesSeparating voice and data traffic with IEEE 802.1Q VLANs, PoE switch configuration, TFTP/DHCP provisioning for Cisco IP phones, and the SCCP boot sequence.W">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Networking</span>
+    <h1>Voice VLAN Design: PoE Switch Configuration and Cisco IP Phone Provisioning</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<a href="../index.html">← All Articles</a><p>Separating voice and data traffic with IEEE 802.1Q VLANs, PoE switch configuration, TFTP/DHCP provisioning for Cisco IP phones, and the SCCP boot sequence.</p><h2>Why a Separate Voice VLAN</h2><p>Mixing voice and data traffic on the same VLAN causes QoS problems, broadcast interference, and security exposure.</p><p>VoIP traffic is latency-sensitive — a 150ms one-way delay is noticeable, and jitter above 30ms degrades call quality significantly. When IP phones share a data VLAN with computers and servers, their traffic competes for the same bandwidth and switch buffers. A dedicated voice VLAN solves three problems:</p><ul><li><strong>QoS isolation</strong> — voice packets can be marked with 802.1p priority and treated differently by the switch</li><li><strong>Broadcast domain</strong> — phones do not see data VLAN broadcasts, reducing unnecessary CPU load on phone firmware</li><li><strong>Security</strong> — phones on VLAN 10 cannot directly reach servers on VLAN 1 without routing through a firewall or router</li></ul><h2>Network Design</h2><pre>PBX Server (en0) ─────────── PoE Switch ───── Cisco IP Phone 1
+  10.0.0.1 (data)                 │                (VLAN 10, ext 1001)
+  10.10.0.1 (voice VLAN)          └────────── Cisco IP Phone 2
+                                                     (VLAN 10, ext 1002)</pre><table><thead><tr><th>VLAN</th><th>ID</th><th>Subnet</th><th>Use</th></tr></thead><tbody><tr><td>Data</td><td>1 (native)</td><td>10.0.0.0/24</td><td>Computers, servers, management</td></tr><tr><td>Voice</td><td>10</td><td>10.10.0.0/24</td><td>Cisco IP phones (SCCP/SIP)</td></tr></tbody></table><h2>Cisco Switch Configuration (IOS)</h2><p>A managed switch is required for separate voice and data VLANs. Unmanaged switches see section 3.</p><pre>! Step 1 — Create the Voice VLAN
+vlan 10
+ name VOICE
+exit
+
+! Step 2 — Uplink port to PBX server (TRUNK — carries both VLANs)
+interface GigabitEthernetX/X
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10
+ switchport trunk native vlan 1
+ no shutdown
+
+! Step 3 — Phone ports (ACCESS — voice VLAN tagged, data VLAN native)
+interface range GigabitEthernetX/X - X
+ switchport mode access
+ switchport access vlan 1
+ switchport voice vlan 10
+ spanning-tree portfast          ! Eliminates 30-second STP delay on boot
+ no shutdown
+exit
+
+! Step 4 — Enable PoE on phone ports
+interface range GigabitEthernetX/X - X
+ power inline auto
+exit</pre><p>The <code>switchport voice vlan 10</code> command tells the switch to tag frames from a Cisco phone with VLAN 10 even though the port is in access mode. Cisco phones negotiate VLAN membership via CDP. The PC connected to the phone's passthrough port sees native VLAN 1.</p><h2>Unmanaged PoE Switch (No VLANs)</h2><p>If the switch is unmanaged, phones and computers share the same network. The setup is simpler but loses QoS isolation:</p><ul><li>Skip VLAN 10 creation — all devices on the data subnet</li><li>DHCP serves the data subnet address range to all devices</li><li>Phones use the same gateway and TFTP server IP as computers</li><li>Acceptable for small lab environments; not recommended for production</li></ul><h2>DHCP Configuration for Phone Provisioning</h2><p>Phones get their TFTP server address via DHCP Option 150 — the Cisco-specific TFTP option.</p><pre>! Cisco IOS DHCP scope for Voice VLAN
+ip dhcp pool VOICE-VLAN
+ network 10.10.0.0 255.255.255.0
+ default-router 10.10.0.1
+ dns-server 8.8.8.8
+ option 150 ip 10.10.0.1        ! TFTP server address (Option 150 = Cisco SCCP)
+ lease 0 12                     ! 12-hour lease
+
+ip dhcp excluded-address 10.10.0.1 10.10.0.20   ! Reserve gateway and servers</pre><p>Option 150 is the Cisco proprietary TFTP option used by SCCP phones. SIP-mode Cisco phones use the standard Option 66 (TFTP server name) instead. Use the option that matches the firmware mode your phones are running.</p><h2>TFTP Phone Provisioning</h2><p>Cisco phones boot from TFTP — downloading firmware and configuration XML files.</p><h3>Phone Boot Sequence</h3><ol><li>Phone powers on via PoE</li><li>Phone sends DHCP DISCOVER — receives IP + Option 150 (TFTP server)</li><li>Phone downloads <code>XMLDefault.cnf.xml</code> from TFTP — global defaults</li><li>Phone downloads <code>SEP&lt;MAC-ADDRESS&gt;.cnf.xml</code> from TFTP — per-phone config</li><li>Phone downloads SIP or SCCP firmware SBN files if version mismatch</li><li>Phone registers to the configured PBX/CME at the SIP/SCCP address</li><li>Extension shows green — phone ready</li></ol><h3>Per-Phone XML Configuration</h3><pre>&lt;!-- SEPXXXXXXXXXXXX.cnf.xml (replace XX... with actual MAC) --&gt;
+&lt;device&gt;
+  &lt;devicePool&gt;
+    &lt;dateTimeSetting&gt;
+      &lt;dateTemplate&gt;M/D/YA&lt;/dateTemplate&gt;
+      &lt;timeZone&gt;Eastern Standard/Daylight Time&lt;/timeZone&gt;
+    &lt;/dateTimeSetting&gt;
+  &lt;/devicePool&gt;
+  &lt;sipProfile&gt;
+    &lt;sipProxies&gt;
+      &lt;backupProxy&gt;10.10.0.1&lt;/backupProxy&gt;
+      &lt;backupProxyPort&gt;5060&lt;/backupProxyPort&gt;
+    &lt;/sipProxies&gt;
+    &lt;phoneLabel&gt;Front Desk&lt;/phoneLabel&gt;
+    &lt;line1Name&gt;1001&lt;/line1Name&gt;
+    &lt;line1DisplayName&gt;Front Desk&lt;/line1DisplayName&gt;
+    &lt;line1AuthName&gt;1001&lt;/line1AuthName&gt;
+    &lt;line1Password&gt;&lt;extension-password&gt;&lt;/line1Password&gt;
+  &lt;/sipProfile&gt;
+&lt;/device&gt;</pre><h2>TFTP Server Setup (macOS/Linux)</h2><pre># macOS — enable built-in TFTP daemon
+sudo launchctl bootstrap system /System/Library/LaunchDaemons/tftp.plist
+# Files served from /private/tftpboot/
+
+# Linux (tftpd-hpa)
+apt install tftpd-hpa
+# Files served from /var/lib/tftpboot/
+
+# Test TFTP is serving correctly
+tftp 10.10.0.1
+tftp&gt; get XMLDefault.cnf.xml
+# Should download successfully</pre><p>TFTP has no authentication or encryption. Keep the TFTP server on the voice VLAN only, and restrict access via firewall rules. Never expose a TFTP server to the internet.</p>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-voice-vlan-design-poe-switch-configuration-and-cis",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

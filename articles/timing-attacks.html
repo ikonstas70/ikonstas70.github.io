@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/timing-attacks">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Side-Channel and Timing Attacks — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Cryptography</span>
+    <h1>Side-Channel and Timing Attacks</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>You can have a mathematically perfect cipher and still leak the key — not through the algorithm, but through the machine running it. Side-channel attacks exploit the physical shadow a computation casts: how long it takes, how much power it draws, what sound or electromagnetic emission it makes, what it leaves in the cache. The algorithm is sound; the <em>implementation</em> talks. This is one of the most counterintuitive and important ideas in applied security.</p>
+
+    <h2>The classic: timing attacks</h2>
+    <p>A timing attack infers secret data from how long an operation takes. The canonical example is decades old and still instructive: RSA and similar implementations can leak private keys because the time to perform a modular exponentiation depends on the bits of the secret. Feed the device many chosen inputs, measure the tiny timing differences, and statistics recovers the key one bit at a time — no need to break the math at all.</p>
+    <p>Smartcards were an early victim: an attacker with physical access sends byte patterns to be signed, times each operation, and correlates the durations (and even the number of set bits in the input) with the internal key-dependent branches. Enough measurements, and the private key falls out.</p>
+
+    <h2>The everyday version: string comparison</h2>
+    <p>You don't need a smartcard to be vulnerable. The most common timing bug in ordinary software is comparing secrets with a normal equality check, which returns the instant it finds a mismatch:</p>
+    <pre><code># VULNERABLE: returns early on first differing byte.
+# An attacker measures response time to learn the token prefix-by-prefix.
+def check_token(supplied, real):
+    return supplied == real          # short-circuits -> leaks how much matched
+
+# SAFE: constant-time comparison, always examines every byte.
+import hmac
+def check_token_safe(supplied, real):
+    return hmac.compare_digest(supplied, real)</code></pre>
+    <p>Every language ships a constant-time comparator (<code>hmac.compare_digest</code> in Python, <code>crypto.timingSafeEqual</code> in Node, <code>subtle.ConstantTimeCompare</code> in Go). Use it for tokens, MACs, and password hashes — anywhere a mismatch is a secret.</p>
+
+    <h2>The broader family</h2>
+    <ul>
+      <li><strong>Power analysis</strong> — measuring current draw (SPA/DPA) to read key-dependent operations; devastating against unprotected embedded devices.</li>
+      <li><strong>Electromagnetic</strong> — the same idea via radiated emissions, sometimes at a distance.</li>
+      <li><strong>Acoustic</strong> — yes, the sound of a CPU or coil has leaked keys in lab conditions.</li>
+      <li><strong>Cache attacks</strong> — Flush+Reload and friends: one process infers another's memory-access pattern by timing shared CPU cache, breaking cross-tenant isolation.</li>
+      <li><strong>Speculative execution</strong> — Spectre and Meltdown weaponized CPU performance features into cross-boundary leaks, reshaping processor design.</li>
+    </ul>
+
+    <h2>Defenses: make the shadow constant</h2>
+    <p>The unifying principle is <strong>eliminate the correlation between secret data and observable behavior</strong>:</p>
+    <ul>
+      <li><strong>Constant-time code</strong> — no secret-dependent branches, no secret-dependent memory indices. The runtime must not depend on the secret.</li>
+      <li><strong>Use vetted crypto libraries.</strong> Do not implement AES or RSA yourself; libraries have spent decades hardening against exactly these leaks. "Don't roll your own crypto" is really "don't roll your own side-channel bug."</li>
+      <li><strong>Blinding and masking</strong> — randomize inputs (RSA blinding) or split secrets across random shares so measurements reveal nothing.</li>
+      <li><strong>Hardware countermeasures</strong> — noise, shielding, and dedicated secure elements for high-value keys.</li>
+    </ul>
+
+    <h2>Why it matters even if you're not writing crypto</h2>
+    <p>Two reasons. First, the string-comparison bug is common, easy to introduce, and easy to fix — and it's real: token and signature verification are exactly where it bites. Second, side channels reframe how you think about security: correctness of the algorithm is necessary but not sufficient; the implementation and the hardware are part of the attack surface. A perfect lock on a door with a glass panel is not a secure door.</p>
+
+    <blockquote>A flawless cipher can still betray its key through timing, power, or cache. The defense is to make the observable behavior independent of the secret — constant-time code and battle-tested libraries — because the machine, not just the math, is part of your threat model.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=timing-attacks",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

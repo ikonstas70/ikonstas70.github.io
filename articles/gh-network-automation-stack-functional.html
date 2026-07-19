@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-network-automation-stack-functional">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network Automation Stack Functional — Konstas Engineering Notes</title>
+<meta name="description" content="Programmatic HTTP-to-Telnet Gateway for Network Device FleetsOverviewThis project establishes a high-security, automated management layer for network device fleets. By la">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Automation</span>
+    <h1>Network Automation Stack Functional</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<h2>Programmatic HTTP-to-Telnet Gateway for Network Device Fleets</h2><h2>Overview</h2><p>This project establishes a high-security, automated management layer for network device fleets. By layering a Flask API Gateway over a socat transport bridge, it converts any Telnet-accessible device into a RESTful endpoint — transforming 10–20 Cisco CSR1000v routers into a programmatically managed fleet with zero external exposure.</p><p><strong>Platform-agnostic:</strong> No hypervisor required. The stack works with any appliance reachable via Telnet on a forwarded port — physical hardware, virtual machines, console servers, or any platform that maps devices to TCP ports.</p><h2>Architecture Diagram</h2><pre>  curl / AI Agent / Automation Script
+                        |
+               HTTPS (outbound-only)
+                        |
+            +-----------+-----------+
+            |    Cloudflare Edge    |  WAF + Zero Trust
+            +-----------+-----------+
+                        |
+                Cloudflare Tunnel
+                        |
+                        v
+  +-----------------------------------------------------+
+  |  MAC MINI  (Management Host)                        |
+  |                                                     |
+  |     +----------------------------+                  |
+  |     |  Flask API  :8080          |                  |
+  |     |  csr_api_secure.py         |                  |
+  |     |   - X-API-KEY validation   |                  |
+  |     |   - ALLOWED_PORTS check    |                  |
+  |     |   - Timing controller      |                  |
+  |     |   - scrub_output() regex   |                  |
+  |     +----------------------------+                  |
+  |                  |  localhost                       |
+  |     +----------------------------+                  |
+  |     |  socat Gateway (telnet.sh) |                  |
+  |     |  Ports 2301-2310           |                  |
+  |     |   - fork  (concurrent)     |                  |
+  |     |   - nohup (persistent)     |                  |
+  |     +----------------------------+                  |
+  |                  |  L3 Point-to-Point               |
+  +------------------+----------------------------------+
+                     |  (No default gateway)
+                     v
+  +-----------------------------------------------------+
+  |  NETWORK DEVICE LAYER                               |
+  |  (any Telnet-accessible appliance)                  |
+  |                                                     |
+  |  +------+ +------+ +------+ +------+   +------+    |
+  |  |  R1  | |  R2  | |  R3  | |  R4  |...| R10  |   |
+  |  | 2301 | | 2302 | | 2303 | | 2304 |   | 2310 |   |
+  |  +------+ +------+ +------+ +------+   +------+    |
+  |         Cisco CSR1000v Fleet (current)              |
+  +-----------------------------------------------------+
+
+  OUT-OF-BAND ACCESS (Tailscale WireGuard):
+  [ Engineer ] ------&gt; [ Mac Mini :2301-2310 ]</pre><h2>Stack Layers</h2>EDGE<strong>Cloudflare Tunnel + WAF</strong>Global HTTPS access, Web Application Firewall, Zero Trust policy enforcement. No inbound ports open on the host.API<strong>Flask API — csr_api_secure.py (:8080)</strong>X-API-KEY authentication, ALLOWED_PORTS validation, timing controller, scrub_output() regex sanitization.TCP<strong>socat Gateway — telnet.sh (Ports 2301–2310)</strong>TCP relay from management host to target device. Fork mode for concurrent sessions. nohup for persistence.DEV<strong>Network Device Layer</strong>Any Telnet-accessible appliance. Current deployment: Cisco CSR1000v fleet on isolated L3 point-to-point (no default gateway).VPN<strong>Tailscale / WireGuard — Out-of-Band Access</strong>Private mesh VPN for direct engineer access to console ports, independent of the Cloudflare path.<h2>Data Flow</h2>1<strong>Trigger</strong> — <code>curl POST /telnet {"port": 2301, "command": "show ip int brief"}</code>2<strong>Ingress</strong> — Cloudflare Tunnel forwards request to localhost:80803<strong>Validate</strong> — Flask checks X-API-KEY header and ALLOWED_PORTS list4<strong>Execute</strong> — Python subshell with timed printf/telnet sequence5<strong>Relay</strong> — socat forwards localhost:2301 → target-host:23016<strong>Execution</strong> — Device receives command via Telnet on the forwarded port7<strong>Return</strong> — Output scrubbed and returned as structured JSON<h2>Security Posture</h2><table><tr><th>Feature</th><th>Mechanism</th><th>Purpose</th></tr><tr><td>Authentication</td><td><code>X-API-KEY</code> header</td><td>Blocks unauthenticated API access</td></tr><tr><td>Port restriction</td><td><code>ALLOWED_PORTS</code> list</td><td>Limits access to ports 2301–2310 only</td></tr><tr><td>Network isolation</td><td>L3 Point-to-Point, no default gateway</td><td>Devices unreachable from internet</td></tr><tr><td>Output sanitization</td><td><code>scrub_output()</code> regex</td><td>Strips Telnet banners and escape chars</td></tr><tr><td>Transport encryption</td><td>Tailscale WireGuard</td><td>Private mesh VPN for engineer access</td></tr><tr><td>Application firewall</td><td>Cloudflare WAF</td><td>Filters malicious inbound requests</td></tr></table><blockquote><strong>Defense-in-depth:</strong> Two independent access paths — Cloudflare (public API) and Tailscale (private console) — operate at different stack layers and do not share configuration.</blockquote><h2>Quick Start</h2><pre># Install dependencies
+python3 -m venv ~/csr_env &amp;&amp; source ~/csr_env/bin/activate
+pip install -r requirements.txt
+
+# Start socat transport bridge
+sh src/telnet.sh
+
+# Start Flask API
+sh src/start_csr_api.sh
+
+# Open Cloudflare tunnel
+cloudflared tunnel --url http://localhost:8080
+
+# Send a command
+curl -X POST http://127.0.0.1:8080/telnet \
+     -H "X-API-KEY: YOUR_SECRET_KEY_HERE" \
+     -H "Content-Type: application/json" \
+     -d '{"port": 2301, "command": "show ip interface brief"}'</pre><h2>Future Roadmap</h2><ul><li>Command sanitization to replace <code>shell=True</code> subprocess execution</li><li>SSH transport layer replacing Telnet over socat</li><li>Self-hosted LLM integration for AI-driven network operations</li><li>NAPALM / Ansible orchestration layer over the Flask API</li><li>Persistent Cloudflare named tunnel replacing quick tunnels</li></ul>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-network-automation-stack-functional",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

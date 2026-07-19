@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/awareness/privacy">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reclaiming Your Privacy — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/" class="active">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Privacy</span>
+    <h1>Reclaiming Your Privacy</h1>
+    <p class="meta">Security Awareness &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Privacy isn't about having something to hide. It's about consent: who gets to know what about you, and what they're allowed to do with it. Today the answer is "thousands of companies you've never heard of, more than you think, and almost anything" — because an entire industry of data brokers assembles your purchases, locations, health hints, and relationships into a dossier that's bought and sold without your signature. You can't opt out of the world, but you can shrink the exhaust trail dramatically.</p>
+
+    <h2>Where the data actually leaks from</h2>
+    <ul>
+      <li><strong>Your phone's location.</strong> Apps with location access — and the ad networks inside them — have historically been the single richest privacy leak. Weather apps do not need "always."</li>
+      <li><strong>Ad tracking identifiers.</strong> The glue that links your activity across apps and sites.</li>
+      <li><strong>Loyalty programs and quizzes.</strong> You are trading data for pennies; at least know the price.</li>
+      <li><strong>Public records + social media.</strong> Data brokers merge the two into people-search listings: your address, relatives, and phone number, one search away.</li>
+      <li><strong>Old accounts.</strong> Every dormant account is a future breach with your name in it.</li>
+    </ul>
+
+    <h2>The eighty-percent afternoon</h2>
+    <p>Ranked by payoff per minute:</p>
+    <ul>
+      <li><strong>Turn off the ad identifier.</strong> iOS: disallow app tracking. Android: delete the advertising ID. One switch, industry-wide effect.</li>
+      <li><strong>Audit location permissions.</strong> Everything to "while using" or "never"; disable precise location where approximate serves.</li>
+      <li><strong>Use a browser that blocks trackers</strong> (or add a reputable content blocker), and prefer it over in-app browsers, which can watch you type.</li>
+      <li><strong>Split your email identity.</strong> Aliases or a second address for shopping and signups; your real address for humans. When an alias starts getting spam, you know exactly who sold you — and you delete it.</li>
+      <li><strong>Encrypt your DNS</strong> or use a filtering resolver — quietly removes tracking at the network layer for every device at home.</li>
+      <li><strong>Delete dead accounts.</strong> The account that doesn't exist can't be breached, sold, or subpoenaed.</li>
+    </ul>
+
+    <h2>Getting off the people-search sites</h2>
+    <p>Data brokers must honor removal requests in a growing number of states, and every major people-search site has an opt-out page — tedious but effective, and worth doing for the big ones. Paid removal services automate the chore for a fee; for anyone with a stalker, an abusive ex, or a public-facing job, they're worth it. Recheck quarterly: brokers repopulate.</p>
+
+    <h2>What you post is the part no tool fixes</h2>
+    <p>The durable habits: post the vacation after you're home, keep your address and daily patterns out of photos (house numbers, street signs, license plates), and assume anything shared with one platform is shared with its subpoena drawer. Social media privacy settings decide who among <em>users</em> sees your post — the platform itself always sees everything.</p>
+
+    <blockquote>Stop paying in data without reading the price tag. Think about who profits from each permission. Connect through identities you can afford to burn.</blockquote>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=awareness-privacy",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://blog.konstas.us/articles/gh-docker-voip-stack-boot-sequencing-health-checks-an">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docker VoIP Stack: Boot Sequencing, Health Checks, and Dependency Management — Konstas Engineering Notes</title>
+<meta name="description" content="← All ArticlesHow to correctly order Docker container startup for a Kamailio + Asterisk + A2Billing stack using health checks, and bridging VLAN-isolated IP phones via a ">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Telecom</span>
+    <h1>Docker VoIP Stack: Boot Sequencing, Health Checks, and Dependency Management</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+<a href="../index.html">← All Articles</a><p>How to correctly order Docker container startup for a Kamailio + Asterisk + A2Billing stack using health checks, and bridging VLAN-isolated IP phones via a Python SIP relay.</p><h2>The Boot Sequencing Problem</h2><p>The default Docker depends_on ordering is not sufficient for VoIP stacks — service_started ≠ service_ready.</p><p>A VoIP stack has strict startup dependencies. If Kamailio starts routing before Asterisk is ready to accept SIP connections, phones that send REGISTER at boot will get rejected and enter an exponential backoff timer — some phones won't retry for 30–60 minutes. Getting the boot order right matters enormously.</p><p>The failure mode is subtle: all containers show as "running" in Docker, but phones show as "unregistered" after a reboot. The root cause is that <code>depends_on: service_started</code> (the default) only waits for the container process to start — not for the application inside to become ready to serve requests.</p><h2>Correct Startup Order</h2><pre>mysql (wts-db)
+  │ service_healthy (~15s — mysqladmin ping)
+  ▼
+asterisk-1 + asterisk-2 + a2billing + mysql-exporter
+  │ asterisk service_healthy (~45s — asterisk -rx 'core show version')
+  ▼
+kamailio                    ← KEY FIX: was service_started, now service_healthy
+  │ kamailio service_healthy (~30s — kamailio -c validates config)
+  ▼
+sip-relay (host process)    ← waits for Kamailio healthy, then binds port 5060
+  │ (~5s after relay binds)
+  ▼
+IP Phones register          ← REGISTER → relay → Kamailio → Asterisk → 200 OK</pre><p><strong>The fix:</strong> Change <code>kamailio depends_on asterisk condition: service_started</code> to <code>condition: service_healthy</code>. Without this, Kamailio receives REGISTER requests before Asterisk is ready and returns 503 — the phone enters backoff and stays unregistered.</p><h2>docker-compose.yml Health Checks</h2><pre>services:
+  mysql:
+    image: mysql:8
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root",
+             "-p$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  asterisk:
+    image: asterisk:20
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "asterisk", "-rx", "core show version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  kamailio:
+    image: kamailio:5
+    depends_on:
+      asterisk:
+        condition: service_healthy    # CRITICAL — not service_started
+    healthcheck:
+      test: ["CMD", "kamailio", "-c"]  # Validates config without running
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  a2billing:
+    image: a2billing:latest
+    depends_on:
+      asterisk:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r",
+             "require '/etc/a2billing/a2billing.conf'; echo 'ok';"]
+      interval: 30s
+      timeout: 10s
+      retries: 3</pre><h2>Health Check Reference</h2><table><thead><tr><th>Container</th><th>Health Check Command</th><th>Interval</th><th>Retries</th></tr></thead><tbody><tr><td>mysql</td><td>mysqladmin ping</td><td>10s</td><td>5</td></tr><tr><td>asterisk</td><td>asterisk -rx 'core show version'</td><td>30s</td><td>5</td></tr><tr><td>asterisk-2</td><td>asterisk -rx 'core show version'</td><td>30s</td><td>5</td></tr><tr><td>kamailio</td><td>kamailio -c</td><td>30s</td><td>3</td></tr><tr><td>a2billing</td><td>php parse a2billing.conf</td><td>30s</td><td>3</td></tr></tbody></table><h2>SIP Relay — Bridging VLAN-Isolated Phones to Docker</h2><p>IP phones on a voice VLAN cannot directly reach Docker containers. A Python SIP relay bridges the gap.</p><p>When Asterisk runs inside Docker, it listens on the Docker bridge network — not on the host's VLAN interface. IP phones on VLAN 10 (voice subnet) can reach the host's VLAN 10 IP, but not the container. A lightweight Python relay process on the host forwards SIP messages bidirectionally:</p><pre>Phone (voice-VLAN IP:5060)
+  │ TCP/UDP
+sip-relay.py (voice-gateway-ip:5060)    ← host process — visible to phones
+  │ TCP/UDP
+Asterisk container (127.0.0.1:5065)     ← published Docker port
+  │
+Asterisk:5060 (inside container)</pre><h3>SIP Relay Implementation</h3><pre>import socket, threading, time
+
+LISTEN_IP   = '10.10.0.1'   # Host's voice VLAN interface
+LISTEN_PORT = 5060
+TARGET_IP   = '127.0.0.1'   # Docker host port
+TARGET_PORT = 5065           # Asterisk published port
+SESSION_TTL = 300            # Seconds before idle UDP session expires
+
+def handle_udp():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((LISTEN_IP, LISTEN_PORT))
+    sessions = {}  # src_addr -&gt; last_seen
+    upstream = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    while True:
+        data, addr = sock.recvfrom(4096)
+        sessions[addr] = time.time()
+        upstream.sendto(data, (TARGET_IP, TARGET_PORT))
+        # Return path handled by upstream receive thread
+</pre><p>The relay handles both UDP and TCP SIP transport. UDP sessions are keyed by source address (phone IP:port) — one upstream socket per phone. TCP uses bidirectional pipe threads. Session TTL expires idle UDP mappings after 300 seconds.</p><h2>LaunchDaemon Wait Script (macOS)</h2><p>On macOS, LaunchDaemons fire at boot — before Docker Desktop is running. A wait script prevents the relay from starting too early.</p><pre>#!/bin/bash
+# sip-relay-wait.sh — waits for VLAN interface, Docker, and Kamailio before binding
+
+# 1. Wait for voice VLAN interface to exist
+until ifconfig vlan10 &amp;&gt;/dev/null; do sleep 2; done
+
+# 2. Wait for Docker Desktop to be responding
+until docker info &amp;&gt;/dev/null 2&gt;&amp;1; do sleep 5; done
+
+# 3. Wait for Kamailio container to be healthy
+until [ "$(docker inspect --format='{{.State.Health.Status}}' kamailio 2&gt;/dev/null)" = "healthy" ]; do
+    sleep 5
+done
+
+# 4. All dependencies ready — exec the relay (replaces this shell)
+exec python3 /path/to/sip-relay.py</pre><pre>&lt;!-- /Library/LaunchDaemons/com.voip.sip-relay.plist --&gt;
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+  &lt;key&gt;Label&lt;/key&gt;&lt;string&gt;com.voip.sip-relay&lt;/string&gt;
+  &lt;key&gt;ProgramArguments&lt;/key&gt;
+  &lt;array&gt;
+    &lt;string&gt;/bin/bash&lt;/string&gt;
+    &lt;string&gt;/path/to/sip-relay-wait.sh&lt;/string&gt;
+  &lt;/array&gt;
+  &lt;key&gt;RunAtLoad&lt;/key&gt;&lt;true/&gt;
+  &lt;key&gt;KeepAlive&lt;/key&gt;&lt;true/&gt;
+  &lt;key&gt;StandardOutPath&lt;/key&gt;&lt;string&gt;/var/log/sip-relay.log&lt;/string&gt;
+  &lt;key&gt;StandardErrorPath&lt;/key&gt;&lt;string&gt;/var/log/sip-relay.log&lt;/string&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</pre><h2>Expected Boot Timeline</h2><table><thead><tr><th>Milestone</th><th>Approximate Time (from system login)</th></tr></thead><tbody><tr><td>IP forwarding set</td><td>&lt; 5 seconds</td></tr><tr><td>Docker Desktop running</td><td>60–90 seconds</td></tr><tr><td>MySQL healthy</td><td>+ 15 seconds</td></tr><tr><td>Asterisk healthy</td><td>+ 45 seconds</td></tr><tr><td>Kamailio healthy</td><td>+ 30 seconds</td></tr><tr><td>SIP relay binds port 5060</td><td>Immediately after Kamailio healthy</td></tr><tr><td>Phone registers</td><td>+ 5 seconds</td></tr><tr><td><strong>Total</strong></td><td><strong>~2.5–3 minutes</strong></td></tr></tbody></table><h3>Monitoring Commands</h3><pre># Check all container health states
+docker ps --format "table {{.Names}}	{{.Status}}"
+
+# Check sip-relay is running and what it logged
+pgrep -f sip-relay.py &amp;&amp; tail -20 /var/log/sip-relay.log
+
+# Verify Kamailio is routing
+docker exec kamailio kamcmd dispatcher.list
+
+# Verify Asterisk shows phones as registered
+docker exec asterisk asterisk -rx "sip show peers"</pre>
+    <p><a href="/">← All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-docker-voip-stack-boot-sequencing-health-checks-an",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
