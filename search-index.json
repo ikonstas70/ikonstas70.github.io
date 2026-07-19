@@ -971,5 +971,12 @@
   "section": "Articles",
   "tag": "CCIE Lab",
   "url": "/articles/ccie-enterprise-lab/"
+ },
+ {
+  "title": "Readings",
+  "desc": "Curated systems-security reading list — the foundational papers, grouped by theme, with why each matters.",
+  "section": "Readings",
+  "tag": "Reading List",
+  "url": "/readings"
  }
 ]

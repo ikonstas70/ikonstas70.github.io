@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/readings">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Readings — Konstas Engineering Notes</title>
+<meta name="description" content="A curated systems-security reading list — the foundational papers on memory safety, sandboxing, web and network security, side channels, privacy and anonymity, with a short note on why each one matters.">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .search-wrap { margin: 8px 0 30px; }
+  #q {
+    width: 100%; box-sizing: border-box; padding: 14px 18px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg); font-family: var(--mono); font-size: 1rem; outline: none;
+  }
+  #q:focus { border-color: var(--accent); }
+  #q::placeholder { color: var(--fg-dim); }
+  .controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 26px; }
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+  .filters button {
+    background: none; border: 1px solid var(--border); color: var(--fg-dim);
+    padding: 5px 14px; border-radius: 14px; font-family: var(--sans); font-size: 0.78rem;
+    letter-spacing: 0.08em; cursor: pointer; transition: all .2s; text-transform: uppercase;
+  }
+  .filters button.active, .filters button:hover { border-color: var(--accent); color: var(--accent); }
+  #count { color: var(--fg-dim); font-size: 0.8rem; }
+  .alpha { color: var(--accent); font-family: var(--serif); font-size: 1.5rem; margin: 30px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .result { display: block; padding: 14px 0; border-bottom: 1px solid var(--border); text-decoration: none; }
+  .result:hover .r-title { color: var(--accent); }
+  .r-title { color: var(--fg); font-family: var(--serif); font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+  .r-desc { color: var(--fg-dim); font-size: 0.85rem; }
+  .r-sect { color: var(--accent-dim); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; margin-left: 10px; }
+  #empty { color: var(--fg-dim); text-align: center; padding: 40px 0; display: none; }
+</style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings" class="active">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search" class="active">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  
+    <h1 style="text-align:center">Readings</h1>
+    <p class="section-intro">A working list of the systems-security papers I keep coming back to — the ones that named a problem, shipped a defense, or changed how I look at a threat. Grouped by theme rather than by course order, with a line on why each earns its place. Read them in the original; the summaries elsewhere lose what matters.</p>
+    <h2>Memory Safety &amp; Exploitation</h2>
+    <div class="reading">
+      <h3>Baggy Bounds Checking</h3>
+      <p class="cite">Akritidis, Costa, Castro, Hand &middot; 2009 &middot; USENIX Security</p>
+      <p class="take">A bounds-checking scheme fast and compatible enough to actually ship — the practical answer to out-of-bounds errors in C, and the backdrop for my own buffer-overflow notes.</p>
+    </div>
+    <div class="reading">
+      <h3>Hacking Blind</h3>
+      <p class="cite">Bittau, Belay, Mashtizadeh, Mazières, Boneh &middot; 2014 &middot; IEEE S&amp;P</p>
+      <p class="take">Builds a working stack-overflow exploit against a service with no binary and no source, defeating ASLR by crashing and observing. The paper that made me respect blind ROP.</p>
+    </div>
+    <h2>Privilege Separation, Capabilities &amp; Sandboxing</h2>
+    <div class="reading">
+      <h3>Building Secure High-Performance Web Services with OKWS</h3>
+      <p class="cite">Krohn &middot; 2004 &middot; USENIX ATC</p>
+      <p class="take">Splits a web server into least-privilege processes that each hold only what they need — the cleanest illustration of privilege separation done for real throughput.</p>
+    </div>
+    <div class="reading">
+      <h3>The Confused Deputy</h3>
+      <p class="cite">Hardy &middot; 1988 &middot; ACM SIGOPS OSR</p>
+      <p class="take">Three pages that name a whole class of bug: an authorized program tricked into misusing its authority. Once you see it you find it everywhere.</p>
+    </div>
+    <div class="reading">
+      <h3>Capsicum: Practical Capabilities for UNIX</h3>
+      <p class="cite">Watson, Anderson, Laurie, Kennaway &middot; 2010 &middot; USENIX Security</p>
+      <p class="take">Retrofits capability security onto UNIX without throwing UNIX away — the compromise design that shipped into FreeBSD.</p>
+    </div>
+    <div class="reading">
+      <h3>Native Client: A Sandbox for Portable, Untrusted x86</h3>
+      <p class="cite">Yee, Sehr, Dardyk, et al. &middot; 2009 &middot; IEEE S&amp;P</p>
+      <p class="take">Runs untrusted native x86 in the browser safely by validating the instruction stream — audacious, and it worked.</p>
+    </div>
+    <h2>Web Security</h2>
+    <div class="reading">
+      <h3>The Tangled Web (ch. 9–13)</h3>
+      <p class="cite">Zalewski &middot; 2011 &middot; No Starch Press</p>
+      <p class="take">The browser security model as it actually behaves, not as the specs pretend. Same-origin, cookies, content sniffing — the messy truth.</p>
+    </div>
+    <div class="reading">
+      <h3>OWASP Top 10</h3>
+      <p class="cite">OWASP &middot; 2013</p>
+      <p class="take">Not research, but the shared vocabulary for what goes wrong in web apps. Worth re-reading to keep the failure modes fresh.</p>
+    </div>
+    <div class="reading">
+      <h3>Framework defenses: Django security &amp; CSRF</h3>
+      <p class="cite">Django project</p>
+      <p class="take">How a mature framework bakes in escaping, CSRF tokens, and secure defaults — the pragmatic counterpart to the attack papers.</p>
+    </div>
+    <h2>Program Analysis</h2>
+    <div class="reading">
+      <h3>KLEE: Automatic Generation of High-Coverage Tests</h3>
+      <p class="cite">Cadar, Dunbar, Engler &middot; 2008 &middot; OSDI</p>
+      <p class="take">Symbolic execution that finds deep bugs by treating inputs as unknowns and solving for the paths. Changed how I think about test coverage.</p>
+    </div>
+    <div class="reading">
+      <h3>Ur/Web: A Simple Model for Programming the Web</h3>
+      <p class="cite">Chlipala &middot; 2015 &middot; POPL</p>
+      <p class="take">A language where whole categories of web bugs can't be expressed. The type-system-as-security argument, taken seriously.</p>
+    </div>
+    <h2>Network Security &amp; Authentication</h2>
+    <div class="reading">
+      <h3>A Look Back at Security Problems in the TCP/IP Protocol Suite</h3>
+      <p class="cite">Bellovin &middot; 2004 &middot; ACSAC</p>
+      <p class="take">The author revisits his own 1989 catalogue of protocol flaws fifteen years later — a lesson in which weaknesses persist and why.</p>
+    </div>
+    <div class="reading">
+      <h3>Kerberos: An Authentication Service for Open Networks</h3>
+      <p class="cite">Steiner, Neuman, Schiller &middot; 1988 &middot; USENIX</p>
+      <p class="take">The ticket-based authentication design still under every enterprise you'll audit. Read the original, not the wiki summary.</p>
+    </div>
+    <div class="reading">
+      <h3>ForceHTTPS</h3>
+      <p class="cite">Jackson, Barth &middot; 2008 &middot; WWW</p>
+      <p class="take">The idea that became HSTS: let a site refuse to be downgraded out of HTTPS. Small mechanism, large payoff.</p>
+    </div>
+    <h2>Side Channels &amp; Hardware-Adjacent</h2>
+    <div class="reading">
+      <h3>Remote Timing Attacks are Practical</h3>
+      <p class="cite">Brumley, Boneh &middot; 2003 &middot; USENIX Security</p>
+      <p class="take">Recovers an RSA private key over a network just by timing responses. The paper that retired 'the network hides the timing.'</p>
+    </div>
+    <div class="reading">
+      <h3>Trustworthy Medical Device Software</h3>
+      <p class="cite">Fu &middot; 2011 &middot; IOM</p>
+      <p class="take">Security when the failure mode is a patient, not a data breach. Reframes the whole risk conversation.</p>
+    </div>
+    <h2>Authentication, Privacy &amp; Anonymity</h2>
+    <div class="reading">
+      <h3>The Quest to Replace Passwords</h3>
+      <p class="cite">Bonneau, Herley, van Oorschot, Stajano &middot; 2012 &middot; IEEE S&amp;P</p>
+      <p class="take">A ruthless comparative framework scoring every password alternative on usability, deployability, and security. Explains why passwords won't die.</p>
+    </div>
+    <div class="reading">
+      <h3>An Analysis of Private Browsing Modes</h3>
+      <p class="cite">Aggarwal, Bursztein, Jackson, Boneh &middot; 2010 &middot; USENIX Security</p>
+      <p class="take">Measures what 'incognito' actually protects against — usually less than users assume, and against a different adversary than they think.</p>
+    </div>
+    <div class="reading">
+      <h3>Tor: The Second-Generation Onion Router</h3>
+      <p class="cite">Dingledine, Mathewson, Syverson &middot; 2004 &middot; USENIX Security</p>
+      <p class="take">The design of the anonymity network everyone cites and few have read. Threat model, tradeoffs, and why low-latency anonymity is hard.</p>
+    </div>
+    <h2>Mobile, Tracking &amp; Economics</h2>
+    <div class="reading">
+      <h3>Understanding Android Security</h3>
+      <p class="cite">Enck, Ongtang, McDaniel &middot; 2009 &middot; IEEE S&amp;P</p>
+      <p class="take">The permission-and-intent model that defines the Android attack surface. Foundation for everything mobile that follows.</p>
+    </div>
+    <div class="reading">
+      <h3>TaintDroid: Realtime Privacy Monitoring on Smartphones</h3>
+      <p class="cite">Enck, Gilbert, Chun, et al. &middot; 2010 &middot; OSDI</p>
+      <p class="take">Follows tagged sensitive data as it flows through apps and out to the network — dynamic taint tracking made to run on a phone.</p>
+    </div>
+    <div class="reading">
+      <h3>Click Trajectories: The Spam Value Chain</h3>
+      <p class="cite">Levchenko, Pitsillidis, et al. &middot; 2011 &middot; IEEE S&amp;P</p>
+      <p class="take">Follows the money end-to-end through the spam economy and finds the payment bottleneck. Security as economics, brilliantly.</p>
+    </div>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+
+<script>
+let INDEX = [];
+let sect = "all";
+let sortMode = "az";
+const $ = (id) => document.getElementById(id);
+
+function render() {
+  const q = $("q").value.trim().toLowerCase();
+  const terms = q.split(/\s+/).filter(Boolean);
+  let list = INDEX.filter(it => {
+    if (sect !== "all" && it.section !== sect) return false;
+    if (!terms.length) return true;
+    const hay = (it.title + " " + it.desc + " " + it.tag + " " + it.section).toLowerCase();
+    return terms.every(t => hay.includes(t));
+  });
+  const domainOf = (it) => it.section === "Articles" ? (it.tag || "Articles") : it.section;
+  if (sortMode === "domain") {
+    list.sort((a, b) => domainOf(a).localeCompare(domainOf(b))
+      || a.title.toLowerCase().localeCompare(b.title.toLowerCase()));
+  } else {
+    list.sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()));
+  }
+
+  const box = $("results");
+  box.innerHTML = "";
+  $("count").textContent = list.length + (list.length === 1 ? " result" : " results");
+  $("empty").style.display = list.length ? "none" : "block";
+
+  let letter = "";
+  for (const it of list) {
+    const first = sortMode === "domain" ? domainOf(it) : it.title[0].toUpperCase();
+    if (first !== letter) {
+      letter = first;
+      const h = document.createElement("div");
+      h.className = "alpha";
+      h.textContent = letter;
+      box.appendChild(h);
+    }
+    const a = document.createElement("a");
+    a.className = "result";
+    a.href = it.url;
+    a.innerHTML = `<div class="r-title">${esc(it.title)}<span class="r-sect">${esc(it.section)}</span></div>`
+                + `<div class="r-desc">${esc(it.desc)}</div>`;
+    box.appendChild(a);
+  }
+}
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+$("q").addEventListener("input", render);
+document.querySelectorAll(".filters button[data-sect]").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".filters button[data-sect]").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    sect = b.dataset.sect;
+    render();
+  });
+});
+document.querySelectorAll("#sortmode button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#sortmode button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    sortMode = b.dataset.sort;
+    render();
+  });
+});
+
+fetch("/search-index.json")
+  .then(r => r.json())
+  .then(data => { INDEX = data; render(); })
+  .catch(() => { $("empty").textContent = "Could not load the index."; $("empty").style.display = "block"; });
+</script>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=readings",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>
