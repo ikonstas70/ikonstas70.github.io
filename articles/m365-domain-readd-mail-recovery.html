@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/m365-domain-readd-mail-recovery">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Restoring Microsoft 365 Mail Flow After a Domain Re-Add — Konstas Engineering Notes</title>
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Email Security</span>
+    <h1>Restoring Microsoft 365 Mail Flow After a Domain Re-Add</h1>
+    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+
+    <p>Removing an accepted domain from a Microsoft 365 tenant and adding it back sounds like a no-op. It is not. The re-add silently regenerates parts of the mail infrastructure that your DNS zone still describes in the past tense, and the failure modes are scattered: inbound mail may keep flowing while Outlook profiles refuse to configure, or outbound mail lands in spam while everything looks green in the admin center. This is the recovery procedure I use — it takes a zone from "email is acting weird" back to fully authenticated mail flow, and it applies equally when you inherit a tenant someone else broke.</p>
+
+    <h2>What a re-add actually destroys</h2>
+    <p>When a domain leaves a tenant, Exchange Online tears down tenant-side state that does not come back identically:</p>
+    <ul>
+      <li><strong>The MX endpoint name can change.</strong> Inbound mail for each domain terminates at a tenant-scoped hostname under <code>mail.protection.outlook.com</code>. On a re-add, the regenerated endpoint often carries a numeric or letter suffix (<code>example-com0e</code> instead of <code>example-com</code>) because the original name is still reserved by the deleted registration. Your old MX record now points at a name that may resolve — but is no longer yours.</li>
+      <li><strong>DKIM signing configs are deleted.</strong> The private keys are gone. The selector CNAMEs in your zone point at key records that no longer exist, and signing is off even if the toggle was on before.</li>
+      <li><strong>Client discovery must be re-proven.</strong> Autodiscover behavior for the domain resets along with the domain registration, so any DNS problem that was latent before the re-add becomes fatal now — clients re-run discovery from scratch instead of using cached profiles.</li>
+    </ul>
+    <p>What survives: your SPF TXT record, your DMARC policy, and any third-party records. That asymmetry — half the records right, half stale — is exactly why the symptoms look inconsistent.</p>
+
+    <h2>Triage in the right order</h2>
+    <p>Work outside-in with <code>dig</code> before touching any portal. Five queries tell you the whole story:</p>
+    <pre><code># 1. Where does inbound mail go?
+dig +short MX example.com
+
+# 2. Does client discovery reach the provider?
+dig +short CNAME autodiscover.example.com
+dig +short autodiscover.example.com        # A-record fallback — see below
+
+# 3. Who may send as this domain?
+dig +short TXT example.com | grep spf
+
+# 4. Are signing keys published?
+dig +short CNAME selector1._domainkey.example.com
+dig +short CNAME selector2._domainkey.example.com
+
+# 5. What do receivers do with failures?
+dig +short TXT _dmarc.example.com</code></pre>
+    <p>The MX answer should be your tenant endpoint — suffix included — exactly as the admin center's DNS page states it <em>today</em>, not as you remember it. Verify against the portal, never from memory: the suffix variant is the single most common stale record after a re-add.</p>
+
+    <h2>The proxied-record trap</h2>
+    <p>Here is the failure that wastes the most hours, because every record looks correct in your DNS provider's dashboard. If your zone sits behind a CDN or reverse-proxy layer (Cloudflare and similar), each record has a proxy toggle. A proxied <code>autodiscover</code> CNAME still <em>displays</em> as pointing to <code>autodiscover.outlook.com</code> — but publicly it resolves to the proxy's edge addresses, and every client request terminates at the CDN instead of the mail provider.</p>
+    <p>The diagnostic signature is unmistakable once you know to look for it:</p>
+    <pre><code># BROKEN — proxy is answering:
+$ dig +short autodiscover.example.com
+104.21.x.x        # CDN edge address
+172.67.x.x        # CDN edge address
+
+# HEALTHY — CNAME chain reaches the provider:
+$ dig +short autodiscover.example.com
+autodiscover.outlook.com.
+autodiscover.outlook.cloud.microsoft.
+52.96.x.x</code></pre>
+    <p>Why it breaks: Outlook's discovery client is not a browser. If the proxy layer runs bot mitigation or a challenge mode — common on zones under active attack protection — the client receives a JavaScript challenge page instead of the discovery XML, and it can never solve it. Profile creation fails with generic "cannot connect" errors while the website on the same zone works perfectly, which sends you hunting in all the wrong places.</p>
+    <blockquote>The rule is absolute: every mail-plumbing record — <code>autodiscover</code>, the <code>_domainkey</code> selectors, SRV records for SIP/federation, and anything an MX resolves through — is DNS-only. Proxying is for humans with browsers; mail protocols must bypass the edge entirely.</blockquote>
+    <p>The fix is one API call or one toggle: switch the record to DNS-only (grey cloud). No content change is needed when the target was right all along.</p>
+
+    <h2>SPF: one record, every sender</h2>
+    <p>SPF survives the re-add, but audit it anyway — it is the record most likely to have drifted if the domain also sends through a legacy webmail platform, a marketing tool, or a hosting provider's relay. Every active sending path needs an <code>include</code>, and Exchange Online's is non-negotiable:</p>
+    <pre><code>v=spf1 include:spf.protection.outlook.com include:relay.example-host.net -all</code></pre>
+    <p>Missing the provider include while MX points at that provider is a silent half-failure: inbound works, receivers accept your outbound on reputation for a while, and then a strict verifier starts quarantining you. Keep it to a single TXT record — multiple SPF records at the same name is a permanent error (<code>permerror</code>) — and stay under the 10-DNS-lookup limit that nested includes burn through.</p>
+
+    <h2>DKIM: rebuild, don't repair</h2>
+    <p>Because the re-add destroyed the signing keys, the old selector CNAMEs are dead weight. Rebuild from the provider side first:</p>
+    <ol>
+      <li>In the security portal's DKIM page, select the domain and <strong>create new keys</strong>. The portal returns two CNAME targets — one per selector, so keys can rotate without further DNS edits.</li>
+      <li>Publish both records exactly as issued, DNS-only. Current Exchange Online targets land under a namespace of the form <code>selector1-example-com0e._domainkey.&lt;tenant&gt;.p-v1.dkim.mail.microsoft</code> — note that the MX suffix reappears here, and that newer tenants get <code>p-v1</code>/<code>r-v1</code> zone variants. Copy, don't transcribe.</li>
+      <li>Verify propagation from the outside before touching the enable toggle:
+<pre><code>for r in 1.1.1.1 8.8.8.8 9.9.9.9; do
+  dig +short CNAME selector1._domainkey.example.com @$r
+  dig +short CNAME selector2._domainkey.example.com @$r
+done</code></pre></li>
+      <li>Enable signing. Expect the provider to publish the public-key TXT at the target only after enablement — an empty TXT behind a correct CNAME is normal until the toggle is on.</li>
+    </ol>
+
+    <h2>The negative-cache gotcha</h2>
+    <p>You publish the selector CNAMEs, all four public resolvers confirm them, you flip the enable toggle — and the portal insists <em>"CNAME record does not exist."</em> Nothing is wrong. The provider's resolver queried the name <em>before</em> you published it, received NXDOMAIN, and is entitled to cache that negative answer for the duration of your zone's SOA minimum TTL:</p>
+    <pre><code>$ dig +noall +authority SOA nonexistent-probe.example.com
+example.com.  1800  IN  SOA  ns1.example-dns.com. hostmaster.example.com. ...
+                ^^^^
+                negative answers cached up to 30 minutes</code></pre>
+    <p>Query your authoritative servers directly (<code>dig @ns1.example-dns.com</code>) to prove the records are live, then simply wait out the SOA minimum and retry. Portals phrase this as "up to 4 days" to cover pathological TTLs; with a competently configured zone it is bounded at your SOA minimum — typically 30 minutes. Knowing the exact bound turns a vague "come back later" into a scheduled retry.</p>
+
+    <h2>Prove it end-to-end</h2>
+    <p>Dashboards lie by omission; message headers do not. Send from the recovered domain to an external mailbox you control and read the authentication results:</p>
+    <pre><code>Authentication-Results: mx.example-receiver.com;
+       spf=pass  smtp.mailfrom=example.com;
+       dkim=pass header.d=example.com header.s=selector1;
+       dmarc=pass action=none header.from=example.com</code></pre>
+    <p>All three must pass, and <code>header.d</code> must be your domain — not the tenant's <code>onmicrosoft.com</code> fallback, which is what you get when DKIM enablement didn't take. Then confirm the client path: a fresh mail profile on a device <em>outside</em> your own network must configure without manual server entries. Testing discovery from inside your infrastructure can mislead you — egress filtering and VPN routing produce local-only failures that have nothing to do with your zone.</p>
+
+    <h2>Finish with DMARC enforcement</h2>
+    <p>A re-add is the right moment to advance DMARC, because you have just re-verified every mechanism it depends on. If you sat at <code>p=none</code> before, collect a week of aggregate reports to confirm no legitimate sender is missing from SPF/DKIM, then move to <code>p=quarantine</code>, then <code>p=reject</code>:</p>
+    <pre><code>v=DMARC1; p=quarantine; rua=mailto:dmarc-reports@example.com; fo=1; adkim=s; aspf=s</code></pre>
+    <p>With enforcement on, the authentication stack you just rebuilt stops being paperwork and starts actively discarding forgeries of your domain.</p>
+
+    <h2>The recovery checklist</h2>
+    <ul>
+      <li><strong>MX</strong> — matches the admin center's <em>current</em> endpoint, suffix and all; verified with <code>dig</code>, not memory.</li>
+      <li><strong>Autodiscover</strong> — CNAME to <code>autodiscover.outlook.com</code>, DNS-only, publicly resolving to the provider's chain, never to CDN edge IPs.</li>
+      <li><strong>Every mail record unproxied</strong> — selectors, SRV, anything mail-protocol clients touch.</li>
+      <li><strong>SPF</strong> — single TXT, one include per active sending platform, <code>-all</code>, under 10 lookups.</li>
+      <li><strong>DKIM</strong> — keys regenerated post-re-add, both selector CNAMEs published verbatim, signing enabled, <code>header.d</code> confirmed in real headers.</li>
+      <li><strong>Negative caching</strong> — SOA minimum known; portal "record does not exist" errors retried after that window, not debugged.</li>
+      <li><strong>End-to-end proof</strong> — external inbound delivery, external profile setup, and a three-pass <code>Authentication-Results</code> header.</li>
+      <li><strong>DMARC</strong> — advanced toward enforcement now that the foundations are re-proven.</li>
+    </ul>
+
+    <blockquote>A domain re-add is a partial rebuild wearing the mask of a no-op. Treat it as one: enumerate what the tenant regenerated, republish what changed, keep every mail record out of the proxy path, and let message headers — not dashboards — declare the incident closed.</blockquote>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=m365-domain-readd-mail-recovery",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
