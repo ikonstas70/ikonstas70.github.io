@@ -28,9 +28,11 @@
   </header>
 
   <main>
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:92px;height:92px;object-fit:cover;border-radius:50%;border:2px solid hsl(43 45% 56%);margin:4px 24px 12px 0;">
     <span class="tag">Email Security</span>
     <h1>Restoring Microsoft 365 Mail Flow After a Domain Re-Add</h1>
-    <p class="meta">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+    <p class="meta" style="clear:none;">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+    <div style="clear:both;"></div>
 
     <p>Removing an accepted domain from a Microsoft 365 tenant and adding it back sounds like a no-op. It is not. The re-add silently regenerates parts of the mail infrastructure that your DNS zone still describes in the past tense, and the failure modes are scattered: inbound mail may keep flowing while Outlook profiles refuse to configure, or outbound mail lands in spam while everything looks green in the admin center. This is the recovery procedure I use — it takes a zone from "email is acting weird" back to fully authenticated mail flow, and it applies equally when you inherit a tenant someone else broke.</p>
 
