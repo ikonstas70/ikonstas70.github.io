@@ -38,7 +38,7 @@
     <p>When a domain leaves a tenant, Exchange Online tears down tenant-side state that does not come back identically:</p>
     <ul>
       <li><strong>The MX endpoint name can change.</strong> Inbound mail for each domain terminates at a tenant-scoped hostname under <code>mail.protection.outlook.com</code>. On a re-add, the regenerated endpoint often carries a numeric or letter suffix (<code>example-com0e</code> instead of <code>example-com</code>) because the original name is still reserved by the deleted registration. Your old MX record now points at a name that may resolve — but is no longer yours.</li>
-      <li><strong>DKIM signing configs are deleted.</strong> The private keys are gone. The selector CNAMEs in your zone point at key records that no longer exist, and signing is off even if the toggle was on before.</li>
+      <li><strong>DKIM signing configs are deleted.</strong> DKIM — DomainKeys Identified Mail, the mechanism that cryptographically signs every outbound message so receivers can verify it originated from your domain and was not altered in transit — is provisioned per domain, per tenant. The private keys are gone. The selector CNAMEs in your zone point at key records that no longer exist, and signing is off even if the toggle was on before.</li>
       <li><strong>Client discovery must be re-proven.</strong> Autodiscover behavior for the domain resets along with the domain registration, so any DNS problem that was latent before the re-add becomes fatal now — clients re-run discovery from scratch instead of using cached profiles.</li>
     </ul>
     <p>What survives: your SPF TXT record, your DMARC policy, and any third-party records. That asymmetry — half the records right, half stale — is exactly why the symptoms look inconsistent.</p>
@@ -85,7 +85,7 @@ autodiscover.outlook.cloud.microsoft.
     <pre><code>v=spf1 include:spf.protection.outlook.com include:relay.example-host.net -all</code></pre>
     <p>Missing the provider include while MX points at that provider is a silent half-failure: inbound works, receivers accept your outbound on reputation for a while, and then a strict verifier starts quarantining you. Keep it to a single TXT record — multiple SPF records at the same name is a permanent error (<code>permerror</code>) — and stay under the 10-DNS-lookup limit that nested includes burn through.</p>
 
-    <h2>DKIM: rebuild, don't repair</h2>
+    <h2>DKIM (DomainKeys Identified Mail): rebuild, don't repair</h2>
     <p>Because the re-add destroyed the signing keys, the old selector CNAMEs are dead weight. Rebuild from the provider side first:</p>
     <ol>
       <li>In the security portal's DKIM page, select the domain and <strong>create new keys</strong>. The portal returns two CNAME targets — one per selector, so keys can rotate without further DNS edits.</li>

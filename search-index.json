@@ -981,7 +981,7 @@
 },
 {
 "title": "Restoring Microsoft 365 Mail Flow After a Domain Re-Add",
-"desc": "Why removing and re-adding a domain in a Microsoft 365 tenant breaks autodiscover, DKIM, and MX in scattered ways — and the outside-in DNS recovery procedure…",
+"desc": "Why removing and re-adding a domain in a Microsoft 365 tenant breaks autodiscover, DomainKeys Identified Mail (DKIM), and MX in scattered ways — and the outside-in DNS recovery procedure…",
 "section": "Articles",
 "tag": "Email Security",
 "url": "/articles/m365-domain-readd-mail-recovery"
