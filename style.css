@@ -70,6 +70,15 @@ pre {
 code { font-family: var(--mono); background: var(--code-bg); padding: 2px 6px; border-radius: 3px; font-size: 0.85em; color: hsl(43 35% 70%); }
 pre code { padding: 0; background: none; color: hsl(0 0% 85%); }
 blockquote { border-left: 2px solid var(--accent); padding-left: 18px; color: var(--fg-dim); margin: 0 0 18px; font-style: italic; }
+.masthead-quote { max-width: 640px; margin: 0 auto 40px; text-align: center; }
+.masthead-quote p {
+  font-family: var(--serif); font-style: italic; font-size: 1.02rem; line-height: 1.65;
+  color: var(--fg-dim); margin: 0 0 12px;
+}
+.masthead-quote cite {
+  display: block; font-style: normal; font-size: 0.72rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--accent);
+}
 .card {
   display: block; background: var(--card); border: 1px solid var(--border);
   border-radius: 4px; padding: 24px 28px; margin-bottom: 18px;
