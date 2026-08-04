@@ -82,7 +82,7 @@ canary-tokened   directly to raw scan  auto-contains in <1s
     <h3>Continuous file integrity verification</h3>
     <p>Several hundred critical configuration files, binaries, and credentials are cryptographically hashed and watched in real time. Any unauthorized change — even a single byte, which flips the hash entirely — triggers an immediate alert, regardless of how the change happened.</p>
     <h3>Self-healing deployment</h3>
-    <p>A hash mismatch doesn't just alert — it rebuilds. On a fixed cycle, and immediately on detecting a hash deviation at any other time, SENTINEL re-verifies web-facing infrastructure against its authorized master copy and automatically restores anything that doesn't match, before I've opened an alert. The system repairs itself faster than I could respond to a notification.</p>
+    <p>A hash mismatch doesn't just alert — it rebuilds. On a fixed cycle, web-facing infrastructure is purged and rebuilt from its authorized master copy unconditionally, whether or not anything was flagged, on the assumption that something could slip past detection. Outside that cycle, a hash deviation caught at any other moment triggers the same restoration immediately, before I've opened an alert. Either way, the system repairs itself faster than I could respond to a notification.</p>
     <h3>Security operations dashboard</h3>
     <p>An authenticated, loopback-only command view shows every threat, block, alert, and service health status — filterable live logs, one-click emergency purge, all in one screen, never exposed to the open internet.</p>
     <h3>Zero-trust management tunnel</h3>

@@ -186,6 +186,7 @@ img { -webkit-user-drag: none; user-drag: none; }
 .live-log .lvl-TRAP   { color: hsl(28 70% 62%);    border-color: hsl(28 40% 40%); }
 .live-log .lvl-ALERT  { color: hsl(4 65% 64%);     border-color: hsl(4 40% 42%); }
 .live-log .lvl-INFO   { color: var(--fg-dim);      border-color: var(--border); }
+.live-log .lvl-SYNC   { color: hsl(200 40% 62%);   border-color: hsl(200 30% 38%); }
 .live-log .ltxt { color: var(--fg); }
 @media (max-width: 560px) {
   .live-log-line { flex-wrap: wrap; gap: 4px 12px; }
