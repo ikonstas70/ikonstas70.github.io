@@ -134,3 +134,34 @@ img { -webkit-user-drag: none; user-drag: none; }
 .viewcount .vc-num { color:var(--accent); font-weight:600; font-variant-numeric:tabular-nums; }
 .viewcount .vc-eye { opacity:0.8; }
 @media (max-width:600px){ .viewcount { bottom:12px; right:12px; font-size:0.72rem; padding:5px 12px; } }
+
+/* Live signal widget (cached-snapshot stats panel) */
+.live-signal {
+  border: 1px solid var(--accent-dim); border-radius: 8px;
+  padding: 22px 28px; margin: 8px 0 28px;
+  background: linear-gradient(165deg, hsl(43 45% 56% / 0.06), transparent 70%);
+}
+.live-signal-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+  font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  animation: live-pulse 2.4s ease-out infinite;
+}
+@keyframes live-pulse {
+  0%   { box-shadow: 0 0 0 0 hsl(43 45% 56% / 0.5); }
+  70%  { box-shadow: 0 0 0 9px hsl(43 45% 56% / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(43 45% 56% / 0); }
+}
+.live-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 24px 32px; margin-bottom: 16px;
+}
+.live-tile { display: flex; flex-direction: column; }
+.live-tile-num {
+  font-family: var(--mono); font-size: 1.7rem; font-weight: 600;
+  color: var(--fg); line-height: 1; font-variant-numeric: tabular-nums;
+}
+.live-tile-label { font-size: 0.7rem; color: var(--fg-dim); margin-top: 7px; letter-spacing: 0.02em; }
+.live-meta { font-size: 0.72rem; color: var(--fg-dim); font-family: var(--mono); }

@@ -156,6 +156,47 @@ canary-tokened   directly to raw scan  auto-contains in <1s
       <li><strong>65 / 2 / 0</strong> — pass / warn / fail on the latest independent pentest pass</li>
     </ul>
 
+    <h2>Live signal</h2>
+    <p>A cached, sanitized snapshot pulled periodically from the running installation — not a real-time stream, and not sample data. Only aggregate counts and severity buckets ever leave the platform for this; no IPs, ports, paths, or service names.</p>
+    <div class="live-signal">
+      <div class="live-signal-head"><span class="live-dot"></span><span>Cached Snapshot — Live Signal</span></div>
+      <div class="live-grid">
+        <div class="live-tile"><span class="live-tile-num" id="ls-blocked">—</span><span class="live-tile-label">Hostile sources blocked to date</span></div>
+        <div class="live-tile"><span class="live-tile-num" id="ls-health">—</span><span class="live-tile-label">Systems healthy</span></div>
+        <div class="live-tile"><span class="live-tile-num" id="ls-lastblock">—</span><span class="live-tile-label">Last source blocked</span></div>
+        <div class="live-tile"><span class="live-tile-num" id="ls-sev">—</span><span class="live-tile-label">Alert severity mix, last 50</span></div>
+      </div>
+      <div class="live-meta" id="ls-updated">Loading last snapshot…</div>
+    </div>
+    <script>
+    (function(){
+      var elB=document.getElementById("ls-blocked"),
+          elH=document.getElementById("ls-health"),
+          elL=document.getElementById("ls-lastblock"),
+          elS=document.getElementById("ls-sev"),
+          elU=document.getElementById("ls-updated");
+      function ago(iso){
+        var d=new Date(iso), s=Math.max(0,Math.floor((Date.now()-d.getTime())/1000));
+        if(s<90) return "just now";
+        var m=Math.floor(s/60); if(m<60) return m+"m ago";
+        var h=Math.floor(m/60); if(h<48) return h+"h ago";
+        return Math.floor(h/24)+"d ago";
+      }
+      fetch("/articles/sentinel-live.json",{cache:"no-store"})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          elB.textContent = (d.blocked_total||0).toLocaleString();
+          elH.textContent = d.systems_total ? (d.systems_healthy+" / "+d.systems_total) : "—";
+          var recent = (d.recent_activity && d.recent_activity[0]) ? d.recent_activity[0].time : null;
+          elL.textContent = recent ? ago(recent) : "—";
+          var sev = d.alerts_window || {};
+          elS.textContent = (sev.high||0)+"H · "+(sev.medium||0)+"M · "+(sev.info||0)+"I";
+          elU.textContent = "snapshot updated " + ago(d.updated);
+        })
+        .catch(function(){ elU.textContent = "snapshot unavailable right now"; });
+    })();
+    </script>
+
     <h2>Why publish this</h2>
     <p>I'm deliberately not publishing exact ports, file paths, or credentials here — that would just be handing a map to the same scanners the deception grid is built to catch. What I am publishing is the architecture and the discipline behind it, because the discipline is the actual differentiator: a platform that tests itself against real attack classes on a real schedule, built on cryptography that's already ahead of a deadline most of the industry hasn't started planning for.</p>
 

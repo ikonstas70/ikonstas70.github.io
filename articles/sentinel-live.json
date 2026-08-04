@@ -1,0 +1,34 @@
+{
+ "blocked_total": 3758,
+ "systems_healthy": 10,
+ "systems_total": 10,
+ "recent_activity": [
+  {
+   "type": "blocked",
+   "time": "2026-08-04T14:09:41.319Z"
+  },
+  {
+   "type": "blocked",
+   "time": "2026-08-04T14:09:41.319Z"
+  },
+  {
+   "type": "blocked",
+   "time": "2026-08-04T14:09:41.319Z"
+  },
+  {
+   "type": "blocked",
+   "time": "2026-08-04T14:09:41.319Z"
+  },
+  {
+   "type": "blocked",
+   "time": "2026-08-04T14:09:41.319Z"
+  }
+ ],
+ "alerts_window": {
+  "total": 50,
+  "high": 0,
+  "medium": 0,
+  "info": 50
+ },
+ "updated": "2026-08-04T14:40:48.889549Z"
+}
