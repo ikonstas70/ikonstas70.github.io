@@ -187,12 +187,6 @@ img { -webkit-user-drag: none; user-drag: none; }
 .live-log .lvl-ALERT  { color: hsl(4 65% 64%);     border-color: hsl(4 40% 42%); }
 .live-log .lvl-INFO   { color: var(--fg-dim);      border-color: var(--border); }
 .live-log .lvl-SYNC   { color: hsl(200 40% 62%);   border-color: hsl(200 30% 38%); }
-
-/* Decorative emblem above article titles */
-.sentinel-mark {
-  display: block; width: 88px; height: auto; margin: 0 auto 20px;
-  opacity: 0.92; filter: drop-shadow(0 0 14px hsl(43 45% 56% / 0.25));
-}
 .live-log .ltxt { color: var(--fg); }
 @media (max-width: 560px) {
   .live-log-line { flex-wrap: wrap; gap: 4px 12px; }
