@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SENTINEL: An Autonomous, Quantum-Safe Defense Platform — Konstas Engineering Notes</title>
-<meta name="description" content="Inside SENTINEL, a self-defending security platform I designed and operate: an eight-layer deception and containment architecture, a quantum-safe cryptographic layer, and the pen-testing regimen I run against it continuously.">
+<meta name="description" content="SENTINEL: a security platform I designed and operate on Zero Trust, active deception, and post-quantum cryptography (FIPS 203/204) — eight layers of autonomous defense and a quantum-safe cryptographic core, built as a closed-loop, self-correcting system rather than a passive alert stream.">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -38,6 +38,8 @@
     <p class="meta">Articles &middot; August 2026 &middot; Ioannis Konstas</p>
 
     <p>SENTINEL is a security platform I designed, built, and operate myself. It isn't a proof of concept — it's a live, autonomous defense stack sitting in front of production infrastructure I run, watching real traffic and containing real attackers around the clock. This piece covers the architecture, the reasoning behind it, and the testing regimen I use to keep proving it holds up.</p>
+
+    <blockquote>It's a working implementation of Zero Trust, active defense, and post-quantum cryptography built as one system rather than three separate initiatives. The differentiator isn't any single layer — it's marrying forward-looking cryptographic standards (FIPS 203/204) with automated active deception, so security monitoring behaves as a closed-loop, self-correcting system instead of a passive alert stream.</blockquote>
 
     <h2>The problem with reactive security</h2>
     <p>Industry figures put the average time to detect a breach at around <strong>207 days</strong> — meaning most organizations discover an intrusion months after the attacker already extracted whatever they came for. Three habits get most defenses there: perimeter-only thinking (firewalls and antivirus stop known threats, but modern intrusions ride in on legitimate tools and trusted protocols), alert fatigue (security teams drowning in low-quality alerts until the real one gets lost in the noise), and no forensic trail once a breach is finally noticed. SENTINEL is built to be wrong about none of those three: it decides without waiting on a human, it manufactures its own forensic trail, and it assumes the classical cryptography protecting all of this has an expiration date.</p>

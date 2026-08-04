@@ -1,7 +1,7 @@
 [
 {
 "title": "SENTINEL: An Autonomous, Quantum-Safe Defense Platform",
-"desc": "Inside a self-defending security platform I designed and operate: an eight-layer deception and containment architecture, a quantum-safe cryptographic layer, and the pen-testing regimen I run against it continuously.",
+"desc": "A security platform I designed and operate on Zero Trust, active deception, and post-quantum cryptography (FIPS 203/204) — built as a closed-loop, self-correcting system rather than a passive alert stream.",
 "section": "Articles",
 "tag": "Security Operations",
 "url": "/articles/sentinel-platform"
