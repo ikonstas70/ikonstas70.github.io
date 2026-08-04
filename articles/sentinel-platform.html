@@ -207,6 +207,18 @@ canary-tokened   directly to raw scan  auto-contains in <1s
     })();
     </script>
 
+    <h2>What the security team sees, all day</h2>
+    <p>The live signal above is a public sliver of a private view. Day to day, everything about SENTINEL is watched through one authenticated, loopback-only dashboard, organized into five views:</p>
+    <table>
+      <tr><th>View</th><th>What it shows</th></tr>
+      <tr><td>Overview</td><td>The state of everything at a glance — sources blocked today, deception hits, running total, and overall system status in one screen.</td></tr>
+      <tr><td>Threats</td><td>A chronological feed of every contained attempt: severity, which layer caught it, how long containment took.</td></tr>
+      <tr><td>Honeypot</td><td>Live status per deception node — hits today, canary tokens issued, which trap type drew the most attention.</td></tr>
+      <tr><td>Live Log</td><td>The raw event stream as it happens, unfiltered, for when I want to watch something unfold in real time rather than read a summary.</td></tr>
+      <tr><td>Web Sync</td><td>Encrypted-content sync and integrity status — last verified time, and where the self-heal cycle stands.</td></tr>
+    </table>
+    <p><strong>Notification status</strong> runs on two tracks that never depend on someone watching the screen. In-dashboard, an event is visible within about a second of happening, as covered above. In parallel, everything also rolls up into a scheduled encrypted digest on a fixed interval, so a standing record exists whether or not I was looking at the moment it mattered.</p>
+
     <h2>Why publish this</h2>
     <p>I'm deliberately not publishing exact ports, file paths, or credentials here — that would just be handing a map to the same scanners the deception grid is built to catch. What I am publishing is the architecture and the discipline behind it, because the discipline is the actual differentiator: a platform that tests itself against real attack classes on a real schedule, built on cryptography that's already ahead of a deadline most of the industry hasn't started planning for.</p>
 
