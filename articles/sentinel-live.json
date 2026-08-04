@@ -2,26 +2,56 @@
  "blocked_total": 3758,
  "systems_healthy": 10,
  "systems_total": 10,
- "recent_activity": [
+ "log_lines": [
   {
-   "type": "blocked",
-   "time": "2026-08-04T14:09:41.319Z"
+   "time": "2026-08-04T14:09:41.319Z",
+   "level": "BLOCK",
+   "text": "66 hostile sources auto-contained"
   },
   {
-   "type": "blocked",
-   "time": "2026-08-04T14:09:41.319Z"
+   "time": "2026-08-04T13:44:17.000+0000",
+   "level": "INFO",
+   "text": "Routine integrity / status check \u2014 no issues"
   },
   {
-   "type": "blocked",
-   "time": "2026-08-04T14:09:41.319Z"
+   "time": "2026-08-03T21:08:36.000+0000",
+   "level": "TRAP",
+   "text": "Deception grid engaged \u2014 scanner trapped and contained"
   },
   {
-   "type": "blocked",
-   "time": "2026-08-04T14:09:41.319Z"
+   "time": "2026-08-03T21:08:35.763Z",
+   "level": "BLOCK",
+   "text": "Hostile source auto-contained"
   },
   {
-   "type": "blocked",
-   "time": "2026-08-04T14:09:41.319Z"
+   "time": "2026-08-01T22:26:07.000+0000",
+   "level": "TRAP",
+   "text": "Deception grid engaged \u2014 scanner trapped and contained"
+  },
+  {
+   "time": "2026-08-01T22:26:06.800Z",
+   "level": "BLOCK",
+   "text": "Hostile source auto-contained"
+  },
+  {
+   "time": "2026-07-31T00:11:38.433Z",
+   "level": "BLOCK",
+   "text": "Hostile source auto-contained"
+  },
+  {
+   "time": "2026-07-31T00:11:38.082Z",
+   "level": "BLOCK",
+   "text": "Hostile source auto-contained"
+  },
+  {
+   "time": "2026-07-31T00:11:38.000+0000",
+   "level": "TRAP",
+   "text": "Deception grid engaged \u2014 scanner trapped and contained"
+  },
+  {
+   "time": "2026-07-31T00:11:38.000+0000",
+   "level": "TRAP",
+   "text": "Deception grid engaged \u2014 scanner trapped and contained"
   }
  ],
  "alerts_window": {
@@ -30,5 +60,5 @@
   "medium": 0,
   "info": 50
  },
- "updated": "2026-08-04T14:40:48.889549Z"
+ "updated": "2026-08-04T14:44:36.678787Z"
 }
