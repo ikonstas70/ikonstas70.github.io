@@ -157,24 +157,47 @@ canary-tokened   directly to raw scan  auto-contains in <1s
     </ul>
 
     <h2>Live signal</h2>
-    <p>A cached, sanitized event log pulled periodically from the running installation — not a real-time stream, and not sample data. Each line reflects a real event, reduced to a generic category and a timestamp; no IPs, ports, paths, or service names ever leave the platform for this.</p>
+    <p>A cached, sanitized dashboard pulled periodically from the running installation — not a real-time stream, and not sample data. Every number and every log line reflects a real event, reduced to an aggregate or a generic category; no IPs, ports, paths, or service names ever leave the platform for this.</p>
     <div class="live-signal">
       <div class="live-signal-head"><span class="live-dot"></span><span>Cached Snapshot — Live Signal</span></div>
-      <div class="live-grid">
-        <div class="live-tile"><span class="live-tile-num" id="ls-blocked">—</span><span class="live-tile-label">Hostile sources blocked to date</span></div>
-        <div class="live-tile"><span class="live-tile-num" id="ls-health">—</span><span class="live-tile-label">Systems healthy</span></div>
+
+      <div class="live-metrics">
+        <div class="live-metric"><span class="live-metric-label">Sources Blocked</span><span class="live-metric-num" id="ls-blocked">—</span></div>
+        <div class="live-metric"><span class="live-metric-label">Systems Healthy</span><span class="live-metric-num" id="ls-health">—</span></div>
+        <div class="live-metric"><span class="live-metric-label">Events Reviewed</span><span class="live-metric-num" id="ls-events">—</span></div>
+        <div class="live-metric"><span class="live-metric-label">Status</span><span class="live-metric-num" id="ls-status">—</span></div>
       </div>
-      <div class="live-log" id="ls-log">
-        <div class="live-log-line live-log-empty">Loading recent activity…</div>
+
+      <div class="live-panels">
+        <div class="live-panel">
+          <div class="live-panel-head">Recent Activity</div>
+          <div class="live-log" id="ls-log">
+            <div class="live-log-line live-log-empty">Loading recent activity…</div>
+          </div>
+        </div>
+        <div class="live-panel">
+          <div class="live-panel-head">Severity Mix — Last 50 Events</div>
+          <div class="live-sev" id="ls-sev">
+            <div class="live-sev-row"><span class="live-sev-label">High</span><div class="live-sev-track"><div class="live-sev-fill sev-high" id="ls-bar-high"></div></div><span class="live-sev-n" id="ls-n-high">0</span></div>
+            <div class="live-sev-row"><span class="live-sev-label">Medium</span><div class="live-sev-track"><div class="live-sev-fill sev-medium" id="ls-bar-medium"></div></div><span class="live-sev-n" id="ls-n-medium">0</span></div>
+            <div class="live-sev-row"><span class="live-sev-label">Info</span><div class="live-sev-track"><div class="live-sev-fill sev-info" id="ls-bar-info"></div></div><span class="live-sev-n" id="ls-n-info">0</span></div>
+          </div>
+        </div>
       </div>
+
       <div class="live-meta" id="ls-updated">Loading last snapshot…</div>
     </div>
     <script>
     (function(){
       var elB=document.getElementById("ls-blocked"),
           elH=document.getElementById("ls-health"),
+          elEv=document.getElementById("ls-events"),
+          elSt=document.getElementById("ls-status"),
           elLog=document.getElementById("ls-log"),
-          elU=document.getElementById("ls-updated");
+          elU=document.getElementById("ls-updated"),
+          barHigh=document.getElementById("ls-bar-high"), nHigh=document.getElementById("ls-n-high"),
+          barMed=document.getElementById("ls-bar-medium"), nMed=document.getElementById("ls-n-medium"),
+          barInfo=document.getElementById("ls-bar-info"), nInfo=document.getElementById("ls-n-info");
       function ago(iso){
         var d=new Date(iso), s=Math.max(0,Math.floor((Date.now()-d.getTime())/1000));
         if(s<90) return "just now";
@@ -188,6 +211,18 @@ canary-tokened   directly to raw scan  auto-contains in <1s
         .then(function(d){
           elB.textContent = (d.blocked_total||0).toLocaleString();
           elH.textContent = d.systems_total ? (d.systems_healthy+" / "+d.systems_total) : "—";
+
+          var sev = d.alerts_window || {};
+          var total = sev.total || 0, high = sev.high||0, med = sev.medium||0, info = sev.info||0;
+          elEv.textContent = total.toLocaleString();
+          elSt.textContent = high > 0 ? "REVIEW" : "SECURE";
+          elSt.style.color = high > 0 ? "hsl(4 65% 64%)" : "var(--accent)";
+
+          var maxN = Math.max(high, med, info, 1);
+          barHigh.style.width = (high/maxN*100)+"%"; nHigh.textContent = high;
+          barMed.style.width  = (med/maxN*100)+"%";  nMed.textContent  = med;
+          barInfo.style.width = (info/maxN*100)+"%"; nInfo.textContent = info;
+
           var lines = d.log_lines || [];
           if(!lines.length){
             elLog.innerHTML = '<div class="live-log-line live-log-empty">No recent events in this snapshot.</div>';

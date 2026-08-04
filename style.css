@@ -154,17 +154,42 @@ img { -webkit-user-drag: none; user-drag: none; }
   70%  { box-shadow: 0 0 0 9px hsl(43 45% 56% / 0); }
   100% { box-shadow: 0 0 0 0 hsl(43 45% 56% / 0); }
 }
-.live-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 24px 32px; margin-bottom: 20px;
+.live-metrics {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px; margin-bottom: 20px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
 }
-.live-tile { display: flex; flex-direction: column; }
-.live-tile-num {
-  font-family: var(--mono); font-size: 1.7rem; font-weight: 600;
+.live-metric {
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--code-bg); padding: 16px 18px;
+}
+.live-metric-label { font-size: 0.66rem; color: var(--fg-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+.live-metric-num {
+  font-family: var(--mono); font-size: 1.5rem; font-weight: 600;
   color: var(--fg); line-height: 1; font-variant-numeric: tabular-nums;
 }
-.live-tile-label { font-size: 0.7rem; color: var(--fg-dim); margin-top: 7px; letter-spacing: 0.02em; }
-.live-meta { font-size: 0.72rem; color: var(--fg-dim); font-family: var(--mono); margin-top: 12px; }
+.live-meta { font-size: 0.72rem; color: var(--fg-dim); font-family: var(--mono); margin-top: 16px; }
+
+.live-panels {
+  display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; align-items: start;
+}
+@media (max-width: 640px) { .live-panels { grid-template-columns: 1fr; } }
+.live-panel-head {
+  font-size: 0.66rem; color: var(--fg-dim); letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.live-sev {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px 18px; display: flex; flex-direction: column; gap: 14px;
+}
+.live-sev-row { display: flex; align-items: center; gap: 12px; }
+.live-sev-label { flex: 0 0 52px; font-size: 0.72rem; color: var(--fg-dim); }
+.live-sev-track { flex: 1; height: 6px; border-radius: 3px; background: hsl(0 0% 100% / 0.06); overflow: hidden; }
+.live-sev-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.live-sev-fill.sev-high   { background: hsl(4 65% 64%); }
+.live-sev-fill.sev-medium { background: hsl(28 70% 62%); }
+.live-sev-fill.sev-info   { background: var(--accent-dim); }
+.live-sev-n { flex: 0 0 22px; text-align: right; font-family: var(--mono); font-size: 0.78rem; color: var(--fg); font-variant-numeric: tabular-nums; }
 
 .live-log {
   background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
