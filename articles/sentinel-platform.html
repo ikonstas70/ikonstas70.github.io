@@ -108,6 +108,20 @@ canary-tokened   directly to raw scan  auto-contains in <1s
     </ul>
     <p>Classical elliptic-curve exchange and RSA/Ed25519 signatures are vulnerable to Shor's algorithm once a sufficiently large quantum computer exists; AES-256 is not, which is why it stays as the symmetric workhorse underneath the hybrid handshake.</p>
 
+    <table>
+      <tr><th>Parameter</th><th>ML-KEM-768</th></tr>
+      <tr><td>Standard</td><td>NIST FIPS 203 (August 2024)</td></tr>
+      <tr><td>Hardness assumption</td><td>Module Learning With Errors (MLWE), k = 3, q = 3329</td></tr>
+      <tr><td>Public key</td><td>1,184 bytes</td></tr>
+      <tr><td>Private key</td><td>2,400 bytes</td></tr>
+      <tr><td>Ciphertext</td><td>1,088 bytes</td></tr>
+      <tr><td>Shared secret</td><td>32 bytes (256-bit)</td></tr>
+      <tr><td>Classical / post-quantum security</td><td>~180 bits / NIST Level 3</td></tr>
+      <tr><td>Effect of Grover's algorithm</td><td>Halves the effective key-search space — ~384-bit margin still holds post-quantum</td></tr>
+      <tr><td>Effect of Shor's algorithm</td><td>None — MLWE is not a hidden-subgroup problem Shor's algorithm solves</td></tr>
+    </table>
+    <p>The signature side, ML-DSA-65 (FIPS 204), sits at the equivalent NIST security category and replaces RSA/Ed25519 for every signed artifact SENTINEL produces — pentest reports, configuration attestations, canary-token provenance. A one-bit tamper anywhere in a signed payload invalidates the signature; there's no partial-credit verification.</p>
+
     <h2>Compliance mapping</h2>
     <p>The architecture wasn't retrofitted to a framework — it maps directly onto controls from the standards that matter most:</p>
     <ul>
