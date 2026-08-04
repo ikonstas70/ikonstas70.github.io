@@ -80,9 +80,9 @@ canary-tokened   directly to raw scan  auto-contains in <1s
     <h3>Autonomous containment</h3>
     <p>Hostile sources are blocked at the network layer within about a second of first contact, no human decision required, and the block is reported outward to global threat-intelligence feeds automatically.</p>
     <h3>Continuous file integrity verification</h3>
-    <p>Several hundred critical configuration files, binaries, and credentials are fingerprinted and watched in real time. Any unauthorized change — even a single byte — triggers an immediate alert, regardless of how the change happened.</p>
+    <p>Several hundred critical configuration files, binaries, and credentials are cryptographically hashed and watched in real time. Any unauthorized change — even a single byte, which flips the hash entirely — triggers an immediate alert, regardless of how the change happened.</p>
     <h3>Self-healing deployment</h3>
-    <p>On a fixed cycle, SENTINEL verifies that web-facing infrastructure still matches its authorized master copy and purges any deviation. If an intrusion is detected at any point, restoration fires instantly, before I've opened an alert.</p>
+    <p>A hash mismatch doesn't just alert — it rebuilds. On a fixed cycle, and immediately on detecting a hash deviation at any other time, SENTINEL re-verifies web-facing infrastructure against its authorized master copy and automatically restores anything that doesn't match, before I've opened an alert. The system repairs itself faster than I could respond to a notification.</p>
     <h3>Security operations dashboard</h3>
     <p>An authenticated, loopback-only command view shows every threat, block, alert, and service health status — filterable live logs, one-click emergency purge, all in one screen, never exposed to the open internet.</p>
     <h3>Zero-trust management tunnel</h3>
