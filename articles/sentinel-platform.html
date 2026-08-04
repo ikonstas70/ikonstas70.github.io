@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/sentinel-platform">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SENTINEL: An Autonomous, Quantum-Safe Defense Platform — Konstas Engineering Notes</title>
+<meta name="description" content="Inside SENTINEL, a self-defending security platform I designed and operate: an eight-layer deception and containment architecture, a quantum-safe cryptographic layer, and the pen-testing regimen I run against it continuously.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .55);margin:6px 22px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure &middot; Musician</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="https://pulseintimetunes.agency" target="_blank" rel="noopener">Music</a>
+      <a href="/articles/sentinel-platform" class="active">SENTINEL</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Security Operations</span>
+    <h1>SENTINEL: An Autonomous, Quantum-Safe Defense Platform</h1>
+    <p class="meta">Articles &middot; August 2026 &middot; Ioannis Konstas</p>
+
+    <p>SENTINEL is a security platform I designed, built, and operate myself. It isn't a proof of concept — it's a live, autonomous defense stack sitting in front of production infrastructure I run, watching real traffic and containing real attackers around the clock. This piece covers the architecture, the reasoning behind it, and the testing regimen I use to keep proving it holds up.</p>
+
+    <h2>The problem with reactive security</h2>
+    <p>Industry figures put the average time to detect a breach at around <strong>207 days</strong> — meaning most organizations discover an intrusion months after the attacker already extracted whatever they came for. Three habits get most defenses there: perimeter-only thinking (firewalls and antivirus stop known threats, but modern intrusions ride in on legitimate tools and trusted protocols), alert fatigue (security teams drowning in low-quality alerts until the real one gets lost in the noise), and no forensic trail once a breach is finally noticed. SENTINEL is built to be wrong about none of those three: it decides without waiting on a human, it manufactures its own forensic trail, and it assumes the classical cryptography protecting all of this has an expiration date.</p>
+
+    <h2>Topology</h2>
+    <p>The architecture is layered — each layer assumes the one in front of it eventually gets bypassed, and exists to catch what gets through:</p>
+    <pre><code>Internet / attackers
+      │
+      ▼
+Edge filtering  ── challenges and mitigates known-bad traffic before it lands
+      │
+      ├──────────────┬───────────────────┐
+      ▼               ▼                   ▼
+Deception grid   Production services   Behavioral threat engine
+11 decoy nodes,  never exposed         scores every request,
+canary-tokened   directly to raw scan  auto-contains in <1s
+      │                                    │
+      └───────────────┬────────────────────┘
+                       ▼
+              Security operations dashboard
+              loopback-bound, authenticated
+                       │
+                       ▼
+          Quantum-safe cryptographic layer
+          ML-KEM-768 + X25519 hybrid, ML-DSA-65 signing
+                       │
+                       ▼
+          Encrypted reporting &amp; backup
+          scheduled digests, signed pentest reports,
+          encrypted at rest, keys rotated on schedule</code></pre>
+    <p>Nothing that touches raw internet traffic talks directly to a production service — every path either terminates in a decoy, gets scored by the behavioral engine, or both. The dashboard that shows all of this is not internet-reachable; it's loopback-bound and authenticated, because a monitoring console is itself an attack surface.</p>
+
+    <h2>Eight layers, working in concert</h2>
+    <h3>Behavioral threat intelligence engine</h3>
+    <p>An always-running analysis engine reads every inbound request, classifies intent from behavioral signatures, assigns a threat severity score, and acts autonomously — no human approval in the loop. Decisions happen in milliseconds.</p>
+    <h3>Multi-node deception grid</h3>
+    <p>Eleven invisible traps — fake admin panels, credential portals, database consoles, environment files — wait silently for attackers. The moment one engages, every action is logged with a unique forensic canary token. They leave believing they succeeded.</p>
+    <h3>Autonomous containment</h3>
+    <p>Hostile sources are blocked at the network layer within about a second of first contact, no human decision required, and the block is reported outward to global threat-intelligence feeds automatically.</p>
+    <h3>Continuous file integrity verification</h3>
+    <p>Several hundred critical configuration files, binaries, and credentials are fingerprinted and watched in real time. Any unauthorized change — even a single byte — triggers an immediate alert, regardless of how the change happened.</p>
+    <h3>Self-healing deployment</h3>
+    <p>On a fixed cycle, SENTINEL verifies that web-facing infrastructure still matches its authorized master copy and purges any deviation. If an intrusion is detected at any point, restoration fires instantly, before I've opened an alert.</p>
+    <h3>Security operations dashboard</h3>
+    <p>An authenticated, loopback-only command view shows every threat, block, alert, and service health status — filterable live logs, one-click emergency purge, all in one screen, never exposed to the open internet.</p>
+    <h3>Zero-trust management tunnel</h3>
+    <p>All administrative access routes through a cryptographically authenticated, zero-trust tunnel. No exposed management ports, no cleartext credentials.</p>
+    <h3>Forensic evidence chain</h3>
+    <p>Every attacker who touches the deception grid leaves carrying a unique canary token embedded in whatever they extracted. If that token ever surfaces elsewhere — another breach, a dark-web leak, a future attack — it traces back to the exact moment it was planted.</p>
+
+    <h2>What happens the second an attacker finds it</h2>
+    <p>A typical organization might not know it's been probed for days. In SENTINEL, the whole sequence — detection to global reporting — runs in about a second:</p>
+    <ol>
+      <li><strong>T+0ms — probe detected.</strong> The behavioral engine receives the first request and starts building a threat profile; recon attempts and known scanner fingerprints are recognized instantly.</li>
+      <li><strong>T+1ms — deception engaged.</strong> If the probe targets a sensitive path, the source is silently redirected into the deception grid and served convincing fake responses, each carrying its own forensic token.</li>
+      <li><strong>T+800ms — blocked permanently.</strong> The source is blocked at the firewall layer; all future connections from it are dropped silently.</li>
+      <li><strong>T+1s — reported outward.</strong> The attack is pushed to threat-intelligence infrastructure, so other systems using the same feeds are now protected from the same source.</li>
+      <li><strong>T+1s — visible on the dashboard.</strong> Source, attack type, severity, which decoy nodes were touched, and the forensic canary IDs involved, all logged in real time.</li>
+    </ol>
+
+    <h2>Quantum-safe cryptography</h2>
+    <p>Google's March 2026 warning — later echoed by Cloudflare and backed by a $2B U.S. government emergency program — put a working estimate on the table: large-scale quantum computers capable of breaking today's public-key cryptography could arrive by <strong>2029</strong>. That matters today because of "harvest now, decrypt later": encrypted traffic captured now can be stored and broken retroactively once the hardware exists. Waiting until 2029 to migrate means everything captured between now and then is already compromised in advance.</p>
+    <p>SENTINEL's internal cryptographic layer implements NIST FIPS 203/204 directly:</p>
+    <ul>
+      <li><strong>ML-KEM-768</strong> — post-quantum key encapsulation (Module-LWE based), replacing pure X25519 for key exchange.</li>
+      <li><strong>ML-DSA-65</strong> — post-quantum digital signatures, replacing Ed25519/RSA for signing.</li>
+      <li><strong>Hybrid mode</strong> — ML-KEM-768 and X25519 combined through HKDF-SHA3-256 into an AES-256-GCM session key, so an attacker has to break <em>both</em> the classical and post-quantum primitives at once to compromise anything, even if one falls first.</li>
+    </ul>
+    <p>Classical elliptic-curve exchange and RSA/Ed25519 signatures are vulnerable to Shor's algorithm once a sufficiently large quantum computer exists; AES-256 is not, which is why it stays as the symmetric workhorse underneath the hybrid handshake.</p>
+
+    <h2>Compliance mapping</h2>
+    <p>The architecture wasn't retrofitted to a framework — it maps directly onto controls from the standards that matter most:</p>
+    <ul>
+      <li><strong>NIST SP 800-53</strong> — CA-8 (penetration testing), SC-26 (honeypots), SI-4 (system monitoring), AU-2 (audit events), IR-4 (incident handling).</li>
+      <li><strong>DoD DoDI 8500.01</strong> — government-standard warning banners and access-control notices on every deception node.</li>
+      <li><strong>CFAA</strong> — Computer Fraud and Abuse Act notices embedded in every honeypot response, so the deception layer is legally defensible, not just technically clever.</li>
+      <li><strong>AES-256</strong> — all reports, configuration, and sensitive data encrypted at rest and in transit.</li>
+    </ul>
+
+    <h2>Vulnerability and penetration testing — what I run, and how often</h2>
+    <p>A defense platform that hasn't been attacked by its own operator is just a hope. SENTINEL gets tested continuously, not audited once a year, and the results feed back into the behavioral engine's scoring. The categories I run on a standing basis:</p>
+    <ul>
+      <li><strong>Reconnaissance &amp; service enumeration</strong> — port and service scans against the platform's own edge, to confirm the deception grid is what's actually being fingerprinted, not production.</li>
+      <li><strong>Credential attacks</strong> — brute-force and credential-stuffing attempts against every exposed authentication surface.</li>
+      <li><strong>Injection testing</strong> — SQL injection, path traversal, remote code execution, and command injection against application inputs.</li>
+      <li><strong>Web application fuzzing</strong> — including cross-site scripting and input-validation edge cases across every user-facing form.</li>
+      <li><strong>Replay and man-in-the-middle attempts</strong> — including downgrade attacks trying to force a session back to classical-only crypto.</li>
+      <li><strong>Denial-of-service simulation</strong> — flood and resource-exhaustion testing against the edge layer.</li>
+      <li><strong>Quantum cryptanalysis simulation</strong> — a dedicated harness that runs six vectors against the crypto layer on every pass: brute-force against ML-KEM-768 (computationally infeasible at current estimates), a simulated break of the classical side alone (the hybrid holds because ML-KEM-768 is still required), harvest-now-decrypt-later replay with an incorrect post-quantum key (fails at AES-GCM authentication), ML-DSA-65 signature forgery and single-bit tampering (detected immediately), nonce replay (blocked by per-message randomness), and a legitimate-owner decrypt path run every time as a control.</li>
+    </ul>
+    <p>An authorized external penetration test against the live installation, using the same tools and techniques real attackers use, validated nine security domains: every deception node active and issuing canary tokens; security headers present and enforced externally; admin paths blocked or redirected into traps; injection and RCE attempts blocked; TLS enforced with no version leakage; file-integrity monitoring confirmed across every watched target; every background service healthy; and an encrypted PDF report generated and archived for the audit trail. The latest full pass came back <strong>65 checks passed, 2 warnings, 0 failures</strong> — and it doesn't stay at that number by accident, because the same battery gets re-run on a fixed cadence, not once a year. A regression shows up at the next pass, not at the next annual audit.</p>
+
+    <h2>Production numbers</h2>
+    <p>These aren't lab figures — they're pulled from a live installation running continuously:</p>
+    <ul>
+      <li><strong>2,000+</strong> hostile sources permanently blocked</li>
+      <li><strong>11</strong> active deception nodes</li>
+      <li><strong>&lt;1s</strong> average containment time from first contact to block</li>
+      <li><strong>700+</strong> critical files under continuous integrity watch</li>
+      <li><strong>65 / 2 / 0</strong> — pass / warn / fail on the latest independent pentest pass</li>
+    </ul>
+
+    <h2>Why publish this</h2>
+    <p>I'm deliberately not publishing exact ports, file paths, or credentials here — that would just be handing a map to the same scanners the deception grid is built to catch. What I am publishing is the architecture and the discipline behind it, because the discipline is the actual differentiator: a platform that tests itself against real attack classes on a real schedule, built on cryptography that's already ahead of a deadline most of the industry hasn't started planning for.</p>
+
+    <p><a href="/">← All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=sentinel-platform",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

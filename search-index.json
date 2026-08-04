@@ -1,5 +1,12 @@
 [
 {
+"title": "SENTINEL: An Autonomous, Quantum-Safe Defense Platform",
+"desc": "Inside a self-defending security platform I designed and operate: an eight-layer deception and containment architecture, a quantum-safe cryptographic layer, and the pen-testing regimen I run against it continuously.",
+"section": "Articles",
+"tag": "Security Operations",
+"url": "/articles/sentinel-platform"
+},
+{
 "title": "A Cascade of Factoring Techniques: From Pollard's Rho to the General Number Field Sieve",
 "desc": "While the General Number Field Sieve (GNFS) remains the premier method for factoring very large integers, other techniques are used depending on the size of…",
 "section": "Articles",
