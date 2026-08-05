@@ -5,6 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Wrapping Legacy Network Gear in a Modern API — Konstas Engineering Notes</title>
+<meta name="description" content="Turning legacy Telnet-only router consoles into an authenticated REST API with total network isolation, the Netmiko alternative for SSH-native fleets, and the roadmap toward a full automation platform.">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -161,6 +162,67 @@ def scrub(raw: str) -&gt; str:
     </ul>
 
     <blockquote>Legacy interfaces don't need replacing to be usable — they need a disciplined bridge. Isolate the fleet at the network layer, wait for the prompt instead of guessing, validate everything at the edge, and never open an inbound port.</blockquote>
+
+    <h2>The alternative: direct SSH with Netmiko</h2>
+    <p>The API gateway above is the right shape when the fleet only speaks Telnet and you want a REST surface in front of it. When devices speak SSH directly and the consumer is a script rather than an HTTP client, the simpler and more common path is <strong>Netmiko</strong> — a Python library that wraps SSH and hides the vendor-specific quirks (prompts, paging, enable mode) behind one consistent interface across dozens of platforms.</p>
+    <p>Start read-only — it can't break anything and proves the connection works. Netmiko can parse output into structured data via TextFSM/Genie instead of leaving you to regex a text blob:</p>
+    <pre><code>from netmiko import ConnectHandler
+
+device = {
+    "device_type": "cisco_ios",
+    "host": host,
+    "username": "admin",
+    "password": get_secret("r1"),     # never hard-code; pull from a vault/env
+    "fast_cli": True,
+}
+
+with ConnectHandler(**device) as conn:      # context manager -> always disconnects
+    # use_textfsm parses the table into a list of dicts, not a blob of text
+    interfaces = conn.send_command("show ip interface brief", use_textfsm=True)
+
+for intf in interfaces:
+    if intf["status"] != "up":
+        print(f"DOWN: {intf['interface']} ({intf['ip_address']})")</code></pre>
+    <p>Pushing config is where automation earns trust or loses it. Send config as a list — Netmiko enters config mode for you — verify the change applied, and only <em>then</em> save:</p>
+    <pre><code>commands = ["interface Loopback100", "description managed-by-automation", "ip address 10.100.0.1 255.255.255.255"]
+
+with ConnectHandler(**device) as conn:
+    output = conn.send_config_set(commands)     # enters/exits config mode
+    check = conn.send_command("show ip interface brief | include Loopback100")
+    if "10.100.0.1" in check:
+        conn.save_config()                       # write mem / copy run start
+    else:
+        raise RuntimeError(f"change did not apply cleanly: {output}")</code></pre>
+    <p>One device at a time is a demo; the point is a hundred at once. Network I/O is the bottleneck, so a thread pool scales cleanly — and the rule that separates professionals from outages is that one bad device can't abort the batch:</p>
+    <pre><code>from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def audit(host: str) -> tuple[str, str]:
+    dev = {**base, "host": host}
+    try:
+        with ConnectHandler(**dev) as c:
+            return host, c.send_command("show version | include uptime")
+    except Exception as e:                        # unreachable, auth fail, timeout
+        return host, f"ERROR: {e}"
+
+results = {}
+with ThreadPoolExecutor(max_workers=20) as pool:
+    futures = {pool.submit(audit, h): h for h in inventory}
+    for f in as_completed(futures):
+        host, out = f.result()
+        results[host] = out                       # one bad device can't stop the rest</code></pre>
+    <p>Netmiko is the low-level SSH engine. Above it sit richer frameworks: <strong>NAPALM</strong> for vendor-neutral getters and config replace/rollback, and <strong>Nornir</strong> for a pure-Python automation framework with inventory and concurrency built in — it often uses Netmiko underneath. The natural progression is to script tasks with Netmiko first, then graduate to Nornir/NAPALM as inventory size and safety requirements grow.</p>
+
+    <h2>Where this goes next</h2>
+    <p>The gateway above solves the "last mile" — console access via a REST API. The next layer is a professional-grade automation platform on top of it: structured device interaction, parallel fleet operations, live topology graphing, and packet-level diagnostics, all served over local HTTPS with no external cloud dependency.</p>
+    <table>
+      <tr><th>Addition</th><th>Priority</th><th>What it buys</th></tr>
+      <tr><td>Netmiko session management</td><td>High</td><td>Replaces the raw subshell with a structured connection handler — removes the shell-injection surface and the fixed-sleep timing entirely.</td></tr>
+      <tr><td>Nornir parallel execution</td><td>High</td><td>A fleet-wide poll that takes 40+ seconds sequentially finishes in under 5 running concurrently.</td></tr>
+      <tr><td>NAPALM structured data</td><td>Medium</td><td>Vendor-neutral getters — Python dicts instead of raw CLI text, on top of Netmiko for Cisco IOS.</td></tr>
+      <tr><td>NetworkX topology graph</td><td>Medium</td><td>A live, queryable graph of the fleet — shortest paths, centrality, a data layer for topology-aware automation.</td></tr>
+      <tr><td>Scapy diagnostics</td><td>Low</td><td>Low-level packet testing — custom probes, TCP session inspection, DSCP verification.</td></tr>
+      <tr><td>Local Nginx TLS termination</td><td>Medium</td><td>Self-hosted HTTPS as an alternative to the tunnel — fully offline, no external dependency.</td></tr>
+    </table>
 
     <p><a href="/">← All articles</a></p>
   </main>

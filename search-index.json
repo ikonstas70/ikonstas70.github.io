@@ -329,27 +329,6 @@
 "url": "/awareness/malware"
 },
 {
-"title": "Network Automation Platform — Phase 2 Roadmap",
-"desc": "Netmiko · NAPALM · Nornir · NetworkX · Scapy · Nginx SSLVisionThe current stack solves the \"last mile\" problem — serial console access via a REST API. Phase…",
-"section": "Articles",
-"tag": "Automation",
-"url": "/articles/gh-network-automation-platform-phase-2-roadmap"
-},
-{
-"title": "Network Automation Stack Functional",
-"desc": "Programmatic HTTP-to-Telnet Gateway for Network Device FleetsOverviewThis project establishes a high-security, automated management layer for network device…",
-"section": "Articles",
-"tag": "Automation",
-"url": "/articles/gh-network-automation-stack-functional"
-},
-{
-"title": "Network Automation with Netmiko",
-"desc": "Articles · July 2026 · Ioannis Konstas",
-"section": "Articles",
-"tag": "Automation",
-"url": "/articles/network-automation-netmiko"
-},
-{
 "title": "Online Gaming Without the Griefers",
 "desc": "Security Awareness · July 2026 · Ioannis Konstas",
 "section": "Security Awareness",
@@ -483,13 +462,6 @@
 "url": "/articles/strategic-business-impact-planning"
 },
 {
-"title": "Technical Report: Network Automation Stack Project",
-"desc": "Executive SummaryThis project establishes a high-security, automated management layer for network device fleets. By leveraging a Flask-based API Gateway, we…",
-"section": "Articles",
-"tag": "Automation",
-"url": "/articles/gh-network-automation-stack-technical-report"
-},
-{
 "title": "The Executive Briefing",
 "desc": "Security Awareness · July 2026 · Ioannis Konstas",
 "section": "Security Awareness",
@@ -603,7 +575,7 @@
 },
 {
 "title": "Wrapping Legacy Network Gear in a Modern API",
-"desc": "Articles · July 2026 · Ioannis Konstas",
+"desc": "Turning legacy Telnet-only router consoles into an authenticated REST API with total network isolation, the Netmiko alternative for SSH-native fleets, and the roadmap toward a full automation platform.",
 "section": "Articles",
 "tag": "Automation",
 "url": "/articles/network-automation-api"
