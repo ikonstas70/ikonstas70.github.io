@@ -1,22 +1,27 @@
 {
- "blocked_total": 3758,
- "systems_healthy": 10,
+ "blocked_total": 3773,
+ "systems_healthy": 9,
  "systems_total": 10,
  "log_lines": [
   {
-   "time": "2026-08-05T05:35:33Z",
+   "time": "2026-08-05T16:14:14Z",
    "level": "SYNC",
    "text": "Encrypted site content verified \u2014 up to date"
   },
   {
-   "time": "2026-08-05T05:30:31Z",
+   "time": "2026-08-05T16:09:12Z",
    "level": "SYNC",
    "text": "Encrypted site content verified \u2014 up to date"
   },
   {
-   "time": "2026-08-05T05:25:30Z",
+   "time": "2026-08-05T16:04:10Z",
    "level": "SYNC",
    "text": "Encrypted site content verified \u2014 up to date"
+  },
+  {
+   "time": "2026-08-05T14:18:18.782Z",
+   "level": "BLOCK",
+   "text": "15 hostile sources auto-contained"
   },
   {
    "time": "2026-08-04T13:44:17.000+0000",
@@ -47,11 +52,6 @@
    "time": "2026-07-31T00:11:38.433Z",
    "level": "BLOCK",
    "text": "Hostile source auto-contained"
-  },
-  {
-   "time": "2026-07-31T00:11:38.082Z",
-   "level": "BLOCK",
-   "text": "Hostile source auto-contained"
   }
  ],
  "alerts_window": {
@@ -60,5 +60,5 @@
   "medium": 0,
   "info": 50
  },
- "updated": "2026-08-05T05:38:02.863925Z"
+ "updated": "2026-08-05T16:18:23.341673Z"
 }
