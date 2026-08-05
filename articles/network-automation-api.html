@@ -163,8 +163,8 @@ def scrub(raw: str) -&gt; str:
 
     <blockquote>Legacy interfaces don't need replacing to be usable — they need a disciplined bridge. Isolate the fleet at the network layer, wait for the prompt instead of guessing, validate everything at the edge, and never open an inbound port.</blockquote>
 
-    <h2>The alternative: direct SSH with Netmiko</h2>
-    <p>The API gateway above is the right shape when the fleet only speaks Telnet and you want a REST surface in front of it. When devices speak SSH directly and the consumer is a script rather than an HTTP client, the simpler and more common path is <strong>Netmiko</strong> — a Python library that wraps SSH and hides the vendor-specific quirks (prompts, paging, enable mode) behind one consistent interface across dozens of platforms.</p>
+    <h2>The alternative: Netmiko instead of a gateway</h2>
+    <p>The API gateway above earns its keep when you actually want a REST surface — a caller anywhere, authenticated over HTTPS, that doesn't need Python installed. If the consumer is a script rather than an HTTP client, though, building a whole gateway is often more than the job needs. <strong>Netmiko</strong> — a Python library that wraps SSH <em>or Telnet</em> and hides the vendor-specific quirks (prompts, paging, enable mode) behind one consistent interface — talks to this exact fleet directly, no gateway required: Netmiko's <code>cisco_ios_telnet</code> device type handles the same forwarded console ports Tier 3 relays. SSH fleets use the plain <code>cisco_ios</code> type shown below; swap it for <code>cisco_ios_telnet</code> and the rest of the code is identical for a Telnet-only fleet like this one.</p>
     <p>Start read-only — it can't break anything and proves the connection works. Netmiko can parse output into structured data via TextFSM/Genie instead of leaving you to regex a text blob:</p>
     <pre><code>from netmiko import ConnectHandler
 
@@ -216,7 +216,6 @@ with ThreadPoolExecutor(max_workers=20) as pool:
     <p>The gateway above solves the "last mile" — console access via a REST API. The next layer is a professional-grade automation platform on top of it: structured device interaction, parallel fleet operations, live topology graphing, and packet-level diagnostics, all served over local HTTPS with no external cloud dependency.</p>
     <table>
       <tr><th>Addition</th><th>Priority</th><th>What it buys</th></tr>
-      <tr><td>Netmiko session management</td><td>High</td><td>Replaces the raw subshell with a structured connection handler — removes the shell-injection surface and the fixed-sleep timing entirely.</td></tr>
       <tr><td>Nornir parallel execution</td><td>High</td><td>A fleet-wide poll that takes 40+ seconds sequentially finishes in under 5 running concurrently.</td></tr>
       <tr><td>NAPALM structured data</td><td>Medium</td><td>Vendor-neutral getters — Python dicts instead of raw CLI text, on top of Netmiko for Cisco IOS.</td></tr>
       <tr><td>NetworkX topology graph</td><td>Medium</td><td>A live, queryable graph of the fleet — shortest paths, centrality, a data layer for topology-aware automation.</td></tr>
