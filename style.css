@@ -439,3 +439,18 @@ section.references { margin-top: 40px; }
 table.comparison-table td.yes { color: hsl(150 45% 60%); }
 table.comparison-table td.no { color: hsl(4 55% 62%); }
 table.comparison-table td.maybe { color: hsl(43 60% 60%); }
+
+/* ── More snip-label language/status variants + inline diagrams ── */
+.snip-label.out, .snip-label.shell { color: var(--fg-dim); }
+.snip-label.py { color: hsl(200 55% 68%); }
+.snip-label.sh { color: hsl(150 40% 55%); }
+.snip-label.asan { color: hsl(4 55% 62%); }
+.snip-label.gdb { color: hsl(270 45% 72%); }
+.hi { color: var(--accent); font-weight: 600; }
+.snippet pre .addr { color: hsl(200 55% 68%); }
+.snippet pre .smash { color: hsl(4 60% 65%); font-weight: 600; }
+.snippet pre .math { color: var(--accent); }
+.warn-text { color: hsl(43 60% 60%); }
+
+.diagram-wrap { margin: 0 0 8px; text-align: center; }
+.diagram-caption { font-size: 0.8rem; color: var(--fg-dim); text-align: center; margin: 0 0 20px; line-height: 1.6; }
