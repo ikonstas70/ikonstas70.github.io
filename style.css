@@ -335,3 +335,12 @@ pre.code-inline { font-size: 0.82rem; }
 
 .table-wrap { overflow-x: auto; margin-bottom: 20px; }
 .table-wrap table { margin-bottom: 0; }
+
+/* Homepage site-map tree */
+.sitemap-tree {
+  font-size: 0.82rem; line-height: 1.9; margin: 0 0 40px;
+  padding: 22px 26px; overflow-x: auto;
+}
+.sitemap-tree a { text-decoration: none; }
+.sitemap-tree a:hover { text-decoration: underline; }
+@media (max-width: 640px) { .sitemap-tree { font-size: 0.72rem; } }
