@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Docker VoIP Stack: Boot Sequencing, Health Checks, and Dependency Management — Konstas Engineering Notes</title>
-<meta name="description" content="← All ArticlesHow to correctly order Docker container startup for a Kamailio + Asterisk + A2Billing stack using health checks, and bridging VLAN-isolated IP phones via a ">
+<meta name="description" content="How to correctly order Docker container startup for a Kamailio + Asterisk + A2Billing stack using health checks, and bridging VLAN-isolated IP phones via a Python SIP relay.">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -34,7 +34,8 @@
     <span class="tag">Telecom</span>
     <h1>Docker VoIP Stack: Boot Sequencing, Health Checks, and Dependency Management</h1>
     <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
-<a href="../index.html">← All Articles</a><p>How to correctly order Docker container startup for a Kamailio + Asterisk + A2Billing stack using health checks, and bridging VLAN-isolated IP phones via a Python SIP relay.</p><h2>The Boot Sequencing Problem</h2><p>The default Docker depends_on ordering is not sufficient for VoIP stacks — service_started ≠ service_ready.</p><p>A VoIP stack has strict startup dependencies. If Kamailio starts routing before Asterisk is ready to accept SIP connections, phones that send REGISTER at boot will get rejected and enter an exponential backoff timer — some phones won't retry for 30–60 minutes. Getting the boot order right matters enormously.</p><p>The failure mode is subtle: all containers show as "running" in Docker, but phones show as "unregistered" after a reboot. The root cause is that <code>depends_on: service_started</code> (the default) only waits for the container process to start — not for the application inside to become ready to serve requests.</p><h2>Correct Startup Order</h2><pre>mysql (wts-db)
+<a href="../index.html">← All Articles</a>
+    <p>How to correctly order Docker container startup for a Kamailio + Asterisk + A2Billing stack using health checks, and bridging VLAN-isolated IP phones via a Python SIP relay.</p><h2>The Boot Sequencing Problem</h2><p>The default Docker depends_on ordering is not sufficient for VoIP stacks — service_started ≠ service_ready.</p><p>A VoIP stack has strict startup dependencies. If Kamailio starts routing before Asterisk is ready to accept SIP connections, phones that send REGISTER at boot will get rejected and enter an exponential backoff timer — some phones won't retry for 30–60 minutes. Getting the boot order right matters enormously.</p><p>The failure mode is subtle: all containers show as "running" in Docker, but phones show as "unregistered" after a reboot. The root cause is that <code>depends_on: service_started</code> (the default) only waits for the container process to start — not for the application inside to become ready to serve requests.</p><h2>Correct Startup Order</h2><pre>mysql (wts-db)
   │ service_healthy (~15s — mysqladmin ping)
   ▼
 asterisk-1 + asterisk-2 + a2billing + mysql-exporter

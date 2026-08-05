@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kamailio SIP Server: Proxy, Load Balancer, and Session Border Controller — Konstas Engineering Notes</title>
-<meta name="description" content="← All ArticlesArchitecture, core modules, dispatcher load balancing, fraud protection, TLS, and RTPEngine integration for Kamailio in a production VoIP platform.What Is K">
+<meta name="description" content="Architecture, core modules, dispatcher load balancing, fraud protection, TLS, and RTPEngine integration for Kamailio in a production VoIP platform.">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -34,7 +34,8 @@
     <span class="tag">Telecom</span>
     <h1>Kamailio SIP Server: Proxy, Load Balancer, and Session Border Controller</h1>
     <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
-<a href="../index.html">← All Articles</a><p>Architecture, core modules, dispatcher load balancing, fraud protection, TLS, and RTPEngine integration for Kamailio in a production VoIP platform.</p><h2>What Is Kamailio</h2><p>A high-performance open source SIP proxy, registrar, load balancer, and Session Border Controller.</p><p>Kamailio is an open source SIP server that processes <strong>millions of SIP messages per second</strong> on modest hardware. In a carrier-grade VoIP platform it sits in front of all Asterisk PBX nodes and performs signaling-plane functions — it does not process media (audio), which is handled by RTPEngine.</p><h3>Core Functions</h3><ul><li><strong>Load balancing</strong> — distributes SIP calls across Asterisk nodes via the dispatcher module</li><li><strong>SIP proxy</strong> — routes all SIP signaling between carriers and PBX nodes</li><li><strong>SBC (Session Border Controller)</strong> — NAT traversal, topology hiding, TLS termination</li><li><strong>STIR/SHAKEN</strong> — digitally signs outbound calls for caller ID authentication</li><li><strong>Fraud protection</strong> — rate limiting via the pike module, IP blocklisting</li><li><strong>Failover</strong> — automatically removes failed Asterisk nodes from rotation</li></ul><h2>Architecture Position</h2><pre>Internet / SIP Trunk Provider
+<a href="../index.html">← All Articles</a>
+    <p>Architecture, core modules, dispatcher load balancing, fraud protection, TLS, and RTPEngine integration for Kamailio in a production VoIP platform.</p><h2>What Is Kamailio</h2><p>A high-performance open source SIP proxy, registrar, load balancer, and Session Border Controller.</p><p>Kamailio is an open source SIP server that processes <strong>millions of SIP messages per second</strong> on modest hardware. In a carrier-grade VoIP platform it sits in front of all Asterisk PBX nodes and performs signaling-plane functions — it does not process media (audio), which is handled by RTPEngine.</p><h3>Core Functions</h3><ul><li><strong>Load balancing</strong> — distributes SIP calls across Asterisk nodes via the dispatcher module</li><li><strong>SIP proxy</strong> — routes all SIP signaling between carriers and PBX nodes</li><li><strong>SBC (Session Border Controller)</strong> — NAT traversal, topology hiding, TLS termination</li><li><strong>STIR/SHAKEN</strong> — digitally signs outbound calls for caller ID authentication</li><li><strong>Fraud protection</strong> — rate limiting via the pike module, IP blocklisting</li><li><strong>Failover</strong> — automatically removes failed Asterisk nodes from rotation</li></ul><h2>Architecture Position</h2><pre>Internet / SIP Trunk Provider
          │
          ▼
    ┌─────────────┐

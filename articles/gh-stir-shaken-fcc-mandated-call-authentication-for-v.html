@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>STIR/SHAKEN: FCC-Mandated Call Authentication for VoIP Carriers — Konstas Engineering Notes</title>
-<meta name="description" content="← All ArticlesHow STIR/SHAKEN works, attestation levels A/B/C, PASSporT token structure, STI-CA certificate requirements, and Asterisk implementation.What Is STIR/SHAKENT">
+<meta name="description" content="How STIR/SHAKEN works, attestation levels A/B/C, PASSporT token structure, STI-CA certificate requirements, and Asterisk implementation.">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -34,7 +34,8 @@
     <span class="tag">Telecom</span>
     <h1>STIR/SHAKEN: FCC-Mandated Call Authentication for VoIP Carriers</h1>
     <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
-<a href="../index.html">← All Articles</a><p>How STIR/SHAKEN works, attestation levels A/B/C, PASSporT token structure, STI-CA certificate requirements, and Asterisk implementation.</p><h2>What Is STIR/SHAKEN</h2><p>The FCC-mandated framework that digitally signs outbound calls to prevent caller ID spoofing.</p><p>STIR/SHAKEN is the call authentication framework all US carriers and CLECs must implement. It digitally signs outbound calls so that receiving carriers can verify the caller ID has not been spoofed — addressing the robocall and caller ID fraud epidemic that has eroded trust in the telephone network.</p><ul><li><strong>STIR</strong> — Secure Telephone Identity Revisited (IETF RFC 8226, 8588)</li><li><strong>SHAKEN</strong> — Signature-based Handling of Asserted information using toKENs</li></ul><p>Mandatory for all CLECs since <strong>September 2025</strong>. Carriers without STIR/SHAKEN are required by FCC rules to have their calls blocked by terminating carriers.</p><h2>How It Works</h2><pre>Originating Carrier                    Receiving Carrier
+<a href="../index.html">← All Articles</a>
+    <p>How STIR/SHAKEN works, attestation levels A/B/C, PASSporT token structure, STI-CA certificate requirements, and Asterisk implementation.</p><h2>What Is STIR/SHAKEN</h2><p>The FCC-mandated framework that digitally signs outbound calls to prevent caller ID spoofing.</p><p>STIR/SHAKEN is the call authentication framework all US carriers and CLECs must implement. It digitally signs outbound calls so that receiving carriers can verify the caller ID has not been spoofed — addressing the robocall and caller ID fraud epidemic that has eroded trust in the telephone network.</p><ul><li><strong>STIR</strong> — Secure Telephone Identity Revisited (IETF RFC 8226, 8588)</li><li><strong>SHAKEN</strong> — Signature-based Handling of Asserted information using toKENs</li></ul><p>Mandatory for all CLECs since <strong>September 2025</strong>. Carriers without STIR/SHAKEN are required by FCC rules to have their calls blocked by terminating carriers.</p><h2>How It Works</h2><pre>Originating Carrier                    Receiving Carrier
         │                                    │
         │ 1. Sign the call                   │
         │    Create PASSporT JWT token        │

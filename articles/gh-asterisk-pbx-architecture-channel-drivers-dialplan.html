@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Asterisk PBX Architecture: Channel Drivers, Dialplan Engine, and AGI Integration — Konstas Engineering Notes</title>
-<meta name="description" content="← All ArticlesCore Asterisk components — chan_pjsip, extensions.conf dialplan logic, AGI scripting, AMI/ARI interfaces, CDR to MySQL, and STIR/SHAKEN configuration.What I">
+<meta name="description" content="Core Asterisk components — chan_pjsip, extensions.conf dialplan logic, AGI scripting, AMI/ARI interfaces, CDR to MySQL, and STIR/SHAKEN configuration.">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -34,7 +34,8 @@
     <span class="tag">Telecom</span>
     <h1>Asterisk PBX Architecture: Channel Drivers, Dialplan Engine, and AGI Integration</h1>
     <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
-<a href="../index.html">← All Articles</a><p>Core Asterisk components — chan_pjsip, extensions.conf dialplan logic, AGI scripting, AMI/ARI interfaces, CDR to MySQL, and STIR/SHAKEN configuration.</p><h2>What Is Asterisk</h2><p>The open source telephony engine that powers millions of phone systems and VoIP carriers worldwide.</p><p>Asterisk is an open source PBX (Private Branch Exchange) and telephony toolkit that runs on Linux. It turns a standard server into a communications engine capable of handling VoIP calls, IVR menus, voicemail, call queuing, conferencing, and call recording. A single Asterisk node on an 8-core / 16GB server handles approximately <strong>300–500 concurrent calls</strong> using G.711 passthrough.</p><pre>┌─────────────────────────────────────────────────────┐
+<a href="../index.html">← All Articles</a>
+    <p>Core Asterisk components — chan_pjsip, extensions.conf dialplan logic, AGI scripting, AMI/ARI interfaces, CDR to MySQL, and STIR/SHAKEN configuration.</p><h2>What Is Asterisk</h2><p>The open source telephony engine that powers millions of phone systems and VoIP carriers worldwide.</p><p>Asterisk is an open source PBX (Private Branch Exchange) and telephony toolkit that runs on Linux. It turns a standard server into a communications engine capable of handling VoIP calls, IVR menus, voicemail, call queuing, conferencing, and call recording. A single Asterisk node on an 8-core / 16GB server handles approximately <strong>300–500 concurrent calls</strong> using G.711 passthrough.</p><pre>┌─────────────────────────────────────────────────────┐
 │                    ASTERISK                         │
 │                                                     │
 │  ┌──────────────┐    ┌────────────────────────┐   │

@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A2Billing VoIP Billing Engine: Architecture, AGI Integration, and Rate Management — Konstas Engineering Notes</title>
-<meta name="description" content="← All ArticlesHow A2Billing integrates with Asterisk via AGI for real-time call billing, rate deck structure, calling card IVR flow, and MySQL database schema.What Is A2B">
+<meta name="description" content="How A2Billing integrates with Asterisk via AGI for real-time call billing, rate deck structure, calling card IVR flow, and MySQL database schema.">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -34,7 +34,8 @@
     <span class="tag">Telecom</span>
     <h1>A2Billing VoIP Billing Engine: Architecture, AGI Integration, and Rate Management</h1>
     <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
-<a href="../index.html">← All Articles</a><p>How A2Billing integrates with Asterisk via AGI for real-time call billing, rate deck structure, calling card IVR flow, and MySQL database schema.</p><h2>What Is A2Billing</h2><p>An open source VoIP billing and management platform built for Asterisk — AGPLv3, free for commercial use.</p><p>A2Billing handles prepaid and postpaid billing, calling card management, DID provisioning, reseller accounts, and customer self-service. It integrates with Asterisk via the AGI (Asterisk Gateway Interface) — intercepting calls in the dialplan to check balances, authorise calls, and deduct credit in real time.</p><h2>Architecture</h2><pre>┌──────────────────────────────────────────┐
+<a href="../index.html">← All Articles</a>
+    <p>How A2Billing integrates with Asterisk via AGI for real-time call billing, rate deck structure, calling card IVR flow, and MySQL database schema.</p><h2>What Is A2Billing</h2><p>An open source VoIP billing and management platform built for Asterisk — AGPLv3, free for commercial use.</p><p>A2Billing handles prepaid and postpaid billing, calling card management, DID provisioning, reseller accounts, and customer self-service. It integrates with Asterisk via the AGI (Asterisk Gateway Interface) — intercepting calls in the dialplan to check balances, authorise calls, and deduct credit in real time.</p><h2>Architecture</h2><pre>┌──────────────────────────────────────────┐
 │              ASTERISK                    │
 │  extensions.conf calls AGI script        │
 └──────────────▬──────────────────────────┘
