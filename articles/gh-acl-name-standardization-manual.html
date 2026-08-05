@@ -245,12 +245,12 @@ function copyCode(btn){
 
   <h3>Rules</h3>
   <ul>
-    <li>Always run <code style="font-family:monospace;color:var(--cyan)">INCLUDE()</code> before <code style="font-family:monospace;color:var(--cyan)">SUBSTR()</code> — extract from clean data only</li>
-    <li>Always apply <code style="font-family:monospace;color:var(--cyan)">UPPER()</code> before any text matching, join, or duplicate check</li>
-    <li>Use fixed-length <code style="font-family:monospace;color:var(--cyan)">SUBSTR()</code> widths — variable keys cause join failures</li>
-    <li>Define cleaned fields with <code style="font-family:monospace;color:var(--cyan)">DEFINE FIELD … COMPUTED</code> so the logic runs once and is reused</li>
+    <li>Always run <code style="font-family:monospace;color:var(--accent)">INCLUDE()</code> before <code style="font-family:monospace;color:var(--accent)">SUBSTR()</code> — extract from clean data only</li>
+    <li>Always apply <code style="font-family:monospace;color:var(--accent)">UPPER()</code> before any text matching, join, or duplicate check</li>
+    <li>Use fixed-length <code style="font-family:monospace;color:var(--accent)">SUBSTR()</code> widths — variable keys cause join failures</li>
+    <li>Define cleaned fields with <code style="font-family:monospace;color:var(--accent)">DEFINE FIELD … COMPUTED</code> so the logic runs once and is reused</li>
     <li>Apply exclusion filters early — reduce the working dataset before any heavy operations</li>
-    <li>Test key uniqueness with <code style="font-family:monospace;color:var(--cyan)">DUPLICATES ON key_field</code> before using keys in joins</li>
+    <li>Test key uniqueness with <code style="font-family:monospace;color:var(--accent)">DUPLICATES ON key_field</code> before using keys in joins</li>
   </ul>
 
   <h3>Common Use Cases</h3>
