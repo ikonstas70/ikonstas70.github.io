@@ -67,8 +67,13 @@ ML-KEM-768 + X25519 hybrid, ML-DSA-65 — protects management channels stack-wid
    │
    ▼
 Encrypted Infrastructure Repos
-git-crypt AES-256 — source and configuration for every piece above, at rest</code></pre>
-    <p>Edge Defense fronts everything public. SENTINEL and the Network Automation Stack are separate: SENTINEL defends production services that are reachable from the internet, the automation stack manages a device fleet that isn't reachable from it at all. The host security stack, the cryptography layer, and the encrypted repos aren't separate boxes on this diagram so much as properties that cut across all of it.</p>
+git-crypt AES-256 — source and configuration for every piece above, at rest
+   │
+   ▼
+Zero-Trust Homelab (foundation)
+Mac Mini + Oracle Cloud over WireGuard — no direct inbound on either node,
+Cloudflare Tunnel is the only public entry point</code></pre>
+    <p>Edge Defense fronts everything public. SENTINEL and the Network Automation Stack are separate: SENTINEL defends production services that are reachable from the internet, the automation stack manages a device fleet that isn't reachable from it at all. The host security stack, the cryptography layer, and the encrypted repos aren't separate boxes on this diagram so much as properties that cut across all of it. The homelab layer at the bottom is really the foundation everything else sits on, not the last stop.</p>
 
     <h2>The Stack</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px;margin-bottom:10px;">
@@ -97,9 +102,24 @@ git-crypt AES-256 — source and configuration for every piece above, at rest</c
         <p>Every site and service I run is version-controlled through git-crypt AES-256 encrypted repositories — source and configuration are never at rest in plaintext, even in private storage.</p>
         <span class="date">Storage</span>
       </a>
-      <a class="card" href="/articles/gh-network-automation-stack-technical-report">
+      <a class="card" href="/articles/network-automation-api">
         <h3>Network Automation Stack</h3>
         <p>A Flask-based API gateway that turns a totally isolated fleet of network devices into RESTful endpoints — API-key auth, strict port allowlisting, L3 point-to-point isolation with no route to the public internet.</p>
+        <span class="date">Read the full breakdown &rarr;</span>
+      </a>
+      <a class="card" href="#homelab">
+        <h3>Zero-Trust Homelab</h3>
+        <p>The physical/cloud split this all runs on: a Mac Mini on-prem plus an Oracle Cloud free-tier node, joined over WireGuard, with Cloudflare Tunnel as the only public entry point — nothing accepts a direct inbound connection.</p>
+        <span class="date">Foundation</span>
+      </a>
+      <a class="card" href="/articles/gh-layered-security-stack">
+        <h3>Layered Security Stack</h3>
+        <p>The defense-in-depth reference this stack follows in practice — WireGuard, Snort, Wazuh, OSSEC, and DNS-level filtering as independent layers, not a single point of failure.</p>
+        <span class="date">Read the full breakdown &rarr;</span>
+      </a>
+      <a class="card" href="/articles/gh-pentest-professional-reference">
+        <h3>Offensive Security Practice</h3>
+        <p>The attacker-side reference I test my own defenses against — attack taxonomy, methodology, and a separate memory-safety/buffer-overflow deep dive.</p>
         <span class="date">Read the full breakdown &rarr;</span>
       </a>
     </div>
@@ -116,6 +136,9 @@ git-crypt AES-256 — source and configuration for every piece above, at rest</c
 
     <h2 id="repos">Encrypted Infrastructure Repos</h2>
     <p>Source and configuration for every site and service I run live in git-crypt AES-256 encrypted repositories, synced automatically on a fixed interval with continuous integrity verification. The threat model isn't just "don't leak this publicly" — it's that even private version-control storage shouldn't hold plaintext infrastructure secrets. Keys are held locally, protected by a passphrase, never committed alongside the content they protect.</p>
+
+    <h2 id="homelab">Zero-Trust Homelab</h2>
+    <p>Everything above runs across two nodes: a Mac Mini on-prem and an Oracle Cloud free-tier instance, joined over a WireGuard mesh. Neither node accepts a direct inbound connection from the internet — the only public entry point for anything is a Cloudflare Tunnel, which means there's no port to scan in the first place, on either side. It's the same "assume breach, verify everything" posture as the rest of the stack, just applied at the network-topology level instead of the application level.</p>
 
     <p><a href="/">&larr; All articles</a></p>
   </main>
