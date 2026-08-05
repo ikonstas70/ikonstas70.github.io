@@ -34,8 +34,14 @@
     <span class="tag">Telecom</span>
     <h1>A2Billing VoIP Billing Engine: Architecture, AGI Integration, and Rate Management</h1>
     <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
-<a href="../index.html">← All Articles</a>
-    <p>How A2Billing integrates with Asterisk via AGI for real-time call billing, rate deck structure, calling card IVR flow, and MySQL database schema.</p><h2>What Is A2Billing</h2><p>An open source VoIP billing and management platform built for Asterisk — AGPLv3, free for commercial use.</p><p>A2Billing handles prepaid and postpaid billing, calling card management, DID provisioning, reseller accounts, and customer self-service. It integrates with Asterisk via the AGI (Asterisk Gateway Interface) — intercepting calls in the dialplan to check balances, authorise calls, and deduct credit in real time.</p><h2>Architecture</h2><pre>┌──────────────────────────────────────────┐
+
+    <p>Asterisk handles the media and signaling for a call — it has no concept of what that call should cost, or whether the caller can afford it. Left alone, a PBX will happily connect a prepaid customer with a zero balance to an international destination and let the call run until someone notices the invoice. <strong>A2Billing</strong> closes that gap: an open-source (AGPLv3) billing engine that hooks into the dialplan itself, so authorization happens <em>before</em> the call connects, not after it's already cost money.</p>
+
+    <p>The mechanism is the Asterisk Gateway Interface (AGI) — Asterisk calls out to an external script mid-dialplan and waits for an answer before proceeding. A2Billing uses that hook to check the account balance, look up the destination rate, calculate the maximum call duration the balance actually covers, and reject the call outright if there's nothing left to charge against.</p>
+
+    <h2>Architecture</h2>
+    <p>Three pieces do the work: the AGI script sits between Asterisk and the database, and a web interface sits on top for administration and customer self-service.</p>
+    <pre>┌──────────────────────────────────────────┐
 │              ASTERISK                    │
 │  extensions.conf calls AGI script        │
 └──────────────▬──────────────────────────┘
@@ -57,7 +63,10 @@
 ┌──────────────▼──────────────────────────┐
 │         A2BILLING WEB INTERFACE          │
 │  Admin │ Agent │ Customer self-service  │
-└──────────────────────────────────────────┘</pre><h2>Key Features</h2><table><thead><tr><th>Feature</th><th>Description</th></tr></thead><tbody><tr><td>Prepaid billing</td><td>Real-time balance check and per-second deduction during the call</td></tr><tr><td>Postpaid billing</td><td>Monthly invoice generation from accumulated CDRs</td></tr><tr><td>Calling cards</td><td>PIN-based access via IVR with per-card rate decks</td></tr><tr><td>DID management</td><td>Assign and track Direct Inward Dial numbers per account</td></tr><tr><td>Rate decks</td><td>Per-destination rate tables with multiple tiers (retail, wholesale, reseller)</td></tr><tr><td>Reseller accounts</td><td>Sub-accounts with independent rates and markups over cost</td></tr><tr><td>Customer portal</td><td>Self-service top-up, call history, account management</td></tr><tr><td>Multi-currency</td><td>Supports USD and international currencies</td></tr></tbody></table><h2>AGI Integration in the Dialplan</h2><pre>; extensions.conf — A2Billing called before every outbound call
+└──────────────────────────────────────────┘</pre>
+    <p>On top of core prepaid/postpaid billing, the same platform handles the things that tend to get bolted on separately: calling-card access via PIN, DID inventory and per-account assignment, reseller sub-accounts with their own markup over cost, and a self-service portal so customers can top up and review call history without a support ticket. USD and international currencies both work out of the box.</p>
+    <h2>The AGI hook, in the dialplan</h2>
+    <p>The whole system hinges on one line placed before the actual <code>Dial()</code>:</p><pre>; extensions.conf — A2Billing called before every outbound call
 [from-pstn-inbound]
 exten =&gt; _NXXNXXXXXX,1,AGI(a2billing.php,1)
 exten =&gt; _NXXNXXXXXX,n,Dial(PJSIP/${EXTEN},30)
@@ -66,14 +75,18 @@ exten =&gt; _NXXNXXXXXX,n,Hangup()
 [outbound-calls]
 exten =&gt; _1NXXNXXXXXX,1,AGI(a2billing.php,1)
 exten =&gt; _1NXXNXXXXXX,n,Dial(PJSIP/${EXTEN}@carrier-trunk,60)
-exten =&gt; _1NXXNXXXXXX,n,Hangup()</pre><p>When Asterisk executes <code>AGI(a2billing.php,1)</code>, A2Billing: looks up the customer account, checks the balance, looks up the rate for the destination prefix, calculates the maximum allowed call duration, and sets an Asterisk channel variable. If the balance is zero or the destination is not in any rate deck, the call is rejected before connecting.</p><h2>Rate Deck Structure</h2><p>Rate decks define what the platform charges per minute to each destination prefix.</p><pre>-- Example rate entries (cc_rate table)
+exten =&gt; _1NXXNXXXXXX,n,Hangup()</pre><p>When Asterisk hits <code>AGI(a2billing.php,1)</code>, execution pauses on that channel while the script looks up the account, checks the balance, resolves the rate for the destination prefix, and calculates the maximum duration that balance actually covers. Zero balance or an unrated destination means the call gets rejected right there — the dialplan never reaches <code>Dial()</code> at all.</p>
+    <h2>Rate decks, and why the match order matters</h2>
+    <p>A rate deck is just a per-destination price list, but the matching logic is the part worth understanding before populating one:</p><pre>-- Example rate entries (cc_rate table)
 destination         | prefix | rate_usd_per_min
 --------------------|--------|------------------
 USA Domestic        | 1      | 0.0120
 Mexico Mobile       | 5219   | 0.1800
 Dominican Republic  | 1809   | 0.0850
 Brazil Mobile       | 5511   | 0.2200
-UK Landline         | 4411   | 0.0250</pre><p>Prefix matching is longest-match — a call to a Brazil mobile (5511...) will match the <code>5511</code> prefix over the generic <code>55</code> Brazil entry. Multiple rate decks can exist for different customer tiers (retail, wholesale, reseller).</p><h2>Calling Card IVR Flow</h2><pre>Customer dials access number (DID)
+UK Landline         | 4411   | 0.0250</pre><p>Matching is always longest-prefix-first — a call to a Brazil mobile number (5511...) matches the specific <code>5511</code> entry over the generic <code>55</code> Brazil entry, the same logic as IP routing. Get that backwards in a manually-edited rate table and every mobile call in Brazil silently bills at the landline rate. Separate rate decks can exist per customer tier — retail, wholesale, reseller — each pointed at the same prefix logic with different numbers.</p>
+    <h2>The calling-card path</h2>
+    <p>Prepaid access without an account at all — PIN in, destination in, call connects at whatever rate the card's own deck specifies:</p><pre>Customer dials access number (DID)
          │
          ▼
 Asterisk IVR answers
@@ -95,7 +108,10 @@ Call connects → real-time credit deduction per second
 "You have 2 minutes remaining" (warning prompt)
          │
          ▼
-Credit exhausted → call terminated → CDR written</pre><h2>Database Schema (Key Tables)</h2><table><thead><tr><th>Table</th><th>Purpose</th></tr></thead><tbody><tr><td>cc_card</td><td>Customer accounts, PINs, and balances</td></tr><tr><td>cc_call</td><td>CDR — every call detail record with cost and duration</td></tr><tr><td>cc_did</td><td>DID number inventory and routing rules</td></tr><tr><td>cc_did_use</td><td>DID assignment to customer accounts</td></tr><tr><td>cc_tariffplan</td><td>Rate deck definitions and tier names</td></tr><tr><td>cc_rate</td><td>Per-destination rates within each tariff plan</td></tr><tr><td>cc_invoice</td><td>Generated postpaid invoices</td></tr><tr><td>cc_agent</td><td>Agent and reseller sub-accounts with markup settings</td></tr><tr><td>cc_voucher</td><td>Top-up voucher codes for prepaid top-up</td></tr></tbody></table>
+Credit exhausted → call terminated → CDR written</pre>
+    <h2>What's actually in the database</h2>
+    <p>Nine tables cover the whole lifecycle — accounts and balances, the call detail records everything else derives from, DID inventory, rate structure, and the reseller layer on top:</p>
+    <table><thead><tr><th>Table</th><th>Purpose</th></tr></thead><tbody><tr><td>cc_card</td><td>Customer accounts, PINs, and balances</td></tr><tr><td>cc_call</td><td>CDR — every call detail record with cost and duration</td></tr><tr><td>cc_did</td><td>DID number inventory and routing rules</td></tr><tr><td>cc_did_use</td><td>DID assignment to customer accounts</td></tr><tr><td>cc_tariffplan</td><td>Rate deck definitions and tier names</td></tr><tr><td>cc_rate</td><td>Per-destination rates within each tariff plan</td></tr><tr><td>cc_invoice</td><td>Generated postpaid invoices</td></tr><tr><td>cc_agent</td><td>Agent and reseller sub-accounts with markup settings</td></tr><tr><td>cc_voucher</td><td>Top-up voucher codes for prepaid top-up</td></tr></tbody></table>
     <p><a href="/">← All articles</a></p>
   </main>
   <footer class="site">
