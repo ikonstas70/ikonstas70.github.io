@@ -6,18 +6,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lab 02 — MPLS L3VPN — VRF CORP End-to-End | CCIE Advanced Lab</title>
 <style>
-:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--green:#3fb950;--cyan:#58a6ff;--purple:#bc8cff;--orange:#f0883e;--red:#f85149;--yellow:#d29922;--text:#e6edf3;--muted:#8b949e;}
+:root{--bg:#0a0a0a;--bg2:#0f0f0f;--bg3:#141414;--border:#1f1f1f;--green:#3fb950;--cyan:#c1a55c;--purple:#bc8cff;--orange:#f0883e;--red:#f85149;--yellow:#d29922;--text:#f7f7f7;--muted:#9e9e9e;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;}
+body{background:var(--bg);color:var(--text);font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.6;}
 a{color:var(--cyan);text-decoration:none;}a:hover{text-decoration:underline;}
 .nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:24px;position:sticky;top:0;z-index:100;}
 .nav-brand{color:var(--cyan);font-weight:bold;font-size:14px;}
 .hero{padding:40px 32px 24px;border-bottom:1px solid var(--border);}
 .lab-num{display:inline-block;background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:2px 10px;border-radius:12px;margin-bottom:12px;}
-.hero h1{font-size:26px;color:#e6edf3;margin-bottom:8px;}
+.hero h1{font-size:26px;color:#f7f7f7;margin-bottom:8px;}
 .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
 .badge{padding:3px 12px;border-radius:12px;font-size:11px;font-weight:bold;}
-.badge-blue{background:#1f6feb33;color:#58a6ff;border:1px solid #1f6feb;}
+.badge-blue{background:#1f6feb33;color:#c1a55c;border:1px solid #1f6feb;}
 .badge-green{background:#3fb95033;color:#3fb950;border:1px solid #3fb950;}
 .badge-purple{background:#bc8cff33;color:#bc8cff;border:1px solid #bc8cff;}
 .badge-yellow{background:#d2992233;color:#d29922;border:1px solid #d29922;}
@@ -35,7 +35,7 @@ p{color:var(--muted);margin-bottom:12px;font-size:14px;}
 .addr-table tr:nth-child(even) td{background:#0a0e13;}
 .router-block{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:20px;overflow:hidden;}
 .router-header{background:var(--bg3);padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);}
-.router-name{color:#e6edf3;font-weight:bold;font-size:14px;}
+.router-name{color:#f7f7f7;font-weight:bold;font-size:14px;}
 .router-role{color:var(--muted);font-size:12px;}
 .router-ip{color:var(--green);font-size:12px;margin-left:auto;}
 pre{background:#010409;border:none;padding:20px;overflow-x:auto;font-size:12px;color:#c9d1d9;line-height:1.5;}
@@ -62,38 +62,38 @@ pre{background:#010409;border:none;padding:20px;overflow-x:auto;font-size:12px;c
   <div class="section">
     <h2>Active Nodes</h2>
     <div class="topology-container">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"  style="width:100%;height:auto;display:block;" style="background:#0d1117;font-family:'Courier New',monospace;">
-  <rect x="0" y="0" width="800" height="500" fill="#0d1117"/>
-  <text x="400" y="28" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="bold">02 MPLS VPN CORP</text>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"  style="width:100%;height:auto;display:block;" style="background:#0a0a0a;font-family:Menlo,"SF Mono",Consolas,monospace;">
+  <rect x="0" y="0" width="800" height="500" fill="#0a0a0a"/>
+  <text x="400" y="28" text-anchor="middle" fill="#f7f7f7" font-size="13" font-weight="bold">02 MPLS VPN CORP</text>
   <text x="400" y="46" text-anchor="middle" fill="#388bfd" font-size="11">MPLS VPN CORP sites — Active: EDGE-1,EDGE-4,CE-CORP-1,CE-CORP-2</text>
 
   <!-- Reference topology note -->
-  <rect x="40" y="70" width="720" height="370" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
-  <text x="400" y="130" text-anchor="middle" fill="#8b949e" font-size="12">See master topology for full 20-router diagram</text>
+  <rect x="40" y="70" width="720" height="370" rx="8" fill="#0f0f0f" stroke="#1f1f1f" stroke-width="1"/>
+  <text x="400" y="130" text-anchor="middle" fill="#9e9e9e" font-size="12">See master topology for full 20-router diagram</text>
   <text x="400" y="155" text-anchor="middle" fill="#388bfd" font-size="14" font-weight="bold">Active Nodes: EDGE-1,EDGE-4,CE-CORP-1,CE-CORP-2</text>
 
   <!-- Color coded zone boxes -->
-  <rect x="80" y="175" width="620" height="200" rx="6" fill="#0d1117" stroke="#388bfd" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <rect x="80" y="175" width="620" height="200" rx="6" fill="#0a0a0a" stroke="#388bfd" stroke-width="1.5" stroke-dasharray="8,4"/>
   <text x="400" y="200" text-anchor="middle" fill="#388bfd" font-size="11" font-weight="bold">MPLS VPN CORP sites</text>
 
   <!-- Router nodes listed -->
-  <text x="400" y="240" text-anchor="middle" fill="#e6edf3" font-size="12">EDGE-1,EDGE-4,CE-CORP-1,CE-CORP-2</text>
+  <text x="400" y="240" text-anchor="middle" fill="#f7f7f7" font-size="12">EDGE-1,EDGE-4,CE-CORP-1,CE-CORP-2</text>
 
   <!-- Protocol info -->
-  <text x="400" y="290" text-anchor="middle" fill="#8b949e" font-size="10">Refer to lab.html for complete step-by-step configuration</text>
-  <text x="400" y="310" text-anchor="middle" fill="#8b949e" font-size="10">and verification commands for each active router</text>
+  <text x="400" y="290" text-anchor="middle" fill="#9e9e9e" font-size="10">Refer to lab.html for complete step-by-step configuration</text>
+  <text x="400" y="310" text-anchor="middle" fill="#9e9e9e" font-size="10">and verification commands for each active router</text>
 
   <!-- Legend strip -->
-  <rect x="40" y="455" width="720" height="28" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="40" y="455" width="720" height="28" rx="4" fill="#0f0f0f" stroke="#1f1f1f" stroke-width="1"/>
   <rect x="60" y="462" width="14" height="14" rx="2" fill="#388bfd"/>
-  <text x="82" y="473" fill="#8b949e" font-size="10">Active Zone</text>
-  <rect x="200" y="462" width="14" height="14" rx="2" fill="#21262d"/>
-  <text x="222" y="473" fill="#8b949e" font-size="10">Inactive (dimmed)</text>
+  <text x="82" y="473" fill="#9e9e9e" font-size="10">Active Zone</text>
+  <rect x="200" y="462" width="14" height="14" rx="2" fill="#141414"/>
+  <text x="222" y="473" fill="#9e9e9e" font-size="10">Inactive (dimmed)</text>
   <text x="680" y="473" text-anchor="end" fill="#6e7681" font-size="9">Ioannis Alexander Konstas</text>
 </svg>
 
     </div>
-    <p>Active routers in this lab: <strong style="color:#58a6ff">EDGE-1, EDGE-4, CE-CORP-1, CE-CORP-2, CORE-1..4</strong></p>
+    <p>Active routers in this lab: <strong style="color:#c1a55c">EDGE-1, EDGE-4, CE-CORP-1, CE-CORP-2, CORE-1..4</strong></p>
   </div>
   <div class="section"><h2>Key Concepts</h2>
 <div class="concept-box"><h4>VRF Route Distinguisher and Route Target</h4><p>The Route Distinguisher (RD) makes VPN prefixes globally unique in the BGP table: <code>rd 65000:100</code> prepends 8 bytes to every IPv4 prefix before advertising to MP-BGP VPNv4 peers. The Route Target (RT) is an extended community that controls import/export policy — PE routers only import prefixes carrying a matching RT. In a simple hub-and-spoke VPN, all PE routers share the same RT (65000:100), giving all sites full mesh connectivity.</p></div>

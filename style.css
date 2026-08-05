@@ -344,3 +344,28 @@ pre.code-inline { font-size: 0.82rem; }
 .sitemap-tree a { text-decoration: none; }
 .sitemap-tree a:hover { text-decoration: underline; }
 @media (max-width: 640px) { .sitemap-tree { font-size: 0.72rem; } }
+
+/* ── Numbered-section reference docs (facebook-privacy-defense and similar) ── */
+.wrapper { max-width: 100%; }
+.subtitle { color: var(--fg-dim); font-size: 1.02rem; line-height: 1.6; margin: -8px 0 14px; max-width: 720px; }
+.meta-row { display: flex; align-items: center; gap: 10px; color: var(--fg-dim); font-size: 0.82rem; margin-bottom: 30px; }
+.meta-row .dot { opacity: 0.5; }
+h2 .num {
+  font-family: var(--mono); font-size: 0.7rem; color: var(--accent-dim);
+  border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; margin-right: 10px;
+}
+.risk-high, .risk-medium, .risk-low, .risk-none {
+  font-size: 0.76rem; font-weight: 600; padding: 2px 10px; border-radius: 20px; white-space: nowrap;
+}
+.risk-high { color: hsl(4 60% 65%); background: hsl(4 60% 58% / 0.1); }
+.risk-medium { color: hsl(43 65% 62%); background: hsl(43 65% 58% / 0.1); }
+.risk-low { color: hsl(150 45% 60%); background: hsl(150 45% 55% / 0.1); }
+.risk-none { color: var(--fg-dim); background: hsl(0 0% 100% / 0.05); }
+.fairness {
+  border: 1px solid var(--border); border-left: 3px solid var(--accent-dim);
+  border-radius: 4px; padding: 18px 22px; margin: 0 0 20px;
+}
+.fairness h3 { margin-top: 0; }
+pre .c { color: var(--fg-dim); font-style: italic; }
+section.refs { margin-top: 8px; }
+pre.topology { font-size: 0.72rem; }

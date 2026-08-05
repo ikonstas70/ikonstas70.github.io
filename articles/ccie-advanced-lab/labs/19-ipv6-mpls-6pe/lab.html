@@ -1,15 +1,15 @@
 <!DOCTYPE html><html lang="en"><head>
 <link rel="canonical" href="https://ikonstas70.github.io/articles/ccie-advanced-lab/labs/19-ipv6-mpls-6pe/lab"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lab 19 — 6PE — IPv6 over MPLS without P-Router IPv6 | CCIE Advanced Lab</title>
-<style>:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--green:#3fb950;--cyan:#58a6ff;--purple:#bc8cff;--orange:#f0883e;--red:#f85149;--yellow:#d29922;--text:#e6edf3;--muted:#8b949e;}
-*{box-sizing:border-box;margin:0;padding:0;}body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;}
+<style>:root{--bg:#0a0a0a;--bg2:#0f0f0f;--bg3:#141414;--border:#1f1f1f;--green:#3fb950;--cyan:#c1a55c;--purple:#bc8cff;--orange:#f0883e;--red:#f85149;--yellow:#d29922;--text:#f7f7f7;--muted:#9e9e9e;}
+*{box-sizing:border-box;margin:0;padding:0;}body{background:var(--bg);color:var(--text);font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.6;}
 a{color:var(--cyan);text-decoration:none;}a:hover{text-decoration:underline;}
 .nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:24px;position:sticky;top:0;z-index:100;}
 .nav-brand{color:var(--cyan);font-weight:bold;font-size:14px;}.hero{padding:40px 32px 24px;border-bottom:1px solid var(--border);}
 .lab-num{display:inline-block;background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:2px 10px;border-radius:12px;margin-bottom:12px;}
-.hero h1{font-size:26px;color:#e6edf3;margin-bottom:8px;}.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.hero h1{font-size:26px;color:#f7f7f7;margin-bottom:8px;}.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
 .badge{padding:3px 12px;border-radius:12px;font-size:11px;font-weight:bold;}
-.badge-blue{background:#1f6feb33;color:#58a6ff;border:1px solid #1f6feb;}.badge-green{background:#3fb95033;color:#3fb950;border:1px solid #3fb950;}
+.badge-blue{background:#1f6feb33;color:#c1a55c;border:1px solid #1f6feb;}.badge-green{background:#3fb95033;color:#3fb950;border:1px solid #3fb950;}
 .badge-purple{background:#bc8cff33;color:#bc8cff;border:1px solid #bc8cff;}.badge-yellow{background:#d2992233;color:#d29922;border:1px solid #d29922;}
 .badge-red{background:#f8514933;color:#f85149;border:1px solid #f85149;}.badge-orange{background:#f0883e33;color:#f0883e;border:1px solid #f0883e;}
 .content{max-width:1100px;margin:0 auto;padding:32px;}.section{margin-bottom:40px;}
@@ -18,7 +18,7 @@ p{color:var(--muted);margin-bottom:12px;font-size:14px;}
 .topology-container{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px;overflow-x:auto;}
 .router-block{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:20px;overflow:hidden;}
 .router-header{background:var(--bg3);padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);}
-.router-name{color:#e6edf3;font-weight:bold;font-size:14px;}.router-role{color:var(--muted);font-size:12px;}.router-ip{color:var(--green);font-size:12px;margin-left:auto;}
+.router-name{color:#f7f7f7;font-weight:bold;font-size:14px;}.router-role{color:var(--muted);font-size:12px;}.router-ip{color:var(--green);font-size:12px;margin-left:auto;}
 pre{background:#010409;border:none;padding:20px;overflow-x:auto;font-size:12px;color:#c9d1d9;line-height:1.5;}
 .verify-block{background:var(--bg2);border-left:3px solid var(--green);padding:16px 20px;margin:12px 0;border-radius:0 6px 6px 0;}
 .verify-block .cmd{color:var(--green);font-weight:bold;font-size:13px;}.verify-block .expected{color:var(--muted);font-size:12px;margin-top:6px;}
@@ -30,37 +30,37 @@ pre{background:#010409;border:none;padding:20px;overflow-x:auto;font-size:12px;c
 <div class="hero"><span class="lab-num">LAB 19 / 20</span><h1>6PE — IPv6 over MPLS without P-Router IPv6</h1><div class="badges"><span class="badge badge-blue">6PE</span><span class="badge badge-purple">IPv6 over MPLS</span><span class="badge badge-green">Labeled-Unicast</span><span class="badge badge-yellow">Dual-Stack</span></div></div>
 <div class="content">
 <div class="section"><h2>Active Nodes</h2>
-<div class="topology-container"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"  style="width:100%;height:auto;display:block;" style="background:#0d1117;font-family:'Courier New',monospace;">
-  <rect x="0" y="0" width="800" height="500" fill="#0d1117"/>
-  <text x="400" y="28" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="bold">19 IPV6 MPLS 6PE</text>
+<div class="topology-container"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"  style="width:100%;height:auto;display:block;" style="background:#0a0a0a;font-family:Menlo,"SF Mono",Consolas,monospace;">
+  <rect x="0" y="0" width="800" height="500" fill="#0a0a0a"/>
+  <text x="400" y="28" text-anchor="middle" fill="#f7f7f7" font-size="13" font-weight="bold">19 IPV6 MPLS 6PE</text>
   <text x="400" y="46" text-anchor="middle" fill="#bc8cff" font-size="11">6PE — Active: EDGE-1,EDGE-4,CORE-1,CORE-2,CE-CORP-1,CE-CORP-2</text>
 
   <!-- Reference topology note -->
-  <rect x="40" y="70" width="720" height="370" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
-  <text x="400" y="130" text-anchor="middle" fill="#8b949e" font-size="12">See master topology for full 20-router diagram</text>
+  <rect x="40" y="70" width="720" height="370" rx="8" fill="#0f0f0f" stroke="#1f1f1f" stroke-width="1"/>
+  <text x="400" y="130" text-anchor="middle" fill="#9e9e9e" font-size="12">See master topology for full 20-router diagram</text>
   <text x="400" y="155" text-anchor="middle" fill="#bc8cff" font-size="14" font-weight="bold">Active Nodes: EDGE-1,EDGE-4,CORE-1,CORE-2,CE-CORP-1,CE-CORP-2</text>
 
   <!-- Color coded zone boxes -->
-  <rect x="80" y="175" width="620" height="200" rx="6" fill="#0d1117" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <rect x="80" y="175" width="620" height="200" rx="6" fill="#0a0a0a" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="8,4"/>
   <text x="400" y="200" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="bold">6PE</text>
 
   <!-- Router nodes listed -->
-  <text x="400" y="240" text-anchor="middle" fill="#e6edf3" font-size="12">EDGE-1,EDGE-4,CORE-1,CORE-2,CE-CORP-1,CE-CORP-2</text>
+  <text x="400" y="240" text-anchor="middle" fill="#f7f7f7" font-size="12">EDGE-1,EDGE-4,CORE-1,CORE-2,CE-CORP-1,CE-CORP-2</text>
 
   <!-- Protocol info -->
-  <text x="400" y="290" text-anchor="middle" fill="#8b949e" font-size="10">Refer to lab.html for complete step-by-step configuration</text>
-  <text x="400" y="310" text-anchor="middle" fill="#8b949e" font-size="10">and verification commands for each active router</text>
+  <text x="400" y="290" text-anchor="middle" fill="#9e9e9e" font-size="10">Refer to lab.html for complete step-by-step configuration</text>
+  <text x="400" y="310" text-anchor="middle" fill="#9e9e9e" font-size="10">and verification commands for each active router</text>
 
   <!-- Legend strip -->
-  <rect x="40" y="455" width="720" height="28" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="40" y="455" width="720" height="28" rx="4" fill="#0f0f0f" stroke="#1f1f1f" stroke-width="1"/>
   <rect x="60" y="462" width="14" height="14" rx="2" fill="#bc8cff"/>
-  <text x="82" y="473" fill="#8b949e" font-size="10">Active Zone</text>
-  <rect x="200" y="462" width="14" height="14" rx="2" fill="#21262d"/>
-  <text x="222" y="473" fill="#8b949e" font-size="10">Inactive (dimmed)</text>
+  <text x="82" y="473" fill="#9e9e9e" font-size="10">Active Zone</text>
+  <rect x="200" y="462" width="14" height="14" rx="2" fill="#141414"/>
+  <text x="222" y="473" fill="#9e9e9e" font-size="10">Inactive (dimmed)</text>
   <text x="680" y="473" text-anchor="end" fill="#6e7681" font-size="9">Ioannis Alexander Konstas</text>
 </svg>
 </div>
-<p>Active routers: <strong style="color:#58a6ff">EDGE-1, EDGE-4, CORE-1, CORE-2, CE-CORP-1, CE-CORP-2</strong></p></div>
+<p>Active routers: <strong style="color:#c1a55c">EDGE-1, EDGE-4, CORE-1, CORE-2, CE-CORP-1, CE-CORP-2</strong></p></div>
 <div class="section"><h2>Key Concepts</h2>
 <div class="concept-box"><h4>6PE Architecture</h4><p>6PE (IPv6 Provider Edge) carries IPv6 prefixes over an MPLS backbone without requiring IPv6 on P (core) routers. PE routers have dual-stack capability and use IPv4 LDP for label transport. IPv6 prefixes are encoded as labeled IPv6 routes in iBGP (address-family ipv6 with <code>send-label</code>). When an IPv6 packet arrives at a PE, it is encapsulated with a two-label stack: outer label for transport (IPv4 LDP toward remote PE) and inner label for the IPv6 prefix. P routers see only the outer IPv4 label and swap normally.</p></div>
 <div class="concept-box"><h4>mpls ipv6 source-interface</h4><p>The <code>mpls ipv6 source-interface Loopback0</code> command tells the PE to use its IPv4 loopback address as the MPLS transport address for IPv6 label distribution. Without this, the router might try to use an IPv6 address for LDP transport, which P routers cannot reach. This is the critical configuration that enables 6PE over an IPv4-only MPLS backbone — the IPv6 routing uses IPv4 LDP sessions established between PE loopbacks.</p></div>
