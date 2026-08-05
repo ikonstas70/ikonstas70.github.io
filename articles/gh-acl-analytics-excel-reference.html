@@ -10,6 +10,17 @@
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script>
+function copyCode(btn){
+  var pre = btn.parentElement.querySelector("pre");
+  if(!pre) return;
+  navigator.clipboard.writeText(pre.textContent).then(function(){
+    var orig = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(function(){ btn.textContent = orig; }, 1400);
+  }).catch(function(){});
+}
+</script>
 </head>
 <body>
 <div class="wrap">

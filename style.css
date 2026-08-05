@@ -217,3 +217,121 @@ img { -webkit-user-drag: none; user-drag: none; }
   .live-log-line { flex-wrap: wrap; gap: 4px 12px; }
   .live-log .llt { flex-basis: auto; }
 }
+
+/* ── Reference-doc template (used by several longer articles) ── */
+.container { max-width: 100%; }
+
+.header-sub { color: var(--fg-dim); font-size: 1.02rem; line-height: 1.6; margin: -10px 0 10px; max-width: 720px; }
+.header-meta { color: var(--accent-dim); font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px; }
+.header-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 34px; }
+.htag {
+  display: inline-block; border: 1px solid var(--border); border-radius: 20px;
+  padding: 3px 12px; font-size: 0.72rem; color: var(--fg-dim); background: var(--card);
+}
+
+.sec-head { display: flex; align-items: center; gap: 14px; margin: 44px 0 20px; }
+.sec-label { font-family: var(--serif); font-size: 1.3rem; color: var(--fg); white-space: nowrap; }
+.sec-line { flex: 1; height: 1px; background: var(--border); }
+.sec-count { font-family: var(--mono); font-size: 0.76rem; color: var(--accent-dim); white-space: nowrap; }
+
+.callout {
+  border: 1px solid var(--accent-dim); border-left: 3px solid var(--accent);
+  border-radius: 4px; background: hsl(43 45% 56% / 0.05);
+  padding: 16px 20px; margin: 0 0 20px; color: var(--fg-dim); line-height: 1.65;
+}
+.callout.tip { border-color: hsl(150 35% 45%); border-left-color: hsl(150 45% 50%); background: hsl(150 45% 50% / 0.05); }
+.callout.warn { border-color: hsl(4 55% 55%); border-left-color: hsl(4 60% 58%); background: hsl(4 60% 58% / 0.06); }
+
+.snippet { position: relative; margin: 0 0 20px; }
+.snippet pre { margin: 0; padding-top: 38px; }
+.snip-label {
+  position: absolute; top: 0; left: 0; right: 60px;
+  padding: 9px 16px; font-size: 0.72rem; color: var(--fg-dim);
+  letter-spacing: 0.04em; border-bottom: 1px solid var(--border);
+}
+.copy-btn {
+  position: absolute; top: 6px; right: 8px; z-index: 1;
+  background: var(--card); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--fg-dim); font-family: var(--sans); font-size: 0.68rem;
+  padding: 4px 10px; cursor: pointer; letter-spacing: 0.04em;
+}
+.copy-btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+.snippet pre .kw { color: hsl(200 60% 68%); }
+.snippet pre .str { color: hsl(150 40% 62%); }
+.snippet pre .cmt { color: var(--fg-dim); font-style: italic; }
+.snippet pre .num { color: hsl(28 65% 65%); }
+.snippet pre .formula { color: var(--accent); }
+
+table.ref-table { margin-top: 0; }
+.fn { font-size: 0.8rem; color: var(--fg-dim); }
+
+.purple { color: hsl(270 45% 72%); }
+.yellow { color: hsl(48 70% 65%); }
+.green, .ok { color: hsl(150 45% 60%); }
+.red, .bad { color: hsl(4 60% 65%); }
+.blue { color: hsl(200 55% 68%); }
+.cyan { color: hsl(185 55% 62%); }
+.orange { color: hsl(28 65% 62%); }
+
+/* ── Diagram / card-grid components (layered-security-stack and similar) ── */
+.section-sub { color: var(--fg-dim); font-size: 0.94rem; margin: -8px 0 24px; max-width: 640px; }
+h2 .icon { margin-right: 8px; opacity: 0.85; }
+
+.topo-shell { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 20px; background: var(--code-bg); }
+.topo-bar { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid var(--border); background: var(--card); }
+.topo-bar .dot { width: 9px; height: 9px; border-radius: 50%; }
+.topo-bar .dot-r { background: hsl(4 60% 58%); }
+.topo-bar .dot-y { background: hsl(43 65% 58%); }
+.topo-bar .dot-g { background: hsl(150 45% 55%); }
+.topo-label { margin-left: 8px; font-family: var(--mono); font-size: 0.72rem; color: var(--fg-dim); }
+.topo-body { padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+.tier { width: 100%; max-width: 560px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.tier-head {
+  background: hsl(43 45% 56% / 0.08); color: var(--accent); font-family: var(--mono);
+  font-size: 0.78rem; letter-spacing: 0.04em; padding: 8px 16px; border-bottom: 1px solid var(--border);
+}
+.tier-nodes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--border); }
+.node { display: flex; align-items: center; gap: 10px; background: var(--card); padding: 10px 14px; }
+.node-icon { font-size: 1.1rem; flex-shrink: 0; }
+.node-info { display: flex; flex-direction: column; }
+.node-name { font-size: 0.82rem; color: var(--fg); }
+.node-sub { font-size: 0.7rem; color: var(--fg-dim); }
+
+.topo-conn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; }
+.conn-stem { width: 1px; height: 12px; background: var(--border); }
+.conn-pill {
+  font-family: var(--mono); font-size: 0.68rem; color: var(--fg-dim);
+  border: 1px solid var(--border); border-radius: 20px; padding: 3px 12px; text-align: center;
+}
+.conn-arrow { color: var(--accent-dim); font-size: 0.8rem; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 20px; }
+.grid .card {
+  display: block; background: var(--card); border: 1px solid var(--border);
+  border-radius: 4px; padding: 20px 22px;
+}
+.grid .card-icon { font-size: 1.3rem; display: block; margin-bottom: 8px; }
+.grid .card h3 { margin: 0 0 8px; }
+.grid .card p { color: var(--fg-dim); font-size: 0.88rem; margin: 0 0 10px; }
+.tech { font-family: var(--mono); font-size: 0.72rem; color: var(--accent-dim); }
+
+.flows { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 20px; }
+.flow-card { min-width: 0; }
+.flow-title { font-family: var(--mono); font-size: 0.74rem; color: var(--accent); letter-spacing: 0.04em; margin-bottom: 8px; }
+pre.flow { font-size: 0.76rem; overflow-x: auto; }
+
+.decision { margin-bottom: 20px; }
+.decision h3 { margin-bottom: 8px; }
+pre.code-inline { font-size: 0.82rem; }
+
+.fix { margin-bottom: 20px; }
+.fix-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.fix-header h3 { margin: 0; }
+.fix-num.solved {
+  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.08em;
+  color: hsl(150 45% 60%); border: 1px solid hsl(150 35% 40%); border-radius: 20px; padding: 2px 10px;
+}
+
+.table-wrap { overflow-x: auto; margin-bottom: 20px; }
+.table-wrap table { margin-bottom: 0; }
