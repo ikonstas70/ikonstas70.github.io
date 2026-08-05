@@ -1,5 +1,12 @@
 [
 {
+"title": "The Stack",
+"desc": "The operational security and infrastructure stack I designed and run myself: autonomous defense, edge mitigation, post-quantum cryptography, and encrypted infrastructure, unified around one thesis.",
+"section": "Articles",
+"tag": "Security & Infrastructure",
+"url": "/stack"
+},
+{
 "title": "SENTINEL: An Autonomous, Quantum-Safe Defense Platform",
 "desc": "A security platform I designed and operate on Zero Trust, active deception, and post-quantum cryptography (FIPS 203/204) — built as a closed-loop, self-correcting system rather than a passive alert stream.",
 "section": "Articles",

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/stack">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Stack — Konstas Engineering Notes</title>
+<meta name="description" content="The operational security and infrastructure stack I designed and run myself: autonomous defense, edge mitigation, post-quantum cryptography, and encrypted infrastructure, unified around one thesis.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://blog.konstas.us/stack">
+<meta property="og:title" content="The Stack — Ioannis Konstas">
+<meta property="og:description" content="The operational security and infrastructure stack I designed and run myself: autonomous defense, edge mitigation, post-quantum cryptography, and encrypted infrastructure.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .55);margin:6px 22px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure &middot; Musician</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="https://pulseintimetunes.agency" target="_blank" rel="noopener">Music</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack" class="active">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Security &amp; Infrastructure</span>
+    <h1>The Stack</h1>
+    <p class="meta">Articles &middot; August 2026 &middot; Ioannis Konstas</p>
+
+    <p>Infrastructure I designed, built, and personally operate.</p>
+
+    <h2>The Stack</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px;margin-bottom:10px;">
+      <a class="card" href="/articles/sentinel-platform" style="border-color:var(--accent);">
+        <h3>SENTINEL</h3>
+        <p>An autonomous, quantum-safe defense platform — deception grid, behavioral containment, self-healing infrastructure, continuous pen-testing. The flagship piece; full writeup linked.</p>
+        <span class="date">Read the full breakdown &rarr;</span>
+      </a>
+      <a class="card" href="#edge">
+        <h3>Edge Defense</h3>
+        <p>Automatic challenge-and-block for hostile traffic at the network edge, before it ever reaches origin infrastructure, plus continuous file-integrity scanning behind it.</p>
+        <span class="date">Perimeter</span>
+      </a>
+      <a class="card" href="#host">
+        <h3>Host Security Stack</h3>
+        <p>Continuous local file-integrity monitoring, automated threat-intel-fed IP blocking, a privacy-hardened network posture, and a private authenticated operations dashboard.</p>
+        <span class="date">Endpoint</span>
+      </a>
+      <a class="card" href="#pqc">
+        <h3>Post-Quantum Cryptography</h3>
+        <p>ML-KEM-768 + ML-DSA-65 hybrid cryptography (NIST FIPS 203/204) protecting management channels stack-wide, ahead of the "harvest now, decrypt later" threat model.</p>
+        <span class="date">Cryptography</span>
+      </a>
+      <a class="card" href="#repos">
+        <h3>Encrypted Infrastructure Repos</h3>
+        <p>Every site and service I run is version-controlled through git-crypt AES-256 encrypted repositories — source and configuration are never at rest in plaintext, even in private storage.</p>
+        <span class="date">Storage</span>
+      </a>
+      <a class="card" href="/articles/gh-network-automation-stack-technical-report">
+        <h3>Network Automation Stack</h3>
+        <p>A Flask-based API gateway that turns a totally isolated fleet of network devices into RESTful endpoints — API-key auth, strict port allowlisting, L3 point-to-point isolation with no route to the public internet.</p>
+        <span class="date">Read the full breakdown &rarr;</span>
+      </a>
+    </div>
+
+    <h2 id="edge">Edge Defense</h2>
+    <p>The first layer nothing gets past without passing through: automatic bot and attack-pattern mitigation at the network edge, in front of every service I run. Hostile and automated traffic gets challenged or blocked before it ever reaches origin infrastructure — origin servers only ever see traffic that's already cleared that filter. Behind the edge, a continuous file-integrity scanner watches for unauthorized change across the properties it fronts, feeding the same behavioral pipeline SENTINEL uses.</p>
+
+    <h2 id="host">Host Security Stack</h2>
+    <p>On the host itself: continuous file-integrity monitoring against a known-good baseline, an automated IP-blocklist pipeline fed by threat-intelligence sources and enriched over time, a hardened network posture that null-routes known tracking and advertising infrastructure at the resolver level, and a private, authenticated operations dashboard for watching all of it — never exposed to the open internet. Thousands of hostile sources are on the permanent blocklist at this point, and the last full integrity sweep came back clean.</p>
+
+    <h2 id="pqc">Post-Quantum Cryptography</h2>
+    <p>Google's March 2026 warning — later echoed by Cloudflare and backed by a $2B U.S. government emergency program — put a working estimate on the table: large-scale quantum computers capable of breaking today's public-key cryptography could arrive by <strong>2029</strong>. "Harvest now, decrypt later" makes that a today problem, not a 2029 problem: encrypted traffic captured now can simply be stored and broken retroactively once the hardware exists.</p>
+    <p>The cryptographic layer protecting management channels across this stack implements NIST FIPS 203/204 directly — <strong>ML-KEM-768</strong> for post-quantum key encapsulation and <strong>ML-DSA-65</strong> for post-quantum signatures, combined with classical X25519 in a hybrid construction so an attacker has to break both simultaneously, even if one falls first. Full technical detail — parameter sizes, the six-vector attack simulation, signature verification — is in the <a href="/articles/sentinel-platform">SENTINEL writeup</a>.</p>
+
+    <h2 id="repos">Encrypted Infrastructure Repos</h2>
+    <p>Source and configuration for every site and service I run live in git-crypt AES-256 encrypted repositories, synced automatically on a fixed interval with continuous integrity verification. The threat model isn't just "don't leak this publicly" — it's that even private version-control storage shouldn't hold plaintext infrastructure secrets. Keys are held locally, protected by a passphrase, never committed alongside the content they protect.</p>
+
+    <p><a href="/">&larr; All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=stack",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
