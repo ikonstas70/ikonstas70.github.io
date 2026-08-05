@@ -56,7 +56,7 @@ import asyncio, os, secrets
 
 ALLOWED_PORTS = set(range(2301, 2321))          # the console range, explicit
 API_KEY = os.environ["ROUTER_API_KEY"]          # never hard-coded
-HYPERVISOR = "10.10.0.210"                        # reachable only via mgmt host
+HYPERVISOR = "198.51.100.10"                        # reachable only via mgmt host
 
 app = FastAPI(title="Router Console API")
 
@@ -127,7 +127,7 @@ async def _read_until_prompt(reader, timeout=8.0) -&gt; str:
     <pre><code># One relay per console port; TCP-LISTEN forks a child per client
 for p in $(seq 2301 2320); do
   socat TCP-LISTEN:${p},reuseaddr,fork \
-        TCP:10.10.0.210:${p} &amp;
+        TCP:198.51.100.10:${p} &amp;
 done</code></pre>
     <p>Finally, strip the Telnet negotiation bytes, ANSI escapes, and echoed command so callers get clean text:</p>
     <pre><code>import re
