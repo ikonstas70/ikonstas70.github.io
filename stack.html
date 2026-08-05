@@ -44,6 +44,32 @@
 
     <p>Infrastructure I designed, built, and personally operate.</p>
 
+    <h2>Topology</h2>
+    <pre><code>Internet
+   │
+   ▼
+Edge Defense  ── challenges/blocks hostile traffic before it reaches origin
+   │
+   ├─────────────────────┬───────────────────────────┐
+   ▼                       ▼                           ▼
+SENTINEL               Other public                Network Automation Stack
+deception grid,        services                     isolated device fleet,
+containment,           (blog, sites)                L3 point-to-point link,
+self-healing                                         no route to the internet
+   │
+   ▼
+Host Security Stack
+file-integrity monitoring, blocklist pipeline, private ops dashboard
+   │
+   ▼
+Post-Quantum Cryptography Layer
+ML-KEM-768 + X25519 hybrid, ML-DSA-65 — protects management channels stack-wide
+   │
+   ▼
+Encrypted Infrastructure Repos
+git-crypt AES-256 — source and configuration for every piece above, at rest</code></pre>
+    <p>Edge Defense fronts everything public. SENTINEL and the Network Automation Stack are separate: SENTINEL defends production services that are reachable from the internet, the automation stack manages a device fleet that isn't reachable from it at all. The host security stack, the cryptography layer, and the encrypted repos aren't separate boxes on this diagram so much as properties that cut across all of it.</p>
+
     <h2>The Stack</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px;margin-bottom:10px;">
       <a class="card" href="/articles/sentinel-platform" style="border-color:var(--accent);">
