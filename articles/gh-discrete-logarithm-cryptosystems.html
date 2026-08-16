@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Public-Key Cryptosystems Based on the Discrete Logarithm Problem — Konstas Engineering Notes</title>
-<meta name="description" content="Technical reference on the Discrete Logarithm Problem (DLP), ℤₚ* Multiplicative Group Operations, Diffie-Hellman Key Exchange (DHKE), ElGamal Encryption, and Elliptic Curve Cryptography (ECC).">
+<meta name="description" content="Technical reference on the Discrete Logarithm Problem (DLP), ℤₚ* Multiplicative Group Operations, Diffie-Hellman Key Exchange (DHKE), ElGamal Encryption, Elliptic Curve Cryptography (ECC), and security bit-length equivalents.">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -212,7 +212,59 @@ y₃ ≡ &lambda;(x₁ &minus; x₃) &minus; y₁ (mod p)
 
     <hr></hr>
 
-    <h2>5. Algebraic Correspondence & Cryptanalytic Comparison</h2>
+    <h2>5. Bit Lengths of Public-Key Algorithms for Different Security Levels</h2>
+    <p>Because subexponential algorithms (GNFS and Index Calculus) exist for integer factorization and finite field discrete logarithms, their key sizes must grow superlinearly to keep pace with security levels. In contrast, elliptic curves lack subexponential structure, allowing key lengths to scale linearly (<code>2 &times; security bits</code>):</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Algorithm Family</th>
+          <th>Cryptosystems</th>
+          <th>80-bit Security (Legacy)</th>
+          <th>128-bit Security (Standard)</th>
+          <th>192-bit Security (High)</th>
+          <th>256-bit Security (Top-Secret)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Integer Factorization</strong></td>
+          <td>RSA</td>
+          <td>1024 bit</td>
+          <td>3072 bit</td>
+          <td>7680 bit</td>
+          <td>15360 bit</td>
+        </tr>
+        <tr>
+          <td><strong>Discrete Logarithm (Finite Field)</strong></td>
+          <td>DH, DSA, ElGamal</td>
+          <td>1024 bit (q &ge; 160)</td>
+          <td>3072 bit (q &ge; 256)</td>
+          <td>7680 bit (q &ge; 384)</td>
+          <td>15360 bit (q &ge; 512)</td>
+        </tr>
+        <tr>
+          <td><strong>Elliptic Curves (ECDLP)</strong></td>
+          <td>ECDH, ECDSA, Ed25519</td>
+          <td>160 bit</td>
+          <td>256 bit (P-256, Curve25519)</td>
+          <td>384 bit (P-384)</td>
+          <td>512–521 bit (P-521, Ed448)</td>
+        </tr>
+        <tr>
+          <td><strong>Symmetric Key (Baseline)</strong></td>
+          <td>AES, 3DES</td>
+          <td>80 bit (2TDEA / 3DES)</td>
+          <td>128 bit (AES-128)</td>
+          <td>192 bit (AES-192)</td>
+          <td>256 bit (AES-256)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr></hr>
+
+    <h2>6. Algebraic Correspondence & Cryptanalytic Comparison</h2>
     <p>The mathematical operations and security parameters compare directly:</p>
 
     <table>
