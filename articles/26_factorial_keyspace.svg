@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="100%" height="100%" style="background:#0a0e17; font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <radialGradient id="bg-radial" cx="50%" cy="20%" r="80%" fx="50%" fy="20%">
+      <stop offset="0%" stop-color="#151d30"/>
+      <stop offset="100%" stop-color="#070a10"/>
+    </radialGradient>
+
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+
+    <linearGradient id="card-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <linearGradient id="highlight-blue" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+
+    <linearGradient id="highlight-emerald" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+
+    <linearGradient id="highlight-amber" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+
+    <linearGradient id="highlight-purple" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1200" height="680" fill="url(#bg-radial)"/>
+
+  <!-- Subtle Tech Grid -->
+  <g opacity="0.04" stroke="#ffffff" stroke-width="1">
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40"/>
+    </pattern>
+    <rect width="1200" height="680" fill="url(#grid)"/>
+  </g>
+
+  <!-- Title Header -->
+  <text x="600" y="46" font-size="12" font-weight="700" letter-spacing="4" fill="#38bdf8" text-anchor="middle" text-transform="uppercase">CRYPTOGRAPHIC KEYSPACE MATHEMATICS</text>
+  <text x="600" y="80" font-size="28" font-weight="800" fill="#f8fafc" text-anchor="middle" letter-spacing="-0.5">Why 26! ≈ 2⁸⁸ : Bit Depth &amp; Mental Estimation</text>
+  <text x="600" y="104" font-size="14" font-weight="400" fill="#94a3b8" text-anchor="middle">Permutations of the 26-letter English Alphabet in Simple Substitution Ciphers</text>
+
+  <!-- ================= TOP SECTION: THE CORE EQUIVALENCE ================= -->
+  
+  <!-- Left Box: Exact Value -->
+  <g filter="url(#shadow)" transform="translate(60, 130)">
+    <rect width="330" height="130" rx="12" fill="url(#card-grad)" stroke="#38bdf8" stroke-width="1.5"/>
+    <rect x="0" y="0" width="330" height="4" fill="url(#highlight-blue)" rx="2"/>
+    <text x="24" y="34" font-size="12" font-weight="700" fill="#38bdf8" letter-spacing="1">1. EXACT PERMUTATIONS</text>
+    <text x="24" y="66" font-size="22" font-weight="800" fill="#ffffff">26! (Factorial)</text>
+    <text x="24" y="94" font-size="12" font-family="'JetBrains Mono', 'SF Mono', monospace" fill="#7dd3fc">403,291,461,126,605,635,584,000,000</text>
+    <text x="24" y="114" font-size="11" font-weight="500" fill="#94a3b8">≈ 4.0329 × 10²⁶ keys</text>
+  </g>
+
+  <!-- Center Arrow / Conversion -->
+  <g transform="translate(420, 175)">
+    <circle cx="45" cy="20" r="24" fill="#1e293b" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="45" y="25" font-size="14" font-weight="700" fill="#a5b4fc" text-anchor="middle">log₂</text>
+    <path d="M 0 20 L 15 20 M 75 20 L 90 20" stroke="#818cf8" stroke-width="2" stroke-dasharray="3,3"/>
+  </g>
+
+  <!-- Right Box: Bit Depth Equivalent -->
+  <g filter="url(#shadow)" transform="translate(540, 130)">
+    <rect width="600" height="130" rx="12" fill="url(#card-grad)" stroke="#34d399" stroke-width="1.5"/>
+    <rect x="0" y="0" width="600" height="4" fill="url(#highlight-emerald)" rx="2"/>
+    <text x="24" y="34" font-size="12" font-weight="700" fill="#34d399" letter-spacing="1">2. EQUIVALENT BIT SECURITY</text>
+    <text x="24" y="68" font-size="24" font-weight="800" fill="#ffffff">288.38 ≈ 2⁸⁸ Bits of Entropy</text>
+    <text x="24" y="96" font-size="13" font-weight="500" fill="#cbd5e1">log₂(26!) = ∑ log₂(k) = 88.38195...</text>
+    <text x="24" y="116" font-size="11" font-weight="500" fill="#6ee7b7">✓ Pure Brute-Force: 2⁸⁸ operations | ⚠ Vulnerable to: Frequency Analysis</text>
+  </g>
+
+  <!-- ================= BOTTOM SECTION: 3 MENTAL ARITHMETIC TRICKS ================= -->
+
+  <!-- Trick 1 -->
+  <g filter="url(#shadow)" transform="translate(60, 290)">
+    <rect width="340" height="330" rx="12" fill="url(#card-grad)" stroke="#1e3a5f" stroke-width="1.5"/>
+    <rect x="0" y="0" width="340" height="42" rx="12" fill="#0c2136"/>
+    <rect x="0" y="30" width="340" height="12" fill="#0c2136"/>
+    <text x="20" y="26" font-size="13" font-weight="700" fill="#38bdf8">TRICK 1: Outside-In Pairing</text>
+    
+    <rect x="20" y="54" width="130" height="20" rx="10" fill="#0284c7" opacity="0.25"/>
+    <text x="85" y="68" font-size="10" font-weight="700" fill="#38bdf8" text-anchor="middle">13 PAIRS SCALE SMOOTHLY</text>
+
+    <text x="20" y="104" font-size="12" font-family="monospace" fill="#93c5fd">• 1 × 26 = 26   (≈ 24.7)</text>
+    <text x="20" y="126" font-size="12" font-family="monospace" fill="#93c5fd">• 2 × 25 = 50   (≈ 25.6)</text>
+    <text x="20" y="148" font-size="12" font-family="monospace" fill="#93c5fd">• ...</text>
+    <text x="20" y="170" font-size="12" font-family="monospace" fill="#93c5fd">• 13 × 14 = 182 (≈ 27.5)</text>
+
+    <path d="M 20 188 L 320 188" stroke="#1e3a5f" stroke-width="1"/>
+
+    <text x="20" y="212" font-size="12" font-weight="600" fill="#e2e8f0">Average Pair Product ≈ 120</text>
+    <text x="20" y="232" font-size="11.5" font-weight="400" fill="#94a3b8">Since 2⁷ = 128, log₂(120) ≈ 6.8</text>
+
+    <rect x="20" y="254" width="300" height="48" rx="8" fill="#082f49" stroke="#0284c7" stroke-width="1"/>
+    <text x="170" y="274" font-size="11" font-weight="600" fill="#7dd3fc" text-anchor="middle">13 pairs × 6.8 ≈</text>
+    <text x="170" y="294" font-size="17" font-weight="800" fill="#38bdf8" text-anchor="middle">88.4 bits</text>
+  </g>
+
+  <!-- Trick 2 -->
+  <g filter="url(#shadow)" transform="translate(430, 290)">
+    <rect width="340" height="330" rx="12" fill="url(#card-grad)" stroke="#1e3a5f" stroke-width="1.5"/>
+    <rect x="0" y="0" width="340" height="42" rx="12" fill="#142820"/>
+    <rect x="0" y="30" width="340" height="12" fill="#142820"/>
+    <text x="20" y="26" font-size="13" font-weight="700" fill="#34d399">TRICK 2: Power-of-2 Buckets</text>
+
+    <rect x="20" y="54" width="130" height="20" rx="10" fill="#059669" opacity="0.25"/>
+    <text x="85" y="68" font-size="10" font-weight="700" fill="#34d399" text-anchor="middle">OCTAVE GROUPING</text>
+
+    <text x="20" y="104" font-size="11" font-family="monospace" fill="#a7f3d0">[1 – 2]   2 nos × 20.5 = 1.0</text>
+    <text x="20" y="126" font-size="11" font-family="monospace" fill="#a7f3d0">[3 – 4]   2 nos × 21.8 = 3.6</text>
+    <text x="20" y="148" font-size="11" font-family="monospace" fill="#a7f3d0">[5 – 8]   4 nos × 22.6 = 10.4</text>
+    <text x="20" y="170" font-size="11" font-family="monospace" fill="#a7f3d0">[9 – 16]  8 nos × 23.6 = 28.8</text>
+    <text x="20" y="192" font-size="11" font-family="monospace" fill="#a7f3d0">[17 – 26] 10 nos × 24.4 = 44.0</text>
+
+    <path d="M 20 208 L 320 208" stroke="#1e3a5f" stroke-width="1"/>
+
+    <text x="20" y="232" font-size="12" font-weight="600" fill="#e2e8f0">Sum of 5 Octave Buckets:</text>
+    <text x="20" y="248" font-size="10.5" font-weight="400" fill="#94a3b8">1.0 + 3.6 + 10.4 + 28.8 + 44.0</text>
+
+    <rect x="20" y="254" width="300" height="48" rx="8" fill="#064e3b" stroke="#059669" stroke-width="1"/>
+    <text x="170" y="274" font-size="11" font-weight="600" fill="#a7f3d0" text-anchor="middle">Total Bucket Sum =</text>
+    <text x="170" y="294" font-size="17" font-weight="800" fill="#34d399" text-anchor="middle">87.8 bits</text>
+  </g>
+
+  <!-- Trick 3 -->
+  <g filter="url(#shadow)" transform="translate(800, 290)">
+    <rect width="340" height="330" rx="12" fill="url(#card-grad)" stroke="#1e3a5f" stroke-width="1.5"/>
+    <rect x="0" y="0" width="340" height="42" rx="12" fill="#2d1338"/>
+    <rect x="0" y="30" width="340" height="12" fill="#2d1338"/>
+    <text x="20" y="26" font-size="13" font-weight="700" fill="#c084fc">TRICK 3: Stirling's Shortcut</text>
+
+    <rect x="20" y="54" width="130" height="20" rx="10" fill="#9333ea" opacity="0.25"/>
+    <text x="85" y="68" font-size="10" font-weight="700" fill="#c084fc" text-anchor="middle">ASYMPTOTIC FORMULA</text>
+
+    <text x="20" y="104" font-size="11.5" font-weight="600" fill="#f1f5f9">1. ln(26!) ≈ 26 ln(26) - 26</text>
+    <text x="20" y="126" font-size="11" font-family="monospace" fill="#e9d5ff">   26 ≈ 27 = 3³ → ln(27) ≈ 3.30</text>
+    <text x="20" y="148" font-size="11" font-family="monospace" fill="#e9d5ff">   ln(26!) ≈ 26(3.30 - 1) = 59.8</text>
+
+    <text x="20" y="174" font-size="11.5" font-weight="600" fill="#f1f5f9">2. Base Conversion:</text>
+    <text x="20" y="194" font-size="11" font-family="monospace" fill="#e9d5ff">   log₂(x) = 59.8 / 0.693 ≈ 86.3</text>
+
+    <path d="M 20 208 L 320 208" stroke="#1e3a5f" stroke-width="1"/>
+
+    <text x="20" y="232" font-size="12" font-weight="600" fill="#e2e8f0">+ Stirling Correction Term (+2.0):</text>
+    <text x="20" y="248" font-size="10.5" font-weight="400" fill="#94a3b8">86.3 + 0.5·log₂(2π × 26)</text>
+
+    <rect x="20" y="254" width="300" height="48" rx="8" fill="#4c1d95" stroke="#9333ea" stroke-width="1"/>
+    <text x="170" y="274" font-size="11" font-weight="600" fill="#e9d5ff" text-anchor="middle">Corrected Stirling =</text>
+    <text x="170" y="294" font-size="17" font-weight="800" fill="#c084fc" text-anchor="middle">88.3 bits</text>
+  </g>
+
+  <!-- Footer Tag -->
+  <text x="600" y="655" font-size="11" font-weight="500" fill="#475569" text-anchor="middle" letter-spacing="1">IOANNIS ALEXANDER KONSTAS • GITHUB: @IKONSTAS70</text>
+</svg>
