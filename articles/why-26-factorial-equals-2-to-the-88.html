@@ -4,16 +4,16 @@
 <link rel="canonical" href="https://ikonstas70.github.io/articles/why-26-factorial-equals-2-to-the-88">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Why 26! ≈ 2⁸⁸: Substitution Cipher Key Space, Bit Depth & Mental Estimation — Konstas Engineering Notes</title>
-<meta name="description" content="Converting the 26! alphabet permutations of simple substitution ciphers into base-2 logarithmic bit depth (2⁸⁸), Python verification, and 3 mental arithmetic shortcuts.">
+<title>Why 26! ≈ 2⁸⁸: Key Space, Bit Depth & Base-10 Mental Estimation — Konstas Engineering Notes</title>
+<meta name="description" content="Mathematical report and mental estimation derivation converting 26! alphabet permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).">
 <meta name="author" content="Ioannis Konstas">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
-<meta name="keywords" content="26 factorial, 2^88, substitution cipher keyspace, bit depth, log2, Stirlings approximation, mental arithmetic, cryptography, brute force keyspace, frequency analysis, Ioannis Konstas">
+<meta name="keywords" content="26 factorial, 2^88, substitution cipher keyspace, bit depth, log2, Stirlings approximation, mental arithmetic, base-10 estimation, drift correction, cryptography, Ioannis Konstas">
 
 <!-- Open Graph / Social Sharing -->
 <meta property="og:type" content="article">
-<meta property="og:title" content="Why 26! ≈ 2⁸⁸: Substitution Cipher Key Space, Bit Depth & Mental Estimation">
-<meta property="og:description" content="Converting 26! permutations into base-2 logarithmic bit depth (2⁸⁸), with analytical derivations, Python code, and 3 mental arithmetic tricks.">
+<meta property="og:title" content="Why 26! ≈ 2⁸⁸: Key Space, Bit Depth & Base-10 Mental Estimation">
+<meta property="og:description" content="Mathematical report and mental estimation derivation converting 26! permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).">
 <meta property="og:url" content="https://ikonstas70.github.io/articles/why-26-factorial-equals-2-to-the-88">
 <meta property="og:site_name" content="Konstas — Engineering Notes">
 <meta property="og:image" content="https://ikonstas70.github.io/articles/26_factorial_keyspace.png">
@@ -28,8 +28,8 @@
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Why 26! ≈ 2⁸⁸: Substitution Cipher Key Space, Bit Depth & Mental Estimation">
-<meta name="twitter:description" content="Converting 26! permutations into base-2 logarithmic bit depth (2⁸⁸), with analytical derivations, Python code, and 3 mental arithmetic tricks.">
+<meta name="twitter:title" content="Why 26! ≈ 2⁸⁸: Key Space, Bit Depth & Base-10 Mental Estimation">
+<meta name="twitter:description" content="Mathematical report and mental estimation derivation converting 26! permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).">
 <meta name="twitter:image" content="https://ikonstas70.github.io/articles/26_factorial_keyspace.png">
 <meta name="twitter:image:alt" content="Why 26! ≈ 2^88: Cryptographic Key Space, Bit Depth, and Mental Estimation">
 
@@ -38,8 +38,8 @@
 {
   "@context": "https://schema.org",
   "@type": "TechArticle",
-  "headline": "Why 26! ≈ 2⁸⁸: Substitution Cipher Key Space, Bit Depth & Mental Estimation",
-  "description": "Converting the 26! alphabet permutations of simple substitution ciphers into base-2 logarithmic bit depth (2⁸⁸), Python verification, and 3 mental arithmetic shortcuts.",
+  "headline": "Why 26! ≈ 2⁸⁸: Key Space, Bit Depth & Base-10 Mental Estimation",
+  "description": "Mathematical report and mental estimation derivation converting 26! alphabet permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).",
   "author": {
     "@type": "Person",
     "name": "Ioannis Konstas",
@@ -58,6 +58,13 @@
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+
+<!-- KaTeX for math rendering -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+
 <style>
   .diagram-container {
     margin: 28px 0 36px;
@@ -82,6 +89,18 @@
     margin: 20px 0;
     border-radius: 0 6px 6px 0;
   }
+  .report-box {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 24px;
+    margin: 28px 0;
+  }
+  .report-header {
+    border-bottom: 1px solid #334155;
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+  }
 </style>
 </head>
 <body>
@@ -104,10 +123,10 @@
   </header>
   <main>
     <span class="tag">Cryptography</span>
-    <h1>Why 26! ≈ 2⁸⁸: Substitution Cipher Key Space, Bit Depth &amp; Mental Estimation</h1>
+    <h1>Why $26! \approx 2^{88}$: Key Space, Bit Depth &amp; Base-10 Mental Estimation</h1>
     <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas</p>
 
-    <p>The total number of ways to arrange the 26 letters of the English alphabet (e.g., trying every permutation for a monoalphabetic substitution cipher) is <strong>26!</strong> (26 factorial). To understand its cryptographic strength, we convert this astronomical value into a <strong>base-2 logarithmic bit depth</strong>.</p>
+    <p>Evaluating the key space of a basic 26-letter monoalphabetic substitution cipher requires calculating $26!$ (26 factorial). In modern computer science and cryptography, key spaces are measured in <strong>bits of security</strong> ($2^x$). This guide provides the step-by-step mathematical derivation showing why $26! \approx 2^{88}$, the mental arithmetic techniques to compute its base-10 value ($3.09 \times 10^{26}$), and Python verification code.</p>
 
     <div class="diagram-container">
       <img src="/articles/26_factorial_keyspace.svg" alt="Why 26! ≈ 2^88: Cryptographic Key Space, Bit Depth, and Mental Estimation">
@@ -115,79 +134,161 @@
 
     <hr>
 
-    <h2>1. The Exact Value of 26!</h2>
-    <p>Evaluating the factorial product explicitly:</p>
-    <pre><code>26! = 26 × 25 × 24 × ... × 2 × 1
-    = 403,291,461,126,605,635,584,000,000
-    ≈ 4.0329 × 10²⁶ keys
-</code></pre>
-    <p>This number exceeds 400 septillion possible permutations.</p>
+    <div class="report-box">
+      <div class="report-header">
+        <h2 style="margin:0 0 6px; font-size:1.4rem; color:var(--accent);">Mathematical Analysis &amp; Mental Estimation Report</h2>
+        <p style="margin:0; font-size:0.88rem; color:var(--fg-dim);"><strong>Subject:</strong> Conversion of 26 Alphabet Permutations ($26!$) to Binary Security Bits ($2^{88}$) and Mental Base-10 Equivalence ($3.09 \times 10^{26}$)</p>
+      </div>
 
-    <hr>
-
-    <h2>2. Calculating the Bit Depth (log₂)</h2>
-    <p>In cryptography, key spaces are measured in <strong>bits of security</strong> ($2^x$). To find the equivalent exponent $x$ for $26!$, we solve:</p>
-    <pre><code>x = log₂(26!)
-</code></pre>
-    <p>Applying the logarithmic product rule ($\log(a \cdot b) = \log(a) + \log(b)$):</p>
-    <pre><code>log₂(26!) = ∑ (k=1 to 26) log₂(k)
-          = log₂(1) + log₂(2) + log₂(3) + ... + log₂(26)
-</code></pre>
-    <p>Evaluating this sum yields:</p>
-    <pre><code>log₂(26!) ≈ 88.38195
-</code></pre>
-    <p>Because $x \approx 88.38$, we have:</p>
-    <div class="highlight-box">
-      <strong>Core Equivalence:</strong><br>
-      <code>26! = 2⁸⁸·³⁸ ≈ 2⁸⁸</code>
+      <h3>Executive Summary</h3>
+      <p>The total number of ways to arrange the 26 letters of the English alphabet is $26!$. Converting this value into a base-2 logarithmic scale demonstrates that $26! \approx 2^{88.38} \approx 2^{88}$. Furthermore, by applying binary exponent deconstruction ($2^{56} \times 2^{32}$) and linear error correction for the $2^{10} \approx 10^3$ drift, the absolute base-10 value of $2^{88}$ can be derived mentally with over <strong>98.5% precision</strong>.</p>
     </div>
 
     <hr>
 
-    <h2>3. Analytical Estimation via Stirling's Approximation</h2>
-    <p>Without computing each logarithm individually, <strong>Stirling's approximation</strong> ($\ln(n!) \approx n \ln(n) - n$) provides an analytical shortcut:</p>
+    <h2>1. Exact Factorial Value</h2>
+    <p>The exact number of unique permutations of the 26 English alphabet characters is given by:</p>
+    $$26! = 26 \times 25 \times 24 \times \dots \times 2 \times 1$$
+    $$\mathbf{26! = 403,291,461,126,605,635,584,000,000 \approx 4.0329 \times 10^{26}}$$
 
+    <hr>
+
+    <h2>2. Binary Bit-Depth Derivation ($\log_2$)</h2>
+    <p>To convert any total state space $N$ into an equivalent power of two ($2^x$), solve for $x$ using base-2 logarithms:</p>
+    $$x = \log_2(26!)$$
+
+    <p>Applying the logarithmic product rule $\log_2(a \cdot b) = \log_2(a) + \log_2(b)$:</p>
+    $$\log_2(26!) = \sum_{k=1}^{26} \log_2(k) = \log_2(1) + \log_2(2) + \dots + \log_2(26)$$
+
+    <p>Summing these 26 terms explicitly:</p>
+    $$\log_2(26!) \approx 88.38195 \implies \mathbf{26! = 2^{88.38} \approx 2^{88}}$$
+
+    <div class="highlight-box">
+      <strong>Cryptographic Takeaway:</strong> A key space of $26!$ offers approximately <strong>88 bits of security</strong> against an exhaustive brute-force search ($2^{88} \approx 3.09 \times 10^{26}$ operations). While $2^{88}$ is infeasible for brute-force attacks on classical hardware, monoalphabetic substitution ciphers are broken using <strong>frequency analysis</strong> (letter frequencies, digrams, and trigrams).
+    </div>
+
+    <hr>
+
+    <h2>3. Base-10 Absolute Value Estimation (Mental Arithmetic)</h2>
+    <p>To compute the absolute base-10 magnitude of $2^{88}$ mentally, split the exponent into two manageable binary factors: $2^{56}$ and $2^{32}$.</p>
+
+    <h3>Step A: Deconstruct $2^{56}$</h3>
+    <p>Using the fundamental engineering approximation $2^{10} = 1024 \approx 1000 = 10^3$:</p>
+    $$2^{56} = 2^6 \times (2^{10})^5 \approx 64 \times (10^3)^5 = \mathbf{64 \times 10^{15}}$$
+
+    <h3>Step B: Deconstruct $2^{32}$</h3>
+    $$2^{32} = 2^2 \times (2^{10})^3 \approx 4 \times (10^3)^3 = \mathbf{4 \times 10^9}$$
+
+    <h3>Step C: Multiply the Components</h3>
+    $$2^{88} \approx (64 \times 10^{15}) \times (4 \times 10^9)$$
+    $$2^{88} \approx (64 \times 4) \times (10^{15} \times 10^9)$$
+    $$2^{88} \approx 256 \times 10^{24} = \mathbf{2.56 \times 10^{26}}$$
+
+    <hr>
+
+    <h2>4. Error Correction &amp; Final Precision Refinement</h2>
+    <p>Approximating $2^{10} = 1024$ as $1000$ introduces an error of $-2.4\%$ per factor of $2^{10}$.</p>
     <ol>
-      <li><strong>Natural Logarithm:</strong>
-        <pre><code>ln(26!) ≈ 26·ln(26) - 26 ≈ 26(3.258) - 26 ≈ 58.71
-</code></pre>
-      </li>
-      <li><strong>Change of Base to log₂ ($\log_2 x = \frac{\ln x}{\ln 2}$):</strong>
-        <pre><code>log₂(26!) = ln(26!) / ln(2) ≈ 58.71 / 0.69315 ≈ 84.7
-</code></pre>
-      </li>
-      <li><strong>Adding Stirling's Correction Term:</strong><br>
-        Adding the standard asymptotic correction $\frac{1}{2}\log_2(2\pi \cdot 26) \approx 3.68$ yields the precise:
-        <pre><code>84.7 + 3.68 ≈ 88.38
-</code></pre>
-      </li>
+      <li><strong>Count of $2^{10}$ Factors:</strong> 8 total instances ($5 \text{ from } 2^{56} + 3 \text{ from } 2^{32}$).</li>
+      <li><strong>Total Compounded Drift:</strong> $8 \times +2.4\% \approx \mathbf{+19.2\%}$.</li>
+      <li><strong>Applying Linear Correction to the Estimate:</strong></li>
+    </ol>
+
+    $$2.56 + (19.2\% \text{ of } 2.56) = 2.56 + 0.486 = \mathbf{3.046 \times 10^{26}}$$
+
+    <p>Comparing this mental result to the true value of $2^{88}$:</p>
+    $$2^{88} = 309,485,009,821,345,068,724,781,056 \approx \mathbf{3.0948 \times 10^{26}}$$
+    <p>The mental drift correction achieves within <strong>~1.5%</strong> of the true mathematical value.</p>
+
+    <hr>
+
+    <h2>5. Three Mental Shortcuts to Derive $\log_2(26!) \approx 88$</h2>
+
+    <h3>Trick 1: Outside-In Symmetrical Pairing</h3>
+    <p>Pair the 26 numbers symmetrically from the extremes inward:</p>
+    <ul>
+      <li>Pair 1: $1 \times 26 = 26$ ($\approx 2^{4.7}$)</li>
+      <li>Pair 2: $2 \times 25 = 50$ ($\approx 2^{5.6}$)</li>
+      <li>Pair 3: $3 \times 24 = 72$</li>
+      <li>Pair 4: $4 \times 23 = 92$</li>
+      <li>Pair 5: $5 \times 22 = 110$</li>
+      <li>&hellip;</li>
+      <li>Pair 13: $13 \times 14 = 182$ ($\approx 2^{7.5}$)</li>
+    </ul>
+    <p>There are 13 pairs. The average product is roughly <strong>$120$</strong>. Since $2^7 = 128$, $\log_2(120) \approx 6.8$:</p>
+    $$13 \text{ pairs} \times 6.8 \approx \mathbf{88.4 \text{ bits}}$$
+
+    <h3>Trick 2: Grouping by Power-of-2 Octaves</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Integer Range</th>
+          <th>Count</th>
+          <th>Representative Power of 2</th>
+          <th>Subtotal Contribution</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1 – 2</strong></td>
+          <td>2 numbers</td>
+          <td>$\approx 2^{0.5}$</td>
+          <td>$2 \times 0.5 = \mathbf{1.0}$</td>
+        </tr>
+        <tr>
+          <td><strong>3 – 4</strong></td>
+          <td>2 numbers</td>
+          <td>$\approx 2^{1.8}$</td>
+          <td>$2 \times 1.8 = \mathbf{3.6}$</td>
+        </tr>
+        <tr>
+          <td><strong>5 – 8</strong></td>
+          <td>4 numbers</td>
+          <td>$\approx 2^{2.6}$</td>
+          <td>$4 \times 2.6 = \mathbf{10.4}$</td>
+        </tr>
+        <tr>
+          <td><strong>9 – 16</strong></td>
+          <td>8 numbers</td>
+          <td>$\approx 2^{3.6}$</td>
+          <td>$8 \times 3.6 = \mathbf{28.8}$</td>
+        </tr>
+        <tr>
+          <td><strong>17 – 26</strong></td>
+          <td>10 numbers</td>
+          <td>$\approx 2^{4.4}$</td>
+          <td>$10 \times 4.4 = \mathbf{44.0}$</td>
+        </tr>
+      </tbody>
+    </table>
+    $$\text{Sum} = 1.0 + 3.6 + 10.4 + 28.8 + 44.0 = \mathbf{87.8 \text{ bits}}$$
+
+    <h3>Trick 3: Stirling's Formula Shortcut</h3>
+    <ol>
+      <li>Use Stirling's natural log approximation: $\ln(n!) \approx n \ln(n) - n$.</li>
+      <li>Estimate $\ln(26) \approx \ln(27) = 3 \ln(3) \approx 3 \times 1.10 = 3.30$.</li>
+      <li>Substitute into formula: $\ln(26!) \approx 26(3.30 - 1) = 26 \times 2.30 = 59.8$.</li>
+      <li>Change of base: $\log_2(26!) = \frac{\ln(26!)}{\ln(2)} \approx \frac{59.8}{0.693} \approx 86.3$.</li>
+      <li>Add the Stirling correction term $\frac{1}{2}\log_2(2\pi \times 26) \approx 2.0 \implies \mathbf{88.3 \text{ bits}}$.</li>
     </ol>
 
     <hr>
 
-    <h2>4. Cryptographic Takeaway: Brute Force vs. Cryptanalysis</h2>
-    <p>A key space of $26! \approx 2^{88}$ provides roughly <strong>88 bits of theoretical entropy</strong> against a pure brute-force attack. Searching through $2^{88}$ keys requires over $3 \times 10^{26}$ trial decryptions—well outside the bounds of trivial hardware enumeration.</p>
-    <p>However, simple substitution ciphers are <strong>catastrophically broken</strong> not by brute force, but through <strong>frequency analysis</strong> (analyzing unigram, bigram, and trigram letter distributions in natural language). This highlights a core law of cryptology: <em>a massive key space is a necessary condition for security, but never a sufficient one</em>.</p>
-
-    <hr>
-
-    <h2>5. Python Verification Code</h2>
-    <p>The following script calculates the exact bit depth, verifies the pairing symmetry, and confirms the sums:</p>
-
+    <h2>6. Python Verification Script</h2>
     <pre><code>import math
 
-# Show the exact log2 terms for 1 to 26
+# Calculate the exact sum of log2 terms for 1 to 26
 logs = [math.log2(i) for i in range(1, 27)]
 print("Sum of log2:", sum(logs))
 
-# Grouping pairing check: (1, 26), (2, 25), ... (13, 14)
+# Symmetrical pairing check: (1, 26), (2, 25), ... (13, 14)
 pairs = [(i, 27-i, i*(27-i)) for i in range(1, 14)]
 print("Products of pairs:", [p[2] for p in pairs])
 log2_pairs = [math.log2(p[2]) for p in pairs]
 print("Sum of log2 pairs:", sum(log2_pairs))
 </code></pre>
 
-    <p><strong>Script Output:</strong></p>
+    <p><strong>Execution Output:</strong></p>
     <pre><code>Sum of log2: 88.38195332701626
 Products of pairs: [26, 50, 72, 92, 110, 126, 140, 152, 162, 170, 176, 180, 182]
 Sum of log2 pairs: 88.38195332701626
@@ -195,138 +296,49 @@ Sum of log2 pairs: 88.38195332701626
 
     <hr>
 
-    <h2>6. Three Mental Arithmetic Estimation Tricks</h2>
-    <p>Calculating 26 separate logarithms mentally is difficult, but you can estimate $\log_2(26!) \approx 88$ entirely in your head using three distinct heuristics.</p>
-
-    <h3>Trick 1: Pair Up the Extreme Numbers (Outside-In Pairing)</h3>
-    <p>Instead of summing 26 numbers, pair the integers from the outside in:</p>
-    <ul>
-      <li><code>1 × 26 = 26</code></li>
-      <li><code>2 × 25 = 50</code></li>
-      <li><code>3 × 24 = 72</code></li>
-      <li><code>4 × 23 = 92</code></li>
-      <li><code>5 × 22 = 110</code></li>
-      <li>&hellip;</li>
-      <li><code>13 × 14 = 182</code></li>
-    </ul>
-    <p>This produces <strong>13 pairs</strong> whose products scale smoothly from 26 to 182. The average pair product is approximately <strong>120</strong>.</p>
-    <ul>
-      <li>Since $2^7 = 128$, $\log_2(120)$ is slightly below 7 &rarr; $\approx 6.8$.</li>
-      <li>Multiplying across the 13 pairs:
-        <pre><code>13 pairs × 6.8 ≈ 88.4
-</code></pre>
-      </li>
-    </ul>
-
-    <h3>Trick 2: Group into Benchmark Power-of-2 Buckets</h3>
-    <p>Group the 26 numbers into octaves based on standard powers of 2:</p>
+    <h2>7. Summary Table of Results</h2>
     <table>
       <thead>
         <tr>
-          <th>Integer Range</th>
-          <th>Count</th>
-          <th>Approx Power of 2</th>
-          <th>Subtotal Log Contribution</th>
+          <th>Calculation Stage</th>
+          <th>Method Used</th>
+          <th>Derived Value</th>
+          <th>Accuracy vs. Exact</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><strong>1 – 2</strong></td>
-          <td>2 numbers</td>
-          <td>&approx; 2⁰·⁵</td>
-          <td>2 &times; 0.5 = <strong>1.0</strong></td>
+          <td><strong>Exact Factorial ($26!$)</strong></td>
+          <td>Combinatorial Multiplication</td>
+          <td>$4.0329 \times 10^{26}$</td>
+          <td>Baseline (100%)</td>
         </tr>
         <tr>
-          <td><strong>3 – 4</strong></td>
-          <td>2 numbers</td>
-          <td>&approx; 2¹·⁸</td>
-          <td>2 &times; 1.8 = <strong>3.6</strong></td>
+          <td><strong>Bit Depth ($x$)</strong></td>
+          <td>Logarithmic Sum $\sum \log_2(k)$</td>
+          <td><strong>$2^{88.38}$</strong></td>
+          <td>100%</td>
         </tr>
         <tr>
-          <td><strong>5 – 8</strong></td>
-          <td>4 numbers</td>
-          <td>&approx; 2²·⁶</td>
-          <td>4 &times; 2.6 = <strong>10.4</strong></td>
+          <td><strong>Raw Mental Base-10</strong></td>
+          <td>$2^{56} \times 2^{32}$ ($10^3$ split)</td>
+          <td>$2.56 \times 10^{26}$</td>
+          <td>~17% low (drift)</td>
         </tr>
         <tr>
-          <td><strong>9 – 16</strong></td>
-          <td>8 numbers</td>
-          <td>&approx; 2³·⁶</td>
-          <td>8 &times; 3.6 = <strong>28.8</strong></td>
+          <td><strong>Corrected Mental Base-10</strong></td>
+          <td>$+19.2\%$ Drift Correction</td>
+          <td>$\mathbf{3.05 \times 10^{26}}$</td>
+          <td><strong>~1.5% low</strong></td>
         </tr>
         <tr>
-          <td><strong>17 – 26</strong></td>
-          <td>10 numbers</td>
-          <td>&approx; 2⁴·⁴</td>
-          <td>10 &times; 4.4 = <strong>44.0</strong></td>
+          <td><strong>Exact Power of Two ($2^{88}$)</strong></td>
+          <td>Binary Calculation</td>
+          <td>$\mathbf{3.0948 \times 10^{26}}$</td>
+          <td>Exact $2^{88}$</td>
         </tr>
       </tbody>
     </table>
-    <p>Summing the 5 bucket totals:</p>
-    <pre><code>1.0 + 3.6 + 10.4 + 28.8 + 44.0 = 87.8 bits
-</code></pre>
-
-    <h3>Trick 3: Stirling's Logarithmic Shortcut</h3>
-    <p>Using simple mental approximations for natural logarithms:</p>
-    <ol>
-      <li>Approximate $\ln(26) \approx \ln(27) = \ln(3^3) = 3 \cdot \ln(3) \approx 3 \times 1.10 = 3.30$.</li>
-      <li>Evaluate Stirling's base term:
-        <pre><code>ln(26!) ≈ 26·ln(26) - 26 = 26(3.30 - 1) = 26 × 2.30 = 59.8
-</code></pre>
-      </li>
-      <li>Convert to base-2 by dividing by $\ln(2) \approx 0.693$:
-        <pre><code>log₂(26!) ≈ 59.8 / 0.693 ≈ 86.3
-</code></pre>
-      </li>
-      <li>Add the small Stirling correction term $\frac{1}{2}\log_2(2\pi \times 26) \approx 2.0$:
-        <pre><code>86.3 + 2.0 = 88.3 bits
-</code></pre>
-      </li>
-    </ol>
-
-    <hr>
-
-    <h2>7. Summary Comparison</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Method</th>
-          <th>Technique</th>
-          <th>Calculated Result</th>
-          <th>Error from Exact</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Exact Math</strong></td>
-          <td>Explicit $\sum_{k=1}^{26} \log_2(k)$</td>
-          <td><strong>88.38</strong></td>
-          <td>0.00 (Exact)</td>
-        </tr>
-        <tr>
-          <td><strong>Trick 1</strong></td>
-          <td>13 Symmetric Outside-In Pairs</td>
-          <td><strong>88.40</strong></td>
-          <td>+0.02</td>
-        </tr>
-        <tr>
-          <td><strong>Trick 2</strong></td>
-          <td>5 Power-of-2 Octave Buckets</td>
-          <td><strong>87.80</strong></td>
-          <td>-0.58</td>
-        </tr>
-        <tr>
-          <td><strong>Trick 3</strong></td>
-          <td>Stirling's Shortcut with Correction</td>
-          <td><strong>88.30</strong></td>
-          <td>-0.08</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="highlight-box">
-      <strong>Takeaway:</strong> All three mental strategies confirm without a calculator that <code>26! ≈ 2⁸⁸</code>.
-    </div>
 
     <hr>
     <p><a href="/">&larr; All articles</a></p>
