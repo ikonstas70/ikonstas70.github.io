@@ -1,0 +1,266 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="100%" height="100%" style="background:#0a0e17; font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bg-radial" cx="50%" cy="20%" r="80%" fx="50%" fy="20%">
+      <stop offset="0%" stop-color="#151d30"/>
+      <stop offset="100%" stop-color="#070a10"/>
+    </radialGradient>
+
+    <!-- Glowing Filters -->
+    <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    
+    <filter id="glow-purple" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+
+    <!-- Gradients for Cards -->
+    <linearGradient id="root-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <linearGradient id="crypto-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2b48"/>
+      <stop offset="100%" stop-color="#081726"/>
+    </linearGradient>
+
+    <linearGradient id="analysis-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b114d"/>
+      <stop offset="100%" stop-color="#1e0729"/>
+    </linearGradient>
+
+    <linearGradient id="leaf-crypto-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#112238"/>
+      <stop offset="100%" stop-color="#0a1524"/>
+    </linearGradient>
+
+    <linearGradient id="leaf-analysis-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a1038"/>
+      <stop offset="100%" stop-color="#15081c"/>
+    </linearGradient>
+
+    <!-- Accent Lines -->
+    <linearGradient id="line-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+
+    <linearGradient id="line-rose" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1200" height="680" fill="url(#bg-radial)"/>
+
+  <!-- Subtle Tech Grid -->
+  <g opacity="0.05" stroke="#ffffff" stroke-width="1">
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40"/>
+    </pattern>
+    <rect width="1200" height="680" fill="url(#grid)"/>
+  </g>
+
+  <!-- Title Header -->
+  <text x="600" y="48" font-size="12" font-weight="700" letter-spacing="4" fill="#38bdf8" text-anchor="middle" text-transform="uppercase">TAXONOMIC ARCHITECTURE</text>
+  <text x="600" y="78" font-size="26" font-weight="800" fill="#f8fafc" text-anchor="middle" letter-spacing="-0.5">Overview of Cryptology</text>
+
+  <!-- ================= CONNECTING ORTHOGONAL LINES ================= -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Root to Midpoints -->
+    <path d="M 600 176 L 600 216" stroke="#475569" stroke-width="2.5"/>
+    <path d="M 330 216 L 870 216" stroke="#475569" stroke-width="2.5"/>
+    
+    <!-- Down into Cryptography and Cryptanalysis -->
+    <path d="M 330 216 L 330 256" stroke="#38bdf8" stroke-width="2.5"/>
+    <path d="M 870 216 L 870 256" stroke="#c084fc" stroke-width="2.5"/>
+
+    <!-- Cryptography Down to 3 Leaves -->
+    <path d="M 330 336 L 330 376" stroke="#0ea5e9" stroke-width="2"/>
+    <path d="M 120 376 L 540 376" stroke="#0ea5e9" stroke-width="2"/>
+    <path d="M 120 376 L 120 416" stroke="#0ea5e9" stroke-width="2"/>
+    <path d="M 330 376 L 330 416" stroke="#0ea5e9" stroke-width="2"/>
+    <path d="M 540 376 L 540 416" stroke="#0ea5e9" stroke-width="2"/>
+
+    <!-- Cryptanalysis Down to 3 Leaves -->
+    <path d="M 870 336 L 870 376" stroke="#e11d48" stroke-width="2"/>
+    <path d="M 750 376 L 990 376" stroke="#e11d48" stroke-width="2"/>
+    <path d="M 750 376 L 750 416" stroke="#e11d48" stroke-width="2"/>
+    <path d="M 870 376 L 870 416" stroke="#e11d48" stroke-width="2"/>
+    <path d="M 990 376 L 990 416" stroke="#e11d48" stroke-width="2"/>
+  </g>
+
+  <!-- ================= LEVEL 1: ROOT NODE (CRYPTOLOGY) ================= -->
+  <g filter="url(#shadow)" transform="translate(460, 106)">
+    <rect width="280" height="70" rx="14" fill="url(#root-grad)" stroke="#38bdf8" stroke-width="2"/>
+    <rect x="0" y="0" width="280" height="70" rx="14" fill="none" stroke="#38bdf8" stroke-width="4" opacity="0.2"/>
+    
+    <!-- Icon / Badge -->
+    <circle cx="36" cy="35" r="16" fill="#0284c7" opacity="0.25"/>
+    <path d="M 32 31 L 40 31 M 36 27 L 36 43 M 31 38 L 41 38" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+    
+    <text x="148" y="36" font-size="18" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="0.5">Cryptology</text>
+    <text x="148" y="52" font-size="11" font-weight="500" fill="#94a3b8" text-anchor="middle">Science of Secure Communications</text>
+  </g>
+
+  <!-- ================= LEVEL 2: CORE BRANCHES ================= -->
+  
+  <!-- LEFT: Cryptography -->
+  <g filter="url(#shadow)" transform="translate(190, 256)">
+    <rect width="280" height="80" rx="14" fill="url(#crypto-grad)" stroke="#0ea5e9" stroke-width="2"/>
+    <!-- Top indicator line -->
+    <rect x="20" y="0" width="240" height="3" fill="url(#line-cyan)" rx="1.5"/>
+    
+    <text x="140" y="38" font-size="17" font-weight="700" fill="#f0f9ff" text-anchor="middle" letter-spacing="0.3">Cryptography</text>
+    <text x="140" y="58" font-size="11.5" font-weight="400" fill="#7dd3fc" text-anchor="middle">Constructive Security &amp; Data Protection</text>
+  </g>
+
+  <!-- RIGHT: Cryptanalysis -->
+  <g filter="url(#shadow)" transform="translate(730, 256)">
+    <rect width="280" height="80" rx="14" fill="url(#analysis-grad)" stroke="#f43f5e" stroke-width="2"/>
+    <!-- Top indicator line -->
+    <rect x="20" y="0" width="240" height="3" fill="url(#line-rose)" rx="1.5"/>
+    
+    <text x="140" y="38" font-size="17" font-weight="700" fill="#fff1f2" text-anchor="middle" letter-spacing="0.3">Cryptanalysis</text>
+    <text x="140" y="58" font-size="11.5" font-weight="400" fill="#fda4af" text-anchor="middle">Security Evaluation &amp; Vulnerability Analysis</text>
+  </g>
+
+  <!-- ================= LEVEL 3: CRYPTOGRAPHY LEAVES ================= -->
+
+  <!-- Symmetric Ciphers -->
+  <g filter="url(#shadow)" transform="translate(25, 416)">
+    <rect width="190" height="210" rx="12" fill="url(#leaf-crypto-grad)" stroke="#1e3a5f" stroke-width="1.5"/>
+    <rect x="0" y="0" width="190" height="42" rx="12" fill="#0d233a"/>
+    <rect x="0" y="30" width="190" height="12" fill="#0d233a"/>
+    <text x="95" y="26" font-size="13" font-weight="700" fill="#38bdf8" text-anchor="middle">Symmetric Ciphers</text>
+    
+    <!-- Badge -->
+    <rect x="45" y="54" width="100" height="18" rx="9" fill="#0284c7" opacity="0.2"/>
+    <text x="95" y="66" font-size="9.5" font-weight="600" fill="#38bdf8" text-anchor="middle">SHARED SECRET KEY</text>
+
+    <!-- Details -->
+    <text x="20" y="98" font-size="11.5" font-weight="600" fill="#e2e8f0">• Block Ciphers</text>
+    <text x="32" y="116" font-size="10" font-weight="400" fill="#94a3b8">AES-GCM, AES-256</text>
+
+    <text x="20" y="142" font-size="11.5" font-weight="600" fill="#e2e8f0">• Stream Ciphers</text>
+    <text x="32" y="160" font-size="10" font-weight="400" fill="#94a3b8">ChaCha20, Salsa20</text>
+
+    <text x="20" y="186" font-size="11.5" font-weight="600" fill="#e2e8f0">• Primary Goal</text>
+    <text x="32" y="204" font-size="10" font-weight="400" fill="#94a3b8">High-speed bulk enc</text>
+  </g>
+
+  <!-- Asymmetric Ciphers -->
+  <g filter="url(#shadow)" transform="translate(235, 416)">
+    <rect width="190" height="210" rx="12" fill="url(#leaf-crypto-grad)" stroke="#1e3a5f" stroke-width="1.5"/>
+    <rect x="0" y="0" width="190" height="42" rx="12" fill="#0d233a"/>
+    <rect x="0" y="30" width="190" height="12" fill="#0d233a"/>
+    <text x="95" y="26" font-size="13" font-weight="700" fill="#818cf8" text-anchor="middle">Asymmetric Ciphers</text>
+    
+    <!-- Badge -->
+    <rect x="45" y="54" width="100" height="18" rx="9" fill="#4f46e5" opacity="0.25"/>
+    <text x="95" y="66" font-size="9.5" font-weight="600" fill="#a5b4fc" text-anchor="middle">PUBLIC / PRIVATE KEY</text>
+
+    <!-- Details -->
+    <text x="20" y="98" font-size="11.5" font-weight="600" fill="#e2e8f0">• Factorization &amp; DLP</text>
+    <text x="32" y="116" font-size="10" font-weight="400" fill="#94a3b8">RSA-4096, Diffie-Hellman</text>
+
+    <text x="20" y="142" font-size="11.5" font-weight="600" fill="#e2e8f0">• Elliptic Curves</text>
+    <text x="32" y="160" font-size="10" font-weight="400" fill="#94a3b8">ECDSA, Ed25519, X25519</text>
+
+    <text x="20" y="186" font-size="11.5" font-weight="600" fill="#e2e8f0">• Post-Quantum</text>
+    <text x="32" y="204" font-size="10" font-weight="400" fill="#94a3b8">ML-KEM (Kyber), ML-DSA</text>
+  </g>
+
+  <!-- Protocols -->
+  <g filter="url(#shadow)" transform="translate(445, 416)">
+    <rect width="190" height="210" rx="12" fill="url(#leaf-crypto-grad)" stroke="#1e3a5f" stroke-width="1.5"/>
+    <rect x="0" y="0" width="190" height="42" rx="12" fill="#0d233a"/>
+    <rect x="0" y="30" width="190" height="12" fill="#0d233a"/>
+    <text x="95" y="26" font-size="13" font-weight="700" fill="#34d399" text-anchor="middle">Protocols</text>
+    
+    <!-- Badge -->
+    <rect x="45" y="54" width="100" height="18" rx="9" fill="#059669" opacity="0.25"/>
+    <text x="95" y="66" font-size="9.5" font-weight="600" fill="#6ee7b7" text-anchor="middle">SYSTEM COMPOSITES</text>
+
+    <!-- Details -->
+    <text x="20" y="98" font-size="11.5" font-weight="600" fill="#e2e8f0">• Transport Security</text>
+    <text x="32" y="116" font-size="10" font-weight="400" fill="#94a3b8">TLS 1.3, SSHv2, IPsec</text>
+
+    <text x="20" y="142" font-size="11.5" font-weight="600" fill="#e2e8f0">• Authentication</text>
+    <text x="32" y="160" font-size="10" font-weight="400" fill="#94a3b8">PKI, X.509, Kerberos</text>
+
+    <text x="20" y="186" font-size="11.5" font-weight="600" fill="#e2e8f0">• Advanced Schemes</text>
+    <text x="32" y="204" font-size="10" font-weight="400" fill="#94a3b8">ZK-SNARKs, SMPC</text>
+  </g>
+
+  <!-- ================= LEVEL 3: CRYPTANALYSIS LEAVES ================= -->
+
+  <!-- Mathematical Cryptanalysis -->
+  <g filter="url(#shadow)" transform="translate(655, 416)">
+    <rect width="160" height="210" rx="12" fill="url(#leaf-analysis-grad)" stroke="#4a154b" stroke-width="1.5"/>
+    <rect x="0" y="0" width="160" height="42" rx="12" fill="#25092a"/>
+    <rect x="0" y="30" width="160" height="12" fill="#25092a"/>
+    <text x="80" y="26" font-size="12" font-weight="700" fill="#f43f5e" text-anchor="middle">Mathematical</text>
+
+    <!-- Badge -->
+    <rect x="30" y="54" width="100" height="18" rx="9" fill="#e11d48" opacity="0.25"/>
+    <text x="80" y="66" font-size="9" font-weight="600" fill="#fb7185" text-anchor="middle">ALGORITHMIC</text>
+
+    <text x="14" y="98" font-size="10.5" font-weight="600" fill="#f1f5f9">• Differential</text>
+    <text x="14" y="122" font-size="10.5" font-weight="600" fill="#f1f5f9">• Linear Approximations</text>
+    <text x="14" y="146" font-size="10.5" font-weight="600" fill="#f1f5f9">• Algebraic Solvers</text>
+    <text x="14" y="170" font-size="10.5" font-weight="600" fill="#f1f5f9">• Meet-in-the-Middle</text>
+    <text x="14" y="194" font-size="10" font-weight="400" fill="#fda4af">Reduces brute-force space</text>
+  </g>
+
+  <!-- Side-Channel Attacks -->
+  <g filter="url(#shadow)" transform="translate(835, 416)">
+    <rect width="160" height="210" rx="12" fill="url(#leaf-analysis-grad)" stroke="#4a154b" stroke-width="1.5"/>
+    <rect x="0" y="0" width="160" height="42" rx="12" fill="#25092a"/>
+    <rect x="0" y="30" width="160" height="12" fill="#25092a"/>
+    <text x="80" y="26" font-size="12" font-weight="700" fill="#fb923c" text-anchor="middle">Side-Channel</text>
+
+    <!-- Badge -->
+    <rect x="30" y="54" width="100" height="18" rx="9" fill="#ea580c" opacity="0.25"/>
+    <text x="80" y="66" font-size="9" font-weight="600" fill="#fdba74" text-anchor="middle">PHYSICAL LEAKAGE</text>
+
+    <text x="14" y="98" font-size="10.5" font-weight="600" fill="#f1f5f9">• Timing Analysis</text>
+    <text x="14" y="122" font-size="10.5" font-weight="600" fill="#f1f5f9">• Power (SPA/DPA)</text>
+    <text x="14" y="146" font-size="10.5" font-weight="600" fill="#f1f5f9">• Fault Injection</text>
+    <text x="14" y="170" font-size="10.5" font-weight="600" fill="#f1f5f9">• EM Radiation</text>
+    <text x="14" y="194" font-size="10" font-weight="400" fill="#fed7aa">Target: Implementation</text>
+  </g>
+
+  <!-- Quantum Threat -->
+  <g filter="url(#shadow)" transform="translate(1015, 416)">
+    <rect width="160" height="210" rx="12" fill="url(#leaf-analysis-grad)" stroke="#4a154b" stroke-width="1.5"/>
+    <rect x="0" y="0" width="160" height="42" rx="12" fill="#25092a"/>
+    <rect x="0" y="30" width="160" height="12" fill="#25092a"/>
+    <text x="80" y="26" font-size="12" font-weight="700" fill="#c084fc" text-anchor="middle">Quantum Threats</text>
+
+    <!-- Badge -->
+    <rect x="30" y="54" width="100" height="18" rx="9" fill="#9333ea" opacity="0.25"/>
+    <text x="80" y="66" font-size="9" font-weight="600" fill="#d8b4fe" text-anchor="middle">CRQC CAPABILITIES</text>
+
+    <text x="14" y="98" font-size="10.5" font-weight="600" fill="#f1f5f9">• Shor's Algorithm</text>
+    <text x="24" y="114" font-size="9.5" font-weight="400" fill="#d8b4fe">Breaks RSA / ECC</text>
+
+    <text x="14" y="142" font-size="10.5" font-weight="600" fill="#f1f5f9">• Grover's Algorithm</text>
+    <text x="24" y="158" font-size="9.5" font-weight="400" fill="#d8b4fe">O(√N) key search</text>
+
+    <text x="14" y="186" font-size="10.5" font-weight="600" fill="#f1f5f9">• Post-Quantum</text>
+    <text x="24" y="202" font-size="9.5" font-weight="400" fill="#d8b4fe">Lattice mitigation</text>
+  </g>
+
+  <!-- Footer Tag -->
+  <text x="600" y="655" font-size="11" font-weight="500" fill="#475569" text-anchor="middle" letter-spacing="1">IOANNIS ALEXANDER KONSTAS • GITHUB: @IKONSTAS70</text>
+</svg>

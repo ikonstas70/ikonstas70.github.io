@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/overview-of-cryptology">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview of Cryptology — Konstas Engineering Notes</title>
+<meta name="description" content="Taxonomic architecture and overview of cryptology: Cryptography (Symmetric, Asymmetric, Protocols) and Cryptanalysis (Mathematical, Side-Channel, Quantum threats).">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<style>
+  .topology-container {
+    margin: 28px 0 36px;
+    background: #0a0e17;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+  .topology-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Cryptography</span>
+    <h1>Overview of Cryptology</h1>
+    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas</p>
+
+    <p><strong>Cryptology</strong> (from the Greek <em>krypt&oacute;s</em>, meaning &ldquo;hidden&rdquo; or &ldquo;secret&rdquo;, and <em>l&oacute;gos</em>, meaning &ldquo;study&rdquo; or &ldquo;word&rdquo;) is the formal scientific and mathematical discipline dedicated to secure communications, data protection, and information security in the presence of adversarial third parties.</p>
+
+    <div class="topology-container">
+      <img src="/articles/cryptology_topology.svg" alt="Cryptology Topology: Cryptography (Symmetric Ciphers, Asymmetric Ciphers, Protocols) and Cryptanalysis">
+    </div>
+
+    <hr>
+
+    <h2>1. The Cryptology Topology</h2>
+    <p>The domain of cryptology is fundamentally bifurcated into two complementary and opposing branches:</p>
+    <ul>
+      <li><strong>Cryptography</strong>: The constructive engineering and mathematical discipline of designing secure primitives, algorithms, key agreements, and network protocols.</li>
+      <li><strong>Cryptanalysis</strong>: The analytical discipline of discovering mathematical weaknesses, evaluating physical side-channel leakages, and establishing provable security boundaries.</li>
+    </ul>
+
+    <pre><code>                                  ┌────────────────────────┐
+                                  │       Cryptology       │
+                                  └───────────┬────────────┘
+                                              │
+                     ┌────────────────────────┴────────────────────────┐
+                     ▼                                                 ▼
+          ┌────────────────────┐                            ┌────────────────────┐
+          │    Cryptography    │                            │   Cryptanalysis    │
+          └──────────┬─────────┘                            └─────────┬──────────┘
+                     │                                                │
+       ┌─────────────┼─────────────┐                  ┌───────────────┼───────────────┐
+       ▼             ▼             ▼                  ▼               ▼               ▼
+┌─────────────┐┌─────────────┐┌─────────┐      ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+│  Symmetric  ││ Asymmetric  ││Protocols│      │Mathematical │ │Side-Channel │ │   Quantum   │
+│   Ciphers   ││   Ciphers   ││(TLS/SSH)│      │ (Diff/Linear)│ │(Power/Time) │ │(Shor/Grover)│
+└─────────────┘└─────────────┘└─────────┘      └─────────────┘ └─────────────┘ └─────────────┘
+</code></pre>
+
+    <hr>
+
+    <h2>2. Cryptography: Primitives and Constructions</h2>
+
+    <h3>2.1 Symmetric Ciphers (Secret-Key Cryptography)</h3>
+    <p>In symmetric cryptography, communicating parties share a single private key <code>K</code> for both encryption and decryption:</p>
+    <pre><code>Ciphertext = Encrypt_K(Plaintext)
+Plaintext  = Decrypt_K(Ciphertext)
+</code></pre>
+    <p>Because symmetric operations utilize highly optimized substitution-permutation networks (SPN) or ARX operations (Addition-Rotation-XOR), they exhibit massive computational throughput and form the engine for encrypting bulk data at rest and in transit.</p>
+    <ul>
+      <li><strong>Block Ciphers</strong>: Encrypt fixed-size data blocks (e.g., 128-bit blocks). Standard: <strong>AES (Advanced Encryption Standard / Rijndael)</strong> in 128, 192, and 256-bit key variants. Operating modes like <strong>GCM (Galois/Counter Mode)</strong> provide Authenticated Encryption with Associated Data (AEAD).</li>
+      <li><strong>Stream Ciphers</strong>: Generate an infinite pseudorandom keystream XORed bit-by-bit with the plaintext stream. Standard: <strong>ChaCha20-Poly1305</strong>, delivering exceptional performance across architectures without hardware-accelerated AES instructions.</li>
+    </ul>
+
+    <h3>2.2 Asymmetric Ciphers (Public-Key Cryptography)</h3>
+    <p>Asymmetric cryptography eliminates the requirement for a pre-shared secret key by leveraging <strong>trapdoor one-way functions</strong>&mdash;mathematical operations that are computationally easy to compute in the forward direction but intractable to reverse without secret auxiliary information.</p>
+    <ul>
+      <li><strong>Public Key (PK)</strong>: Freely published; used to encrypt plaintexts or verify digital signatures.</li>
+      <li><strong>Private Key (SK)</strong>: Kept secret; used to decrypt ciphertexts or generate digital signatures.</li>
+    </ul>
+    <table>
+      <thead>
+        <tr>
+          <th>Mathematical Problem</th>
+          <th>Representative Primitives</th>
+          <th>Primary Applications</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Integer Factorization (IFP)</strong></td>
+          <td>RSA (2048 / 4096-bit)</td>
+          <td>Legacy PKI, digital signatures, key transport</td>
+        </tr>
+        <tr>
+          <td><strong>Discrete Logarithm (DLP)</strong></td>
+          <td>Diffie-Hellman (DH), ElGamal, DSA</td>
+          <td>Key agreement, asymmetric encryption</td>
+        </tr>
+        <tr>
+          <td><strong>Elliptic Curves (ECDLP)</strong></td>
+          <td>ECDH, ECDSA, Ed25519, X25519, secp256k1</td>
+          <td>High-efficiency key exchange, Bitcoin, TLS 1.3</td>
+        </tr>
+        <tr>
+          <td><strong>Lattice-Based Post-Quantum</strong></td>
+          <td>ML-KEM (Kyber), ML-DSA (Dilithium)</td>
+          <td>Quantum-resistant key encapsulation and signing</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>2.3 Cryptographic Protocols</h3>
+    <p>Cryptographic protocols orchestrate underlying symmetric and asymmetric primitives into structured multi-step communication flows to satisfy composite security models:</p>
+    <ul>
+      <li><strong>Transport Layer Security (TLS 1.3)</strong>: Combines asymmetric key exchange (X25519 / ECDHE), X.509 PKI certificates for identity authentication, and AEAD symmetric ciphers (AES-256-GCM) for wire encryption.</li>
+      <li><strong>Secure Shell (SSHv2) &amp; IPsec / WireGuard</strong>: Robust host authentication and network-layer tunneling protocols.</li>
+      <li><strong>Privacy-Enhancing Protocols</strong>: Zero-Knowledge Proofs (zk-SNARKs/zk-STARKs) and Secure Multi-Party Computation (SMPC) enabling computation over secret inputs without disclosing private data.</li>
+    </ul>
+
+    <hr>
+
+    <h2>3. Cryptanalysis: Vectors &amp; Threat Models</h2>
+    <p>Cryptanalysis investigates the vulnerabilities of cryptographic schemes across three distinct boundaries:</p>
+
+    <h3>3.1 Mathematical &amp; Algorithmic Cryptanalysis</h3>
+    <ul>
+      <li><strong>Differential Cryptanalysis</strong>: Tracks the evolution of differences between pairs of plaintexts through successive cipher rounds to recover internal round keys.</li>
+      <li><strong>Linear Cryptanalysis</strong>: Fits linear affine approximations over non-linear substitution boxes (S-boxes) to determine key bits with statistical advantage.</li>
+      <li><strong>Algebraic Attacks</strong>: Expresses the entire cipher structure as a large system of multivariate polynomial equations solved via Gr&ouml;bner bases or SAT solvers.</li>
+    </ul>
+
+    <h3>3.2 Implementation &amp; Side-Channel Attacks (SCA)</h3>
+    <p>Rather than attacking theoretical mathematical hardness, Side-Channel Attacks exploit physical phenomena emitted during physical execution:</p>
+    <ul>
+      <li><strong>Timing Attacks</strong>: Variations in CPU execution duration (e.g., non-constant-time modular exponentiation or string comparison) leak key bits.</li>
+      <li><strong>Power Analysis (SPA / DPA)</strong>: Monitoring instantaneous micro-watt power consumption fluctuations during cryptographic operations.</li>
+      <li><strong>Fault Injection</strong>: Inducing physical clock glitches, laser pulses, or voltage drops to provoke computation faults that output corrupted signatures, allowing private key reconstruction.</li>
+    </ul>
+
+    <h3>3.3 Quantum Cryptanalysis</h3>
+    <ul>
+      <li><strong>Shor&rsquo;s Algorithm</strong>: Solves prime factorization and discrete logarithms in polynomial time <code>O((log N)³)</code>, rendering RSA, Diffie-Hellman, and Elliptic Curve Cryptography completely broken once Cryptographically Relevant Quantum Computers (CRQCs) emerge.</li>
+      <li><strong>Grover&rsquo;s Algorithm</strong>: Provides a quadratic speedup <code>O(&radic;N)</code> for brute-force symmetric key search, reducing effective security of an N-bit key to N/2 bits (countered globally by standardizing on 256-bit symmetric keys).</li>
+    </ul>
+
+    <hr>
+
+    <h2>4. Summary Matrix</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Pillar</th>
+          <th>Discipline</th>
+          <th>Core Primitive / Vector</th>
+          <th>Standard Metric</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Cryptography</strong></td>
+          <td>Symmetric Ciphers</td>
+          <td>AES-256-GCM, ChaCha20</td>
+          <td>128–256 bit key entropy</td>
+        </tr>
+        <tr>
+          <td><strong>Cryptography</strong></td>
+          <td>Asymmetric Ciphers</td>
+          <td>RSA, X25519, ML-KEM</td>
+          <td>Computational hardness of IFP/DLP/LWE</td>
+        </tr>
+        <tr>
+          <td><strong>Cryptography</strong></td>
+          <td>Protocols</td>
+          <td>TLS 1.3, SSH, WireGuard, ZKPs</td>
+          <td>IND-CCA2, Perfect Forward Secrecy</td>
+        </tr>
+        <tr>
+          <td><strong>Cryptanalysis</strong></td>
+          <td>Mathematical</td>
+          <td>Differential &amp; Linear Attacks</td>
+          <td>Advantage &epsilon; over random permutation</td>
+        </tr>
+        <tr>
+          <td><strong>Cryptanalysis</strong></td>
+          <td>Side-Channel</td>
+          <td>Timing, DPA, Faults</td>
+          <td>Physical signal-to-noise ratio (SNR)</td>
+        </tr>
+        <tr>
+          <td><strong>Cryptanalysis</strong></td>
+          <td>Quantum</td>
+          <td>Shor's and Grover's Algorithms</td>
+          <td>Quantum circuit depth &amp; physical qubits</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr>
+    <p><a href="/">&larr; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=overview-of-cryptology",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
