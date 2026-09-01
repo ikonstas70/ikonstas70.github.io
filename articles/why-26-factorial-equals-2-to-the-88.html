@@ -270,10 +270,10 @@
 
     <h2>3. Letter Frequency Distribution &amp; Frequency Analysis Attacks</h2>
 
-    <p>While a key space of $2^{88}$ operations renders brute-force search mathematically impossible on classical hardware, simple substitution ciphers possess a fatal vulnerability: <strong>they preserve the statistical frequency distribution of the underlying language</strong>.</p>
+    <p>While a key space of $2^{88}$ operations renders brute-force search mathematically impossible on classical hardware, simple substitution ciphers possess a fatal vulnerability: <strong>they preserve the statistical frequency distribution of the underlying language</strong> (see <a href="https://en.wikipedia.org/wiki/Letter_frequency" target="_blank" rel="noopener noreferrer">Wikipedia: Letter frequency</a>).</p>
 
     <h3>3.1 English Letter Frequency Distribution</h3>
-    <p>In natural English text, letters do not appear with uniform probability ($\frac{1}{26} \approx 3.85\%$). Instead, their occurrence follows a highly skewed, predictable distribution:</p>
+    <p>In natural English text, letters do not appear with uniform probability ($\frac{1}{26} \approx 3.85\%$). Statistical linguistic analysis across large standard corpora (such as the Oxford English Corpus, Cornell Math, and Beker &amp; Piper) reveals a highly predictable distribution:</p>
 
     <table class="matrix-table">
       <thead>
@@ -613,6 +613,17 @@
         </tr>
       </tbody>
     </table>
+
+    <hr>
+
+    <h2>10. References &amp; Further Reading</h2>
+    <ul>
+      <li><a href="https://en.wikipedia.org/wiki/Letter_frequency" target="_blank" rel="noopener noreferrer">Wikipedia: Letter Frequency</a> &mdash; Relative frequencies of letters in the English language and historical cipher applications.</li>
+      <li>Beker, H., &amp; Piper, F. (1982). <em>Cipher Systems: The Protection of Communications</em>. Northwood Books.</li>
+      <li>Shannon, C. E. (1949). &ldquo;Communication Theory of Secrecy Systems&rdquo;. <em>Bell System Technical Journal</em>, 28(4), 656–715.</li>
+      <li>Lewand, R. E. (2000). <em>Cryptological Mathematics</em>. Mathematical Association of America.</li>
+      <li>Konstas, I. (2026). <a href="/articles/overview-of-cryptology">Overview of Cryptology: Taxonomy, Primitives, and Cryptanalysis</a>. <em>Konstas Engineering Notes</em>.</li>
+    </ul>
 
     <hr>
     <p><a href="/">&larr; All articles</a></p>
