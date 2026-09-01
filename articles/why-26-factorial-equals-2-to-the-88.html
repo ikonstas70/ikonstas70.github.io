@@ -4,16 +4,16 @@
 <link rel="canonical" href="https://ikonstas70.github.io/articles/why-26-factorial-equals-2-to-the-88">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Why 26! ≈ 2⁸⁸: Key Space, Bit Depth & Base-10 Mental Estimation — Konstas Engineering Notes</title>
-<meta name="description" content="Mathematical report and mental estimation derivation converting 26! alphabet permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).">
+<title>Why 26! ≈ 2⁸⁸: Substitution Cipher Key Space, Bit Depth & Base-10 Mental Estimation — Konstas Engineering Notes</title>
+<meta name="description" content="Rigorous mathematical analysis and mental estimation framework converting 26! alphabet permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).">
 <meta name="author" content="Ioannis Konstas">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
-<meta name="keywords" content="26 factorial, 2^88, substitution cipher keyspace, bit depth, log2, Stirlings approximation, mental arithmetic, base-10 estimation, drift correction, cryptography, Ioannis Konstas">
+<meta name="keywords" content="26 factorial, 2^88, substitution cipher keyspace, bit depth, log2, Stirlings approximation, mental arithmetic, base-10 estimation, drift correction, cryptography, discrete logarithms, Ioannis Konstas">
 
 <!-- Open Graph / Social Sharing -->
 <meta property="og:type" content="article">
-<meta property="og:title" content="Why 26! ≈ 2⁸⁸: Key Space, Bit Depth & Base-10 Mental Estimation">
-<meta property="og:description" content="Mathematical report and mental estimation derivation converting 26! permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).">
+<meta property="og:title" content="Why 26! ≈ 2⁸⁸: Substitution Cipher Key Space, Bit Depth & Base-10 Mental Estimation">
+<meta property="og:description" content="Rigorous mathematical analysis and mental estimation framework converting 26! permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).">
 <meta property="og:url" content="https://ikonstas70.github.io/articles/why-26-factorial-equals-2-to-the-88">
 <meta property="og:site_name" content="Konstas — Engineering Notes">
 <meta property="og:image" content="https://ikonstas70.github.io/articles/26_factorial_keyspace.png">
@@ -28,8 +28,8 @@
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Why 26! ≈ 2⁸⁸: Key Space, Bit Depth & Base-10 Mental Estimation">
-<meta name="twitter:description" content="Mathematical report and mental estimation derivation converting 26! permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).">
+<meta name="twitter:title" content="Why 26! ≈ 2⁸⁸: Substitution Cipher Key Space, Bit Depth & Base-10 Mental Estimation">
+<meta name="twitter:description" content="Rigorous mathematical analysis and mental estimation framework converting 26! permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).">
 <meta name="twitter:image" content="https://ikonstas70.github.io/articles/26_factorial_keyspace.png">
 <meta name="twitter:image:alt" content="Why 26! ≈ 2^88: Cryptographic Key Space, Bit Depth, and Mental Estimation">
 
@@ -38,8 +38,8 @@
 {
   "@context": "https://schema.org",
   "@type": "TechArticle",
-  "headline": "Why 26! ≈ 2⁸⁸: Key Space, Bit Depth & Base-10 Mental Estimation",
-  "description": "Mathematical report and mental estimation derivation converting 26! alphabet permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).",
+  "headline": "Why 26! ≈ 2⁸⁸: Substitution Cipher Key Space, Bit Depth & Base-10 Mental Estimation",
+  "description": "Rigorous mathematical analysis and mental estimation framework converting 26! alphabet permutations into 88 bits of security and deriving its base-10 value (3.09 × 10²⁶).",
   "author": {
     "@type": "Person",
     "name": "Ioannis Konstas",
@@ -59,7 +59,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
 
-<!-- KaTeX for math rendering -->
+<!-- KaTeX for high-precision math typography -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
@@ -82,24 +82,90 @@
     display: block;
     margin: 0 auto;
   }
-  .highlight-box {
-    background: rgba(56, 189, 248, 0.06);
-    border-left: 3px solid #38bdf8;
-    padding: 14px 18px;
-    margin: 20px 0;
-    border-radius: 0 6px 6px 0;
-  }
-  .report-box {
-    background: #0f172a;
-    border: 1px solid #334155;
+  .math-display-card {
+    background: #080c14;
+    border: 1px solid #1e293b;
     border-radius: 8px;
-    padding: 24px;
-    margin: 28px 0;
+    padding: 22px 20px;
+    margin: 22px 0;
+    text-align: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 16px rgba(0, 0, 0, 0.35);
   }
-  .report-header {
-    border-bottom: 1px solid #334155;
-    padding-bottom: 14px;
-    margin-bottom: 20px;
+  .math-display-card .label {
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #38bdf8;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .callout-theorem {
+    background: rgba(14, 165, 233, 0.04);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-left: 4px solid #38bdf8;
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .callout-theorem h4 {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .callout-takeaway {
+    background: rgba(16, 185, 129, 0.04);
+    border: 1px solid rgba(52, 211, 153, 0.25);
+    border-left: 4px solid #34d399;
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .callout-takeaway h4 {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    color: #34d399;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .code-terminal {
+    background: #06090e;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    overflow-x: auto;
+  }
+  .code-terminal .prompt {
+    color: #64748b;
+  }
+  .code-terminal .output {
+    color: #38bdf8;
+  }
+  table.matrix-table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: collapse;
+  }
+  table.matrix-table th {
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix-table td {
+    border: 1px solid #1e293b;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+  table.matrix-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
   }
 </style>
 </head>
@@ -122,220 +188,272 @@
     </nav>
   </header>
   <main>
-    <span class="tag">Cryptography</span>
-    <h1>Why $26! \approx 2^{88}$: Key Space, Bit Depth &amp; Base-10 Mental Estimation</h1>
-    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas</p>
+    <span class="tag">Cryptography &middot; Discrete Mathematics</span>
+    <h1>Why $26! \approx 2^{88}$: Substitution Cipher Key Space, Bit Depth &amp; Base-10 Mental Estimation</h1>
+    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
 
-    <p>Evaluating the key space of a basic 26-letter monoalphabetic substitution cipher requires calculating $26!$ (26 factorial). In modern computer science and cryptography, key spaces are measured in <strong>bits of security</strong> ($2^x$). This guide provides the step-by-step mathematical derivation showing why $26! \approx 2^{88}$, the mental arithmetic techniques to compute its base-10 value ($3.09 \times 10^{26}$), and Python verification code.</p>
+    <p>In classical cryptology, evaluating the brute-force search space of a monoalphabetic substitution cipher requires computing the total permutations of the 26-letter English alphabet: $26!$ (26 factorial). In modern cryptography, key entropy and cryptographic work factors are expressed in <strong>bits of security</strong> ($2^x$).</p>
+    
+    <p>This technical reference establishes the formal mathematical proof that $26! \approx 2^{88.38} \approx 2^{88}$, analyzes its analytical bounds via Stirling's Approximation, provides reproducible Python code, and details three rapid mental arithmetic techniques for computing both binary bit depth ($2^{88}$) and absolute base-10 magnitude ($3.09 \times 10^{26}$).</p>
 
     <div class="diagram-container">
-      <img src="/articles/26_factorial_keyspace.svg" alt="Why 26! ≈ 2^88: Cryptographic Key Space, Bit Depth, and Mental Estimation">
+      <img src="/articles/26_factorial_keyspace.svg" alt="Why 26! ≈ 2^88: Cryptographic Key Space, Bit Depth, and Mental Estimation Architecture">
     </div>
 
     <hr>
 
-    <div class="report-box">
-      <div class="report-header">
-        <h2 style="margin:0 0 6px; font-size:1.4rem; color:var(--accent);">Mathematical Analysis &amp; Mental Estimation Report</h2>
-        <p style="margin:0; font-size:0.88rem; color:var(--fg-dim);"><strong>Subject:</strong> Conversion of 26 Alphabet Permutations ($26!$) to Binary Security Bits ($2^{88}$) and Mental Base-10 Equivalence ($3.09 \times 10^{26}$)</p>
-      </div>
+    <h2>1. The Combinatorial Permutation Space: $26!$</h2>
+    <p>For an alphabet consisting of $n = 26$ distinct symbols, the total number of bijective mapping functions $f: \Sigma \to \Sigma$ (i.e., keys in a simple substitution cipher) is given by the factorial:</p>
 
-      <h3>Executive Summary</h3>
-      <p>The total number of ways to arrange the 26 letters of the English alphabet is $26!$. Converting this value into a base-2 logarithmic scale demonstrates that $26! \approx 2^{88.38} \approx 2^{88}$. Furthermore, by applying binary exponent deconstruction ($2^{56} \times 2^{32}$) and linear error correction for the $2^{10} \approx 10^3$ drift, the absolute base-10 value of $2^{88}$ can be derived mentally with over <strong>98.5% precision</strong>.</p>
+    <div class="math-display-card">
+      <span class="label">Exact Combinatorial Product</span>
+      $$26! = \prod_{k=1}^{26} k = 26 \times 25 \times 24 \times \dots \times 2 \times 1$$
+      $$\mathbf{26! = 403,291,461,126,605,635,584,000,000}$$
+      $$\mathbf{26! \approx 4.0329146 \times 10^{26}}$$
     </div>
-
-    <hr>
-
-    <h2>1. Exact Factorial Value</h2>
-    <p>The exact number of unique permutations of the 26 English alphabet characters is given by:</p>
-    $$26! = 26 \times 25 \times 24 \times \dots \times 2 \times 1$$
-    $$\mathbf{26! = 403,291,461,126,605,635,584,000,000 \approx 4.0329 \times 10^{26}}$$
 
     <hr>
 
     <h2>2. Binary Bit-Depth Derivation ($\log_2$)</h2>
-    <p>To convert any total state space $N$ into an equivalent power of two ($2^x$), solve for $x$ using base-2 logarithms:</p>
-    $$x = \log_2(26!)$$
+    <p>To convert an arbitrary keyspace cardinality $N$ into equivalent cryptographic bit security $x$, we solve $2^x = N$ via the base-2 logarithm:</p>
 
-    <p>Applying the logarithmic product rule $\log_2(a \cdot b) = \log_2(a) + \log_2(b)$:</p>
-    $$\log_2(26!) = \sum_{k=1}^{26} \log_2(k) = \log_2(1) + \log_2(2) + \dots + \log_2(26)$$
+    <div class="math-display-card">
+      <span class="label">Fundamental Logarithmic Summation</span>
+      $$x = \log_2(26!) = \sum_{k=1}^{26} \log_2(k) = \log_2(1) + \log_2(2) + \dots + \log_2(26)$$
+    </div>
 
-    <p>Summing these 26 terms explicitly:</p>
-    $$\log_2(26!) \approx 88.38195 \implies \mathbf{26! = 2^{88.38} \approx 2^{88}}$$
+    <p>By applying logarithmic properties $\log_2(a \cdot b) = \log_2(a) + \log_2(b)$, the product decomposes into the exact sum of 26 individual discrete logarithms:</p>
 
-    <div class="highlight-box">
-      <strong>Cryptographic Takeaway:</strong> A key space of $26!$ offers approximately <strong>88 bits of security</strong> against an exhaustive brute-force search ($2^{88} \approx 3.09 \times 10^{26}$ operations). While $2^{88}$ is infeasible for brute-force attacks on classical hardware, monoalphabetic substitution ciphers are broken using <strong>frequency analysis</strong> (letter frequencies, digrams, and trigrams).
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th>$k$</th>
+          <th>$\log_2(k)$</th>
+          <th>$k$</th>
+          <th>$\log_2(k)$</th>
+          <th>$k$</th>
+          <th>$\log_2(k)$</th>
+          <th>$k$</th>
+          <th>$\log_2(k)$</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>0.0000</td><td>8</td><td>3.0000</td><td>15</td><td>3.9069</td><td>22</td><td>4.4594</td></tr>
+        <tr><td>2</td><td>1.0000</td><td>9</td><td>3.1699</td><td>16</td><td>4.0000</td><td>23</td><td>4.5236</td></tr>
+        <tr><td>3</td><td>1.5850</td><td>10</td><td>3.3219</td><td>17</td><td>4.0875</td><td>24</td><td>4.5850</td></tr>
+        <tr><td>4</td><td>2.0000</td><td>11</td><td>3.4594</td><td>18</td><td>4.1699</td><td>25</td><td>4.6439</td></tr>
+        <tr><td>5</td><td>2.3219</td><td>12</td><td>3.5850</td><td>19</td><td>4.2479</td><td>26</td><td>4.7004</td></tr>
+        <tr><td>6</td><td>2.5850</td><td>13</td><td>3.7004</td><td>20</td><td>4.3219</td><td>&mdash;</td><td>&mdash;</td></tr>
+        <tr><td>7</td><td>2.8074</td><td>14</td><td>3.8074</td><td>21</td><td>4.3923</td><td><strong>Sum</strong></td><td><strong>88.38195</strong></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout-theorem">
+      <h4>Mathematical Conclusion</h4>
+      $$\log_2(26!) = 88.381953327 \implies 26! = 2^{88.38195} \approx \mathbf{2^{88}}$$
+    </div>
+
+    <div class="callout-takeaway">
+      <h4>Cryptographic Implication: Brute Force vs. Cryptanalysis</h4>
+      <p>A brute-force search over $26! \approx 2^{88}$ keys requires approximately $3.09 \times 10^{26}$ trial evaluations—computationally intractable against standard hardware. However, monoalphabetic substitution ciphers preserve plaintext language statistics (unigram, bigram, and trigram frequencies) and are trivially broken in milliseconds via <strong>frequency analysis</strong> and <strong>hill-climbing algorithms</strong>.</p>
     </div>
 
     <hr>
 
-    <h2>3. Base-10 Absolute Value Estimation (Mental Arithmetic)</h2>
-    <p>To compute the absolute base-10 magnitude of $2^{88}$ mentally, split the exponent into two manageable binary factors: $2^{56}$ and $2^{32}$.</p>
+    <h2>3. Analytical Estimation: Stirling's Approximation</h2>
+    <p>Using <strong>Stirling's asymptotic expansion</strong> for the natural logarithm of factorials:</p>
+    $$\ln(n!) = n \ln(n) - n + \frac{1}{2}\ln(2\pi n) + \mathcal{O}\left(\frac{1}{n}\right)$$
 
-    <h3>Step A: Deconstruct $2^{56}$</h3>
-    <p>Using the fundamental engineering approximation $2^{10} = 1024 \approx 1000 = 10^3$:</p>
-    $$2^{56} = 2^6 \times (2^{10})^5 \approx 64 \times (10^3)^5 = \mathbf{64 \times 10^{15}}$$
+    <h3>First-Order Approximation:</h3>
+    $$\ln(26!) \approx 26 \ln(26) - 26 = 26(3.2580965) - 26 = 58.7105$$
 
-    <h3>Step B: Deconstruct $2^{32}$</h3>
-    $$2^{32} = 2^2 \times (2^{10})^3 \approx 4 \times (10^3)^3 = \mathbf{4 \times 10^9}$$
+    <h3>Change of Base to $\log_2$:</h3>
+    $$\log_2(26!) = \frac{\ln(26!)}{\ln(2)} \approx \frac{58.7105}{0.693147} \approx 84.701$$
 
-    <h3>Step C: Multiply the Components</h3>
-    $$2^{88} \approx (64 \times 10^{15}) \times (4 \times 10^9)$$
-    $$2^{88} \approx (64 \times 4) \times (10^{15} \times 10^9)$$
-    $$2^{88} \approx 256 \times 10^{24} = \mathbf{2.56 \times 10^{26}}$$
-
-    <hr>
-
-    <h2>4. Error Correction &amp; Final Precision Refinement</h2>
-    <p>Approximating $2^{10} = 1024$ as $1000$ introduces an error of $-2.4\%$ per factor of $2^{10}$.</p>
-    <ol>
-      <li><strong>Count of $2^{10}$ Factors:</strong> 8 total instances ($5 \text{ from } 2^{56} + 3 \text{ from } 2^{32}$).</li>
-      <li><strong>Total Compounded Drift:</strong> $8 \times +2.4\% \approx \mathbf{+19.2\%}$.</li>
-      <li><strong>Applying Linear Correction to the Estimate:</strong></li>
-    </ol>
-
-    $$2.56 + (19.2\% \text{ of } 2.56) = 2.56 + 0.486 = \mathbf{3.046 \times 10^{26}}$$
-
-    <p>Comparing this mental result to the true value of $2^{88}$:</p>
-    $$2^{88} = 309,485,009,821,345,068,724,781,056 \approx \mathbf{3.0948 \times 10^{26}}$$
-    <p>The mental drift correction achieves within <strong>~1.5%</strong> of the true mathematical value.</p>
+    <h3>Adding Second-Order Asymptotic Correction:</h3>
+    $$\Delta_{\text{corr}} = \frac{1}{2}\log_2(2\pi \cdot 26) = \frac{1}{2}\log_2(163.36) \approx \frac{1}{2}(7.3519) \approx 3.676$$
+    $$\log_2(26!) \approx 84.701 + 3.676 = \mathbf{88.377 \approx 88.38}$$
 
     <hr>
 
-    <h2>5. Three Mental Shortcuts to Derive $\log_2(26!) \approx 88$</h2>
+    <h2>4. Base-10 Absolute Value Mental Derivation</h2>
+    <p>To calculate the base-10 magnitude of $2^{88}$ mentally, we decompose the exponent into binary components using $2^{10} = 1024 \approx 1000 = 10^3$:</p>
 
-    <h3>Trick 1: Outside-In Symmetrical Pairing</h3>
-    <p>Pair the 26 numbers symmetrically from the extremes inward:</p>
+    <div class="math-display-card">
+      <span class="label">Step A: Decompose $2^{56}$</span>
+      $$2^{56} = 2^6 \times (2^{10})^5 \approx 64 \times (10^3)^5 = \mathbf{64 \times 10^{15}}$$
+    </div>
+
+    <div class="math-display-card">
+      <span class="label">Step B: Decompose $2^{32}$</span>
+      $$2^{32} = 2^2 \times (2^{10})^3 \approx 4 \times (10^3)^3 = \mathbf{4 \times 10^9}$$
+    </div>
+
+    <div class="math-display-card">
+      <span class="label">Step C: Compound Multiplication</span>
+      $$2^{88} \approx (64 \times 10^{15}) \times (4 \times 10^9) = (64 \times 4) \times 10^{24} = 256 \times 10^{24} = \mathbf{2.56 \times 10^{26}}$$
+    </div>
+
+    <h3>Compounded Drift Error Correction ($+19.2\%$):</h3>
+    <p>Because $1024 / 1000 = 1.024$, substituting $10^3$ for $2^{10}$ creates a $-2.4\%$ underestimation per power. Across 8 factors of $2^{10}$ ($5 + 3 = 8$):</p>
+    $$\text{Drift} \approx 8 \times (+2.4\%) = \mathbf{+19.2\%}$$
+    $$2.56 + (0.192 \times 2.56) = 2.56 + 0.4915 = \mathbf{3.05 \times 10^{26}}$$
+
+    <p>Comparing against exact calculations:</p>
+    $$\text{Exact } 2^{88} = 309,485,009,821,345,068,724,781,056 = \mathbf{3.0948 \times 10^{26}}$$
+    $$\text{Estimation Error} = \left|\frac{3.0515 - 3.0948}{3.0948}\right| \approx \mathbf{1.39\%}$$
+
+    <hr>
+
+    <h2>5. Three Mental Estimation Shortcuts for $\log_2(26!)$</h2>
+
+    <h3>Method 1: Outside-In Symmetrical Pairing</h3>
+    <p>Group the 26 numbers into 13 symmetric pairs $k \cdot (27 - k)$:</p>
     <ul>
-      <li>Pair 1: $1 \times 26 = 26$ ($\approx 2^{4.7}$)</li>
-      <li>Pair 2: $2 \times 25 = 50$ ($\approx 2^{5.6}$)</li>
-      <li>Pair 3: $3 \times 24 = 72$</li>
-      <li>Pair 4: $4 \times 23 = 92$</li>
-      <li>Pair 5: $5 \times 22 = 110$</li>
-      <li>&hellip;</li>
-      <li>Pair 13: $13 \times 14 = 182$ ($\approx 2^{7.5}$)</li>
+      <li>$1 \times 26 = 26$ ($\approx 2^{4.7}$)</li>
+      <li>$2 \times 25 = 50$ ($\approx 2^{5.6}$)</li>
+      <li>$3 \times 24 = 72$ ($\approx 2^{6.2}$)</li>
+      <li>$4 \times 23 = 92$ ($\approx 2^{6.5}$)</li>
+      <li>$5 \times 22 = 110$ ($\approx 2^{6.8}$)</li>
+      <li>$\dots$</li>
+      <li>$13 \times 14 = 182$ ($\approx 2^{7.5}$)</li>
     </ul>
-    <p>There are 13 pairs. The average product is roughly <strong>$120$</strong>. Since $2^7 = 128$, $\log_2(120) \approx 6.8$:</p>
+    <p>The geometric mean of pair products is $\approx 120$. Since $2^7 = 128$, $\log_2(120) \approx 6.8$:</p>
     $$13 \text{ pairs} \times 6.8 \approx \mathbf{88.4 \text{ bits}}$$
 
-    <h3>Trick 2: Grouping by Power-of-2 Octaves</h3>
-    <table>
+    <h3>Method 2: Octave Power-of-2 Bucketing</h3>
+    <table class="matrix-table">
       <thead>
         <tr>
-          <th>Integer Range</th>
-          <th>Count</th>
-          <th>Representative Power of 2</th>
-          <th>Subtotal Contribution</th>
+          <th>Bucket Range</th>
+          <th>Element Count</th>
+          <th>Octave Geometric Mean</th>
+          <th>Subtotal Log Contribution</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><strong>1 – 2</strong></td>
-          <td>2 numbers</td>
+          <td>$[1, 2]$</td>
+          <td>2</td>
           <td>$\approx 2^{0.5}$</td>
           <td>$2 \times 0.5 = \mathbf{1.0}$</td>
         </tr>
         <tr>
-          <td><strong>3 – 4</strong></td>
-          <td>2 numbers</td>
+          <td>$[3, 4]$</td>
+          <td>2</td>
           <td>$\approx 2^{1.8}$</td>
           <td>$2 \times 1.8 = \mathbf{3.6}$</td>
         </tr>
         <tr>
-          <td><strong>5 – 8</strong></td>
-          <td>4 numbers</td>
+          <td>$[5, 8]$</td>
+          <td>4</td>
           <td>$\approx 2^{2.6}$</td>
           <td>$4 \times 2.6 = \mathbf{10.4}$</td>
         </tr>
         <tr>
-          <td><strong>9 – 16</strong></td>
-          <td>8 numbers</td>
+          <td>$[9, 16]$</td>
+          <td>8</td>
           <td>$\approx 2^{3.6}$</td>
           <td>$8 \times 3.6 = \mathbf{28.8}$</td>
         </tr>
         <tr>
-          <td><strong>17 – 26</strong></td>
-          <td>10 numbers</td>
+          <td>$[17, 26]$</td>
+          <td>10</td>
           <td>$\approx 2^{4.4}$</td>
           <td>$10 \times 4.4 = \mathbf{44.0}$</td>
         </tr>
+        <tr>
+          <td colspan="3"><strong>Total Octave Sum</strong></td>
+          <td><strong>87.8 bits</strong></td>
+        </tr>
       </tbody>
     </table>
-    $$\text{Sum} = 1.0 + 3.6 + 10.4 + 28.8 + 44.0 = \mathbf{87.8 \text{ bits}}$$
 
-    <h3>Trick 3: Stirling's Formula Shortcut</h3>
-    <ol>
-      <li>Use Stirling's natural log approximation: $\ln(n!) \approx n \ln(n) - n$.</li>
-      <li>Estimate $\ln(26) \approx \ln(27) = 3 \ln(3) \approx 3 \times 1.10 = 3.30$.</li>
-      <li>Substitute into formula: $\ln(26!) \approx 26(3.30 - 1) = 26 \times 2.30 = 59.8$.</li>
-      <li>Change of base: $\log_2(26!) = \frac{\ln(26!)}{\ln(2)} \approx \frac{59.8}{0.693} \approx 86.3$.</li>
-      <li>Add the Stirling correction term $\frac{1}{2}\log_2(2\pi \times 26) \approx 2.0 \implies \mathbf{88.3 \text{ bits}}$.</li>
-    </ol>
+    <h3>Method 3: Stirling's Mental Power Rule</h3>
+    <p>Using $\ln(26) \approx \ln(27) = \ln(3^3) = 3 \ln(3) \approx 3(1.10) = 3.30$:</p>
+    $$\ln(26!) \approx 26(3.30 - 1) = 26 \times 2.30 = 59.8$$
+    $$\log_2(26!) \approx \frac{59.8}{0.693} \approx 86.3 \xrightarrow{+ 2.0 \text{ (corr)}} \mathbf{88.3 \text{ bits}}$$
 
     <hr>
 
-    <h2>6. Python Verification Script</h2>
-    <pre><code>import math
+    <h2>6. Python Verification Suite</h2>
+    <div class="code-terminal">
+      <span class="prompt"># Python 3.12+ Verification Script</span><br>
+      <span class="prompt">import math</span><br><br>
+      <span class="prompt"># 1. Exact log2 summation</span><br>
+      logs = [math.log2(i) for i in range(1, 27)]<br>
+      exact_sum = sum(logs)<br>
+      print(f"Exact log2(26!): {exact_sum:.10f}")<br><br>
+      <span class="prompt"># 2. Symmetrical pairs check</span><br>
+      pairs = [i * (27 - i) for i in range(1, 14)]<br>
+      pair_logs = [math.log2(p) for p in pairs]<br>
+      print(f"Pair products: {pairs}")<br>
+      print(f"Sum of pair log2: {sum(pair_logs):.10f}")<br><br>
+      <span class="prompt"># 3. Base-10 exact check</span><br>
+      exact_26_fact = math.factorial(26)<br>
+      print(f"26! = {exact_26_fact}")<br>
+      print(f"2^88 = {2**88}")<br>
+      print(f"2^(88.38195) = {2**exact_sum:.6e}")
+    </div>
 
-# Calculate the exact sum of log2 terms for 1 to 26
-logs = [math.log2(i) for i in range(1, 27)]
-print("Sum of log2:", sum(logs))
-
-# Symmetrical pairing check: (1, 26), (2, 25), ... (13, 14)
-pairs = [(i, 27-i, i*(27-i)) for i in range(1, 14)]
-print("Products of pairs:", [p[2] for p in pairs])
-log2_pairs = [math.log2(p[2]) for p in pairs]
-print("Sum of log2 pairs:", sum(log2_pairs))
-</code></pre>
-
-    <p><strong>Execution Output:</strong></p>
-    <pre><code>Sum of log2: 88.38195332701626
-Products of pairs: [26, 50, 72, 92, 110, 126, 140, 152, 162, 170, 176, 180, 182]
-Sum of log2 pairs: 88.38195332701626
-</code></pre>
+    <p><strong>Terminal Output:</strong></p>
+    <div class="code-terminal">
+      <span class="output">Exact log2(26!): 88.3819533270</span><br>
+      <span class="output">Pair products: [26, 50, 72, 92, 110, 126, 140, 152, 162, 170, 176, 180, 182]</span><br>
+      <span class="output">Sum of pair log2: 88.3819533270</span><br>
+      <span class="output">26! = 403291461126605635584000000</span><br>
+      <span class="output">2^88 = 309485009821345068724781056</span><br>
+      <span class="output">2^(88.38195) = 4.032915e+26</span>
+    </div>
 
     <hr>
 
-    <h2>7. Summary Table of Results</h2>
-    <table>
+    <h2>7. Comprehensive Summary Matrix</h2>
+    <table class="matrix-table">
       <thead>
         <tr>
-          <th>Calculation Stage</th>
-          <th>Method Used</th>
-          <th>Derived Value</th>
-          <th>Accuracy vs. Exact</th>
+          <th>Evaluation Stage</th>
+          <th>Mathematical Formulation</th>
+          <th>Result</th>
+          <th>Accuracy vs. Ground Truth</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><strong>Exact Factorial ($26!$)</strong></td>
-          <td>Combinatorial Multiplication</td>
+          <td><strong>Exact Factorial</strong></td>
+          <td>$\prod_{k=1}^{26} k$</td>
           <td>$4.0329 \times 10^{26}$</td>
-          <td>Baseline (100%)</td>
+          <td>Ground Truth ($100\%$)</td>
         </tr>
         <tr>
           <td><strong>Bit Depth ($x$)</strong></td>
-          <td>Logarithmic Sum $\sum \log_2(k)$</td>
-          <td><strong>$2^{88.38}$</strong></td>
-          <td>100%</td>
+          <td>$\sum_{k=1}^{26} \log_2(k)$</td>
+          <td><strong>$2^{88.38195}$</strong></td>
+          <td>Exact ($100\%$)</td>
         </tr>
         <tr>
-          <td><strong>Raw Mental Base-10</strong></td>
-          <td>$2^{56} \times 2^{32}$ ($10^3$ split)</td>
-          <td>$2.56 \times 10^{26}$</td>
-          <td>~17% low (drift)</td>
+          <td><strong>Outside-In Pairing</strong></td>
+          <td>$13 \times \log_2(120)$</td>
+          <td><strong>$88.40\text{ bits}$</strong></td>
+          <td>$+0.02\text{ bits}$ error</td>
         </tr>
         <tr>
-          <td><strong>Corrected Mental Base-10</strong></td>
-          <td>$+19.2\%$ Drift Correction</td>
+          <td><strong>Power-of-2 Bucketing</strong></td>
+          <td>$\sum \text{Octave Contributions}$</td>
+          <td><strong>$87.80\text{ bits}$</strong></td>
+          <td>$-0.58\text{ bits}$ error</td>
+        </tr>
+        <tr>
+          <td><strong>Stirling with Correction</strong></td>
+          <td>$\frac{n\ln(n)-n}{\ln(2)} + \Delta$</td>
+          <td><strong>$88.38\text{ bits}$</strong></td>
+          <td>$< 0.01\text{ bits}$ error</td>
+        </tr>
+        <tr>
+          <td><strong>Mental Base-10 ($2^{88}$)</strong></td>
+          <td>$(64 \times 10^{15})(4 \times 10^9) \times 1.192$</td>
           <td>$\mathbf{3.05 \times 10^{26}}$</td>
-          <td><strong>~1.5% low</strong></td>
-        </tr>
-        <tr>
-          <td><strong>Exact Power of Two ($2^{88}$)</strong></td>
-          <td>Binary Calculation</td>
-          <td>$\mathbf{3.0948 \times 10^{26}}$</td>
-          <td>Exact $2^{88}$</td>
+          <td>$\mathbf{1.39\%}$ error vs. $2^{88}$</td>
         </tr>
       </tbody>
     </table>
