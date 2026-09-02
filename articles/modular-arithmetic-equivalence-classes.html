@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/modular-arithmetic-equivalence-classes">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Complete Reference Guide: Modular Arithmetic &amp; Equivalence Classes — Konstas Engineering Notes</title>
+<meta name="description" content="A rigorous mathematical reference guide covering modular arithmetic principles, congruence relations, equivalence classes modulo 8, representative invariance, and modular multiplicative inverses.">
+<meta name="author" content="Ioannis Konstas">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="keywords" content="modular arithmetic, equivalence classes, congruence modulo m, residue classes, modulo 8, modular inverse, extended euclidean algorithm, coprime division, group of units, number theory, cryptography, Ioannis Konstas">
+
+<!-- Open Graph / Social Sharing -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="Complete Reference Guide: Modular Arithmetic &amp; Equivalence Classes">
+<meta property="og:description" content="Core principles, definitions, equivalence classes modulo 8, algebraic consistency, representative invariance proofs, and modular multiplicative inverses.">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/modular-arithmetic-equivalence-classes">
+<meta property="og:site_name" content="Konstas — Engineering Notes">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/modular_arithmetic_og.png">
+<meta property="og:image:secure_url" content="https://ikonstas70.github.io/articles/modular_arithmetic_og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Modular Arithmetic, Cryptographic Equivalence Classes & Inverses">
+<meta property="article:author" content="Ioannis Konstas">
+<meta property="article:published_time" content="2026-09-02">
+<meta property="article:section" content="Cryptography">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Complete Reference Guide: Modular Arithmetic &amp; Equivalence Classes">
+<meta name="twitter:description" content="Core principles, definitions, equivalence classes modulo 8, algebraic consistency, representative invariance proofs, and modular multiplicative inverses.">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/modular_arithmetic_og.png">
+<meta name="twitter:image:alt" content="Modular Arithmetic, Cryptographic Equivalence Classes & Inverses">
+
+<!-- Schema.org JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Complete Reference Guide: Modular Arithmetic & Equivalence Classes",
+  "description": "A rigorous mathematical reference guide covering modular arithmetic principles, congruence relations, equivalence classes modulo 8, representative invariance, and modular multiplicative inverses.",
+  "image": "https://ikonstas70.github.io/articles/modular_arithmetic_og.png",
+  "author": {
+    "@type": "Person",
+    "name": "Ioannis Konstas",
+    "url": "https://ikonstas70.github.io/about"
+  },
+  "datePublished": "2026-09-02",
+  "publisher": {
+    "@type": "Person",
+    "name": "Ioannis Konstas"
+  }
+}
+</script>
+
+<link rel="image_src" href="https://ikonstas70.github.io/articles/modular_arithmetic_og.png">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+
+<!-- KaTeX for high-precision math typography -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+
+<style>
+  .diagram-container {
+    margin: 20px 0 28px;
+    background: #080c14;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+  .diagram-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+    margin: 0 auto;
+  }
+  .math-display-card {
+    background: #080c14;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 22px 0;
+    text-align: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+  .math-display-card .label {
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #38bdf8;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .callout-theorem {
+    background: rgba(14, 165, 233, 0.04);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-left: 4px solid #38bdf8;
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .callout-theorem h4 {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .callout-takeaway {
+    background: rgba(16, 185, 129, 0.04);
+    border: 1px solid rgba(52, 211, 153, 0.25);
+    border-left: 4px solid #34d399;
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .callout-takeaway h4 {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    color: #34d399;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  table.matrix-table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: collapse;
+  }
+  table.matrix-table th {
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix-table td {
+    border: 1px solid #1e293b;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+  table.matrix-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .set-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .invertible-yes {
+    color: #34d399;
+    font-weight: 700;
+  }
+  .invertible-no {
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Cryptography</span>
+    <h1>Complete Reference Guide: Modular Arithmetic &amp; Equivalence Classes</h1>
+    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas</p>
+
+    <div class="diagram-container">
+      <img src="/articles/modular_arithmetic_og.png" alt="Modular Arithmetic &amp; Cryptographic Equivalence Classes" width="1024" height="574">
+    </div>
+
+    <p>A comprehensive mathematical reference guide covering modular arithmetic principles, congruence relations, equivalence classes modulo 8, algebraic consistency, representative invariance proofs, and modular multiplicative inverses.</p>
+
+    <hr>
+
+    <h2>1. Core Principles &amp; Definitions</h2>
+    <p>Modular arithmetic operates on the remainders of division by a fixed positive integer called the <strong>modulus</strong> ($m \in \mathbb{Z}^+$).</p>
+
+    <ul>
+      <li><strong>Divisibility Notation ($x \mid y$):</strong> Read as &ldquo;$x$ divides $y$,&rdquo; meaning there exists an integer $k \in \mathbb{Z}$ such that $y = kx$ (with $x \neq 0$).</li>
+      <li><strong>Congruence Relation:</strong> Two integers $a$ and $b$ are congruent modulo $m$, written as:
+        <div class="math-display-card">
+          <span class="label">Congruence Relation</span>
+          $$a \equiv b \pmod m \iff m \mid (a - b)$$
+        </div>
+        Two integers are congruent modulo $m$ if and only if their difference $(a - b)$ is an exact integer multiple of $m$ (i.e., there exists $k \in \mathbb{Z}$ such that $a - b = km$).
+      </li>
+      <li><strong>Equivalence Class (Congruence Class):</strong> For a given modulus $m$, the set of all integers that leave the identical remainder $r \in \{0, 1, \dots, m-1\}$ upon Euclidean division by $m$. A modulus $m$ partitions the entire set of integers $\mathbb{Z}$ into exactly $m$ pairwise disjoint, non-overlapping equivalence classes:
+        $$\mathbb{Z} = [0]_m \cup [1]_m \cup [2]_m \cup \dots \cup [m-1]_m$$
+      </li>
+      <li><strong>Algebraic Consistency:</strong> Addition, subtraction, and multiplication are well-defined under modular equivalence. If $a \equiv a' \pmod m$ and $b \equiv b' \pmod m$, then:
+        <ul>
+          <li>$(a + b) \equiv (a' + b') \pmod m$</li>
+          <li>$(a - b) \equiv (a' - b') \pmod m$</li>
+          <li>$(a \times b) \equiv (a' \times b') \pmod m$</li>
+        </ul>
+      </li>
+    </ul>
+
+    <hr>
+
+    <h2>2. Equivalence Classes for Modulo 8</h2>
+    <p>For modulus $m = 8$, the set of integers $\mathbb{Z}$ is partitioned into $8$ distinct equivalence classes, uniquely indexed by their canonical remainder $r \in \{0, 1, 2, 3, 4, 5, 6, 7\}$:</p>
+
+    <div class="callout-theorem">
+      <h4>Representative Equivalence Classes Modulo 8 ($m = 8$)</h4>
+      <p><strong>Set A</strong> ($r \equiv 0 \pmod 8$): $\{\dots, -24, -16, -8, 0, 8, 16, 24, 32, 40, \dots\}$</p>
+      <p><strong>Set B</strong> ($r \equiv 1 \pmod 8$): $\{\dots, -23, -15, -7, 1, 9, 17, 25, 33, 41, \dots\}$</p>
+      <p><strong>Set C</strong> ($r \equiv 2 \pmod 8$): $\{\dots, -22, -14, -6, 2, 10, 18, 26, 34, 42, \dots\}$</p>
+      <p><strong>Set D</strong> ($r \equiv 3 \pmod 8$): $\{\dots, -21, -13, -5, 3, 11, 19, 27, 35, 43, \dots\}$</p>
+      <p><strong>Set E</strong> ($r \equiv 4 \pmod 8$): $\{\dots, -20, -12, -4, 4, 12, 20, 28, 36, 44, \dots\}$</p>
+    </div>
+
+    <p><em>(Note: The remaining classes for remainders $r = 5, 6, 7$ follow the identical arithmetic progression $\{8k + r \mid k \in \mathbb{Z}\}$).</em></p>
+
+    <hr>
+
+    <h2>3. Worked Proofs: Algebraic Invariance of Class Representatives</h2>
+
+    <p>To demonstrate that modular evaluation is strictly invariant under the choice of class representative, we examine two worked evaluations.</p>
+
+    <h3>Example 1: Multi-Class Mixed Evaluation &mdash; $19 \times 26 - 11 \pmod 8$</h3>
+
+    <p>We map each input term to its residue class modulo 8:</p>
+    <ul>
+      <li>$19 = 8 \times 2 + 3 \implies 19 \in \mathbf{\text{Set D}} \quad (r = 3)$</li>
+      <li>$26 = 8 \times 3 + 2 \implies 26 \in \mathbf{\text{Set C}} \quad (r = 2)$</li>
+      <li>$11 = 8 \times 1 + 3 \implies 11 \in \mathbf{\text{Set D}} \quad (r = 3)$</li>
+    </ul>
+
+    <h4>Method 1 &mdash; Canonical Representatives (Smallest Non-Negative Remainders)</h4>
+    <p>Substitute each term with its canonical remainder from $\{0, 1, \dots, 7\}$:</p>
+
+    <div class="math-display-card">
+      <span class="label">Canonical Evaluation</span>
+      $$19 \times 26 - 11 \equiv (3) \times (2) - (3) \pmod 8$$
+      $$(3 \times 2) - 3 = 6 - 3 = \mathbf{3} \pmod 8$$
+    </div>
+
+    <h4>Method 2 &mdash; Alternative Small Class Elements (Signed / Offset Representatives)</h4>
+    <p>Substitute distinct, small alternative members belonging to the same classes:</p>
+    <ul>
+      <li>For $19 \in \text{Set D}$, select small negative representative $-5$ (since $-5 = 8(-1) + 3$)</li>
+      <li>For $26 \in \text{Set C}$, select small negative representative $-6$ (since $-6 = 8(-1) + 2$)</li>
+      <li>For $11 \in \text{Set D}$, select canonical representative $3$</li>
+    </ul>
+
+    <div class="math-display-card">
+      <span class="label">Alternative Small Element Evaluation</span>
+      $$(-5) \times (-6) - (3) = 30 - 3 = 27$$
+    </div>
+
+    <p>Reduce $27$ modulo 8:</p>
+    <div class="math-display-card">
+      <span class="label">Modulo 8 Reduction</span>
+      $$27 = 8 \times 3 + 3 \implies 27 \equiv \mathbf{3} \pmod 8$$
+    </div>
+
+    <h4>Method 3 &mdash; Direct Raw Integer Arithmetic Verification</h4>
+    <p>Calculate the entire expression in standard integer arithmetic without intermediate reductions:</p>
+    <div class="math-display-card">
+      <span class="label">Direct Raw Verification</span>
+      $$19 \times 26 - 11 = 494 - 11 = 483$$
+      $$483 = 8 \times 60 + 3 \implies 483 \equiv \mathbf{3} \pmod 8 \quad (\text{Set D})$$
+    </div>
+
+    <hr>
+
+    <h3>Example 2: Zero-Residue Evaluation &mdash; $16 \times 32 - 8 \pmod 8$</h3>
+
+    <p>We analyze the terms in the expression $(16 \times 32) - 8$:</p>
+    <ul>
+      <li>$16 = 8 \times 2 + 0 \implies 16 \in \mathbf{\text{Set A}} \quad ([0]_8)$</li>
+      <li>$32 = 8 \times 4 + 0 \implies 32 \in \mathbf{\text{Set A}} \quad ([0]_8)$</li>
+      <li>Subtracted term $8 = 8 \times 1 + 0 \implies 8 \in \mathbf{\text{Set A}} \quad ([0]_8)$</li>
+    </ul>
+
+    <p>All terms reside in <span class="set-badge">Set A</span> ($[0]_8$).</p>
+
+    <h4>Method 1 &mdash; Canonical Representatives ($0, 0, 0$)</h4>
+    <div class="math-display-card">
+      <span class="label">Canonical Evaluation</span>
+      $$16 \times 32 - 8 \equiv (0) \times (0) - (0) = \mathbf{0} \pmod 8$$
+    </div>
+
+    <h4>Method 2 &mdash; Distinct Small Non-Zero Representatives ($8, -8, 16$)</h4>
+    <p>Substitute distinct small elements from $\text{Set A}$ into the expression $(16 \times 32) - (8)$:</p>
+    <ul>
+      <li>Replace first factor: $16 \to 8 \in \text{Set A}$</li>
+      <li>Replace second factor: $32 \to -8 \in \text{Set A}$</li>
+      <li>Replace subtracted term: $8 \to 16 \in \text{Set A}$</li>
+    </ul>
+
+    <div class="math-display-card">
+      <span class="label">Distinct Small Representative Calculation</span>
+      $$(8) \times (-8) - (16) = -64 - 16 = -80$$
+      $$-80 = 8 \times (-10) + 0 \implies -80 \equiv \mathbf{0} \pmod 8 \quad (\text{Set A})$$
+    </div>
+
+    <div class="callout-theorem" style="margin: 16px 0;">
+      <h4>Sign Bookkeeping &amp; Operator Isolation</h4>
+      <p>In $(16 \times 32) - 8$, the subtraction operator is external to the term. Replacing the subtracted positive integer $8 \in [0]_8$ with $16 \in [0]_8$ yields $- (16) = -16$.</p>
+      <p>Equivalently, viewing the expression as addition of a negative value $(16 \times 32) + (-8)$ and replacing the term $-8 \in [0]_8$ with $-16 \in [0]_8$ gives $((8) \times (-8)) + (-16) = -80 \equiv \mathbf{0} \pmod 8$.</p>
+    </div>
+
+    <hr>
+
+    <h2>4. Summary Table of Operations</h2>
+
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th>Expression</th>
+          <th>Approach</th>
+          <th>Chosen Representatives</th>
+          <th>Computed Value</th>
+          <th>Final Residue Class</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td rowspan="3"><strong>$19 \times 26 - 11$</strong></td>
+          <td>Canonical Remainders</td>
+          <td>$3, 2, 3$</td>
+          <td>$3 \times 2 - 3 = \mathbf{3}$</td>
+          <td>$\text{Set D} \equiv 3 \pmod 8$</td>
+        </tr>
+        <tr>
+          <td>Alternative Small Elements</td>
+          <td>$-5, -6, 3$</td>
+          <td>$(-5) \times (-6) - 3 = \mathbf{27}$</td>
+          <td>$27 = 8(3) + 3 \implies \mathbf{3} \pmod 8$</td>
+        </tr>
+        <tr>
+          <td>Raw Integer Evaluation</td>
+          <td>Full integers</td>
+          <td>$494 - 11 = \mathbf{483}$</td>
+          <td>$483 = 8(60) + 3 \implies \mathbf{3} \pmod 8$</td>
+        </tr>
+        <tr>
+          <td rowspan="2"><strong>$16 \times 32 - 8$</strong></td>
+          <td>Canonical Remainders</td>
+          <td>$0, 0, 0$</td>
+          <td>$0 \times 0 - 0 = \mathbf{0}$</td>
+          <td>$\text{Set A} \equiv 0 \pmod 8$</td>
+        </tr>
+        <tr>
+          <td>Distinct Small Elements</td>
+          <td>$8, -8, 16$</td>
+          <td>$8 \times (-8) - (16) = \mathbf{-80}$</td>
+          <td>$-80 = 8(-10) + 0 \implies \mathbf{0} \pmod 8$</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2>5. Modular Multiplicative Inverses &amp; Division</h2>
+
+    <p>In standard arithmetic, division by $b$ is multiplication by the reciprocal $b^{-1} = \frac{1}{b}$. In modular arithmetic over $\mathbb{Z}$, fractions do not exist. Instead, division is defined through the <strong>modular multiplicative inverse</strong>.</p>
+
+    <h3>Definition</h3>
+    <p>The multiplicative inverse of an integer $a$ modulo $m$ is an integer $x$ such that:</p>
+
+    <div class="math-display-card">
+      <span class="label">Multiplicative Inverse</span>
+      $$a \cdot x \equiv 1 \pmod m$$
+    </div>
+
+    <p>We denote this element as $a^{-1} \pmod m$.</p>
+
+    <h3>The Invertibility Condition (Coprimality)</h3>
+    <p>Unlike addition and multiplication, a modular inverse does <strong>not</strong> always exist.</p>
+
+    <div class="callout-theorem">
+      <h4>Theorem: Existence of Modular Inverses</h4>
+      <p>An integer $a$ possesses a multiplicative inverse modulo $m$ if and only if $a$ and $m$ are coprime:</p>
+      $$\gcd(a, m) = 1$$
+      <ul>
+        <li><strong>If $\gcd(a, m) = 1$:</strong> The inverse exists and is uniquely determined within the canonical range $\{1, 2, \dots, m-1\}$.</li>
+        <li><strong>If $\gcd(a, m) > 1$:</strong> $a$ is a <strong>zero divisor</strong> (shares a non-trivial factor with $m$). No integer $x$ can satisfy $a \cdot x \equiv 1 \pmod m$.</li>
+      </ul>
+    </div>
+
+    <h3>Invertibility in Modulo 8 ($\mathbb{Z}_8$)</h3>
+    <p>Since $m = 8 = 2^3$, any even integer shares a common factor with 8:</p>
+
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th>Residue Class $[a]_8$</th>
+          <th>$\gcd(a, 8)$</th>
+          <th>Invertible?</th>
+          <th>Inverse $a^{-1} \pmod 8$</th>
+          <th>Verification</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>$[0]$</strong></td>
+          <td>8</td>
+          <td><span class="invertible-no">No</span></td>
+          <td>&mdash;</td>
+          <td>$0 \cdot x \equiv 0 \neq 1$</td>
+        </tr>
+        <tr>
+          <td><strong>$[1]$</strong></td>
+          <td>1</td>
+          <td><span class="invertible-yes">Yes</span></td>
+          <td><strong>1</strong></td>
+          <td>$1 \cdot 1 = 1 \equiv 1 \pmod 8$</td>
+        </tr>
+        <tr>
+          <td><strong>$[2]$</strong></td>
+          <td>2</td>
+          <td><span class="invertible-no">No</span></td>
+          <td>&mdash;</td>
+          <td>$2 \cdot x \in \{0, 2, 4, 6\} \pmod 8$</td>
+        </tr>
+        <tr>
+          <td><strong>$[3]$</strong></td>
+          <td>1</td>
+          <td><span class="invertible-yes">Yes</span></td>
+          <td><strong>3</strong></td>
+          <td>$3 \cdot 3 = 9 \equiv 1 \pmod 8$ (self-inverse)</td>
+        </tr>
+        <tr>
+          <td><strong>$[4]$</strong></td>
+          <td>4</td>
+          <td><span class="invertible-no">No</span></td>
+          <td>&mdash;</td>
+          <td>$4 \cdot x \in \{0, 4\} \pmod 8$</td>
+        </tr>
+        <tr>
+          <td><strong>$[5]$</strong></td>
+          <td>1</td>
+          <td><span class="invertible-yes">Yes</span></td>
+          <td><strong>5</strong></td>
+          <td>$5 \cdot 5 = 25 \equiv 1 \pmod 8$ (self-inverse)</td>
+        </tr>
+        <tr>
+          <td><strong>$[6]$</strong></td>
+          <td>2</td>
+          <td><span class="invertible-no">No</span></td>
+          <td>&mdash;</td>
+          <td>$6 \cdot x \in \{0, 2, 4, 6\} \pmod 8$</td>
+        </tr>
+        <tr>
+          <td><strong>$[7]$</strong></td>
+          <td>1</td>
+          <td><span class="invertible-yes">Yes</span></td>
+          <td><strong>7</strong></td>
+          <td>$7 \cdot 7 = 49 \equiv 1 \pmod 8$ (self-inverse)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>The set of invertible elements forms the <strong>group of units</strong>, denoted $\mathbb{Z}_8^\times = \{1, 3, 5, 7\}$. In $\mathbb{Z}_8$, every unit is its own inverse ($a^2 \equiv 1 \pmod 8$).</p>
+
+    <h3>Computing Inverses: The Extended Euclidean Algorithm</h3>
+    <p>To systematically find $a^{-1} \pmod m$ for large integers, we apply <strong>B&eacute;zout&rsquo;s Identity</strong>:</p>
+
+    <div class="math-display-card">
+      <span class="label">B&eacute;zout&rsquo;s Identity</span>
+      $$a \cdot x + m \cdot y = \gcd(a, m)$$
+    </div>
+
+    <p>When $\gcd(a, m) = 1$:</p>
+    $$a \cdot x + m \cdot y = 1 \implies a \cdot x \equiv 1 \pmod m$$
+    <p>The integer coefficient $x$ computed by the Extended Euclidean Algorithm is the modular multiplicative inverse of $a$.</p>
+
+    <h4>Worked Example: Find $17^{-1} \pmod{43}$</h4>
+
+    <p><strong>Step 1 &mdash; Standard Euclidean Algorithm (Find GCD):</strong></p>
+    <ol>
+      <li>$43 = 2 \times 17 + 9$</li>
+      <li>$17 = 1 \times 9 + 8$</li>
+      <li>$9 = 1 \times 8 + 1 \implies \gcd(43, 17) = 1$</li>
+    </ol>
+
+    <p><strong>Step 2 &mdash; Back-Substitution (B&eacute;zout Coefficients):</strong></p>
+    <p>Isolate remainders working backwards from 1:</p>
+    $$1 = 9 - 1 \times 8$$
+    <p>Substitute $8 = 17 - 1 \times 9$:</p>
+    $$1 = 9 - 1 \times (17 - 9) = 2 \times 9 - 1 \times 17$$
+    <p>Substitute $9 = 43 - 2 \times 17$:</p>
+    $$1 = 2 \times (43 - 2 \times 17) - 1 \times 17 = 2 \times 43 - 5 \times 17$$
+
+    <p><strong>Step 3 &mdash; Reduction to Modulo 43:</strong></p>
+    $$-5 \times 17 \equiv 1 \pmod{43}$$
+    <p>Since $-5$ is negative, reduce it into the canonical range $[0, 42]$:</p>
+    $$x = -5 + 43 = \mathbf{38}$$
+
+    <div class="math-display-card">
+      <span class="label">Verification</span>
+      $$17 \times 38 = 646 = 43 \times 15 + 1 \implies 646 \equiv \mathbf{1} \pmod{43}$$
+    </div>
+
+    <p>Thus, $17^{-1} \equiv \mathbf{38} \pmod{43}$.</p>
+
+    <h3>Solving Congruence Equations (Modular Division)</h3>
+    <p>To solve a linear congruence equation of the form:</p>
+
+    <div class="math-display-card">
+      <span class="label">Linear Congruence</span>
+      $$a \cdot x \equiv b \pmod m$$
+    </div>
+
+    <p>Multiply both sides by the modular inverse $a^{-1} \pmod m$ (provided $\gcd(a, m) = 1$):</p>
+    $$x \equiv b \cdot a^{-1} \pmod m$$
+
+    <h4>Example: Solve $3x \equiv 5 \pmod 8$</h4>
+    <ol>
+      <li>From the units table for $\mathbb{Z}_8$, $3^{-1} \equiv 3 \pmod 8$.</li>
+      <li>Multiply both sides by $3$:
+        $$x \equiv 5 \times 3 \pmod 8$$
+        $$x \equiv 15 \equiv \mathbf{7} \pmod 8$$
+      </li>
+      <li><strong>Verification:</strong> $3(7) = 21 = 8(2) + 5 \equiv \mathbf{5} \pmod 8$.</li>
+    </ol>
+
+    <hr>
+
+    <div class="callout-takeaway">
+      <h4>Final Conclusion &amp; Mathematical Principles</h4>
+      <p>The calculations rigorously confirm that <strong>modular arithmetic operations are independent of the representative chosen from any equivalence class</strong>.</p>
+
+      <p><strong>Core Takeaways:</strong></p>
+      <ol>
+        <li><strong>Class Invariance:</strong> Any integer $a$ in a given equivalence class $[a]_m$ behaves identically under addition, subtraction, and multiplication modulo $m$.</li>
+        <li><strong>Computational Efficiency:</strong> Replacing large or negative numbers with their smallest non-negative canonical remainders ($0 \le r < m$) dramatically reduces computational overhead while preserving exact mathematical correctness.</li>
+        <li><strong>Consistency Across Operations:</strong> Whether evaluating expressions with homogeneous class membership ($16 \times 32 - 8$) or heterogeneous multi-class interactions ($19 \times 26 - 11$), intermediate reductions never distort the final residue class.</li>
+        <li><strong>Inverses &amp; Division:</strong> Modular division by $a$ is valid if and only if $\gcd(a, m) = 1$, achieved via multiplication by the modular multiplicative inverse $a^{-1} \pmod m$ computed via the Extended Euclidean Algorithm.</li>
+      </ol>
+    </div>
+
+    <hr>
+
+    <h2>6. Related References &amp; Further Reading</h2>
+    <ul>
+      <li><a href="/articles/gh-extended-euclidean-euler-theorem-cryptology">Extended Euclidean Algorithm, Euler's Theorem &amp; Cryptological Applications</a> &mdash; B&eacute;zout's identity, modular inverses, and RSA cryptography.</li>
+      <li><a href="/articles/gh-discrete-logarithm-cryptosystems">Public-Key Cryptosystems Based on the Discrete Logarithm Problem</a> &mdash; Diffie-Hellman Key Exchange and ElGamal encryption.</li>
+      <li><a href="/articles/gh-galois-fields-aes">Galois Fields in AES: GF(2^8), Irreducible Polynomials, and the Extended Euclidean Algorithm</a></li>
+      <li><a href="/articles/overview-of-cryptology">Overview of Cryptology: Taxonomy, Primitives, and Cryptanalysis</a></li>
+    </ul>
+
+    <hr>
+    <p><a href="/">&larr; All articles</a></p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=modular-arithmetic-equivalence-classes",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
