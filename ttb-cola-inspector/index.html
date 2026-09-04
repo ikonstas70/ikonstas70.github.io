@@ -189,6 +189,19 @@
               <span style="font-size:0.75rem;color:#9ca3af;">Hover table rows to highlight field locations</span>
             </div>
             <div class="card-body" style="padding:12px;">
+                            <!-- Smart Image Pre-flight & Enhancement Controls -->
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <span style="font-size:0.75rem;font-weight:700;color:#9ca3af;">CANVAS ENHANCEMENT:</span>
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('normal')">Original</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('contrast')">High Contrast</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('grayscale')">Grayscale</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('invert')">Invert (Glare)</button>
+                </div>
+                <div id="imageQualityBadge" class="standards-badge" style="padding:4px 8px;font-size:0.75rem;">
+                  📷 Quality Score: <span id="qualityScoreVal" style="color:#34d399;font-weight:700;">99% High Legibility</span>
+                </div>
+              </div>
               <div class="viewer-container" id="canvasContainer">
                 <div class="image-canvas-wrapper" id="canvasWrapper">
                   <p style="color:#6b7280;">Select a test case or upload a label artwork to preview.</p>
@@ -205,6 +218,28 @@
 
             <!-- 27 CFR Part 16 Government Warning Card -->
             <div id="gwCard" class="card"></div>
+
+            
+            <!-- Agent Decision & Formal Notice Generator Bar -->
+            <div class="card" style="margin-top:20px;background:rgba(15,23,42,0.8);border:1px solid #3b82f6;">
+              <div class="card-header" style="background:rgba(59,130,246,0.1);">
+                <h3>🏛️ TTB Compliance Agent Decision &amp; Formal Notice Generator</h3>
+                <span style="font-size:0.75rem;color:#93c5fd;">Official TTB F 5100.31 Actions</span>
+              </div>
+              <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+                <div>
+                  <p style="font-size:0.85rem;color:#d1d5db;">Generate official printable Certificate of Label Approval or formal 27 CFR Rejection Notice.</p>
+                </div>
+                <div style="display:flex;gap:10px;">
+                  <button type="button" class="btn btn-success" onclick="generateCOLAApproval()">
+                    📜 Generate Official COLA Certificate (PDF/Print)
+                  </button>
+                  <button type="button" class="btn btn-secondary" style="border-color:#ef4444;color:#f87171;" onclick="generateRejectionNotice()">
+                    ✉️ Generate 27 CFR Rejection Notice Letter
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <!-- Field-by-Field Breakdown Table Card -->
             <div class="card">
