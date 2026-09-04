@@ -402,6 +402,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupNavigation();
     setupDropzone();
     setupKeyboardShortcuts();
+    setupFormListeners();
+
     await loadSamples();
 });
 
@@ -851,4 +853,16 @@ function setupKeyboardShortcuts() {
             runClientVerification();
         }
     });
+}
+
+
+function setupFormListeners() {
+    const form = document.getElementById('colaForm');
+    if (form) {
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => runClientVerification());
+            input.addEventListener('change', () => runClientVerification());
+        });
+    }
 }
