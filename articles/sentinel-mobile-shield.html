@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/sentinel-mobile-shield">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SENTINEL Mobile Shield: Hardened Endpoint Security &amp; Zero-Trust Tunnel Architecture — Konstas Engineering Notes</title>
+<meta name="description" content="Architecture and security capability overview of SENTINEL Mobile Shield: dual-stack ChaCha20-Poly1305 encryption, inline intrusion detection, DNSSEC-validated encrypted DNS, and zero-trust per-device isolation.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/sentinel-mobile-shield">
+<meta property="og:title" content="SENTINEL Mobile Shield: Hardened Endpoint Security &amp; Zero-Trust Tunnel Architecture">
+<meta property="og:description" content="What a mobile endpoint gains on top of built-in OS protections once routed through a hardened dual-stack security gateway — beyond encryption alone.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/sentinel-og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/sentinel-og.jpg">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .55);margin:6px 22px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Security Architecture</span>
+    <h1>SENTINEL Mobile Shield: Hardened Endpoint Security &amp; Zero-Trust Tunnel Architecture</h1>
+    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas</p>
+
+    <p>Modern mobile operating systems provide robust local security models — hardware-backed secure enclaves, mandatory access controls, and sandboxed application environments. However, the moment packets leave the network interface, the device becomes subject to external network realities: untrusted wireless transports, cellular carrier metadata harvesting, DNS poisoning, and sophisticated on-path adversaries.</p>
+
+    <blockquote>SENTINEL Mobile Shield bridges the gap between endpoint isolation and cloud network security. By placing a hardened, authenticated dual-stack gateway directly in the egress path, a mobile device achieves continuous cryptographic integrity, inline live threat inspection, DNSSEC-enforced domain resolution, and zero-trust identity isolation.</blockquote>
+
+    <h2>Architecture at a Glance</h2>
+    <ul>
+      <li><strong>Transport Security (ChaCha20-Poly1305 AEAD):</strong> Authenticated encryption on every packet using a modern Noise protocol handshake, supplemented with per-endpoint preshared keys (PSK) for post-quantum and identity-tamper resistance.</li>
+      <li><strong>100% Inline Live Threat Inspection:</strong> Every ingress and egress packet transits an inline Intrusion Detection System (IDS) before reaching the wider internet — flagging malicious signatures, anomaly spikes, and suspicious heuristics in real time.</li>
+      <li><strong>Cryptographically Validated Encrypted DNS (DoH + DNSSEC):</strong> Domain lookups are protected end-to-end via DNS-over-HTTPS and verified against DNSSEC root signatures, completely eliminating cleartext queries and ISP resolver tampering.</li>
+      <li><strong>Strict Zero-Trust Identity (1 Device : 1 Keypair):</strong> Each mobile endpoint maintains an isolated cryptographic keypair and dedicated tunnel subnet address. Revocation of any single device occurs instantly without collateral impact.</li>
+    </ul>
+
+    <h2>Core Protection Layers</h2>
+
+    <h3>1. Transport Layer — Full Dual-Stack (IPv4 / IPv6) Encryption</h3>
+    <p>A widespread vulnerability in commercial and legacy VPN implementations is single-stack tunneling — routing IPv4 traffic through the secure interface while silently leaking IPv6 packets over the local physical network. SENTINEL Mobile Shield enforces complete dual-stack routing (<code>0.0.0.0/0</code> and <code>::/0</code>). All payload data remains fully encrypted under ChaCha20-Poly1305, preventing local observers on untrusted public Wi-Fi or cellular infrastructure from inspecting payload headers or session states.</p>
+
+    <h3>2. Monitoring Layer — Inline Intrusion Detection &amp; Threat Scoring</h3>
+    <p>Rather than relying on retrospective log aggregation or post-facto security incident audits, all outbound and inbound transit flows directly through an active inline inspection engine. Traffic is evaluated in transit against structured behavioral heuristics and signature rulesets (e.g., Command and Control beaconing, suspicious port scanning, or exfiltration indicators) and neutralized before reaching destinations.</p>
+
+    <h3>3. Resolution Layer — Validated Encrypted DNS Pipeline</h3>
+    <p>DNS metadata is one of the most frequently exploited vectors for tracking user behavior and conducting man-in-the-middle (MITM) hijacking. SENTINEL Mobile Shield routes all name lookups through a private, loopback-accessible resolver configured exclusively for encrypted upstream queries (DNS-over-HTTPS) with mandatory DNSSEC cryptographic verification. No plaintext UDP/53 packets ever escape the tunnel boundary.</p>
+
+    <h3>4. Identity Layer — Per-Device Cryptographic Isolation</h3>
+    <p>Traditional enterprise mobile access frequently shares bulk certificates or global gateway credentials, expanding the blast radius when a single device is compromised or decommissioned. In this architecture, every mobile endpoint is provisioned with a unique public/private keypair, dedicated tunnel interface address, and unique preshared secret. If an endpoint requires suspension, its public key and routing entry are removed immediately at the gateway with zero disruption to remaining endpoints.</p>
+
+    <h3>5. Exposure Mitigation — Origin Anonymization &amp; Location Masking</h3>
+    <p>External destination hosts and edge content providers interact exclusively with the security relay's cloud IP address and autonomous system (AS). The endpoint's underlying physical IP, ISP telemetry, and coarse physical location remain shielded from network observers, hostile access points, and remote services.</p>
+
+    <h2>System Comparison: Baseline vs. Hardened Gateway Tunnel</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Security Vector</th>
+          <th>Baseline Mobile Connection</th>
+          <th>SENTINEL Mobile Shield Gateway</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Local Wireless Traffic</strong></td>
+          <td>Visible to local network operators, rogue APs, and on-path sniffers</td>
+          <td>End-to-end ChaCha20-Poly1305 authenticated encryption (AEAD)</td>
+        </tr>
+        <tr>
+          <td><strong>DNS Name Resolution</strong></td>
+          <td>Plaintext UDP/53, vulnerable to ISP tracking, MITM, and cache poisoning</td>
+          <td>Encrypted DoH + cryptographic DNSSEC validation; no leaks</td>
+        </tr>
+        <tr>
+          <td><strong>Dual-Stack (IPv6) Leakage</strong></td>
+          <td>High risk of silent IPv6 bypass on dual-stack carrier networks</td>
+          <td>Comprehensive dual-stack encapsulation (IPv4 + IPv6)</td>
+        </tr>
+        <tr>
+          <td><strong>Threat &amp; C2 Detection</strong></td>
+          <td>None in transit; reliant purely on on-device application sandboxing</td>
+          <td>Inline Intrusion Detection System (IDS) scored on the live packet path</td>
+        </tr>
+        <tr>
+          <td><strong>Origin IP &amp; Geolocation</strong></td>
+          <td>Exposed directly to all contacted servers and transit providers</td>
+          <td>Masked behind hardened security relay IP and gateway identity</td>
+        </tr>
+        <tr>
+          <td><strong>Credential &amp; Identity Scope</strong></td>
+          <td>Often shared profiles or centralized pre-shared secrets</td>
+          <td>Strict 1:1 keypair isolation with instant individual revocation</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>End-to-End Traffic Path</h2>
+    <p>The lifecycle of a packet dispatched from a protected mobile endpoint follows a strict cryptographic and analytical sequence:</p>
+
+    <pre><code>[ Mobile Endpoint (iOS / iPadOS / Android) ]
+  │  • Dedicated Ephemeral Keypair (Noise IK)
+  │  • Unique Preshared Secret (PSK)
+  │  • Dual-Stack Encapsulation (IPv4 + IPv6)
+  ▼
+[ Encrypted Transport Tunnel ]
+  │  • ChaCha20-Poly1305 AEAD
+  │  • Cryptographic Zero-Trust Boundary
+  ▼
+[ SENTINEL Cloud Security Relay Gateway ]
+  ├─► [ Inline Threat Engine ] ── Live-path IDS &amp; signature analysis
+  ├─► [ DNS Pipeline ]        ── DNSSEC cryptographic check via Encrypted DoH
+  └─► [ Gateway NAT &amp; Egress ]
+        │
+        ▼
+[ Public Internet &amp; Services ]
+  (Sees only Gateway Identity · Zero endpoint exposure)</code></pre>
+
+    <h2>Key Operational Guarantees</h2>
+    <ul>
+      <li><strong>Zero Plaintext Egress:</strong> The kernel routing table ensures all non-local packets are bound to the virtual tunnel interface; any drop in tunnel state defaults to a closed circuit rather than fail-open cleartext exposure.</li>
+      <li><strong>Cryptographic Simplicity:</strong> By utilizing modern primitives (Curve25519, ChaCha20, Poly1305, BLAKE2s), the tunnel avoids legacy cipher negotiation vulnerabilities, cipher downgrade attacks, and complex renegotiation states.</li>
+      <li><strong>Minimal Latency Overhead:</strong> Running on lightweight, in-kernel cryptographic drivers allows full line-rate packet throughput without degrading battery performance or device responsiveness.</li>
+    </ul>
+
+    <h2>Conclusion</h2>
+    <p>By shifting the mobile security boundary from passive endpoint faith to active, verifiable network assurance, SENTINEL Mobile Shield provides defense-in-depth against network surveillance, transport tampering, and targeted mobile exploitation.</p>
+
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="/about">About</a> &middot; <a href="/sitemap.xml">Sitemap</a></p>
+  </footer>
+</div>
+</body>
+</html>

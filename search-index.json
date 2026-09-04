@@ -1,5 +1,13 @@
 [
   {
+    "title": "SENTINEL Mobile Shield: Hardened Endpoint Security & Zero-Trust Tunnel Architecture",
+    "url": "/articles/sentinel-mobile-shield",
+    "section": "Articles",
+    "tag": "Security Architecture",
+    "description": "Architecture and capability overview of SENTINEL Mobile Shield: dual-stack ChaCha20-Poly1305 encryption, inline live intrusion detection, DNSSEC-validated DoH, and zero-trust per-device isolation.",
+    "keywords": "SENTINEL, mobile security, WireGuard, zero trust, ChaCha20-Poly1305, DoH, DNSSEC, inline IDS, endpoint security, iOS, Android, Ioannis Konstas"
+  },
+  {
     "title": "AI Large Language Model (LLM) Platform",
     "url": "https://ai.konstas.us/",
     "section": "AI & LLM Platform",
