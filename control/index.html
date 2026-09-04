@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/control/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CONTROL: The Art of the Full-Lock U-Turn — Konstas Engineering Notes</title>
+<meta name="description" content="Precision control, balance, and the physics of the full-lock motorcycle U-turn. Step-by-step masterclass, control triangle, and practice progression.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/control/">
+<meta property="og:title" content="CONTROL: The Art of the Full-Lock U-Turn">
+<meta property="og:description" content="Step-by-step masterclass: The three inputs, counterweighting, vision, and practice progressions for tight motorcycle slow-speed control.">
+<meta property="og:image" content="https://ikonstas70.github.io/control/hero.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ikonstas70.github.io/control/hero.jpg">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<style>
+  .hero-img-box {
+    margin: 24px 0 34px;
+    text-align: center;
+  }
+  .hero-img-box img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+  }
+  .highlight-card {
+    background: var(--card);
+    border: 1px solid var(--accent-dim);
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin: 24px 0;
+  }
+  .panic-callout {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin: 24px 0;
+  }
+  .panic-callout h3 {
+    color: hsl(4 80% 70%);
+    margin-top: 0;
+  }
+  .panic-callout ul {
+    color: hsl(4 60% 85%);
+  }
+  .ref-list li {
+    margin-bottom: 14px;
+    line-height: 1.65;
+  }
+  .ref-list em {
+    color: var(--fg-dim);
+    font-size: 0.9em;
+    display: block;
+    margin-top: 3px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .55);margin:6px 22px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/control/" class="active">Control</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Motorcycle Dynamics</span>
+    <h1>CONTROL: The Art &amp; Physics of the Full-Lock U-Turn</h1>
+    <p class="meta">Masterclass &middot; September 2026 &middot; Ioannis Konstas</p>
+
+    <div class="hero-img-box">
+      <img src="/control/hero.jpg" alt="Ducati Streetfighter Rider at Rest">
+    </div>
+
+    <div class="masthead-quote">
+      <p>&ldquo;A bike at low speed doesn't fall because it's slow. It falls because you stop driving it.&rdquo;</p>
+    </div>
+
+    <h2>⚡ Summary</h2>
+    <div class="highlight-card">
+      <p><strong>The Core Formula in 30 Seconds:</strong></p>
+      <ul>
+        <li><strong>The Triangle of Inputs:</strong> Hold constant throttle (<strong>2,000–3,000 RPM</strong>), drag the rear brake (<strong>5–10 kg pressure</strong>), and continuously slip the clutch in its <strong>3–5 mm friction zone</strong>.</li>
+        <li><strong>Counterweight Posture:</strong> Let the motorcycle drop beneath you while your torso remains tall, loading all your weight into the <strong>outside footpeg</strong>.</li>
+        <li><strong>Unbroken Visual Commitment:</strong> Turn your head completely around (<strong>chin to collarbone</strong>) and fixate on the exit point before you turn the bars.</li>
+        <li><strong>The Cardinal Rule:</strong> In moments of panic, <em>never</em> chop the throttle, pull the clutch in, or touch the front brake.</li>
+      </ul>
+      <p style="margin-bottom:0; font-size:0.92rem; color:var(--fg-dim);">
+        Slow-speed motorcycle maneuvering is counter-intuitive: instinct tells riders to slow down, pull in the clutch, and look where they fear falling. Physics demands the exact opposite.
+      </p>
+    </div>
+
+    <h2>1. Setup &amp; Baseline</h2>
+    <ul>
+      <li><strong>Surface:</strong> Empty, flat, clean asphalt with zero gravel, oil, or slope (early morning empty parking lot).</li>
+      <li><strong>Gear:</strong> Full protective riding gear.</li>
+      <li><strong>Fuel:</strong> Tank half-full or less (lowers overall weight and center of mass).</li>
+      <li><strong>Warm-up:</strong> Tyres and engine up to operating temperature.</li>
+      <li><strong>Know your turn-out radius:</strong> At a complete stop, turn handlebars to full lock one way and note how tight the bike wants to go. That is your target circle &mdash; <em>it is tighter than you think</em>.</li>
+    </ul>
+
+    <h2>2. The Three Inputs &mdash; Hold All Constantly</h2>
+    <blockquote>
+      Think of it as: <strong>Throttle</strong> pulls the bike forward and upright, <strong>Rear Brake</strong> holds it back and tight, and <strong>Clutch</strong> modulates between the two. You are riding the bike suspended between the engine drive and the rear brake.
+    </blockquote>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Input</th>
+          <th>Technique &amp; Nuance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Clutch</strong></td>
+          <td>Pull in past the bite, then ease out to where the bike just pulls. <strong>Live in that 3–5 mm window the whole turn.</strong> If you need less speed, pull in slightly; more, let out slightly. <em>You are slipping it on purpose.</em></td>
+        </tr>
+        <tr>
+          <td><strong>Throttle</strong></td>
+          <td>Set it slightly above idle (<strong>2,000–3,000 RPM</strong>) and <strong>freeze your wrist</strong>. A constant, slightly elevated engine speed is what holds the bike up. <em>The single biggest cause of dropping it is rolling off the throttle mid-turn.</em></td>
+        </tr>
+        <tr>
+          <td><strong>Rear Brake</strong></td>
+          <td>Rest your foot on it and apply light, steady pressure (like standing on a bathroom scale reading <strong>5–10 kg</strong>). This pulls the bike into a tighter arc and deletes the wobble. <strong>Front brake stays fully released</strong> &mdash; a dab of front at full lock = the bike tucks and goes down instantly.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Body &mdash; Counterweight</h2>
+    <ul>
+      <li><strong>Shift:</strong> Before initiating the turn, shift your butt slightly to the <strong>outside</strong> of the seat.</li>
+      <li><strong>Peg Pressure:</strong> Weight the <strong>outside footpeg</strong> &mdash; press down firmly like you're standing on it.</li>
+      <li><strong>Torso:</strong> Keep your torso upright (or lean it slightly away from the turn). The bike drops in; <strong>you stay tall</strong>.</li>
+      <li><strong>Arms &amp; Grip:</strong> Keep elbows loose; don't fight the handlebars. Loose grip &mdash; death-gripping transmits every upper-body twitch into the steering.</li>
+    </ul>
+
+    <h2>4. Vision &mdash; 50% of the Maneuver</h2>
+    <ul>
+      <li><strong>Spot the Exit:</strong> Before you initiate, turn your head and find your exit point &mdash; look over your shoulder, past where you will finish (<strong>chin to collarbone</strong>).</li>
+      <li><strong>Hold the Line of Sight:</strong> Keep looking there the entire turn. <em>Your hands follow your eyes automatically.</em></li>
+      <li><strong>Avoid Target Fixation:</strong> Never glance down at the front wheel or the curb/edge you're worried about. <em>You steer into whatever you stare at.</em></li>
+    </ul>
+
+    <h2>5. Execution Sequence</h2>
+    <pre><code>[Approach]          Walking pace in 1st · Friction zone + 2.5k RPM + Light rear drag
+    │
+    ▼
+[Head Turn]         Snap eyes to exit over shoulder (chin to collarbone)
+    │
+    ▼
+[Drop & Turn]       Press inside handlebar · Bars toward full lock
+    │
+    ▼
+[Counterweight]     Outside peg loaded · Torso upright & tall
+    │
+    ▼
+[Hold Inputs]       Maintain steady throttle, clutch slip & rear drag
+    │
+    ▼
+[Smooth Exit]       Ease bike upright · Feed clutch out · Roll on gently</code></pre>
+
+    <ol>
+      <li>Rolling at a slow walking pace in 1st gear, clutch in the friction zone, throttle steady at ~2,500 RPM, right foot lightly on the rear brake.</li>
+      <li>Head turns first &mdash; eyes locked on the exit.</li>
+      <li>Press the inside bar / let the bike fall into the lean, bars moving toward full lock.</li>
+      <li>Counterweight: outside peg loaded, body upright.</li>
+      <li>Hold everything steady &mdash; clutch, throttle, rear brake, eyes. Do not change anything abruptly.</li>
+      <li>As you see the exit come up in your vision, ease the bike upright, feed the clutch out, and roll on gently.</li>
+    </ol>
+
+    <div class="panic-callout">
+      <h3>⚠️ If It Starts to Fall Into the Turn (The Save)</h3>
+      <p><strong>Add throttle and rear brake together, keeping your eyes up.</strong></p>
+      <ul>
+        <li>✖ <strong>Do NOT chop the throttle</strong></li>
+        <li>✖ <strong>Do NOT grab the clutch all the way in</strong></li>
+        <li>✖ <strong>Do NOT touch the front brake</strong></li>
+      </ul>
+      <p style="margin-bottom:0; font-size:0.9em;"><em>Those are the three panic reflexes that turn a save into an instant drop.</em></p>
+    </div>
+
+    <h2>6. Practice Progression</h2>
+    <h3>Phase 1: On the Bicycle (10–15 min sessions)</h3>
+    <ul>
+      <li><strong>Slow Circles:</strong> Ride a slow circle, both feet on pedals, coasting. Turn your head and look behind you through the circle.</li>
+      <li><strong>Shrink the Radius:</strong> Feel the bike lean beneath you while keeping your torso upright.</li>
+      <li><strong>Figure-8s:</strong> Practice transitions and head-turns in a compact footprint.</li>
+      <li><strong>Track-Stand:</strong> Balancing near-stationary trains subconscious micro-corrections.</li>
+    </ul>
+
+    <h3>Phase 2: On the Motorcycle</h3>
+    <ul>
+      <li><strong>Big Lazy Circle:</strong> Feet up, one direction. Steady clutch + throttle + slight rear brake drag.</li>
+      <li><strong>Inward Spiral:</strong> Spiral inward turn by turn until the bars hit the lock stop and you can hold it.</li>
+      <li><strong>Switch Direction:</strong> Do it the other direction (spend double the time on your weaker side).</li>
+      <li><strong>Figure-8:</strong> Between two parking space lines (~5 m).</li>
+      <li><strong>Single Lane U-Turn:</strong> Full U-turn inside one lane width (~3.5 m).</li>
+      <li><strong>The 6m Box:</strong> Mark a 6 m box with cones/chalk and do U-turns inside it (<em>the standard motor-officer test</em>).</li>
+      <li><strong>Refinement:</strong> One hand on the bars, head fully around, tighter radius.</li>
+    </ul>
+
+    <h2>7. Conclusion: The Psychology of Slow-Speed Mastery</h2>
+    <p>Speed covers up poor technique; low speed exposes everything. At 60 mph, gyroscopic forces stabilize the machine on your behalf. At 3 mph, <strong>you</strong> must manufacture stability through mechanical tension &mdash; holding engine drive against the rear brake while floating in the clutch friction zone.</p>
+    
+    <p>When you conquer the full-lock U-turn, you eliminate the anxiety of tight parking structures, dead-end roads, and narrow switchbacks, replacing the instinct to put your feet down with the instinct to drive the machine forward.</p>
+
+    <div class="masthead-quote" style="margin: 28px auto;">
+      <p>&ldquo;Reps beat theory. 20 minutes of slow circles twice a week, and in a month a full-lock U-turn in one lane feels normal.&rdquo;</p>
+    </div>
+
+    <h2>8. References &amp; Further Reading</h2>
+    <ul class="ref-list">
+      <li>
+        <strong>1. Hough, David L. (2000).</strong> <a href="https://www.goodreads.com/book/show/90605.Proficient_Motorcycling" target="_blank" rel="noopener noreferrer"><em>Proficient Motorcycling: The Ultimate Guide to Riding Well</em></a> &mdash; BowTie Press.
+        <em>Foundational treatise on slow-speed dynamics, friction zone modulation, counterweighting, and low-speed balance physics.</em>
+      </li>
+      <li>
+        <strong>2. Code, Keith (1993).</strong> <a href="https://superbikeschool.com/about-us/keith-code/" target="_blank" rel="noopener noreferrer"><em>A Twist of the Wrist II: The Basics of High-Performance Motorcycle Riding</em></a> &mdash; Code Break Books / California Superbike School.
+        <em>Comprehensive study of "Survival Reactions" (SRs) &mdash; the instinctive panic impulses (throttle chop, target fixation) that cause low-speed drops.</em>
+      </li>
+      <li>
+        <strong>3. Palladino, Jerry &ldquo;Motorman&rdquo; (2003–Present).</strong> <a href="https://www.ridelikeapro.com" target="_blank" rel="noopener noreferrer"><em>Ride Like a Pro: The Police Motor Officer Technique</em></a>.
+        <em>Definitive motor-officer training method detailing elevated engine RPM, rear brake trail drag, and extreme head rotation in tight cone patterns.</em>
+      </li>
+      <li>
+        <strong>4. Parks, Lee (2003).</strong> <a href="https://totalcontrol.net" target="_blank" rel="noopener noreferrer"><em>Total Control: High Performance Street Riding Techniques</em></a> &mdash; Motorbooks.
+        <em>Detailed biomechanics of chassis geometry, counterweighting, and psychological discipline for precision motorcycle maneuvering.</em>
+      </li>
+      <li>
+        <strong>5. Motorcycle Safety Foundation (MSF) (2020).</strong> <a href="https://msf-usa.org" target="_blank" rel="noopener noreferrer"><em>Basic RiderCourse &amp; Advanced RiderCourse Rider Handbooks</em></a>.
+        <em>Standardized curriculum for low-speed maneuvering, friction-zone clutch modulation, and the 20-foot U-turn evaluation.</em>
+      </li>
+      <li>
+        <strong>6. Northwestern University Center for Public Safety (2018).</strong> <a href="https://nucps.northwestern.edu" target="_blank" rel="noopener noreferrer"><em>Police Motorcycle Instructor Training &amp; Rodeo Skills Manual</em></a>.
+        <em>Standardized tight-quarters motorcycle rodeo patterns, the 18–24 ft slow cone box, and synchronized control input dynamics.</em>
+      </li>
+    </ul>
+
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=control",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>
