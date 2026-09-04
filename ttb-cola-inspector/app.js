@@ -1,5 +1,5 @@
 // ============================================================================
-// TTB COLA Label Compliance AI Inspector — Client-Side 27 CFR Engine
+// TTB COLA Label Compliance AI Inspector — Client-Side 27 CFR & Tesseract OCR
 // ============================================================================
 
 const STATUTORY_HEADER = "GOVERNMENT WARNING:";
@@ -8,53 +8,84 @@ const STATUTORY_CLAUSE_2 = "(2) Consumption of alcoholic beverages impairs your 
 const FULL_STATUTORY_WARNING = `${STATUTORY_HEADER} ${STATUTORY_CLAUSE_1} ${STATUTORY_CLAUSE_2}`;
 
 const ABBREVIATION_MAP = {
-    "co": "company", "co.": "company", "corp": "corporation", "corp.": "corporation",
-    "inc": "incorporated", "inc.": "incorporated", "ltd": "limited", "ltd.": "limited",
-    "dist": "distillery", "dist.": "distillery", "distill": "distillery", "distilling": "distillery",
-    "brewing": "brewery", "brew": "brewery", "vintners": "winery", "vineyards": "winery",
-    "st": "saint", "st.": "saint", "ky": "kentucky", "ca": "california", "ny": "new york",
-    "tx": "texas", "or": "oregon", "wa": "washington", "nv": "nevada"
+    "co": "company",
+    "dist": "distilling",
+    "distil": "distilling",
+    "distill": "distilling",
+    "distillers": "distilling",
+    "corp": "corporation",
+    "inc": "incorporated",
+    "ltd": "limited",
+    "llc": "limited liability company",
+    "alc": "alcohol",
+    "vol": "volume",
+    "fl": "fluid",
+    "oz": "ounces",
+    "ky": "kentucky",
+    "ca": "california",
+    "nv": "nevada",
+    "tx": "texas",
+    "ny": "new york",
+    "tn": "tennessee",
+    "st": "saint",
+    "rd": "road",
+    "ave": "avenue"
 };
 
+let currentSamples = [];
+let selectedSample = null;
+let currentReport = null;
+let currentImageSrc = null;
+let cachedOcrText = null;
+let cachedOcrBoxes = [];
+let isOcrRunning = false;
+
 // ----------------------------------------------------------------------------
-// String & Fuzzy Matching Utilities (Client-Side Rapid Matching)
+// Fuzzy String Matching & Token Similarity Algorithms
 // ----------------------------------------------------------------------------
 
 function normalizeString(str) {
     if (!str) return "";
-    return str.toLowerCase()
-              .replace(/[^\w\s%]/g, " ")
-              .replace(/\s+/g, " ")
-              .trim();
+    return str
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 function expandAbbreviations(str) {
-    const words = str.split(/\s+/);
-    const expanded = words.map(w => ABBREVIATION_MAP[w.toLowerCase()] || w);
+    const words = normalizeString(str).split(" ");
+    const expanded = words.map(w => ABBREVIATION_MAP[w] || w);
     return expanded.join(" ");
 }
 
 function levenshteinDistance(s1, s2) {
-    const a = s1 || "", b = s2 || "";
-    const m = a.length, n = b.length;
+    const a = s1 || "";
+    const b = s2 || "";
+    const m = a.length;
+    const n = b.length;
+
     if (m === 0) return n;
     if (n === 0) return m;
 
     const matrix = [];
-    for (let i = 0; i <= m; i++) matrix[i] = [i];
-    for (let j = 0; j <= n; j++) matrix[0][j] = j;
+    for (let i = 0; i <= n; i++) matrix[i] = [i];
+    for (let j = 0; j <= m; j++) matrix[0][j] = j;
 
-    for (let i = 1; i <= m; i++) {
-        for (let j = 1; j <= n; j++) {
-            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-            matrix[i][j] = Math.min(
-                matrix[i - 1][j] + 1,
-                matrix[i][j - 1] + 1,
-                matrix[i - 1][j - 1] + cost
-            );
+    for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1, // substitution
+                    matrix[i][j - 1] + 1,     // insertion
+                    matrix[i - 1][j] + 1      // deletion
+                );
+            }
         }
     }
-    return matrix[m][n];
+    return matrix[n][m];
 }
 
 function stringSimilarityRatio(s1, s2) {
@@ -65,8 +96,8 @@ function stringSimilarityRatio(s1, s2) {
 }
 
 function tokenSortRatio(s1, s2) {
-    const t1 = s1.split(/\s+/).sort().join(" ");
-    const t2 = s2.split(/\s+/).sort().join(" ");
+    const t1 = normalizeString(s1).split(" ").filter(Boolean).sort().join(" ");
+    const t2 = normalizeString(s2).split(" ").filter(Boolean).sort().join(" ");
     return stringSimilarityRatio(t1, t2);
 }
 
@@ -163,7 +194,7 @@ function verifyAbvCompliance(appAbvStr, labelText) {
 }
 
 // ----------------------------------------------------------------------------
-// Strict 27 CFR Part 16 Government Warning Validator
+// Strict 27 CFR Part 16 Government Warning Validator & Visual Diff
 // ----------------------------------------------------------------------------
 
 function validateGovernmentWarning(extractedText) {
@@ -182,7 +213,7 @@ function validateGovernmentWarning(extractedText) {
             headerValid = true;
         } else if (headerDetected === "GOVERNMENT WARNING") {
             issues.push("PUNCTUATION ERROR: 'GOVERNMENT WARNING' is missing required trailing colon (:).");
-        } else if (headerDetected === headerDetected.toUpperCase()) {
+        } else if (headerDetected === headerDetected.toUpperCase() && headerDetected.endsWith(":")) {
             headerValid = true;
         } else {
             issues.push(`CASE VIOLATION (27 CFR § 16.21): Header must appear in ALL CAPITAL LETTERS. Found '${headerDetected}' instead of 'GOVERNMENT WARNING:'.`);
@@ -192,11 +223,11 @@ function validateGovernmentWarning(extractedText) {
     let warningSegment = "";
     if (headerMatch) {
         const start = headerMatch.index;
-        warningSegment = text.substring(start, start + 400).trim();
+        warningSegment = text.substring(start, start + 450).trim();
     } else {
         const sgMatch = text.match(/surgeon\s+general/i);
         if (sgMatch) {
-            warningSegment = text.substring(Math.max(0, sgMatch.index - 30), sgMatch.index + 400).trim();
+            warningSegment = text.substring(Math.max(0, sgMatch.index - 30), sgMatch.index + 450).trim();
         }
     }
 
@@ -245,6 +276,46 @@ function validateGovernmentWarning(extractedText) {
     };
 }
 
+function renderWarningDiffHtml(valResult) {
+    if (!valResult) return "";
+    
+    const escapeHtml = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const headerCls = valResult.header_valid ? "diff-highlight-good" : "diff-highlight-bad";
+    const c1Cls = valResult.pregnancy_clause_valid ? "diff-highlight-good" : "diff-highlight-bad";
+    const c2Cls = valResult.machinery_clause_valid ? "diff-highlight-good" : "diff-highlight-bad";
+
+    return `
+    <div class="diff-container">
+        <div class="diff-row">
+            <div class="diff-label">Statutory Rule:</div>
+            <div class="diff-content" style="color:#38bdf8;">
+                <span class="diff-highlight-good">GOVERNMENT WARNING:</span> (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.
+            </div>
+        </div>
+        <div class="diff-row">
+            <div class="diff-label">Artwork Extracted:</div>
+            <div class="diff-content">
+                ${valResult.raw_extracted_warning ? `
+                    <span class="${headerCls}">${escapeHtml(valResult.header_detected_text || 'HEADER MISSING')}</span>
+                    <span class="${c1Cls}">${valResult.pregnancy_clause_valid ? 'Surgeon General Pregnancy Clause Verified' : '<span class="diff-missing">[Clause 1 Pregnancy Warning Missing/Malformed]</span>'}</span> &middot;
+                    <span class="${c2Cls}">${valResult.machinery_clause_valid ? 'Machinery & Health Warning Clause Verified' : '<span class="diff-missing">[Clause 2 Impairment Warning Missing/Malformed]</span>'}</span>
+                ` : '<span class="diff-highlight-bad">[NO GOVERNMENT WARNING DETECTED ON LABEL ARTWORK]</span>'}
+            </div>
+        </div>
+        ${valResult.issues.length > 0 ? `
+            <div class="diff-row" style="border-top:1px solid #334155;padding-top:6px;margin-top:6px;">
+                <div class="diff-label" style="color:#ef4444;">Violations Found:</div>
+                <div class="diff-content" style="color:#f87171;">
+                    <ul style="margin:0;padding-left:16px;">
+                        ${valResult.issues.map(i => `<li>${escapeHtml(i)}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        ` : ''}
+    </div>
+    `;
+}
+
 // ----------------------------------------------------------------------------
 // Full 27 CFR Label Compliance Audit Orchestrator
 // ----------------------------------------------------------------------------
@@ -258,164 +329,294 @@ function runComplianceAudit(app, extractedText, boundingBoxes = []) {
     const brandMatch = matchFieldText(app.brand_name, extractedText, 0.85);
     const brandStatus = brandMatch.confidence >= 0.85 ? "COMPLIANT" : (brandMatch.confidence >= 0.65 ? "WARNING_REVIEW" : "REJECTED_MISMATCH");
     fieldResults.push({
-        field_name: "brand_name",
-        display_name: "Brand Name",
+        field: "Brand Name",
+        cfr_reference: "27 CFR § 4.32 / § 5.32 / § 7.22",
         application_value: app.brand_name,
         extracted_value: brandMatch.extracted,
-        status: brandStatus,
         confidence: brandMatch.confidence,
+        status: brandStatus,
         explanation: brandMatch.explanation,
-        is_mandatory: true
+        bbox_index: 0
     });
+    if (brandStatus !== "COMPLIANT") summaryNotes.push(`Brand Name: ${brandMatch.explanation}`);
 
     // 2. Class / Type Designation
     const classMatch = matchFieldText(app.class_type, extractedText, 0.80);
     const classStatus = classMatch.confidence >= 0.80 ? "COMPLIANT" : (classMatch.confidence >= 0.60 ? "WARNING_REVIEW" : "REJECTED_MISMATCH");
     fieldResults.push({
-        field_name: "class_type",
-        display_name: "Class / Type Designation",
+        field: "Class / Type Designation",
+        cfr_reference: "27 CFR § 4.34 / § 5.35 / § 7.24",
         application_value: app.class_type,
         extracted_value: classMatch.extracted,
-        status: classStatus,
         confidence: classMatch.confidence,
+        status: classStatus,
         explanation: classMatch.explanation,
-        is_mandatory: true
+        bbox_index: 1
     });
+    if (classStatus !== "COMPLIANT") summaryNotes.push(`Class/Type: ${classMatch.explanation}`);
 
-    // 3. Alcohol by Volume (ABV) & Proof
-    const abvMatch = verifyAbvCompliance(app.alcohol_content, extractedText);
-    const abvStatus = abvMatch.confidence >= 0.85 ? "COMPLIANT" : (abvMatch.confidence >= 0.50 ? "WARNING_REVIEW" : "REJECTED_MISMATCH");
+    // 3. Alcohol Content (ABV & Proof)
+    const abvResult = verifyAbvCompliance(app.alcohol_content, extractedText);
+    const abvStatus = abvResult.confidence >= 0.90 ? "COMPLIANT" : (abvResult.confidence >= 0.60 ? "WARNING_REVIEW" : "REJECTED_MISMATCH");
     fieldResults.push({
-        field_name: "alcohol_content",
-        display_name: "Alcohol Content (ABV & Proof)",
+        field: "Alcohol by Volume (ABV)",
+        cfr_reference: "27 CFR § 4.36 / § 5.37 / § 7.71",
         application_value: app.alcohol_content,
-        extracted_value: abvMatch.extracted,
+        extracted_value: abvResult.extracted,
+        confidence: abvResult.confidence,
         status: abvStatus,
-        confidence: abvMatch.confidence,
-        explanation: abvMatch.explanation,
-        is_mandatory: true
+        explanation: abvResult.explanation,
+        bbox_index: 2
     });
+    if (abvStatus !== "COMPLIANT") summaryNotes.push(`ABV/Proof: ${abvResult.explanation}`);
 
     // 4. Net Contents
     const netMatch = matchFieldText(app.net_contents, extractedText, 0.85);
-    const netStatus = netMatch.confidence >= 0.85 ? "COMPLIANT" : "REJECTED_MISMATCH";
+    const netStatus = netMatch.confidence >= 0.85 ? "COMPLIANT" : (netMatch.confidence >= 0.60 ? "WARNING_REVIEW" : "REJECTED_MISMATCH");
     fieldResults.push({
-        field_name: "net_contents",
-        display_name: "Net Contents",
+        field: "Net Contents",
+        cfr_reference: "27 CFR § 4.37 / § 5.38 / § 7.27",
         application_value: app.net_contents,
         extracted_value: netMatch.extracted,
-        status: netStatus,
         confidence: netMatch.confidence,
+        status: netStatus,
         explanation: netMatch.explanation,
-        is_mandatory: true
+        bbox_index: 3
     });
+    if (netStatus !== "COMPLIANT") summaryNotes.push(`Net Contents: ${netMatch.explanation}`);
 
-    // 5. Bottler / Producer Name & Address
-    const bottlerMatch = matchFieldText(app.bottler_name_address, extractedText, 0.75);
-    const bottlerStatus = bottlerMatch.confidence >= 0.75 ? "COMPLIANT" : (bottlerMatch.confidence >= 0.50 ? "WARNING_REVIEW" : "REJECTED_MISMATCH");
+    // 5. Name & Address of Bottler/Producer
+    const bottlerMatch = matchFieldText(app.bottler_name_address, extractedText, 0.70);
+    const bottlerStatus = bottlerMatch.confidence >= 0.70 ? "COMPLIANT" : (bottlerMatch.confidence >= 0.50 ? "WARNING_REVIEW" : "REJECTED_MISMATCH");
     fieldResults.push({
-        field_name: "bottler_name_address",
-        display_name: "Bottler Name & Address",
+        field: "Bottler Name & Address",
+        cfr_reference: "27 CFR § 4.35 / § 5.36 / § 7.25",
         application_value: app.bottler_name_address,
         extracted_value: bottlerMatch.extracted,
-        status: bottlerStatus,
         confidence: bottlerMatch.confidence,
+        status: bottlerStatus,
         explanation: bottlerMatch.explanation,
-        is_mandatory: true
+        bbox_index: 4
     });
+    if (bottlerStatus !== "COMPLIANT") summaryNotes.push(`Bottler: ${bottlerMatch.explanation}`);
 
-    // 6. Country of Origin
-    if (app.country_of_origin && !["united states", "usa", "us"].includes(app.country_of_origin.toLowerCase())) {
+    // 6. Country of Origin (if imported)
+    if (app.country_of_origin && app.country_of_origin.toLowerCase() !== "united states") {
         const originMatch = matchFieldText(app.country_of_origin, extractedText, 0.85);
+        const originStatus = originMatch.confidence >= 0.85 ? "COMPLIANT" : "REJECTED_MISMATCH";
         fieldResults.push({
-            field_name: "country_of_origin",
-            display_name: "Country of Origin",
+            field: "Country of Origin",
+            cfr_reference: "19 U.S.C. 1304 / 27 CFR Part 4/5/7",
             application_value: app.country_of_origin,
             extracted_value: originMatch.extracted,
-            status: originMatch.confidence >= 0.85 ? "COMPLIANT" : "REJECTED_MISMATCH",
             confidence: originMatch.confidence,
+            status: originStatus,
             explanation: originMatch.explanation,
-            is_mandatory: true
+            bbox_index: 5
         });
+        if (originStatus !== "COMPLIANT") summaryNotes.push(`Country of Origin: ${originMatch.explanation}`);
     }
 
-    // 7. Government Warning
-    const gwReport = validateGovernmentWarning(extractedText);
+    // 7. Strict 27 CFR Part 16 Government Warning
+    const gwAudit = validateGovernmentWarning(extractedText);
+    fieldResults.push({
+        field: "Government Health Warning Statement",
+        cfr_reference: "27 CFR Part 16 (27 U.S.C. 215)",
+        application_value: "Statutory 27 CFR Part 16 Exact Text",
+        extracted_value: gwAudit.header_detected_text || "Not Detected",
+        confidence: gwAudit.exact_text_match_ratio,
+        status: gwAudit.status,
+        explanation: gwAudit.issues.length === 0 ? "Mandatory wording, capitalization, and punctuation verified." : gwAudit.issues.join(" "),
+        bbox_index: 5
+    });
+    if (gwAudit.status !== "COMPLIANT") {
+        summaryNotes.push(...gwAudit.issues);
+    }
 
-    // Overall Status
-    const hasRejection = fieldResults.some(f => f.status === "REJECTED_MISMATCH") || gwReport.status === "REJECTED_MISMATCH";
-    const hasWarning = fieldResults.some(f => f.status === "WARNING_REVIEW") || gwReport.status === "WARNING_REVIEW";
-
+    // Determine Overall Status
     let overallStatus = "COMPLIANT";
-    let suggestedAction = "APPROVED FOR COLA CERTIFICATE ISSUANCE";
+    const hasRejection = fieldResults.some(f => f.status === "REJECTED_MISMATCH");
+    const hasWarning = fieldResults.some(f => f.status === "WARNING_REVIEW");
 
     if (hasRejection) {
         overallStatus = "REJECTED_MISMATCH";
-        suggestedAction = "REJECT — CORRECTIONS REQUIRED BEFORE COLA ISSUANCE";
     } else if (hasWarning) {
         overallStatus = "WARNING_REVIEW";
-        suggestedAction = "FLAGGED FOR AGENT MANUAL REVIEW";
     }
 
-    const confs = fieldResults.map(f => f.confidence).concat([gwReport.exact_text_match_ratio]);
-    const overallConfidence = Number((confs.reduce((a, b) => a + b, 0) / confs.length).toFixed(3));
-
-    if (overallStatus === "COMPLIANT") {
-        summaryNotes.push("All mandatory 27 CFR label requirements are verified and match the COLA application.");
-        summaryNotes.push("Government Warning statement meets exact statutory wording and formatting requirements.");
-    } else {
-        if (gwReport.issues) gwReport.issues.forEach(i => summaryNotes.push(`Government Warning: ${i}`));
-        fieldResults.forEach(f => {
-            if (f.status === "REJECTED_MISMATCH") summaryNotes.push(`${f.display_name}: ${f.explanation}`);
-            else if (f.status === "WARNING_REVIEW") summaryNotes.push(`${f.display_name} (Review): ${f.explanation}`);
-        });
-    }
-
-    const elapsedMs = Number((performance.now() - startTime).toFixed(2));
+    const confidences = fieldResults.map(f => f.confidence);
+    const avgConfidence = confidences.reduce((a, b) => a + b, 0) / (confidences.length || 1);
+    const processingTime = Math.round(performance.now() - startTime);
 
     return {
         application_id: app.application_id,
         brand_name: app.brand_name,
-        beverage_type: app.beverage_type || "Distilled Spirits",
+        beverage_type: app.beverage_type,
         overall_status: overallStatus,
-        overall_confidence: overallConfidence,
-        processing_time_ms: elapsedMs,
+        overall_confidence: Number(avgConfidence.toFixed(3)),
+        processing_time_ms: processingTime,
+        government_warning: gwAudit,
         field_results: fieldResults,
-        government_warning: gwReport,
-        extracted_raw_text: extractedText,
         summary_notes: summaryNotes,
-        suggested_action: suggestedAction,
+        suggested_action: overallStatus === "COMPLIANT" ? "APPROVE COLA CERTIFICATE (Form TTB F 5100.31)" : (overallStatus === "WARNING_REVIEW" ? "SUBMIT TO AGENT MANUAL QUEUE" : "ISSUE REJECTION DISCREPANCY NOTICE"),
         all_bounding_boxes: boundingBoxes
     };
 }
 
-// ============================================================================
-// UI Application State & Controller
-// ============================================================================
+// ----------------------------------------------------------------------------
+// Real-Time Tesseract.js WASM OCR Pipeline
+// ----------------------------------------------------------------------------
 
-let currentSamples = [];
-let selectedSample = null;
-let currentReport = null;
-let batchData = null;
+function updateOcrProgress(title, status, pct = 0) {
+    const overlay = document.getElementById('ocrProgressOverlay');
+    const titleEl = document.getElementById('ocrProgressTitle');
+    const statusEl = document.getElementById('ocrProgressStatus');
+    const fillEl = document.getElementById('ocrProgressBarFill');
+    const pctEl = document.getElementById('ocrProgressPct');
 
-document.addEventListener('DOMContentLoaded', async () => {
-    setupNavigation();
-    setupDropzone();
-    setupKeyboardShortcuts();
-    setupFormListeners();
+    if (overlay) overlay.style.display = 'flex';
+    if (titleEl && title) titleEl.innerText = title;
+    if (statusEl && status) statusEl.innerText = status;
+    if (fillEl) fillEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+    if (pctEl) pctEl.innerText = `${Math.round(pct)}%`;
+}
 
-    await loadSamples();
-});
+function hideOcrProgress() {
+    const overlay = document.getElementById('ocrProgressOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+async function runTesseractOCR(imageSrc) {
+    if (typeof Tesseract === 'undefined') {
+        console.warn("Tesseract.js CDN is unavailable. Falling back to rule parser.");
+        return { text: "", boundingBoxes: [] };
+    }
+
+    updateOcrProgress("Initializing Tesseract OCR Engine...", "Loading WASM core & trained data...", 15);
+
+    try {
+        const result = await Tesseract.recognize(
+            imageSrc,
+            'eng',
+            {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        const pct = Math.round(20 + (m.progress || 0) * 75);
+                        updateOcrProgress("Reading Label Text (WASM)...", `Recognizing text blocks... (${Math.round((m.progress || 0) * 100)}%)`, pct);
+                    } else if (m.status) {
+                        updateOcrProgress("Processing Image...", `Stage: ${m.status}...`, 20);
+                    }
+                }
+            }
+        );
+
+        const extractedText = (result.data && result.data.text) ? result.data.text.trim() : "";
+        let boundingBoxes = [];
+
+        if (result.data && result.data.lines && result.data.lines.length > 0) {
+            const img = document.getElementById('labelImg');
+            const natW = (img && img.naturalWidth) ? img.naturalWidth : (result.data.imageWidth || 800);
+            const natH = (img && img.naturalHeight) ? img.naturalHeight : (result.data.imageHeight || 800);
+
+            boundingBoxes = result.data.lines
+                .filter(line => line.text && line.text.trim().length > 1)
+                .map((line, idx) => ({
+                    x: Math.max(0, Math.min(1, line.bbox.x0 / natW)),
+                    y: Math.max(0, Math.min(1, line.bbox.y0 / natH)),
+                    w: Math.max(0.04, Math.min(1, (line.bbox.x1 - line.bbox.x0) / natW)),
+                    h: Math.max(0.03, Math.min(1, (line.bbox.y1 - line.bbox.y0) / natH)),
+                    text: line.text.trim()
+                }));
+        }
+
+        updateOcrProgress("Compliance Engine...", "Applying 27 CFR Validation Rules...", 98);
+        return { text: extractedText, boundingBoxes };
+    } catch (err) {
+        console.error("Tesseract recognition failed:", err);
+        return { text: "", boundingBoxes: [] };
+    } finally {
+        hideOcrProgress();
+    }
+}
+
+function autoFillFormFromOcr(ocrText) {
+    if (!ocrText) return;
+
+    // Brand Name: If empty, pick the first prominent non-warning line
+    const brandInput = document.getElementById('brandName');
+    if (brandInput && !brandInput.value.trim()) {
+        const lines = ocrText.split('\n').map(l => l.trim()).filter(l => l.length > 2 && !l.toLowerCase().includes('government warning'));
+        if (lines.length > 0) {
+            brandInput.value = lines[0].toUpperCase();
+        }
+    }
+
+    // ABV / Proof
+    const abvInput = document.getElementById('alcoholContent');
+    if (abvInput && !abvInput.value.trim()) {
+        const abvMatch = ocrText.match(/(\d+(?:\.\d+)?)\s*%\s*(?:alc(?:ohol)?(?:\s*(?:by|\/|\.)\s*vol(?:ume)?)?|abv)?/i);
+        const proofMatch = ocrText.match(/(\d+(?:\.\d+)?)\s*proof/i);
+        if (abvMatch && proofMatch) {
+            abvInput.value = `${abvMatch[1]}% Alc./Vol. (${proofMatch[1]} Proof)`;
+        } else if (abvMatch) {
+            abvInput.value = `${abvMatch[1]}% Alc./Vol.`;
+        } else if (proofMatch) {
+            abvInput.value = `${proofMatch[1]} Proof`;
+        }
+    }
+
+    // Net Contents
+    const netInput = document.getElementById('netContents');
+    if (netInput && !netInput.value.trim()) {
+        const netMatch = ocrText.match(/(\d+(?:\.\d+)?)\s*(?:m[lL]|fl\.?\s*oz\.?|liters?|litres?|[lL])/i);
+        if (netMatch) {
+            netInput.value = netMatch[0];
+        }
+    }
+
+    // Class / Type
+    const classInput = document.getElementById('classType');
+    if (classInput && !classInput.value.trim()) {
+        const classTypes = [
+            "Kentucky Straight Bourbon Whiskey", "Bourbon Whiskey", "Straight Rye Whiskey", "Rye Whiskey", "Whiskey",
+            "Cabernet Sauvignon", "Chardonnay", "Pinot Noir", "Red Wine", "White Wine",
+            "Double IPA", "India Pale Ale", "Stout", "Lager", "Ale", "Beer",
+            "Reposado Tequila", "Blanco Tequila", "Tequila", "Rum", "Vodka", "Gin"
+        ];
+        for (const ct of classTypes) {
+            if (ocrText.toLowerCase().includes(ct.toLowerCase())) {
+                classInput.value = ct;
+                break;
+            }
+        }
+    }
+
+    // Producer / Bottler
+    const addressInput = document.getElementById('bottlerAddress');
+    if (addressInput && !addressInput.value.trim()) {
+        const prodMatch = ocrText.match(/(?:distilled|bottled|produced|brewed|vinted|imported)\s*(?:&|and)?\s*(?:bottled\s*by)?\s*([^\n]+,[^\n]+)/i);
+        if (prodMatch) {
+            addressInput.value = prodMatch[0].trim();
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Navigation Tabs Setup
+// ----------------------------------------------------------------------------
 
 function setupNavigation() {
     const tabs = document.querySelectorAll('.nav-tab');
+    const contents = document.querySelectorAll('.tab-content');
+
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-            tab.classList.add('active');
             const target = tab.dataset.tab;
-            document.getElementById(target).classList.add('active');
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            const targetEl = document.getElementById(target);
+            if (targetEl) targetEl.classList.add('active');
         });
     });
 }
@@ -424,10 +625,10 @@ async function loadSamples() {
     try {
         const res = await fetch('sample_labels/batch_manifest.json');
         currentSamples = await res.json();
-        
+
         const select = document.getElementById('sampleSelect');
         select.innerHTML = '<option value="">-- Choose a Preloaded Compliance Test Case --</option>';
-        
+
         currentSamples.forEach((sample, idx) => {
             const opt = document.createElement('option');
             opt.value = idx;
@@ -450,6 +651,8 @@ function onSampleSelected(index) {
     if (!sample) return;
 
     selectedSample = sample;
+    cachedOcrText = null;
+    cachedOcrBoxes = [];
     const app = sample.application;
 
     document.getElementById('appId').value = app.application_id || '';
@@ -462,6 +665,7 @@ function onSampleSelected(index) {
     document.getElementById('countryOrigin').value = app.country_of_origin || 'United States';
 
     const imgUrl = `sample_labels/${sample.file}`;
+    currentImageSrc = imgUrl;
     displayImageOnCanvas(imgUrl);
 
     runClientVerification();
@@ -478,7 +682,7 @@ function displayImageOnCanvas(srcUrl) {
 function setupDropzone() {
     const dropzone = document.getElementById('customUploadDropzone');
     const fileInput = document.getElementById('customFileInput');
-    
+
     if (dropzone && fileInput) {
         dropzone.addEventListener('click', () => fileInput.click());
         dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
@@ -486,22 +690,108 @@ function setupDropzone() {
         dropzone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropzone.classList.remove('dragover');
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) handleCustomFile(e.dataTransfer.files[0]);
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                if (e.dataTransfer.files.length === 1) {
+                    handleCustomFile(e.dataTransfer.files[0]);
+                } else {
+                    handleBatchDrop(Array.from(e.dataTransfer.files));
+                }
+            }
         });
         fileInput.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files[0]) handleCustomFile(e.target.files[0]);
+            if (e.target.files && e.target.files.length > 0) {
+                if (e.target.files.length === 1) {
+                    handleCustomFile(e.target.files[0]);
+                } else {
+                    handleBatchDrop(Array.from(e.target.files));
+                }
+            }
         });
     }
 }
 
-function handleCustomFile(file) {
+async function handleCustomFile(file) {
     selectedSample = null;
+    cachedOcrText = null;
+    cachedOcrBoxes = [];
+
+    // Ensure App ID has a value
+    const appIdInput = document.getElementById('appId');
+    if (appIdInput && !appIdInput.value) {
+        appIdInput.value = `COLA-2026-UPL${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+
     const reader = new FileReader();
-    reader.onload = (e) => {
-        displayImageOnCanvas(e.target.result);
+    reader.onload = async (e) => {
+        currentImageSrc = e.target.result;
+        displayImageOnCanvas(currentImageSrc);
+
+        // Run real Tesseract OCR on the custom uploaded artwork
+        const ocr = await runTesseractOCR(currentImageSrc);
+        cachedOcrText = ocr.text;
+        cachedOcrBoxes = ocr.boundingBoxes;
+
+        // Auto-fill form from recognized text if empty
+        autoFillFormFromOcr(cachedOcrText);
+
         runClientVerification();
     };
     reader.readAsDataURL(file);
+}
+
+async function handleBatchDrop(files) {
+    const runBatchBtn = document.getElementById('runBatchBtn');
+    if (runBatchBtn) runBatchBtn.disabled = true;
+
+    updateOcrProgress("Batch OCR Queue...", `Processing ${files.length} custom label images...`, 10);
+
+    const batchResults = [];
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        updateOcrProgress("Batch OCR Queue...", `Processing file ${i + 1}/${files.length}: ${file.name}...`, Math.round(((i) / files.length) * 100));
+
+        const base64 = await new Promise(resolve => {
+            const r = new FileReader();
+            r.onload = e => resolve(e.target.result);
+            r.readAsDataURL(file);
+        });
+
+        const ocr = await runTesseractOCR(base64);
+        const autoApp = {
+            application_id: `COLA-BATCH-${1000 + i}`,
+            brand_name: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").toUpperCase(),
+            beverage_type: "Distilled Spirits",
+            class_type: "Spirits",
+            alcohol_content: "40% ABV",
+            net_contents: "750 mL",
+            bottler_name_address: "Bottler On File",
+            country_of_origin: "United States"
+        };
+
+        const rep = runComplianceAudit(autoApp, ocr.text, ocr.boundingBoxes);
+        batchResults.push({
+            application_id: rep.application_id,
+            brand_name: rep.brand_name,
+            beverage_type: rep.beverage_type,
+            class_type: autoApp.class_type,
+            overall_status: rep.overall_status,
+            overall_confidence: rep.overall_confidence,
+            processing_time_ms: rep.processing_time_ms,
+            notes: rep.summary_notes.join(" | ") || "Compliant"
+        });
+    }
+
+    hideOcrProgress();
+    renderBatchResults({
+        total_processed: batchResults.length,
+        compliant_count: batchResults.filter(r => r.overall_status === 'COMPLIANT').length,
+        warning_count: batchResults.filter(r => r.overall_status === 'WARNING_REVIEW').length,
+        rejected_count: batchResults.filter(r => r.overall_status === 'REJECTED_MISMATCH').length,
+        average_time_ms: Math.round(batchResults.reduce((a, b) => a + b.processing_time_ms, 0) / (batchResults.length || 1)),
+        results: batchResults
+    });
+
+    if (runBatchBtn) runBatchBtn.disabled = false;
 }
 
 function runClientVerification() {
@@ -512,7 +802,7 @@ function runClientVerification() {
     }
 
     const appData = {
-        application_id: document.getElementById('appId').value,
+        application_id: document.getElementById('appId').value || 'COLA-2026-DEMO',
         brand_name: document.getElementById('brandName').value,
         beverage_type: document.getElementById('beverageType').value,
         class_type: document.getElementById('classType').value,
@@ -527,7 +817,6 @@ function runClientVerification() {
 
     if (selectedSample) {
         // Built-in test cases have known high-precision visual coordinate grounds
-        const app = selectedSample.application;
         const exactWarning = "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.";
         const titleWarning = "Government Warning: (1) According to the Surgeon General women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery and may cause health problems.";
 
@@ -554,15 +843,9 @@ function runClientVerification() {
             { x: 0.05, y: 0.68, w: 0.90, h: 0.28, text: "GOVERNMENT WARNING STATEMENT" }
         ];
     } else {
-        // Dynamic fallback for custom uploaded images
-        extractedText = `${appData.brand_name}\n${appData.class_type}\n${appData.alcohol_content} | ${appData.net_contents}\n${appData.bottler_name_address}\nGOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.`;
-        boundingBoxes = [
-            { x: 0.15, y: 0.12, w: 0.70, h: 0.10, text: appData.brand_name },
-            { x: 0.15, y: 0.24, w: 0.70, h: 0.08, text: appData.class_type },
-            { x: 0.10, y: 0.45, w: 0.80, h: 0.10, text: `${appData.alcohol_content} | ${appData.net_contents}` },
-            { x: 0.10, y: 0.60, w: 0.80, h: 0.08, text: appData.bottler_name_address },
-            { x: 0.05, y: 0.72, w: 0.90, h: 0.24, text: "GOVERNMENT WARNING" }
-        ];
+        // Use true OCR extracted text from the uploaded artwork!
+        extractedText = cachedOcrText || "";
+        boundingBoxes = cachedOcrBoxes || [];
     }
 
     currentReport = runComplianceAudit(appData, extractedText, boundingBoxes);
@@ -598,64 +881,37 @@ function renderVerificationReport(report) {
             <div class="status-icon">${statusIcon}</div>
             <div class="status-text">
                 <h2>${statusHeading}</h2>
-                <p>Application ID: <strong>${report.application_id}</strong> &middot; ${report.suggested_action}</p>
+                <p>Application ID: ${report.application_id} &middot; ${report.suggested_action}</p>
             </div>
         </div>
         <div class="metrics-pill-group">
-            <div class="metric-pill">
-                <span style="font-size:0.7rem;color:#9ca3af;">SPEED</span>
-                <span class="metric-val" style="color:#38bdf8;">${report.processing_time_ms} ms</span>
+            <div class="metrics-pill">
+                <span class="label">Compliance Score</span>
+                <span class="val">${(report.overall_confidence * 100).toFixed(1)}%</span>
             </div>
-            <div class="metric-pill">
-                <span style="font-size:0.7rem;color:#9ca3af;">CONFIDENCE</span>
-                <span class="metric-val" style="color:#34d399;">${(report.overall_confidence * 100).toFixed(1)}%</span>
+            <div class="metrics-pill">
+                <span class="label">Engine Latency</span>
+                <span class="val">${report.processing_time_ms} ms</span>
             </div>
         </div>
     `;
 
-    // 2. Government Warning Inspector
+    // 2. 27 CFR Part 16 Government Warning Card with Visual Diff
     const gw = report.government_warning;
     const gwCard = document.getElementById('gwCard');
-
-    const headerBadge = gw.header_valid 
-        ? '<span class="badge badge-pass">✓ ALL CAPS "GOVERNMENT WARNING:"</span>'
-        : '<span class="badge badge-fail">✗ CASE / PUNCTUATION VIOLATION</span>';
-
-    const pClauseBadge = gw.pregnancy_clause_valid
-        ? '<span class="badge badge-pass">✓ (1) Surgeon General / Pregnancy</span>'
-        : '<span class="badge badge-fail">✗ (1) Pregnancy Warning Missing/Altered</span>';
-
-    const mClauseBadge = gw.machinery_clause_valid
-        ? '<span class="badge badge-pass">✓ (2) Machinery / Health Problems</span>'
-        : '<span class="badge badge-fail">✗ (2) Impairment Warning Missing/Altered</span>';
-
-    let issuesHtml = '';
-    if (gw.issues && gw.issues.length > 0) {
-        issuesHtml = `<div style="margin-top:10px;color:#f87171;font-size:0.85rem;">
-            <strong>Violations Detected:</strong>
-            <ul style="margin-left:20px;margin-top:4px;">
-                ${gw.issues.map(i => `<li>${i}</li>`).join('')}
-            </ul>
-        </div>`;
-    }
-
+    gwCard.className = `card ${gw.status === 'COMPLIANT' ? 'card-pass' : 'card-fail'}`;
     gwCard.innerHTML = `
-        <div class="card-header">
-            <h3>⚖️ 27 CFR Part 16 Government Health Warning Statement Check</h3>
-            <span class="badge ${gw.status === 'COMPLIANT' ? 'badge-pass' : 'badge-fail'}">${gw.status}</span>
+        <div class="card-header" style="background:${gw.status === 'COMPLIANT' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'};">
+            <h3>⚖️ 27 CFR Part 16 Government Health Warning Statement Audit</h3>
+            <span class="badge ${gw.status === 'COMPLIANT' ? 'badge-pass' : 'badge-fail'}">
+                ${gw.status === 'COMPLIANT' ? '● VERIFIED COMPLIANT' : '▲ STATUTORY VIOLATIONS DETECTED'}
+            </span>
         </div>
         <div class="card-body">
-            <p style="font-size:0.85rem;color:#9ca3af;">Verifies exact uppercase bold header, Surgeon General pregnancy clause, and motor vehicle/machinery warning.</p>
-            <div class="warning-badges-row">
-                ${headerBadge}
-                ${pClauseBadge}
-                ${mClauseBadge}
-            </div>
-            ${issuesHtml}
-            <div style="margin-top:12px;">
-                <span style="font-size:0.78rem;font-weight:700;color:#9ca3af;">EXTRACTED WARNING TEXT FROM LABEL:</span>
-                <div class="extracted-quote-box">${gw.raw_extracted_warning || 'NO WARNING STATEMENT DETECTED ON ARTWORK'}</div>
-            </div>
+            <p style="font-size:0.85rem;color:#9ca3af;margin-bottom:8px;">
+                Mandatory statutory text pursuant to 27 U.S.C. 215 &amp; 27 CFR Part 16. Verifies exact uppercase bold header, Surgeon General clause, and motor vehicle/machinery warning.
+            </p>
+            ${renderWarningDiffHtml(gw)}
         </div>
     `;
 
@@ -665,21 +921,35 @@ function renderVerificationReport(report) {
 
     report.field_results.forEach((f, idx) => {
         const row = document.createElement('tr');
-        let statusBadge = '<span class="badge badge-pass">✓ MATCH</span>';
-        if (f.status === 'REJECTED_MISMATCH') statusBadge = '<span class="badge badge-fail">✗ MISMATCH</span>';
-        else if (f.status === 'WARNING_REVIEW') statusBadge = '<span class="badge badge-warn">⚠️ REVIEW</span>';
+        row.id = `row-field-${idx}`;
+
+        let statusBadge = `<span class="badge badge-pass">● PASS</span>`;
+        if (f.status === 'REJECTED_MISMATCH') {
+            statusBadge = `<span class="badge badge-fail">▲ REJECTED</span>`;
+        } else if (f.status === 'WARNING_REVIEW') {
+            statusBadge = `<span class="badge badge-warning">◆ REVIEW</span>`;
+        }
 
         row.innerHTML = `
-            <td><strong>${f.display_name}</strong></td>
-            <td><code>${f.application_value || '&mdash;'}</code></td>
-            <td><code>${f.extracted_value || '<span style="color:#ef4444;">Not Detected</span>'}</code></td>
-            <td><strong style="color:${f.confidence >= 0.85 ? '#34d399' : '#f87171'};">${(f.confidence * 100).toFixed(0)}%</strong></td>
+            <td>
+                <strong>${f.field}</strong>
+                <span class="field-cfr">${f.cfr_reference}</span>
+            </td>
+            <td><code>${f.application_value || '—'}</code></td>
+            <td><code>${f.extracted_value || 'Not Detected'}</code></td>
+            <td><strong>${(f.confidence * 100).toFixed(0)}%</strong></td>
             <td>${statusBadge}</td>
-            <td style="font-size:0.82rem;color:#d1d5db;">${f.explanation}</td>
+            <td style="font-size:0.85rem;color:${f.status === 'REJECTED_MISMATCH' ? '#f87171' : (f.status === 'WARNING_REVIEW' ? '#fbbf24' : '#9ca3af')};">
+                ${f.explanation}
+            </td>
         `;
 
         row.addEventListener('mouseenter', () => highlightBox(idx));
         row.addEventListener('mouseleave', () => resetHighlights());
+        row.addEventListener('click', () => {
+            highlightBox(idx);
+            document.getElementById('canvasContainer')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
         tableBody.appendChild(row);
     });
 
@@ -700,12 +970,27 @@ function renderBoundingBoxes(boxes) {
         rect.style.top = `${box.y * 100}%`;
         rect.style.width = `${box.w * 100}%`;
         rect.style.height = `${box.h * 100}%`;
-        rect.title = box.text || `Field Box #${i + 1}`;
+
+        const tag = document.createElement('span');
+        tag.className = 'bbox-tag';
+        tag.innerText = box.text || `Field #${i + 1}`;
+        rect.appendChild(tag);
+
+        rect.addEventListener('mouseenter', () => {
+            const row = document.getElementById(`row-field-${i}`);
+            if (row) row.style.background = 'rgba(59, 130, 246, 0.15)';
+        });
+        rect.addEventListener('mouseleave', () => {
+            const row = document.getElementById(`row-field-${i}`);
+            if (row) row.style.background = '';
+        });
+
         overlay.appendChild(rect);
     });
 }
 
 function highlightBox(index) {
+    resetHighlights();
     const rect = document.getElementById(`bbox-${index}`);
     if (rect) rect.classList.add('highlighted');
 }
@@ -719,132 +1004,193 @@ function resetHighlights() {
 // ----------------------------------------------------------------------------
 
 function runBatchBuiltinTest() {
-    const btn = document.getElementById('runBatchBtn');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '⚡ Processing Batch (Multi-Label)...';
+    const runBatchBtn = document.getElementById('runBatchBtn');
+    if (runBatchBtn) {
+        runBatchBtn.disabled = true;
+        runBatchBtn.innerHTML = '⚡ Processing Batch Applications...';
     }
 
-    const startTime = performance.now();
-    const reports = [];
-    let compliantCount = 0, warningCount = 0, rejectedCount = 0;
-
-    const exactWarning = "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.";
-    const titleWarning = "Government Warning: (1) According to the Surgeon General women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery and may cause health problems.";
-
-    currentSamples.forEach(sample => {
-        let text = "";
-        if (sample.id === "sample-bourbon-compliant") {
-            text = `OLD TOM DISTILLERY\nKentucky Straight Bourbon Whiskey\nALC. 45% BY VOL. (90 PROOF) | NET CONTENTS 750 mL\nDistilled & Bottled by Old Tom Distilling Co., Bardstown, KY\n${exactWarning}`;
-        } else if (sample.id === "sample-bourbon-bad-warning") {
-            text = `OLD TOM DISTILLERY\nKentucky Straight Bourbon Whiskey\nALC. 45% BY VOL. (90 PROOF) | NET CONTENTS 750 mL\nDistilled & Bottled by Old Tom Distilling Co., Bardstown, KY\n${titleWarning}`;
-        } else if (sample.id === "sample-wine-compliant") {
-            text = `OAK RIDGE ESTATE\nReserve Cabernet Sauvignon - Napa Valley 2023\nALCOHOL 14.2% BY VOLUME | 750 mL\nGrown, Produced and Bottled by Oak Ridge Winery, St. Helena, CA\n${exactWarning}`;
-        } else if (sample.id === "sample-wine-abv-mismatch") {
-            text = `OAK RIDGE ESTATE\nReserve Cabernet Sauvignon - Napa Valley 2023\nALCOHOL 14.5% BY VOLUME | 750 mL\nGrown, Produced and Bottled by Oak Ridge Winery, St. Helena, CA\n${exactWarning}`;
-        } else if (sample.id === "sample-beer-compliant") {
-            text = `HIGH SIERRA BREWING\nCascade Ridge Double IPA\nALC. 8.2% BY VOL. | 12 FL. OZ. (355 mL)\nBrewed & Canned by High Sierra Brewing Co., Reno, NV\n${exactWarning}`;
-        } else if (sample.id === "sample-tequila-missing-warning") {
-            text = `DON HIDALGO\n100% De Agave Reposado Tequila\n40% ALC. VOL. (80 PROOF) | 750 mL - NOM 1414 CRT\nProduced in Arandas, Jalisco. Imported by Hacienda Imports, San Antonio, TX`;
+    const testApplications = [
+        {
+            sample_id: "sample-bourbon-compliant",
+            file: "bourbon_compliant.png",
+            application_id: "COLA-2026-88101",
+            brand_name: "OLD TOM DISTILLERY",
+            beverage_type: "Distilled Spirits",
+            class_type: "Kentucky Straight Bourbon Whiskey",
+            alcohol_content: "45% Alc./Vol. (90 Proof)",
+            net_contents: "750 mL",
+            bottler_name_address: "Old Tom Distilling Co., Bardstown, KY",
+            country_of_origin: "United States"
+        },
+        {
+            sample_id: "sample-bourbon-bad-warning",
+            file: "bourbon_bad_warning.png",
+            application_id: "COLA-2026-88102",
+            brand_name: "OLD TOM DISTILLERY",
+            beverage_type: "Distilled Spirits",
+            class_type: "Kentucky Straight Bourbon Whiskey",
+            alcohol_content: "45% Alc./Vol. (90 Proof)",
+            net_contents: "750 mL",
+            bottler_name_address: "Old Tom Distilling Co., Bardstown, KY",
+            country_of_origin: "United States"
+        },
+        {
+            sample_id: "sample-wine-compliant",
+            file: "napa_cabernet_compliant.png",
+            application_id: "COLA-2026-44910",
+            brand_name: "OAK RIDGE ESTATE",
+            beverage_type: "Wine",
+            class_type: "Cabernet Sauvignon",
+            alcohol_content: "14.2% ABV",
+            net_contents: "750 mL",
+            bottler_name_address: "Oak Ridge Winery, St. Helena, CA",
+            country_of_origin: "United States"
+        },
+        {
+            sample_id: "sample-wine-abv-mismatch",
+            file: "napa_cabernet_abv_mismatch.png",
+            application_id: "COLA-2026-44911",
+            brand_name: "OAK RIDGE ESTATE",
+            beverage_type: "Wine",
+            class_type: "Cabernet Sauvignon",
+            alcohol_content: "13.5% ABV",
+            net_contents: "750 mL",
+            bottler_name_address: "Oak Ridge Winery, St. Helena, CA",
+            country_of_origin: "United States"
+        },
+        {
+            sample_id: "sample-beer-compliant",
+            file: "craft_ipa_beer_compliant.png",
+            application_id: "COLA-2026-19302",
+            brand_name: "HIGH SIERRA BREWING",
+            beverage_type: "Malt Beverage / Beer",
+            class_type: "India Pale Ale (Double IPA)",
+            alcohol_content: "8.2% ABV",
+            net_contents: "12 FL. OZ.",
+            bottler_name_address: "High Sierra Brewing Co., Reno, NV",
+            country_of_origin: "United States"
+        },
+        {
+            sample_id: "sample-tequila-missing-warning",
+            file: "tequila_missing_warning.png",
+            application_id: "COLA-2026-62001",
+            brand_name: "DON HIDALGO",
+            beverage_type: "Distilled Spirits",
+            class_type: "Reposado Tequila",
+            alcohol_content: "40% Alc./Vol. (80 Proof)",
+            net_contents: "750 mL",
+            bottler_name_address: "Hacienda Imports, San Antonio, TX",
+            country_of_origin: "Mexico"
         }
+    ];
 
-        const rep = runComplianceAudit(sample.application, text);
-        reports.push(rep);
+    setTimeout(() => {
+        const batchResults = [];
+        testApplications.forEach(app => {
+            selectedSample = { id: app.sample_id, application: app, file: app.file };
+            const rep = runComplianceAudit(app, "", []);
+            batchResults.push({
+                application_id: rep.application_id,
+                brand_name: rep.brand_name,
+                beverage_type: rep.beverage_type,
+                class_type: app.class_type,
+                overall_status: rep.overall_status,
+                overall_confidence: rep.overall_confidence,
+                processing_time_ms: rep.processing_time_ms,
+                notes: rep.summary_notes.join(" | ") || "Compliant"
+            });
+        });
 
-        if (rep.overall_status === "COMPLIANT") compliantCount++;
-        else if (rep.overall_status === "WARNING_REVIEW") warningCount++;
-        else rejectedCount++;
-    });
+        const total = batchResults.length;
+        const compliant = batchResults.filter(r => r.overall_status === 'COMPLIANT').length;
+        const warning = batchResults.filter(r => r.overall_status === 'WARNING_REVIEW').length;
+        const rejected = batchResults.filter(r => r.overall_status === 'REJECTED_MISMATCH').length;
+        const avgTime = Math.round(batchResults.reduce((a, b) => a + b.processing_time_ms, 0) / total);
 
-    const totalTimeMs = Number((performance.now() - startTime).toFixed(2));
-    const avgTimeMs = Number((totalTimeMs / currentSamples.length).toFixed(2));
+        renderBatchResults({
+            total_processed: total,
+            compliant_count: compliant,
+            warning_count: warning,
+            rejected_count: rejected,
+            average_time_ms: avgTime,
+            results: batchResults
+        });
 
-    batchData = {
-        batch_id: "BUILTIN-TEST-BATCH",
-        total_processed: reports.length,
-        compliant_count: compliantCount,
-        warning_count: warningCount,
-        rejected_count: rejectedCount,
-        total_time_ms: totalTimeMs,
-        avg_time_per_label_ms: avgTimeMs,
-        reports
-    };
-
-    renderBatchResults(batchData);
-
-    if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '⚡ Run Built-In Importer Batch (6 Multi-Category Labels)';
-    }
+        if (runBatchBtn) {
+            runBatchBtn.disabled = false;
+            runBatchBtn.innerHTML = '⚡ Run Built-In Importer Batch (6 Multi-Category Labels)';
+        }
+    }, 150);
 }
 
 function renderBatchResults(data) {
     document.getElementById('batchKpis').style.display = 'grid';
     document.getElementById('batchResultsTableContainer').style.display = 'block';
 
-    document.getElementById('kpiTotal').textContent = data.total_processed;
-    document.getElementById('kpiCompliant').textContent = data.compliant_count;
-    document.getElementById('kpiWarning').textContent = data.warning_count;
-    document.getElementById('kpiRejected').textContent = data.rejected_count;
-    document.getElementById('kpiAvgTime').textContent = `${data.avg_time_per_label_ms} ms`;
+    document.getElementById('kpiTotal').innerText = data.total_processed;
+    document.getElementById('kpiCompliant').innerText = data.compliant_count;
+    document.getElementById('kpiWarning').innerText = data.warning_count;
+    document.getElementById('kpiRejected').innerText = data.rejected_count;
+    document.getElementById('kpiAvgTime').innerText = `${data.average_time_ms} ms`;
 
     const tbody = document.getElementById('batchTableBody');
     tbody.innerHTML = '';
 
-    data.reports.forEach(r => {
+    window._latestBatchData = data.results;
+
+    data.results.forEach(r => {
         const tr = document.createElement('tr');
-        let statusBadge = '<span class="badge badge-pass">COMPLIANT</span>';
-        if (r.overall_status === 'REJECTED_MISMATCH') statusBadge = '<span class="badge badge-fail">REJECTED</span>';
-        else if (r.overall_status === 'WARNING_REVIEW') statusBadge = '<span class="badge badge-warn">REVIEW</span>';
+        let statusBadge = `<span class="badge badge-pass">● COMPLIANT</span>`;
+        if (r.overall_status === 'REJECTED_MISMATCH') {
+            statusBadge = `<span class="badge badge-fail">▲ REJECTED</span>`;
+        } else if (r.overall_status === 'WARNING_REVIEW') {
+            statusBadge = `<span class="badge badge-warning">◆ REVIEW</span>`;
+        }
 
         tr.innerHTML = `
-            <td><strong>${r.application_id}</strong></td>
-            <td>${r.brand_name}</td>
-            <td>${r.beverage_type || 'Spirits'}</td>
+            <td><code>${r.application_id}</code></td>
+            <td><strong>${r.brand_name}</strong></td>
+            <td>${r.beverage_type} &middot; <span style="color:#9ca3af;">${r.class_type}</span></td>
             <td>${statusBadge}</td>
-            <td><strong>${(r.overall_confidence * 100).toFixed(1)}%</strong></td>
-            <td><code>${r.processing_time_ms} ms</code></td>
-            <td style="font-size:0.8rem;color:#d1d5db;">${r.summary_notes.join('; ')}</td>
+            <td><strong>${(r.overall_confidence * 100).toFixed(0)}%</strong></td>
+            <td><code style="color:#38bdf8;">${r.processing_time_ms} ms</code></td>
+            <td style="font-size:0.82rem;color:#9ca3af;">${r.notes}</td>
         `;
         tbody.appendChild(tr);
     });
 }
 
 function exportBatchCSV() {
-    if (!batchData || !batchData.reports) {
-        alert('Please run a batch first before exporting.');
-        return;
+    if (!window._latestBatchData || window._latestBatchData.length === 0) {
+        return alert("Please execute a batch processing run first.");
     }
 
-    const headers = [
-        "Application ID", "Brand Name", "Beverage Type",
-        "Overall Compliance Status", "Confidence Score (%)", "Processing Time (ms)",
-        "Government Warning Status", "Issues / Summary Notes", "Suggested TTB Agent Action"
-    ];
-
-    const rows = batchData.reports.map(r => [
+    const headers = ["Application ID", "Brand Name", "Beverage Type", "Class Type", "Compliance Status", "Confidence", "Processing Time (ms)", "Discrepancy Notes"];
+    const rows = window._latestBatchData.map(r => [
         `"${r.application_id}"`,
         `"${r.brand_name}"`,
         `"${r.beverage_type}"`,
+        `"${r.class_type}"`,
         `"${r.overall_status}"`,
         `"${(r.overall_confidence * 100).toFixed(1)}%"`,
         `"${r.processing_time_ms}"`,
-        `"${r.government_warning.status}"`,
-        `"${r.summary_notes.join(' | ').replace(/"/g, '""')}"`,
-        `"${r.suggested_action}"`
+        `"${(r.notes || "").replace(/"/g, '""')}"`
     ]);
 
-    const csvContent = [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'ttb_compliance_audit_report.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.appendChild(a);
-    URL.revokeObjectURL(url);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `TTB_COLA_Batch_Report_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
+
+// ----------------------------------------------------------------------------
+// Shortcuts & Event Handlers
+// ----------------------------------------------------------------------------
 
 function setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
@@ -855,16 +1201,18 @@ function setupKeyboardShortcuts() {
     });
 }
 
-
 function setupFormListeners() {
-    const form = document.getElementById('colaForm');
-    if (form) {
-        const inputs = form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            input.addEventListener('input', () => runClientVerification());
-            input.addEventListener('change', () => runClientVerification());
-        });
-    }
+    const inputs = ['brandName', 'beverageType', 'classType', 'alcoholContent', 'netContents', 'bottlerAddress', 'countryOrigin'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => {
+                if (currentReport) {
+                    runClientVerification();
+                }
+            });
+        }
+    });
 }
 
 // ----------------------------------------------------------------------------
@@ -874,24 +1222,65 @@ function setupFormListeners() {
 function applyCanvasFilter(filterType) {
     const img = document.getElementById('labelImg');
     if (!img) return;
-    
+
     if (filterType === 'contrast') {
         img.style.filter = 'contrast(1.8) brightness(1.1) saturate(1.2)';
     } else if (filterType === 'grayscale') {
         img.style.filter = 'grayscale(100%) contrast(1.5)';
     } else if (filterType === 'invert') {
         img.style.filter = 'invert(100%) hue-rotate(180deg)';
+    } else if (filterType === 'threshold') {
+        binarizeImageCanvas(img);
     } else {
         img.style.filter = 'none';
+        if (img.dataset.origSrc) {
+            img.src = img.dataset.origSrc;
+        }
+    }
+}
+
+function binarizeImageCanvas(img) {
+    try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+
+        let totalLum = 0;
+        for (let i = 0; i < data.length; i += 4) {
+            totalLum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        }
+        const threshold = (totalLum / (data.length / 4)) * 0.95;
+
+        for (let i = 0; i < data.length; i += 4) {
+            const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            const v = lum >= threshold ? 255 : 0;
+            data[i] = v;
+            data[i + 1] = v;
+            data[i + 2] = v;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        if (!img.dataset.origSrc) {
+            img.dataset.origSrc = img.src;
+        }
+        img.src = canvas.toDataURL();
+        img.style.filter = 'none';
+    } catch (e) {
+        console.warn('Canvas binarization error:', e);
+        img.style.filter = 'grayscale(100%) contrast(3.0) brightness(1.1)';
     }
 }
 
 function generateCOLAApproval() {
     if (!currentReport) return alert('Please verify an application first.');
-    
+
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const printWindow = window.open('', '_blank');
-    
+
     printWindow.document.write(`
     <!DOCTYPE html>
     <html>
@@ -929,29 +1318,22 @@ function generateCOLAApproval() {
         <tr><th>Field</th><th>Application Declaration</th><th>Verified Artwork Text</th><th>Status</th></tr>
         ${currentReport.field_results.map(f => `
           <tr>
-            <td><strong>${f.display_name}</strong></td>
+            <td><strong>${f.field}</strong></td>
             <td>${f.application_value}</td>
-            <td>${f.extracted_value || 'Verified'}</td>
-            <td>${f.status === 'COMPLIANT' ? 'MATCH ✓' : f.status}</td>
+            <td>${f.extracted_value}</td>
+            <td>${f.status === 'COMPLIANT' ? 'APPROVED' : f.status}</td>
           </tr>
         `).join('')}
-        <tr>
-          <td><strong>Government Health Warning</strong></td>
-          <td>27 CFR Part 16 Verbatim Statement</td>
-          <td>ALL CAPS Header &amp; Both Clauses Verified</td>
-          <td>COMPLIANT ✓</td>
-        </tr>
       </table>
 
-      <div style="text-align:center;">
-        <div class="stamp">
-          ✓ APPROVED BY TTB COMPLIANCE DIVISION<br>
-          VALID FOR DOMESTIC DISTRIBUTION &amp; CUSTOMS RELEASE
+      <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+          <div class="stamp">TTB COMPLIANCE DIVISION &bull; CERTIFIED</div>
         </div>
-      </div>
-
-      <div style="margin-top: 40px; font-size: 11px; color: #555; text-align: center;">
-        Official Record &middot; United States Alcohol and Tobacco Tax and Trade Bureau &middot; Form TTB F 5100.31
+        <div style="text-align: right; font-size: 12px;">
+          <strong>Authorized Officer:</strong> Automated 27 CFR Verification Engine<br>
+          Alcohol and Tobacco Tax and Trade Bureau
+        </div>
       </div>
       <script>window.print();</script>
     </body>
@@ -962,37 +1344,36 @@ function generateCOLAApproval() {
 
 function generateRejectionNotice() {
     if (!currentReport) return alert('Please verify an application first.');
-    
+
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const printWindow = window.open('', '_blank');
-    
+
     printWindow.document.write(`
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Notice of Rejection — ${currentReport.application_id}</title>
+      <title>Notice of Discrepancy — ${currentReport.application_id}</title>
       <style>
-        body { font-family: 'Times New Roman', serif; padding: 40px; color: #000; max-width: 800px; margin: 0 auto; }
-        .header { text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 15px; margin-bottom: 20px; }
-        .seal { font-size: 28px; font-weight: bold; color: #b91c1c; }
-        .box { border: 1px solid #b91c1c; background: #fff5f5; padding: 15px; margin-bottom: 20px; }
+        body { font-family: Arial, sans-serif; padding: 40px; color: #111; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+        .header { text-align: center; border-bottom: 2px solid #ef4444; padding-bottom: 15px; margin-bottom: 20px; }
+        .badge-fail { color: #dc2626; font-weight: bold; }
+        .box { background: #fef2f2; border: 1px solid #f87171; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
         ul { margin-top: 10px; }
-        li { margin-bottom: 8px; color: #991b1b; }
+        li { margin-bottom: 8px; }
       </style>
     </head>
     <body>
       <div class="header">
-        <div class="seal">★ DEPARTMENT OF THE TREASURY ★</div>
         <h3>ALCOHOL AND TOBACCO TAX AND TRADE BUREAU (TTB)</h3>
-        <h2>NOTICE OF PROPOSED REJECTION / REVOCATION OF APPLICATION</h2>
+        <h2 style="color:#b91c1c;">NOTICE OF PROPOSED REJECTION / REVOCATION OF APPLICATION</h2>
         <p>Form TTB F 5100.31 &bull; 27 CFR Parts 4, 5, 7, 16</p>
       </div>
 
       <div class="box">
         <strong>APPLICATION ID:</strong> ${currentReport.application_id}<br>
+        <strong>DATE OF REVIEW:</strong> ${today}<br>
         <strong>BRAND NAME:</strong> ${currentReport.brand_name}<br>
-        <strong>DATE OF NOTICE:</strong> ${today}<br>
-        <strong>STATUS:</strong> <span style="color:#b91c1c;font-weight:bold;">REJECTED — MANDATORY CORRECTIONS REQUIRED</span>
+        <strong>DETERMINATION:</strong> <span class="badge-fail">NON-COMPLIANT / REJECTED</span>
       </div>
 
       <p>Dear Applicant,</p>
@@ -1030,19 +1411,21 @@ async function loadRegistryDatabase() {
         registryDatabase = await res.json();
         renderRegistryTable(registryDatabase);
     } catch (err) {
-        console.error("Failed to load TTB registry database:", err);
+        console.warn("Using embedded registry database fallback.");
+        registryDatabase = EMBEDDED_TTB_REGISTRY;
+        renderRegistryTable(registryDatabase);
     }
 }
 
 function searchRegistry(query) {
     if (!registryDatabase || registryDatabase.length === 0) return;
     const q = (query || "").trim().toLowerCase();
-    
+
     if (!q) {
         renderRegistryTable(registryDatabase);
         return;
     }
-    
+
     const filtered = registryDatabase.filter(r => 
         (r.brand_name || "").toLowerCase().includes(q) ||
         (r.fanciful_name || "").toLowerCase().includes(q) ||
@@ -1051,7 +1434,7 @@ function searchRegistry(query) {
         (r.application_id || "").toLowerCase().includes(q) ||
         (r.bottler_name_address || "").toLowerCase().includes(q)
     );
-    
+
     renderRegistryTable(filtered);
 }
 
@@ -1059,12 +1442,12 @@ function renderRegistryTable(records) {
     const tbody = document.getElementById('registryTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    
-    if (records.length === 0) {
+
+    if (!records || records.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px;">No matching records found in the TTB Public Registry.</td></tr>';
         return;
     }
-    
+
     records.forEach(r => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -1085,9 +1468,9 @@ function renderRegistryTable(records) {
 }
 
 function importRegistryRecord(ttbId) {
-    const record = registryDatabase.find(r => r.ttb_id === ttbId);
+    const record = (registryDatabase || []).find(r => r.ttb_id === ttbId) || EMBEDDED_TTB_REGISTRY.find(r => r.ttb_id === ttbId);
     if (!record) return;
-    
+
     document.getElementById('appId').value = record.application_id;
     document.getElementById('brandName').value = record.brand_name;
     document.getElementById('beverageType').value = record.beverage_type;
@@ -1096,26 +1479,74 @@ function importRegistryRecord(ttbId) {
     document.getElementById('netContents').value = record.net_contents;
     document.getElementById('bottlerAddress').value = record.bottler_name_address;
     document.getElementById('countryOrigin').value = record.country_of_origin;
-    
+
     // Switch to Studio tab
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-    
+
     const studioTabBtn = document.querySelector('.nav-tab[data-tab="studioTab"]');
     if (studioTabBtn) studioTabBtn.classList.add('active');
     document.getElementById('studioTab').classList.add('active');
-    
+
+    // If sample file exists, preview it
+    if (record.sample_file) {
+        displayImageOnCanvas(`sample_labels/${record.sample_file}`);
+    }
+
     // Run verification
     runClientVerification();
 }
 
-// Load registry database on startup
+function initQuickRegistry() {
+    populateQuickRegistryDropdown(EMBEDDED_TTB_REGISTRY);
+}
+
+function populateQuickRegistryDropdown(records) {
+    const sel = document.getElementById('quickRegistryResults');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Or Select Verified TTB Approved Record --</option>';
+    records.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.ttb_id;
+        opt.textContent = `${r.brand_name} - ${r.class_type} (${r.ttb_id})`;
+        sel.appendChild(opt);
+    });
+}
+
+function onQuickRegistrySearch(query) {
+    const q = (query || "").trim().toLowerCase();
+    if (!q) {
+        populateQuickRegistryDropdown(EMBEDDED_TTB_REGISTRY);
+        return;
+    }
+    const filtered = EMBEDDED_TTB_REGISTRY.filter(r => 
+        r.brand_name.toLowerCase().includes(q) ||
+        r.class_type.toLowerCase().includes(q) ||
+        (r.fanciful_name && r.fanciful_name.toLowerCase().includes(q)) ||
+        r.ttb_id.includes(q)
+    );
+    populateQuickRegistryDropdown(filtered);
+}
+
+function onQuickRegistrySelected(ttbId) {
+    if (!ttbId) return;
+    importRegistryRecord(ttbId);
+}
+
+// ----------------------------------------------------------------------------
+// Startup Initialization
+// ----------------------------------------------------------------------------
+
 document.addEventListener('DOMContentLoaded', () => {
+    setupNavigation();
+    loadSamples();
+    setupDropzone();
+    setupKeyboardShortcuts();
+    setupFormListeners();
+    loadRegistryDatabase();
     initQuickRegistry();
 });
 
-
-// Embedded verified TTB Public Registry Database
 const EMBEDDED_TTB_REGISTRY = [
     {
         "ttb_id": "24088001000101",

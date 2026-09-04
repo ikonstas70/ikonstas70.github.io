@@ -50,7 +50,10 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
 
-  <link rel="stylesheet" href="style.css?v=2.0">
+  <!-- Tesseract.js WASM OCR Engine (100% Client-Side / Zero API Keys) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <link rel="stylesheet" href="style.css?v=2.1">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>">
 </head>
 <body>
@@ -217,12 +220,25 @@
                   <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('contrast')">High Contrast</button>
                   <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('grayscale')">Grayscale</button>
                   <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('invert')">Invert (Glare)</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;border-color:#3b82f6;color:#93c5fd;" onclick="applyCanvasFilter('threshold')">Binarize (OCR)</button>
                 </div>
                 <div id="imageQualityBadge" class="standards-badge" style="padding:4px 8px;font-size:0.75rem;">
                   📷 Quality Score: <span id="qualityScoreVal" style="color:#34d399;font-weight:700;">99% High Legibility</span>
                 </div>
               </div>
               <div class="viewer-container" id="canvasContainer">
+                <!-- Live Client-Side OCR Progress Indicator -->
+                <div id="ocrProgressOverlay" class="ocr-progress-overlay" style="display:none;">
+                  <div class="ocr-progress-box">
+                    <div style="font-size:1.8rem;margin-bottom:6px;">⚡</div>
+                    <h4 id="ocrProgressTitle" style="color:#60a5fa;margin-bottom:4px;font-size:1.05rem;">Running Client-Side OCR Engine...</h4>
+                    <p id="ocrProgressStatus" style="font-size:0.8rem;color:#94a3b8;">Initializing Tesseract.js Web Worker (WASM)...</p>
+                    <div class="ocr-progress-bar">
+                      <div id="ocrProgressBarFill" class="ocr-progress-fill"></div>
+                    </div>
+                    <span id="ocrProgressPct" style="font-size:0.78rem;font-weight:700;color:#38bdf8;">0%</span>
+                  </div>
+                </div>
                 <div class="image-canvas-wrapper" id="canvasWrapper">
                   <p style="color:#6b7280;">Select a test case or upload a label artwork to preview.</p>
                 </div>
