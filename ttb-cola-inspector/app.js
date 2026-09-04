@@ -1017,3 +1017,99 @@ function generateRejectionNotice() {
     `);
     printWindow.document.close();
 }
+
+// ============================================================================
+// Public TTB COLA Registry Database Connector & Search
+// ============================================================================
+
+let registryDatabase = [];
+
+async function loadRegistryDatabase() {
+    try {
+        const res = await fetch('sample_labels/registry_database.json');
+        registryDatabase = await res.json();
+        renderRegistryTable(registryDatabase);
+    } catch (err) {
+        console.error("Failed to load TTB registry database:", err);
+    }
+}
+
+function searchRegistry(query) {
+    if (!registryDatabase || registryDatabase.length === 0) return;
+    const q = (query || "").trim().toLowerCase();
+    
+    if (!q) {
+        renderRegistryTable(registryDatabase);
+        return;
+    }
+    
+    const filtered = registryDatabase.filter(r => 
+        (r.brand_name || "").toLowerCase().includes(q) ||
+        (r.fanciful_name || "").toLowerCase().includes(q) ||
+        (r.class_type || "").toLowerCase().includes(q) ||
+        (r.ttb_id || "").toLowerCase().includes(q) ||
+        (r.application_id || "").toLowerCase().includes(q) ||
+        (r.bottler_name_address || "").toLowerCase().includes(q)
+    );
+    
+    renderRegistryTable(filtered);
+}
+
+function renderRegistryTable(records) {
+    const tbody = document.getElementById('registryTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    if (records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px;">No matching records found in the TTB Public Registry.</td></tr>';
+        return;
+    }
+    
+    records.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><code>${r.ttb_id}</code><br><span style="font-size:0.75rem;color:#9ca3af;">${r.application_id}</span></td>
+            <td><strong>${r.brand_name}</strong><br><span style="font-size:0.8rem;color:#60a5fa;">${r.fanciful_name || ''}</span></td>
+            <td>${r.beverage_type}<br><span style="font-size:0.8rem;color:#9ca3af;">${r.class_type}</span></td>
+            <td><strong>${r.alcohol_content}</strong><br><span style="font-size:0.75rem;color:#9ca3af;">${r.net_contents}</span></td>
+            <td>${r.bottler_name_address}<br><span style="font-size:0.75rem;color:#9ca3af;">Permit: ${r.permit_number} &middot; ${r.country_of_origin}</span></td>
+            <td><span class="badge badge-pass">${r.approval_date}</span></td>
+            <td>
+                <button type="button" class="btn btn-primary btn-sm" style="padding:4px 8px;font-size:0.78rem;" onclick="importRegistryRecord('${r.ttb_id}')">
+                    📥 Import to Studio
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function importRegistryRecord(ttbId) {
+    const record = registryDatabase.find(r => r.ttb_id === ttbId);
+    if (!record) return;
+    
+    document.getElementById('appId').value = record.application_id;
+    document.getElementById('brandName').value = record.brand_name;
+    document.getElementById('beverageType').value = record.beverage_type;
+    document.getElementById('classType').value = record.class_type;
+    document.getElementById('alcoholContent').value = record.alcohol_content;
+    document.getElementById('netContents').value = record.net_contents;
+    document.getElementById('bottlerAddress').value = record.bottler_name_address;
+    document.getElementById('countryOrigin').value = record.country_of_origin;
+    
+    // Switch to Studio tab
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    
+    const studioTabBtn = document.querySelector('.nav-tab[data-tab="studioTab"]');
+    if (studioTabBtn) studioTabBtn.classList.add('active');
+    document.getElementById('studioTab').classList.add('active');
+    
+    // Run verification
+    runClientVerification();
+}
+
+// Load registry database on startup
+document.addEventListener('DOMContentLoaded', () => {
+    loadRegistryDatabase();
+});

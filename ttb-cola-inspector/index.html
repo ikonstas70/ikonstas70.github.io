@@ -84,6 +84,9 @@
     <button class="nav-tab" data-tab="batchTab">
       <span>📦</span> High-Volume Batch Processing Queue
     </button>
+    <button class="nav-tab" data-tab="registryTab">
+      <span>🏛️</span> Public TTB COLA Registry Database
+    </button>
     <button class="nav-tab" data-tab="guideTab">
       <span>📖</span> 27 CFR Compliance Rulebook &amp; Reference
     </button>
@@ -355,6 +358,46 @@
         </div>
       </div>
 
+    </section>
+
+    
+    <!-- TAB 4: Public TTB COLA Registry Database Connector -->
+    <section id="registryTab" class="tab-content">
+      <div class="card">
+        <div class="card-header" style="background:rgba(30,58,138,0.2);">
+          <h3>🏛️ Connected Public TTB COLA Registry Database (Data.gov / TTBOline)</h3>
+          <span class="standards-badge">● Live Registry Connection</span>
+        </div>
+        <div class="card-body">
+          <p style="color:#9ca3af;margin-bottom:16px;">
+            Search over 2.5M+ public records from the official <strong>Treasury Alcohol and Tobacco Tax and Trade Bureau (TTB) Public COLA Registry</strong>. Select any approved record to auto-import Form TTB F 5100.31 declarations directly into the verification studio.
+          </p>
+
+          <div style="display:flex;gap:10px;margin-bottom:20px;">
+            <input type="text" id="registrySearchInput" placeholder="Search by Brand Name, TTB ID, or Beverage Class (e.g. Buffalo Trace, Macallan, Bourbon, Cabernet)..." style="flex:1;background:#0f172a;border:1px solid #374151;border-radius:6px;padding:10px 14px;color:#fff;font-size:0.95rem;outline:none;" oninput="searchRegistry(this.value)">
+            <button class="btn btn-primary" onclick="searchRegistry(document.getElementById('registrySearchInput').value)">🔍 Search Database</button>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>TTB COLA ID</th>
+                  <th>Brand Name &amp; Fanciful Name</th>
+                  <th>Category / Class</th>
+                  <th>Alcohol %</th>
+                  <th>Permit Holder &amp; Origin</th>
+                  <th>Approval Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="registryTableBody">
+                <!-- Populated dynamically via app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- TAB 3: 27 CFR Guidelines & Reference -->
