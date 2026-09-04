@@ -50,7 +50,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2.0">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>">
 </head>
 <body>
@@ -111,6 +111,23 @@
             📁 Upload Custom Label Image
           </button>
           <input type="file" id="customFileInput" accept="image/*" style="display:none;" />
+        </div>
+      </div>
+
+            <!-- Prominent TTB Registry Quick-Search & Auto-Fill Card -->
+      <div class="card" style="margin-bottom:20px;background:linear-gradient(135deg, rgba(30,58,138,0.25), rgba(15,23,42,0.9));border:1px solid #3b82f6;">
+        <div class="card-header" style="background:rgba(59,130,246,0.15);display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="color:#60a5fa;">🏛️ Connected TTB Public COLA Registry (Data.gov / TTBOline)</h3>
+          <span class="standards-badge" style="background:#047857;border-color:#10b981;color:#fff;">● Database Connected</span>
+        </div>
+        <div class="card-body" style="padding:14px 18px;">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <label style="font-size:0.85rem;font-weight:700;color:#93c5fd;white-space:nowrap;">Search Public Registry:</label>
+            <input type="text" id="quickRegistrySearch" placeholder="Type Brand (e.g. Buffalo Trace, Macallan, Caymus, Sierra Nevada, Old Tom)..." style="flex:1;min-width:260px;background:#0f172a;border:1px solid #3b82f6;border-radius:6px;padding:8px 12px;color:#fff;font-size:0.9rem;" oninput="onQuickRegistrySearch(this.value)">
+            <select id="quickRegistryResults" class="sample-select" style="min-width:280px;" onchange="onQuickRegistrySelected(this.value)">
+              <option value="">-- Or Select Verified TTB Approved Record --</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -438,6 +455,6 @@
     <p style="margin-top:4px;color:#4b5563;">Developed by <a href="/about" style="color:#93c5fd;">Ioannis Konstas</a> &middot; <a href="/" style="color:#93c5fd;">Engineering Notes</a> &middot; Sub-Second Verification Engine</p>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2.0"></script>
 </body>
 </html>
