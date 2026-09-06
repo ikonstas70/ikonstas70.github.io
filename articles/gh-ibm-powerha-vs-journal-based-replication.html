@@ -62,41 +62,54 @@
 
     <p>Both of these technologies answer the same question — how do you keep an IBM i environment alive when the primary system goes down — but they answer it at completely different layers of the stack, and that difference cascades into everything: recovery point, recovery time, what happens to corrupted data, and how much hardware you're locked into matching. <strong>IBM PowerHA</strong> replicates at the SAN block level; <strong>IBM Journal-Based Replication (JBR)</strong> replicates at the logical object level inside the OS. That one architectural decision explains almost every difference below.</p>
 
-    <h2>Where each one actually sits</h2>
-    <p>PowerHA moves disk sectors from a source SAN to a target SAN. Every protected application has to live inside an Independent Auxiliary Storage Pool (IASP) — that's not optional, it's the mechanism the whole approach depends on. Recovery means attaching the replicated storage to a separate host and running recovery on it. Because replication happens below the object layer, the system replicating the data has no idea what it's actually moving — no concept of object state, integrity, or application structure. It's just blocks.</p>
-    <p>JBR works entirely differently: journaling inside IBM i tracks object and database changes, and replication becomes a server-to-server conversation rather than a storage-to-storage one. There's no dependency on SAN configuration or IASP boundaries — it runs across IASP, ASP, SYSBAS, or mixed environments without caring which. Because the replicated data arrives already in a usable logical format, switching to the target doesn't require a storage-level recovery step at all.</p>
+    <h2>Where Each Technology Sits</h2>
+    <p>PowerHA operates primarily at the storage block layer. For enterprise SAN environments, it orchestrates hardware-level disk sector replication (Metro Mirror, Global Mirror, HyperSwap) between storage controllers. For environments without external SAN storage, PowerHA provides <strong>Geographic Mirroring (GeoMirror)</strong>, which performs block-level replication directly at the IBM i operating system page level across internal NVMe, SSD, or SAS drives. In all PowerHA deployments, protected application workloads reside inside Independent Auxiliary Storage Pools (IASPs). Recovery is executed by attaching or making the replicated IASP volume accessible to a designated failover node.</p>
+    <p>JBR works at the logical object layer inside the IBM i operating system: database transactions and object modifications write journal entries to local journal receivers, which are transported to target systems via IBM i Remote Journaling (RJ). Because replication is logical and server-to-server, JBR operates transparently across SYSBAS, standard ASPs, IASPs, or mixed storage topologies without requiring SAN hardware dependencies or IASP restructuring.</p>
 
-    <h2>Why RPO Dynamics Differ: Block Write Caching vs. Journal Commit Pipeline</h2>
-    <p>PowerHA's RPO behavior depends directly on the replication mode deployed: in <strong>synchronous configurations (Metro Mirror / HyperSwap)</strong>, synchronous SAN controller handshakes ensure that committed writes reaching the disk subsystem provide <strong>true zero RPO</strong> across matched sites within metropolitan latency boundaries. In asynchronous configurations (Global Mirror) or when uncommitted transactions reside in volatile host memory prior to SAN acknowledgment, an ungraceful failure can leave a delta of un-replicated records.</p>
-    <p>JBR operates directly at the operating system's journal management layer: database operations write journal entries synchronously at the moment of commit. Remote journaling transports these discrete logical entries to target systems over standard IP networks without requiring low-latency SAN fabric links, achieving near-zero or zero RPO across both local and long-distance topologies.</p>
-
-    <h2>Bandwidth: whole sectors vs. changed objects</h2>
-    <p>Block-level replication does not inspect the internal structure of a disk sector, meaning PowerHA replicates entire modified disk blocks—often resulting in higher baseline network bandwidth requirements, particularly during initial synchronization or resync passes. JBR replicates only the discrete database and object-level delta records that actually changed. Administrators can further optimize throughput using journal filtering, Option 42 (HA Journal Performance), <code>MINENTDTA</code> (Minimize Entry Data) and <code>JRNCBDTA</code> (Journal Changed Block Data) settings, excluding non-critical objects, and applying transport compression.</p>
-
-    <h2>A live backup, or a snapshot pretending to be one</h2>
-    <p>PowerHA has no live backup server mode. FlashCopy snapshots exist for point-in-time copies, but a snapshot isn't live data, and using it that way adds operational complexity you didn't ask for. JBR's target stays continuously synchronized <em>and</em> usable — reporting, testing, virtual switching, BI workloads, even selective read/write — all while it keeps replicating.</p>
-
-    <h2>What's actually protected</h2>
-    <p>Every PowerHA-protected application has to live in an IASP, full stop — and not every third-party application is IASP-compatible. Anything outside the IASP simply isn't protected, which is a real constraint on what you can run. JBR has no equivalent restriction: IASP, ASP, SYSBAS, hybrid, all fine, entirely independent of SAN layout.</p>
-
-    <h2>The damaged-object problem</h2>
-    <p>This is the one I'd flag hardest if I were choosing between them. PowerHA replicates damaged objects right along with everything else — corruption propagates to the target. During IPL, those damaged objects have to be found and repaired from backup media, which can be slow or, in the worst case, impossible. That hits both RPO and RTO simultaneously. JBR catches damage <em>before</em> replication — only validated, repaired objects ever get journaled, so corruption never has a path to the target in the first place.</p>
-
-    <h2>Access paths: rebuilt vs. never broken</h2>
-    <p>Because PowerHA replicates storage blocks rather than OS object relationships, abnormal termination can leave database access paths (indexes) in an invalidated state upon failover IPL. While enabling <strong>System-Managed Access Path Protection (SMAPP)</strong> and <strong>Access Path Journaling</strong> significantly minimizes access path rebuild penalties by maintaining recovery checkpoints, unjournaled access paths may still incur an <code>EDTRBDAP</code> rebuild tax during switchover. JBR maintains access path integrity continuously through logical journaling itself, ensuring indexes remain valid and query-ready immediately upon promotion.</p>
-
-    <h2>Operational Realities: IASP Migration vs. JBR Apply Lags &amp; Drift</h2>
-    <p>An objective architectural evaluation must weigh the distinct administrative overhead of each approach:</p>
+    <h2>RPO Dynamics: Synchronous vs. Asynchronous Replication Modes</h2>
+    <p>Rather than an inherent divide between PowerHA and JBR, Recovery Point Objective (RPO) is determined by whether replication runs in <strong>Synchronous</strong> or <strong>Asynchronous</strong> mode:</p>
     <ul>
-      <li><strong>PowerHA's Overhead (Upfront &amp; Capital):</strong> Once deployed, block-level replication operates transparently below the OS with low day-to-day administrative touch. However, it demands substantial upfront re-engineering: refactoring monolithic applications into Independent ASPs (IASPs), ensuring third-party ISV compliance, and procuring homogenous, matched enterprise SAN storage hardware and fiber fabrics.</li>
-      <li><strong>JBR's Overhead (Ongoing Operational):</strong> JBR avoids IASP restructuring and SAN hardware lock-in, but shifts effort to daily operational management. Engineering teams must continuously monitor journal receiver apply lags, manage database lock contention during heavy batch windows, handle target object authority drift, and run routine audit-and-heal sync checks to prevent silent data divergence.</li>
+      <li><strong>Synchronous Mode (RPO = 0):</strong> Both PowerHA and JBR achieve true <strong>RPO = 0</strong> for committed transactions when configured synchronously within supported latency and distance boundaries (typically under 10–20 ms round-trip time).
+        <ul>
+          <li><em>PowerHA (Metro Mirror / HyperSwap / Synchronous GeoMirror):</em> The host I/O request is only acknowledged as complete after the storage controller or GeoMirror sub-system writes and confirms the sector data on the target storage.</li>
+          <li><em>JBR (Synchronous Remote Journaling):</em> The database commit operation holds the primary job thread until the journal entry is transmitted, confirmed, and written to the remote journal receiver on the target system.</li>
+        </ul>
+      </li>
+      <li><strong>Asynchronous Mode (Near-Zero RPO):</strong> When distance or link bandwidth exceeds synchronous thresholds (e.g., cross-country or multi-region replication), both technologies switch to asynchronous transport:
+        <ul>
+          <li><em>PowerHA (Global Mirror / Asynchronous GeoMirror):</em> Sector modifications are queued and sent in consistency groups, introducing a potential block-level delta if the primary node suffers an ungraceful hardware failure.</li>
+          <li><em>JBR (Asynchronous Remote Journaling):</em> Journal entries stream across IP links as fast as bandwidth permits. In an abrupt disaster, any transactions in transit across the TCP/IP pipeline represent the remaining RPO delta.</li>
+        </ul>
+      </li>
     </ul>
 
-    <h2>Distance, hardware matching, and FEMA zoning</h2>
-    <p>PowerHA needs matched hardware, firmware, storage systems, and IASP structures across both environments — which is a real deployment constraint, not just a best practice. Distance matters too: replicating within the same FEMA disaster zone as production defeats the purpose, since both sites share the same risk exposure. JBR has none of that baggage — no distance limitation, one-to-many broadcast to multiple targets, tolerant of OS version differences, and indifferent to whether the underlying storage is SAN, internal disk, or a hybrid of both.</p>
+    <h2>Bandwidth Optimization: Whole Sectors vs. Logical Delta Streams</h2>
+    <p>Block-level replication does not inspect the payload semantics within a 4 KB or 512-byte disk sector, meaning PowerHA must replicate entire modified disk sectors—often resulting in higher baseline network bandwidth requirements during heavy random write workloads or initial synchronization passes. JBR replicates only the discrete database and object-level delta records that actually changed. Administrators can further optimize throughput by specifying the <code>MINENTDTA</code> (Minimize Entry Data) CL parameter on journaled physical files, enabling Option 42 (HA Journal Performance), configuring <code>JRNCBDTA</code> (Journal Changed Block Data), excluding non-critical objects, and utilizing transport compression.</p>
 
-    <h2>Where I land</h2>
-    <p>PowerHA is a legitimate choice in a tightly standardized environment where hardware and storage are already matched end-to-end, IASP refactoring is completed, and teams prioritize zero daily apply-lag monitoring. Outside that scenario, JBR provides greater long-term flexibility—delivering near-zero RPO across any distance, avoiding access-path rebuild penalties, catching object corruption before propagation, and eliminating SAN/hardware lock-in. For organizations balancing recovery predictability with deployment agility, JBR remains the architecture of choice provided teams establish robust apply-lag and audit monitoring practices.</p>
+    <h2>A Live Backup vs. Point-in-Time FlashCopy</h2>
+    <p>PowerHA does not maintain an active, read-write secondary OS instance on the replicated IASP while it is attached to the primary. Point-in-time access requires generating FlashCopy snapshot volumes. JBR's target partition remains continuously active, fully IPLed, and accessible for concurrent utility workloads: read-only reporting, business intelligence, query offloading, virtual role-swap testing, and tape/cloud backup generation—all while replication streams uninterrupted.</p>
+
+    <h2>Scope of Protection &amp; Application Compatibility</h2>
+    <p>PowerHA clusters the contents of the IASP; system configurations, user profiles, output queues, and third-party applications residing in SYSBAS must either be replicated via supplemental cluster administrative domains (CAD) or redesigned into the IASP. JBR operates across SYSBAS, ASPs, and IASPs without architectural re-engineering, protecting native files, data areas, data queues, program objects, and IFS stream files natively.</p>
+
+    <h2>The Damaged-Object Problem &amp; Data Integrity</h2>
+    <p>Because PowerHA replicates storage blocks agnostically, underlying physical or logical corruption within an IASP sector propagates directly to the replicated storage target. If an ungraceful failure or corruption occurs, the damaged object must be identified and recovered during or after target IPL. JBR validates and journals operations through OS-level database interfaces; corrupt objects that fail integrity validation are rejected before journal entries are generated, preventing corrupted structures from writing to the target replica.</p>
+
+    <h2>Access Paths: Rebuild Tax vs. Continual Index Maintenance</h2>
+    <p>Following an abnormal failover under PowerHA, database access paths (indexes) across the replicated storage may require validation or reconstruction during target partition IPL. Enabling <strong>System-Managed Access Path Protection (SMAPP)</strong> and <strong>Access Path Journaling</strong> significantly mitigates rebuild duration by enforcing recovery time limits. Under JBR, index updates are applied continuously on the target database engine as part of the logical journal apply stream, ensuring access paths remain valid and query-ready upon failover.</p>
+
+    <h2>Operational Overhead &amp; Integrity Auditing</h2>
+    <p>A rigorous architectural evaluation must contrast the operational overhead inherent to each paradigm:</p>
+    <ul>
+      <li><strong>PowerHA's Challenge (Upfront Architectural Friction):</strong> Once deployed, block-level replication operates transparently below the OS with low daily administrative intervention. However, it imposes significant upfront re-engineering: refactoring monolithic applications into IASPs, ensuring third-party ISV software compatibility, and provisioning matched storage hardware (or configuring Geographic Mirroring parameters).</li>
+      <li><strong>JBR's Challenge (Ongoing Operational &amp; Audit Governance):</strong> JBR eliminates IASP restructuring and SAN lock-in, but transfers administrative effort to day-to-day operations. Engineering teams must actively monitor remote journal transmission queues and database apply lags during heavy batch processing windows, manage object-level authority drift between primary and target nodes, resolve database record lock contentions, and run automated data integrity auditing tools (audit-and-heal cycles) to ensure zero silent data drift across partitions.</li>
+    </ul>
+
+    <h2>Distance, Hardware Flexibility &amp; Site Distribution</h2>
+    <p>PowerHA SAN-based implementations (Metro Mirror / HyperSwap) require matched enterprise storage frames, firmware levels, and low-latency fiber fabrics. Geographic Mirroring broadens this to internal disks, though bandwidth sizing remains sensitive to sector turnover. JBR offers complete hardware and topology independence: source and target systems can differ in model, generation, storage geometry (SAN vs. internal NVMe), and OS release levels (within supported n-1/n+1 version boundaries), with no geographic distance constraints across standard IP networks.</p>
+
+    <h2>Conclusion &amp; Architectural Decision Matrix</h2>
+    <p>PowerHA represents a compelling solution for organizations with standardized infrastructure, completed IASP application modularization, and a requirement for hands-off steady-state replication without daily apply-lag monitoring. For organizations requiring cross-site hardware flexibility, continuous active query offloading on target nodes, and protection against data corruption propagation without IASP refactoring, Journal-Based Replication remains an agile and resilient architecture—provided teams maintain proactive apply-lag and audit-and-heal governance.</p>
 
     <h2>References</h2>
     <ol style="padding-left:22px;line-height:2">
