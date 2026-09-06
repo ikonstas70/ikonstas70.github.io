@@ -67,18 +67,19 @@
     <p>JBR works at the logical object layer inside the IBM i operating system: database transactions and object modifications write journal entries to local journal receivers, which are transported to target systems via IBM i Remote Journaling (RJ). Because replication is logical and server-to-server, JBR operates transparently across SYSBAS, standard ASPs, IASPs, or mixed storage topologies without requiring SAN hardware dependencies or IASP restructuring.</p>
 
     <h2>RPO Dynamics: Synchronous vs. Asynchronous Replication Modes</h2>
-    <p>Rather than an inherent divide between PowerHA and JBR, Recovery Point Objective (RPO) is determined by whether replication runs in <strong>Synchronous</strong> or <strong>Asynchronous</strong> mode:</p>
+    <p>Rather than an inherent divide between PowerHA and JBR, Recovery Point Objective (RPO) is governed by whether replication is architected in <strong>Synchronous</strong> or <strong>Asynchronous</strong> mode:</p>
     <ul>
-      <li><strong>Synchronous Mode (RPO = 0):</strong> Both PowerHA and JBR achieve true <strong>RPO = 0</strong> for committed transactions when configured synchronously within supported latency and distance boundaries (typically under 10–20 ms round-trip time).
+      <li><strong>Synchronous Mode (RPO = 0):</strong> Both PowerHA and JBR achieve true <strong>RPO = 0</strong> for committed transactions when configured synchronously. The practical boundary for synchronous deployment is not an absolute architectural limit, but an empirical engineering rule of thumb dictated by application latency tolerance:
         <ul>
-          <li><em>PowerHA (Metro Mirror / HyperSwap / Synchronous GeoMirror):</em> The host I/O request is only acknowledged as complete after the storage controller or GeoMirror sub-system writes and confirms the sector data on the target storage.</li>
-          <li><em>JBR (Synchronous Remote Journaling):</em> The database commit operation holds the primary job thread until the journal entry is transmitted, confirmed, and written to the remote journal receiver on the target system.</li>
+          <li><em>Latency &amp; Distance Guidelines:</em> While synchronous replication mathematically guarantees zero data loss regardless of distance, each commit operation directly incurs the round-trip network transit delay (RTT). As an empirical rule of thumb, architects typically target sub-<strong>5–10 ms RTT</strong> for high-rate OLTP environments (or up to <strong>10–20 ms RTT</strong> for less write-intensive batch profiles) before application response-time overhead necessitates asynchronous decoupling.</li>
+          <li><em>PowerHA (Metro Mirror / HyperSwap / Synchronous GeoMirror):</em> The host I/O write is held until the storage controller or GeoMirror sub-system writes and confirms the sector data on the target storage.</li>
+          <li><em>JBR (Synchronous Remote Journaling):</em> The database commit operation holds the application thread until the journal entry is transmitted, written, and acknowledged by the target system's remote journal receiver.</li>
         </ul>
       </li>
-      <li><strong>Asynchronous Mode (Near-Zero RPO):</strong> When distance or link bandwidth exceeds synchronous thresholds (e.g., cross-country or multi-region replication), both technologies switch to asynchronous transport:
+      <li><strong>Asynchronous Mode (Near-Zero RPO):</strong> When geographic distance, inter-site link latency, or write throughput exceeds acceptable synchronous application performance thresholds (e.g., cross-region or continental links), both technologies deploy asynchronous queues:
         <ul>
-          <li><em>PowerHA (Global Mirror / Asynchronous GeoMirror):</em> Sector modifications are queued and sent in consistency groups, introducing a potential block-level delta if the primary node suffers an ungraceful hardware failure.</li>
-          <li><em>JBR (Asynchronous Remote Journaling):</em> Journal entries stream across IP links as fast as bandwidth permits. In an abrupt disaster, any transactions in transit across the TCP/IP pipeline represent the remaining RPO delta.</li>
+          <li><em>PowerHA (Global Mirror / Asynchronous GeoMirror):</em> Sector modifications are queued and sent in consistency groups across distance, introducing a bounded block-level RPO delta if the source site suffers a sudden ungraceful failure.</li>
+          <li><em>JBR (Asynchronous Remote Journaling):</em> Journal entries stream across IP links asynchronously. In an abrupt disaster, the RPO delta is strictly limited to journal entries currently in flight across the TCP/IP transit buffer.</li>
         </ul>
       </li>
     </ul>
