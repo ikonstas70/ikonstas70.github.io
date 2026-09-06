@@ -6,13 +6,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SENTINEL Mobile Shield: Hardened Endpoint Security &amp; Zero-Trust Tunnel Architecture — Konstas Engineering Notes</title>
 <meta name="description" content="Architecture and security capability overview of SENTINEL Mobile Shield: dual-stack ChaCha20-Poly1305 encryption, inline intrusion detection, DNSSEC-validated encrypted DNS, and zero-trust per-device isolation.">
+<meta name="author" content="Ioannis Alexander Konstas">
+
+<!-- Open Graph / LinkedIn / Facebook -->
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ikonstas70.github.io/articles/sentinel-mobile-shield">
 <meta property="og:title" content="SENTINEL Mobile Shield: Hardened Endpoint Security &amp; Zero-Trust Tunnel Architecture">
 <meta property="og:description" content="What a mobile endpoint gains on top of built-in OS protections once routed through a hardened dual-stack security gateway — beyond encryption alone.">
 <meta property="og:image" content="https://ikonstas70.github.io/articles/sentinel-og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SENTINEL Mobile Shield — Hardened Endpoint Security & Zero-Trust Tunnel Architecture">
+<meta property="article:author" content="Ioannis Alexander Konstas">
+
+<!-- Twitter / X -->
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SENTINEL Mobile Shield: Hardened Endpoint Security & Zero-Trust Tunnel Architecture">
+<meta name="twitter:description" content="What a mobile endpoint gains on top of built-in OS protections once routed through a hardened dual-stack security gateway — beyond encryption alone.">
 <meta name="twitter:image" content="https://ikonstas70.github.io/articles/sentinel-og.jpg">
+
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -42,11 +55,17 @@
   <main>
     <span class="tag">Security Architecture</span>
     <h1>SENTINEL Mobile Shield: Hardened Endpoint Security &amp; Zero-Trust Tunnel Architecture</h1>
-    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas</p>
+    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Alexander Konstas</p>
+
+    <figure style="margin: 20px 0 30px; text-align: center;">
+      <img src="/articles/sentinel-og.jpg" alt="SENTINEL Mobile Shield Security Architecture" style="width: 100%; max-width: 820px; border-radius: 8px; border: 1px solid hsl(215 25% 27% / .6); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7); display: block; margin: 0 auto;">
+    </figure>
 
     <p>Modern mobile operating systems provide robust local security models — hardware-backed secure enclaves, mandatory access controls, and sandboxed application environments. However, the moment packets leave the network interface, the device becomes subject to external network realities: untrusted wireless transports, cellular carrier metadata harvesting, DNS poisoning, and sophisticated on-path adversaries.</p>
 
-    <blockquote>SENTINEL Mobile Shield bridges the gap between endpoint isolation and cloud network security. By placing a hardened, authenticated dual-stack gateway directly in the egress path, a mobile device achieves continuous cryptographic integrity, inline live threat inspection, DNSSEC-enforced domain resolution, and zero-trust identity isolation.</blockquote>
+    <blockquote>
+      Conceived and engineered by <strong>Ioannis Alexander Konstas</strong>, the SENTINEL platform is a unique architectural creation that brings together multiple high-assurance security technologies—each aggressively and vigorously stress-tested to ensure resilience against active real-world threats. By placing a hardened, authenticated dual-stack gateway directly in the egress path, a mobile device achieves continuous cryptographic integrity, inline live threat inspection, DNSSEC-enforced domain resolution, and strict zero-trust identity isolation.
+    </blockquote>
 
     <h2>Architecture at a Glance</h2>
     <ul>
