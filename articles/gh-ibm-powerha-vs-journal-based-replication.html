@@ -6,6 +6,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A Technical Comparison of IBM PowerHA Storage Replication and IBM Journal-Based Replication — Konstas Engineering Notes</title>
 <meta name="description" content="IBM PowerHA replicates at the SAN block level; Journal-Based Replication works inside the OS at the object level. That one architectural difference explains everything downstream -- RPO predictability, bandwidth, damaged-object handling, access-path rebuilds, and hardware lock-in.">
+<meta name="author" content="Ioannis Alexander Konstas">
+
+<!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/gh-ibm-powerha-vs-journal-based-replication">
+<meta property="og:title" content="A Technical Comparison of IBM PowerHA Storage Replication and IBM Journal-Based Replication">
+<meta property="og:description" content="IBM PowerHA replicates at the SAN block level; Journal-Based Replication works inside the OS at the object level. That one architectural difference explains everything downstream -- RPO predictability, bandwidth, damaged-object handling, and recovery.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/gh-ibm-powerha-og.jpg">
+<meta property="og:image:secure_url" content="https://ikonstas70.github.io/articles/gh-ibm-powerha-og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="IBM PowerHA Storage Replication vs. Journal-Based Replication">
+<meta property="article:author" content="Ioannis Alexander Konstas">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="A Technical Comparison of IBM PowerHA Storage Replication and IBM Journal-Based Replication">
+<meta name="twitter:description" content="IBM PowerHA replicates at the SAN block level; Journal-Based Replication works inside the OS at the object level.">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/gh-ibm-powerha-og.jpg">
+
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -16,6 +37,7 @@
   <header class="site">
     <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
     <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
     <div class="rule"></div>
     <nav class="top">
       <a href="/" class="active">Articles</a>
@@ -32,7 +54,11 @@
   <main>
     <span class="tag">Systems</span>
     <h1>A Technical Comparison of IBM PowerHA Storage Replication and IBM Journal-Based Replication</h1>
-    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Alexander Konstas</p>
+
+    <figure style="margin: 20px 0 30px; text-align: center;">
+      <img src="/articles/gh-ibm-powerha-hero.jpg" alt="Enterprise Data Center and Infrastructure Architecture" style="width: 100%; max-width: 820px; border-radius: 8px; border: 1px solid hsl(215 25% 27% / .6); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7); display: block; margin: 0 auto;">
+    </figure>
 
     <p>Both of these technologies answer the same question — how do you keep an IBM i environment alive when the primary system goes down — but they answer it at completely different layers of the stack, and that difference cascades into everything: recovery point, recovery time, what happens to corrupted data, and how much hardware you're locked into matching. <strong>IBM PowerHA</strong> replicates at the SAN block level; <strong>IBM Journal-Based Replication (JBR)</strong> replicates at the logical object level inside the OS. That one architectural decision explains almost every difference below.</p>
 
