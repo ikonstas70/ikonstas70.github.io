@@ -1,4 +1,10 @@
 User-agent: *
+Disallow: /control/
+Disallow: /articles/cave-diving
+Disallow: /articles/cave-diving/
+Disallow: /articles/gh-cave-diving-odyssey
+Disallow: /articles/gh-trimix-technical-diving
+Disallow: /articles/gh-trimix-technical-diving/
 Allow: /
 
 Sitemap: https://ikonstas70.github.io/sitemap.xml
