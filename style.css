@@ -57,6 +57,8 @@ nav.top a {
   letter-spacing: 0.18em; text-transform: uppercase; transition: color .2s;
 }
 nav.top a:hover, nav.top a.active { color: var(--accent); }
+nav.top a.nav-gold { color: var(--accent); font-weight: 600; text-shadow: 0 0 12px hsl(43 45% 56% / 0.35); }
+nav.top a.nav-gold:hover { color: var(--fg); }
 h1 { font-family: var(--serif); font-size: 2rem; line-height: 1.25; margin-bottom: 12px; font-weight: 600; }
 h2 { font-family: var(--serif); font-size: 1.45rem; margin: 44px 0 14px; font-weight: 600; }
 h3 { font-size: 1.02rem; margin: 30px 0 10px; color: var(--accent); font-weight: 600; }
@@ -96,6 +98,10 @@ blockquote { border-left: 2px solid var(--accent); padding-left: 18px; color: va
   text-decoration: none; transition: border-color .25s, transform .25s;
 }
 .card:hover { border-color: var(--accent-dim); transform: translateY(-1px); }
+.card.card-gold { border-color: hsl(43 45% 56% / 0.4); }
+.card.card-gold:hover { border-color: var(--accent); }
+.card.card-gold h3 { color: var(--accent); }
+.card.card-gold .date { color: var(--accent); }
 .card h3 { font-family: var(--serif); font-size: 1.18rem; margin: 0 0 8px; color: var(--fg); font-weight: 600; }
 .card:hover h3 { color: var(--accent); }
 .card p { color: var(--fg-dim); font-size: 0.88rem; margin: 0 0 10px; }
