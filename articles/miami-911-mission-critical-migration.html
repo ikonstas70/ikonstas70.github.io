@@ -4,12 +4,22 @@
 <link rel="canonical" href="https://ikonstas70.github.io/articles/miami-911-mission-critical-migration">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Migrating a City's 911 Dispatch System Off the Mainframe — Konstas Engineering Notes</title>
+<title>Mission Critical: City of Miami's 911 System — Konstas Engineering Notes</title>
 <meta name="description" content="Field notes from the 2010 project that moved the City of Miami Fire Rescue Department's mission-critical 911 dispatch system from a mainframe to a Windows/VMware platform.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ikonstas70.github.io/articles/miami-911-mission-critical-migration">
-<meta property="og:title" content="Migrating a City's 911 Dispatch System Off the Mainframe">
+<meta property="og:title" content="Mission Critical: City of Miami's 911 System">
 <meta property="og:description" content="Field notes from the 2010 project that moved the City of Miami Fire Rescue Department's mission-critical 911 dispatch system from a mainframe to a Windows/VMware platform.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/miami-911-migration-diagram.png">
+<meta property="og:image:secure_url" content="https://ikonstas70.github.io/articles/miami-911-migration-diagram.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Diagram: mainframe with legacy COBOL dispatch logic migrating to a Windows/VMware server cluster with SQL clustering, load balancing, and Cisco routing — City of Miami Fire Rescue 911 dispatch, 2010">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mission Critical: City of Miami's 911 System">
+<meta name="twitter:description" content="Field notes from the 2010 project that moved the City of Miami Fire Rescue Department's mission-critical 911 dispatch system from a mainframe to a Windows/VMware platform.">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/miami-911-migration-diagram.png">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -38,8 +48,13 @@
 
   <main>
     <span class="tag">Systems</span>
-    <h1>Migrating a City&rsquo;s 911 Dispatch System Off the Mainframe</h1>
+    <h1>Mission Critical: City of Miami&rsquo;s 911 System</h1>
     <p class="meta">Articles &middot; 2010 project, written up 2026 &middot; Ioannis Konstas</p>
+
+    <div class="diagram-wrap">
+      <img src="/articles/miami-911-migration-diagram.svg" width="1200" height="630" style="max-width:100%;height:auto;border-radius:10px;border:1px solid var(--border);" alt="Diagram: mainframe with legacy COBOL dispatch logic migrating to a Windows/VMware server cluster with SQL clustering, load balancing, and Cisco routing — City of Miami Fire Rescue 911 dispatch, 2010">
+    </div>
+    <p class="diagram-caption">Before / after: legacy mainframe (COBOL dispatch logic) &rarr; Windows/VMware server tier with SQL clustering, load balancing, and Cisco routing.</p>
 
     <p>In 2010 I worked as the network engineer on the project that migrated the City of Miami Fire Rescue Department&rsquo;s 911 emergency dispatch platform off its legacy mainframe and onto a Microsoft/VMware-based architecture. This was a mission-critical system in the literal sense of the term: a fire and medical dispatch platform has no acceptable downtime window, so the cutover had to preserve the existing dispatch logic exactly while replacing the hardware and operating environment underneath it.</p>
 

@@ -1,0 +1,87 @@
+<svg viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dtitle ddesc">
+  <title id="dtitle">Mission-critical migration diagram</title>
+  <desc id="ddesc">Diagram showing a legacy mainframe running COBOL dispatch logic on the left migrating to a Windows/VMware cluster with SQL clustering, load balancing and Cisco routing on the right, for the City of Miami Fire Rescue 911 dispatch system, 2010.</desc>
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1f1f1f" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="arrowGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#85734b"/>
+      <stop offset="1" stop-color="#c1a55c"/>
+    </linearGradient>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+      <polygon points="0 0, 8 3.5, 0 7" fill="#c1a55c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="630" fill="#0a0a0a"/>
+  <rect x="0" y="0" width="1200" height="630" fill="url(#grid)" opacity="0.5"/>
+
+  <text x="600" y="70" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" letter-spacing="4" fill="#c1a55c" font-weight="bold">MISSION-CRITICAL MIGRATION</text>
+  <text x="600" y="98" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#f7f7f7" font-weight="bold">City of Miami Fire Rescue &#8212; 911 Dispatch, 2010</text>
+
+  <!-- Mainframe block -->
+  <g>
+    <rect x="90" y="180" width="280" height="300" rx="10" fill="#0f0f0f" stroke="#1f1f1f" stroke-width="2"/>
+    <rect x="120" y="210" width="220" height="34" rx="4" fill="#1f1f1f"/>
+    <text x="230" y="233" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" fill="#f7f7f7" font-weight="bold">MAINFRAME</text>
+
+    <rect x="120" y="258" width="220" height="26" rx="3" fill="#141414" stroke="#1f1f1f"/>
+    <text x="230" y="275" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#9e9e9e">LEGACY COBOL DISPATCH LOGIC</text>
+
+    <!-- Tape reel icons -->
+    <circle cx="150" cy="330" r="26" fill="none" stroke="#85734b" stroke-width="4"/>
+    <circle cx="150" cy="330" r="7" fill="#85734b"/>
+    <circle cx="230" cy="330" r="26" fill="none" stroke="#85734b" stroke-width="4"/>
+    <circle cx="230" cy="330" r="7" fill="#85734b"/>
+    <circle cx="310" cy="330" r="26" fill="none" stroke="#85734b" stroke-width="4"/>
+    <circle cx="310" cy="330" r="7" fill="#85734b"/>
+
+    <rect x="120" y="386" width="220" height="60" rx="4" fill="#141414" stroke="#1f1f1f"/>
+    <text x="230" y="410" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#9e9e9e">SINGLE PROPRIETARY</text>
+    <text x="230" y="428" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#9e9e9e">HARDWARE PLATFORM</text>
+
+    <text x="230" y="500" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#c1a55c" letter-spacing="1">BEFORE</text>
+  </g>
+
+  <!-- Arrow -->
+  <line x1="392" y1="320" x2="560" y2="320" stroke="#c1a55c" stroke-width="5" marker-end="url(#arrowhead)"/>
+  <text x="476" y="298" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" letter-spacing="2" fill="#c1a55c" font-weight="bold">RECOMPILED &amp; VALIDATED</text>
+  <text x="476" y="345" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#9e9e9e">zero dispatch downtime</text>
+
+  <!-- Windows/VMware cluster block -->
+  <g>
+    <rect x="590" y="150" width="300" height="360" rx="10" fill="#0f0f0f" stroke="#1f1f1f" stroke-width="2"/>
+    <text x="740" y="182" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" fill="#f7f7f7" font-weight="bold">SERVER / VMware TIER</text>
+
+    <!-- rack 1 -->
+    <rect x="618" y="204" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
+    <circle cx="636" cy="230" r="5" fill="#c1a55c"/>
+    <text x="652" y="223" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">SQL Server Cluster</text>
+    <text x="652" y="240" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">high-availability data tier</text>
+
+    <!-- rack 2 -->
+    <rect x="618" y="266" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
+    <circle cx="636" cy="292" r="5" fill="#c1a55c"/>
+    <text x="652" y="285" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">Load-Balanced App Tier</text>
+    <text x="652" y="302" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">no single point of failure</text>
+
+    <!-- rack 3 -->
+    <rect x="618" y="328" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
+    <circle cx="636" cy="354" r="5" fill="#c1a55c"/>
+    <text x="652" y="347" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">Cisco Routing / Switching</text>
+    <text x="652" y="364" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">live cutover to dept. network</text>
+
+    <!-- rack 4 -->
+    <rect x="618" y="390" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
+    <circle cx="636" cy="416" r="5" fill="#c1a55c"/>
+    <text x="652" y="409" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">VMware Virtualization</text>
+    <text x="652" y="426" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">commodity hardware, pooled</text>
+
+    <text x="740" y="480" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#c1a55c" letter-spacing="1">AFTER</text>
+  </g>
+
+  <!-- footer line -->
+  <line x1="90" y1="556" x2="890" y2="556" stroke="#1f1f1f" stroke-width="1"/>
+  <text x="490" y="584" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#9e9e9e">Network engineer on the migration: Ioannis Konstas &#8226; ikonstas70.github.io</text>
+</svg>
