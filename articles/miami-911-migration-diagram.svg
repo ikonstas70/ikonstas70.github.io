@@ -22,66 +22,66 @@
 
   <!-- Mainframe block -->
   <g>
-    <rect x="90" y="180" width="280" height="300" rx="10" fill="#0f0f0f" stroke="#1f1f1f" stroke-width="2"/>
-    <rect x="120" y="210" width="220" height="34" rx="4" fill="#1f1f1f"/>
-    <text x="230" y="233" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" fill="#f7f7f7" font-weight="bold">MAINFRAME</text>
+    <rect x="200" y="180" width="280" height="300" rx="10" fill="#0f0f0f" stroke="#1f1f1f" stroke-width="2"/>
+    <rect x="230" y="210" width="220" height="34" rx="4" fill="#1f1f1f"/>
+    <text x="340" y="233" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" fill="#f7f7f7" font-weight="bold">MAINFRAME</text>
 
-    <rect x="120" y="258" width="220" height="26" rx="3" fill="#141414" stroke="#1f1f1f"/>
-    <text x="230" y="275" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#9e9e9e">LEGACY COBOL DISPATCH LOGIC</text>
+    <rect x="230" y="258" width="220" height="26" rx="3" fill="#141414" stroke="#1f1f1f"/>
+    <text x="340" y="275" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#9e9e9e">LEGACY COBOL DISPATCH LOGIC</text>
 
     <!-- Tape reel icons -->
-    <circle cx="150" cy="330" r="26" fill="none" stroke="#85734b" stroke-width="4"/>
-    <circle cx="150" cy="330" r="7" fill="#85734b"/>
-    <circle cx="230" cy="330" r="26" fill="none" stroke="#85734b" stroke-width="4"/>
-    <circle cx="230" cy="330" r="7" fill="#85734b"/>
-    <circle cx="310" cy="330" r="26" fill="none" stroke="#85734b" stroke-width="4"/>
-    <circle cx="310" cy="330" r="7" fill="#85734b"/>
+    <circle cx="260" cy="330" r="26" fill="none" stroke="#85734b" stroke-width="4"/>
+    <circle cx="260" cy="330" r="7" fill="#85734b"/>
+    <circle cx="340" cy="330" r="26" fill="none" stroke="#85734b" stroke-width="4"/>
+    <circle cx="340" cy="330" r="7" fill="#85734b"/>
+    <circle cx="420" cy="330" r="26" fill="none" stroke="#85734b" stroke-width="4"/>
+    <circle cx="420" cy="330" r="7" fill="#85734b"/>
 
-    <rect x="120" y="386" width="220" height="60" rx="4" fill="#141414" stroke="#1f1f1f"/>
-    <text x="230" y="410" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#9e9e9e">SINGLE PROPRIETARY</text>
-    <text x="230" y="428" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#9e9e9e">HARDWARE PLATFORM</text>
+    <rect x="230" y="386" width="220" height="60" rx="4" fill="#141414" stroke="#1f1f1f"/>
+    <text x="340" y="410" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#9e9e9e">SINGLE PROPRIETARY</text>
+    <text x="340" y="428" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#9e9e9e">HARDWARE PLATFORM</text>
 
-    <text x="230" y="500" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#c1a55c" letter-spacing="1">BEFORE</text>
+    <text x="340" y="500" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#c1a55c" letter-spacing="1">BEFORE</text>
   </g>
 
   <!-- Arrow -->
-  <line x1="392" y1="320" x2="560" y2="320" stroke="#c1a55c" stroke-width="5" marker-end="url(#arrowhead)"/>
-  <text x="476" y="298" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" letter-spacing="2" fill="#c1a55c" font-weight="bold">RECOMPILED &amp; VALIDATED</text>
-  <text x="476" y="345" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#9e9e9e">zero dispatch downtime</text>
+  <line x1="502" y1="320" x2="670" y2="320" stroke="#c1a55c" stroke-width="5" marker-end="url(#arrowhead)"/>
+  <text x="586" y="298" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" letter-spacing="2" fill="#c1a55c" font-weight="bold">RECOMPILED &amp; VALIDATED</text>
+  <text x="586" y="345" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#9e9e9e">zero dispatch downtime</text>
 
   <!-- Windows/VMware cluster block -->
   <g>
-    <rect x="590" y="150" width="300" height="360" rx="10" fill="#0f0f0f" stroke="#1f1f1f" stroke-width="2"/>
-    <text x="740" y="182" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" fill="#f7f7f7" font-weight="bold">SERVER / VMware TIER</text>
+    <rect x="700" y="150" width="300" height="360" rx="10" fill="#0f0f0f" stroke="#1f1f1f" stroke-width="2"/>
+    <text x="850" y="182" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" fill="#f7f7f7" font-weight="bold">SERVER / VMware TIER</text>
 
     <!-- rack 1 -->
-    <rect x="618" y="204" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
-    <circle cx="636" cy="230" r="5" fill="#c1a55c"/>
-    <text x="652" y="223" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">SQL Server Cluster</text>
-    <text x="652" y="240" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">high-availability data tier</text>
+    <rect x="728" y="204" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
+    <circle cx="746" cy="230" r="5" fill="#c1a55c"/>
+    <text x="762" y="223" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">SQL Server Cluster</text>
+    <text x="762" y="240" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">high-availability data tier</text>
 
     <!-- rack 2 -->
-    <rect x="618" y="266" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
-    <circle cx="636" cy="292" r="5" fill="#c1a55c"/>
-    <text x="652" y="285" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">Load-Balanced App Tier</text>
-    <text x="652" y="302" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">no single point of failure</text>
+    <rect x="728" y="266" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
+    <circle cx="746" cy="292" r="5" fill="#c1a55c"/>
+    <text x="762" y="285" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">Load-Balanced App Tier</text>
+    <text x="762" y="302" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">no single point of failure</text>
 
     <!-- rack 3 -->
-    <rect x="618" y="328" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
-    <circle cx="636" cy="354" r="5" fill="#c1a55c"/>
-    <text x="652" y="347" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">Cisco Routing / Switching</text>
-    <text x="652" y="364" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">live cutover to dept. network</text>
+    <rect x="728" y="328" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
+    <circle cx="746" cy="354" r="5" fill="#c1a55c"/>
+    <text x="762" y="347" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">Cisco Routing / Switching</text>
+    <text x="762" y="364" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">live cutover to dept. network</text>
 
     <!-- rack 4 -->
-    <rect x="618" y="390" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
-    <circle cx="636" cy="416" r="5" fill="#c1a55c"/>
-    <text x="652" y="409" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">VMware Virtualization</text>
-    <text x="652" y="426" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">commodity hardware, pooled</text>
+    <rect x="728" y="390" width="244" height="52" rx="4" fill="#141414" stroke="#1f1f1f"/>
+    <circle cx="746" cy="416" r="5" fill="#c1a55c"/>
+    <text x="762" y="409" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#f7f7f7" font-weight="bold">VMware Virtualization</text>
+    <text x="762" y="426" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#9e9e9e">commodity hardware, pooled</text>
 
-    <text x="740" y="480" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#c1a55c" letter-spacing="1">AFTER</text>
+    <text x="850" y="480" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#c1a55c" letter-spacing="1">AFTER</text>
   </g>
 
   <!-- footer line -->
-  <line x1="90" y1="556" x2="890" y2="556" stroke="#1f1f1f" stroke-width="1"/>
-  <text x="490" y="584" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#9e9e9e">Network engineer on the migration: Ioannis Konstas &#8226; ikonstas70.github.io</text>
+  <line x1="200" y1="556" x2="1000" y2="556" stroke="#1f1f1f" stroke-width="1"/>
+  <text x="600" y="584" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#9e9e9e">Network engineer on the migration: Ioannis Konstas &#8226; ikonstas70.github.io</text>
 </svg>
