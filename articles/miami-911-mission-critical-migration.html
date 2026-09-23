@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/miami-911-mission-critical-migration">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migrating a City's 911 Dispatch System Off the Mainframe — Konstas Engineering Notes</title>
+<meta name="description" content="Field notes from the 2010 project that moved the City of Miami Fire Rescue Department's mission-critical 911 dispatch system from a mainframe to a Windows/VMware platform.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/miami-911-mission-critical-migration">
+<meta property="og:title" content="Migrating a City's 911 Dispatch System Off the Mainframe">
+<meta property="og:description" content="Field notes from the 2010 project that moved the City of Miami Fire Rescue Department's mission-critical 911 dispatch system from a mainframe to a Windows/VMware platform.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="https://ikonstas70.github.io/information-security/">Information Security</a>
+      <a href="https://ikonstas70.github.io/music/" class="nav-gold">Music</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Systems</span>
+    <h1>Migrating a City&rsquo;s 911 Dispatch System Off the Mainframe</h1>
+    <p class="meta">Articles &middot; 2010 project, written up 2026 &middot; Ioannis Konstas</p>
+
+    <p>In 2010 I worked as the network engineer on the project that migrated the City of Miami Fire Rescue Department&rsquo;s 911 emergency dispatch platform off its legacy mainframe and onto a Microsoft/VMware-based architecture. This was a mission-critical system in the literal sense of the term: a fire and medical dispatch platform has no acceptable downtime window, so the cutover had to preserve the existing dispatch logic exactly while replacing the hardware and operating environment underneath it.</p>
+
+    <p>The project was part of a broader industry shift happening at the time. Through the late 2000s, a combination of cheaper multi-core server hardware, mature virtualization platforms, and server software capable of scaling to workloads that had previously required a mainframe made it economically realistic for cities and enterprises to move mission-critical applications onto commodity infrastructure. Miami&rsquo;s 911 system became one of the examples cited when Microsoft covered that trend in <a href="https://web.archive.org/web/20241010013335/https://news.microsoft.com/2010/07/14/mission-critical-miamis-new-911-system-part-of-growing-global-trend/">&ldquo;Mission Critical: Miami&rsquo;s New 911 System Part of Growing Global Trend&rdquo;</a> (Microsoft News, July 14, 2010; the original URL has since gone offline, link is to the Internet Archive copy).</p>
+
+    <h2>Scope of the migration</h2>
+    <p>The dispatch application itself was legacy COBOL &mdash; decades of accumulated call-handling and unit-dispatch logic that nobody had an appetite to rewrite from scratch under a mission-critical deadline. The approach instead was to recompile and run that COBOL logic on the new platform rather than reimplement it, which meant the migration was as much about proving behavioral parity as it was about standing up new infrastructure. My part of the work included:</p>
+    <table>
+      <thead><tr><th>Area</th><th>What it involved</th></tr></thead>
+      <tbody>
+        <tr><td>Database tier</td><td>Microsoft SQL Server clustering to replace the mainframe&rsquo;s data layer with a highly-available equivalent.</td></tr>
+        <tr><td>Application tier</td><td>Load balancing across the new server tier to distribute dispatch-application load and remove any single point of failure.</td></tr>
+        <tr><td>Legacy code</td><td>Compiling and validating the existing COBOL dispatch logic against the new platform so call-handling behavior matched the mainframe exactly.</td></tr>
+        <tr><td>Network</td><td>Cisco routing and switching to connect the new server tier into the department&rsquo;s existing network without disrupting live dispatch traffic during cutover.</td></tr>
+        <tr><td>Virtualization</td><td>VMware-based infrastructure underpinning the new environment, in place of dedicated mainframe hardware.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Why it mattered</h2>
+    <p>A 911 dispatch system is one of the few environments where "mostly working" has no meaning &mdash; it is either dispatching units correctly or it is a public-safety failure. That constraint shaped every decision on the project: changes were validated in parallel against the live mainframe before cutover, and the network and server work was sequenced so that no single change could take dispatch capability offline. The project succeeded in bringing the system onto modern, commodity infrastructure at a fraction of mainframe licensing and hardware cost, without a service interruption &mdash; which is the outcome Microsoft&rsquo;s piece was pointing to as evidence that mission-critical no longer meant mainframe-only.</p>
+
+    <p><a href="/">&larr; All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=miami-911-mission-critical-migration",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
