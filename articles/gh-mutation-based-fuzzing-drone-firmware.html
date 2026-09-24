@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/gh-mutation-based-fuzzing-drone-firmware">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mutation-Based Fuzzing: From Commodore 64 POKEs to Drone Firmware — Konstas Engineering Notes</title>
+<meta name="description" content="How mutation-based fuzzing stress-tests parsers, binaries, and drone autopilots — with working Python mutators for text and MAVLink telemetry, the feedback techniques behind modern binary fuzzers, and a field guide to firmware and UAV fuzzing tools.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/gh-mutation-based-fuzzing-drone-firmware">
+<meta property="og:title" content="Mutation-Based Fuzzing: From Commodore 64 POKEs to Drone Firmware">
+<meta property="og:description" content="How mutation-based fuzzing stress-tests parsers, binaries, and drone autopilots — with working Python mutators for text and MAVLink telemetry, the feedback techniques behind modern binary fuzzers, and a field guide to firmware and UAV fuzzing tools.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/gh-mutation-fuzzing-og.jpg">
+<meta property="og:image:secure_url" content="https://ikonstas70.github.io/articles/gh-mutation-fuzzing-og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mutation-Based Fuzzing — from Commodore 64 POKEs to drone firmware: silicon die detail beside dark code listings">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mutation-Based Fuzzing: From Commodore 64 POKEs to Drone Firmware">
+<meta name="twitter:description" content="How mutation-based fuzzing stress-tests parsers, binaries, and drone autopilots — with working Python mutators for text and MAVLink telemetry, the feedback techniques behind modern binary fuzzers, and a field guide to firmware and UAV fuzzing tools.">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/gh-mutation-fuzzing-og.jpg">
+<link rel="stylesheet" href="/style.css">
+<style>
+body{
+  background:
+    linear-gradient(180deg, hsl(0 0% 4% / .90), hsl(0 0% 4% / .96) 40%, hsl(0 0% 4% / 1) 85%),
+    url("/articles/gh-mutation-fuzzing-bg.jpg") center 120px / 1100px auto no-repeat fixed;
+}
+@media (max-width:900px){
+  body{ background-attachment:scroll; background-size:100% auto; }
+}
+@media (max-width:700px){
+  main table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  main pre{ overflow-x:auto; }
+}
+</style>
+<script>
+function copyCode(btn){
+  var pre = btn.parentElement.querySelector("pre");
+  if(!pre) return;
+  navigator.clipboard.writeText(pre.textContent).then(function(){
+    var orig = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(function(){ btn.textContent = orig; }, 1400);
+  }).catch(function(){});
+}
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="https://ikonstas70.github.io/information-security/">Information Security</a>
+      <a href="https://ikonstas70.github.io/music/" class="nav-gold">Music</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Offensive Security</span>
+    <h1>Mutation-Based Fuzzing: From Commodore 64 POKEs to Drone Firmware</h1>
+    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas</p>
+
+    <div class="callout insight">
+      <strong>Summary.</strong> Mutation-based fuzzing takes a known-good input, corrupts it in small, controlled ways, and feeds
+      the result to a program to see whether it fails safely. This note builds two working mutators in Python &mdash; one for
+      text telemetry and one for checksum-valid MAVLink&nbsp;v2 frames &mdash; then explains how binary fuzzers get coverage
+      feedback without source code, how the idea maps back to 8-bit machine-language hacking, and which tools fit which
+      targets, from Cortex-M firmware to full PX4 and ArduPilot autopilots.
+    </div>
+
+    <h2>1. Mutation testing is not mutation-based fuzzing</h2>
+    <p>The two terms are often used interchangeably, but they test different things. Everything in this article is the second one.</p>
+    <table>
+      <thead><tr><th></th><th>Mutation testing</th><th>Mutation-based fuzzing</th></tr></thead>
+      <tbody>
+        <tr><td>What gets mutated</td><td>The program&rsquo;s <em>source code</em> (e.g. swapping <code>&gt;</code> for <code>&lt;</code>)</td><td>The program&rsquo;s <em>input data</em> (flipped bits, altered bytes, truncated packets)</td></tr>
+        <tr><td>Question answered</td><td>&ldquo;Would my test suite notice this bug?&rdquo;</td><td>&ldquo;Does the program survive hostile or corrupted input?&rdquo;</td></tr>
+        <tr><td>Typical output</td><td>A mutation score for the test suite</td><td>Crashes, hangs, sanitizer reports, and the inputs that caused them</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. A first mutator: text telemetry</h2>
+    <p>Ground-control software and mobile telemetry apps often parse simple text frames such as <code>GPS:37.123,-122.456</code>.
+    The smallest useful mutator changes one character at a time:</p>
+    <div class="snippet">
+      <div class="snip-label">Python — single-character mutation</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="kw">import</span> random
+<span class="kw">import</span> string
+
+<span class="kw">def</span> <span class="fn">mutate_string</span>(data: str, rng: random.Random) -&gt; str:
+    <span class="str">&quot;&quot;&quot;Replace one character at a random position with a random printable character.&quot;&quot;&quot;</span>
+    <span class="kw">if</span> <span class="kw">not</span> data:
+        <span class="kw">return</span> data
+    idx = rng.<span class="fn">randrange</span>(<span class="fn">len</span>(data))
+    <span class="kw">return</span> data[:idx] + rng.<span class="fn">choice</span>(string.printable) + data[idx + <span class="num">1</span>:]
+
+rng = random.<span class="fn">Random</span>(<span class="num">1337</span>)                 <span class="cmt"># fixed seed: every run produces the same cases</span>
+telemetry_packet = <span class="str">&quot;GPS:37.123,-122.456&quot;</span>
+<span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(<span class="num">5</span>):
+    <span class="fn">print</span>(<span class="fn">repr</span>(<span class="fn">mutate_string</span>(telemetry_packet, rng)))</pre>
+    </div>
+    <div class="snippet">
+      <div class="snip-label">Output</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre>&#x27;GPS:37.123,-122.4{6&#x27;
+&#x27;GPS:37.123,,122.456&#x27;
+&#x27;GPS:37.123,-122.45~&#x27;
+&#x27;GPS:3\x0c.123,-122.456&#x27;
+&#x27;GPS:37.123N-122.456&#x27;</pre>
+    </div>
+    <table>
+      <thead><tr><th>Component</th><th>Mechanism</th><th>Why it matters for telemetry</th></tr></thead>
+      <tbody>
+        <tr><td>Random index</td><td>Picks one character position to change.</td><td>Models localized corruption in transit, such as one altered digit in a latitude.</td></tr>
+        <tr><td>Printable replacement</td><td>Inserts an unexpected character, including control characters like <code>\x0c</code>.</td><td>Checks that numeric, delimiter, and header parsing rejects bad symbols instead of throwing an unhandled exception.</td></tr>
+        <tr><td>Seeded generator</td><td><code>random.Random(1337)</code> produces the same sequence on every run.</td><td>Any failing case can be reproduced exactly, which is what makes a fuzz finding actionable.</td></tr>
+      </tbody>
+    </table>
+    <p>Notice the second mutant: <code>GPS:37.123,,122.456</code>. The longitude lost its minus sign and gained an empty field.
+    A parser that silently accepts it could place a waypoint in the wrong hemisphere &mdash; exactly the class of bug fuzzing exists to find.</p>
+
+    <h2>3. Binary telemetry: MAVLink frames and the checksum problem</h2>
+    <p>Real flight links carry binary protocols. A MAVLink&nbsp;v2 frame is a 10-byte header (magic <code>0xFD</code>,
+    payload length, incompatibility and compatibility flags, sequence, system ID, component ID, and a 24-bit message ID),
+    the payload, and a 16-bit checksum. The checksum is what makes naive fuzzing ineffective: almost every random mutation
+    breaks it, and the receiver drops the frame before the interesting parsing code ever runs.</p>
+    <p>The mutator below starts from a valid HEARTBEAT frame, applies one binary-aware mutation, then <em>re-signs</em> the
+    frame so the corrupted content actually reaches the message decoder.</p>
+    <div class="snippet">
+      <div class="snip-label">Python — MAVLink v2 mutator with checksum repair</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="kw">import</span> random
+<span class="kw">import</span> struct
+
+<span class="kw">def</span> <span class="fn">x25_crc</span>(data: bytes, crc: int = <span class="num">0xFFFF</span>) -&gt; int:
+    <span class="str">&quot;&quot;&quot;CRC-16/MCRF4XX, the checksum MAVLink uses.&quot;&quot;&quot;</span>
+    <span class="kw">for</span> b <span class="kw">in</span> data:
+        tmp = b ^ (crc &amp; <span class="num">0xFF</span>)
+        tmp = (tmp ^ (tmp &lt;&lt; <span class="num">4</span>)) &amp; <span class="num">0xFF</span>
+        crc = ((crc &gt;&gt; <span class="num">8</span>) ^ (tmp &lt;&lt; <span class="num">8</span>) ^ (tmp &lt;&lt; <span class="num">3</span>) ^ (tmp &gt;&gt; <span class="num">4</span>)) &amp; <span class="num">0xFFFF</span>
+    <span class="kw">return</span> crc
+
+<span class="kw">def</span> <span class="fn">heartbeat</span>(seq: int = <span class="num">0</span>, sysid: int = <span class="num">1</span>, compid: int = <span class="num">1</span>) -&gt; bytes:
+    <span class="str">&quot;&quot;&quot;A valid MAVLink v2 HEARTBEAT frame (message id 0, CRC_EXTRA 50).&quot;&quot;&quot;</span>
+    <span class="cmt"># custom_mode u32, type u8 (2 = quadrotor), autopilot u8 (12 = PX4),</span>
+    <span class="cmt"># base_mode u8, system_status u8 (4 = active), mavlink_version u8</span>
+    payload = struct.<span class="fn">pack</span>(<span class="str">&quot;&lt;IBBBBB&quot;</span>, <span class="num">0</span>, <span class="num">2</span>, <span class="num">12</span>, <span class="num">0</span>, <span class="num">4</span>, <span class="num">3</span>)
+    header = struct.<span class="fn">pack</span>(<span class="str">&quot;&lt;BBBBBBB&quot;</span>, <span class="num">0xFD</span>, <span class="fn">len</span>(payload), <span class="num">0</span>, <span class="num">0</span>, seq, sysid, compid)
+    header += (<span class="num">0</span>).<span class="fn">to_bytes</span>(<span class="num">3</span>, <span class="str">&quot;little&quot;</span>)          <span class="cmt"># 24-bit message id</span>
+    crc = <span class="fn">x25_crc</span>(<span class="fn">bytes</span>([<span class="num">50</span>]), <span class="fn">x25_crc</span>(header[<span class="num">1</span>:] + payload))
+    <span class="kw">return</span> header + payload + struct.<span class="fn">pack</span>(<span class="str">&quot;&lt;H&quot;</span>, crc)
+
+<span class="kw">def</span> <span class="fn">mutate_binary_packet</span>(packet: bytes, rng: random.Random) -&gt; bytes:
+    <span class="str">&quot;&quot;&quot;Bit flip, boundary-integer overwrite, byte swap, or truncation.&quot;&quot;&quot;</span>
+    <span class="kw">while</span> <span class="kw">True</span>:
+        data = <span class="fn">bytearray</span>(packet)
+        kind = rng.<span class="fn">choice</span>([<span class="str">&quot;bit_flip&quot;</span>, <span class="str">&quot;boundary_int&quot;</span>, <span class="str">&quot;byte_swap&quot;</span>, <span class="str">&quot;truncate&quot;</span>])
+        <span class="kw">if</span> kind == <span class="str">&quot;bit_flip&quot;</span>:
+            data[rng.<span class="fn">randrange</span>(<span class="fn">len</span>(data))] ^= <span class="num">1</span> &lt;&lt; rng.<span class="fn">randrange</span>(<span class="num">8</span>)
+        <span class="kw">elif</span> kind == <span class="str">&quot;boundary_int&quot;</span>:
+            idx = rng.<span class="fn">randrange</span>(<span class="fn">len</span>(data) - <span class="num">3</span>)
+            value = rng.<span class="fn">choice</span>([<span class="num">0x00000000</span>, <span class="num">0x7FFFFFFF</span>, <span class="num">0x80000000</span>, <span class="num">0xFFFFFFFF</span>])
+            data[idx:idx + <span class="num">4</span>] = struct.<span class="fn">pack</span>(<span class="str">&quot;&lt;I&quot;</span>, value)
+        <span class="kw">elif</span> kind == <span class="str">&quot;byte_swap&quot;</span>:
+            i, j = rng.<span class="fn">sample</span>(<span class="fn">range</span>(<span class="fn">len</span>(data)), <span class="num">2</span>)
+            data[i], data[j] = data[j], data[i]
+        <span class="kw">else</span>:
+            data = data[:rng.<span class="fn">randrange</span>(<span class="num">1</span>, <span class="fn">len</span>(data))]
+        <span class="kw">if</span> <span class="fn">bytes</span>(data) != packet:                 <span class="cmt"># discard no-op mutations</span>
+            <span class="kw">return</span> <span class="fn">bytes</span>(data)
+
+<span class="kw">def</span> <span class="fn">fix_crc</span>(packet: bytes, crc_extra: int = <span class="num">50</span>) -&gt; bytes:
+    <span class="str">&quot;&quot;&quot;Re-sign the frame so the mutation reaches the parser instead of the CRC check.&quot;&quot;&quot;</span>
+    <span class="kw">if</span> <span class="fn">len</span>(packet) &lt; <span class="num">12</span>:
+        <span class="kw">return</span> packet
+    crc = <span class="fn">x25_crc</span>(<span class="fn">bytes</span>([crc_extra]), <span class="fn">x25_crc</span>(packet[<span class="num">1</span>:-<span class="num">2</span>]))
+    <span class="kw">return</span> packet[:-<span class="num">2</span>] + struct.<span class="fn">pack</span>(<span class="str">&quot;&lt;H&quot;</span>, crc)
+
+rng = random.<span class="fn">Random</span>(<span class="num">1337</span>)
+seed = <span class="fn">heartbeat</span>()
+<span class="fn">print</span>(<span class="str">&quot;seed   &quot;</span>, seed.<span class="fn">hex</span>(<span class="str">&quot; &quot;</span>))
+<span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(<span class="num">3</span>):
+    <span class="fn">print</span>(<span class="str">&quot;mutant &quot;</span>, <span class="fn">fix_crc</span>(<span class="fn">mutate_binary_packet</span>(seed, rng)).<span class="fn">hex</span>(<span class="str">&quot; &quot;</span>))</pre>
+    </div>
+    <div class="snippet">
+      <div class="snip-label">Output</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre>seed    fd 09 00 00 00 01 01 00 00 00 00 00 00 00 02 0c 00 04 03 b6 bd
+mutant  fd 09 00 00 00 01 01 00 00 00 00 00 00 00 02 0c 00 04 bd c8 1d
+mutant  fd 09 00 00 00 01 01 00 00 00 ff ff ff ff 02 0c 00 04 03 bd 5d
+mutant  fd 09 00 00 00 01 01 00 00 00 00 00 00 00 00 0c 00 04 03 e0 b5</pre>
+    </div>
+    <div class="callout tip">
+      <strong>Verified.</strong> The seed frame above is byte-for-byte identical to the HEARTBEAT that the official
+      <code>pymavlink</code> library produces for the same fields. Fuzzing both ways is useful: leave the checksum broken to test
+      frame rejection, and repair it to test everything behind the checksum.
+    </div>
+    <p>The four mutation types mirror what production fuzzers do on binary formats: <strong>bit flips</strong> model radio
+    noise, <strong>boundary integers</strong> (<code>0x7FFFFFFF</code>, <code>0x80000000</code>, <code>0xFFFFFFFF</code>) hunt
+    for signed/unsigned and overflow bugs, <strong>byte swaps</strong> test field-order assumptions, and <strong>truncation</strong>
+    tests length handling &mdash; the classic source of out-of-bounds reads.</p>
+
+    <h2>4. Fuzzing binaries without source code</h2>
+    <p>Mutating input is the easy half. Modern fuzzers are <em>coverage-guided</em>: they keep mutants that reach new code and
+    discard the rest. Without source code, that coverage has to be recovered from the running binary.</p>
+    <table>
+      <thead><tr><th>Technique</th><th>How coverage is obtained</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td>Dynamic binary translation</td><td>The binary runs inside an emulator that records basic-block transitions as it translates code.</td><td>AFL++ QEMU mode, AFL++ Unicorn mode</td></tr>
+        <tr><td>Dynamic binary instrumentation</td><td>A runtime engine is injected into the process to trace blocks and edges.</td><td>AFL++ Frida mode, WinAFL (DynamoRIO)</td></tr>
+        <tr><td>Hardware tracing</td><td>The CPU records branches itself (Intel Processor Trace), with low overhead.</td><td>kAFL, Nyx, Honggfuzz</td></tr>
+        <tr><td>Static rewriting</td><td>Instrumentation is patched into the binary before it runs, avoiding emulator overhead.</td><td>e9patch / e9afl, ZAFL, afl-dyninst</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Speed comes from not restarting the process.</strong> Launching a fresh process for every test case is slow; AFL&rsquo;s
+    fork server removes most of that cost, and <em>persistent mode</em> goes further by looping over the target function inside one
+    process and resetting its state between iterations. The AFL++ documentation cites roughly a 10&ndash;20&times; speedup from persistent mode.</p>
+    <p><strong>Structure-aware mutation</strong> is the other big lever. For formats such as Protobuf, TLV, or JSON, custom mutators
+    (for example <code>libprotobuf-mutator</code> or AFL++ custom mutators) keep the outer structure valid while corrupting the contents &mdash;
+    the same idea as repairing the MAVLink checksum above.</p>
+
+    <h2>5. Where the idea started: the Commodore 64</h2>
+    <p>Anyone who spent time in a machine-language monitor on a Commodore 64 has done manual fuzzing. <code>POKE</code> wrote an
+    arbitrary byte into memory, <code>SYS</code> jumped into machine code, and the result was either the expected effect or a
+    screen full of garbage and a locked machine.</p>
+    <table>
+      <thead><tr><th>Commodore 64 (MOS 6510)</th><th>Modern fuzzing equivalent</th></tr></thead>
+      <tbody>
+        <tr><td><code>POKE address, value</code> &mdash; write any byte to RAM or an I/O register (<code>POKE 53280,0</code> turns the border black)</td><td>The mutation engine: byte overwrites, bit flips, boundary values</td></tr>
+        <tr><td><code>SYS address</code> &mdash; jump straight into machine code</td><td>The harness: calling a target function directly with a controlled input</td></tr>
+        <tr><td>A machine-language monitor (SuperMon, the Final Cartridge) &mdash; inspect <code>A</code>, <code>X</code>, <code>Y</code>, <code>PC</code>, <code>SP</code>, set breakpoints</td><td>Instrumentation and debugging: GDB, Frida, QEMU tracing</td></tr>
+        <tr><td>Lock-ups, garbage on screen, reaching for RUN/STOP + RESTORE or the power switch</td><td>Crash triage: <code>SIGSEGV</code>, hangs, sanitizer reports</td></tr>
+      </tbody>
+    </table>
+    <p>Two things changed. The 6510 had no memory protection, so a bad <code>POKE</code> could corrupt anything, including the VIC-II
+    video registers at <code>$D000</code>. Modern systems isolate each process, so a fuzzer can crash its target thousands of times a
+    second without taking itself down &mdash; and it records the exact input and machine state behind every crash instead of relying
+    on a human to remember what was typed.</p>
+
+    <h2>6. Drone firmware: when a bug does not crash</h2>
+    <p>On a server, a parser bug usually ends in a crash. On a drone, the worst bugs leave the software running and do the wrong
+    thing in the physical world: a bad mode transition, a failsafe that fires late, a motor command at the wrong time. Drone fuzzing
+    therefore needs <em>oracles</em> that understand flight behavior, not just crash detection.</p>
+    <p>The two main open-source autopilots are <strong>PX4</strong>, a modular stack built around the uORB publish/subscribe
+    message bus and typically running on the NuttX RTOS, and <strong>ArduPilot</strong> (Copter, Plane, Rover, Sub), built on its
+    <code>AP_HAL</code> hardware abstraction layer and running on ChibiOS for most flight controllers. Both can also be compiled to
+    run on Linux or macOS as <strong>SITL</strong> (Software-in-the-Loop), which is what makes large-scale fuzzing practical.</p>
+    <h3>The three layers worth testing</h3>
+    <table>
+      <thead><tr><th>Layer</th><th>What is mutated</th><th>What you are looking for</th></tr></thead>
+      <tbody>
+        <tr><td>Protocols &amp; parsers</td><td>MAVLink, DroneCAN, MSP, GNSS NMEA/UBX frames before they reach the serial or network interface</td><td>Buffer overflows, out-of-bounds reads, and lock-ups from malformed lengths and truncated payloads</td></tr>
+        <tr><td>Parameters &amp; state machine</td><td>Out-of-order commands and boundary values in configuration parameters</td><td>Invalid transitions &mdash; disarming in flight, ignoring altitude limits, failsafes that never trigger</td></tr>
+        <tr><td>Environment (in simulation)</td><td>Sensor noise, IMU drift, barometer jumps, GPS errors, obstacle placement</td><td>Estimator (EKF) failures and unsafe flight that the software does not detect</td></tr>
+      </tbody>
+    </table>
+    <h3>Research tools</h3>
+    <table>
+      <thead><tr><th>Tool</th><th>Target</th><th>Approach</th></tr></thead>
+      <tbody>
+        <tr><td><strong>PGFuzz</strong> (Purdue, NDSS 2021)</td><td>PX4, ArduPilot, Paparazzi</td><td>Policy-guided fuzzing: safety policies written in metric temporal logic steer mutation of inputs, parameters, and environment toward policy violations.</td></tr>
+        <tr><td><strong>RoboFuzz</strong> (Georgia Tech, ESEC/FSE 2022)</td><td>ROS 2&ndash;based robots, including a PX4 quadcopter</td><td>Type-aware mutation of ROS messages with correctness oracles for physical-law violations, specification violations, and cyber-physical discrepancies.</td></tr>
+        <tr><td><strong>AFL++ / LibAFL + SITL</strong></td><td>Protocol parsers and decoders</td><td>Coverage-guided fuzzing of autopilot code compiled for SITL with AddressSanitizer.</td></tr>
+        <tr><td><strong>CAMBA, DeepHyperion-UAV</strong> (SBFT 2024 UAV tool competition)</td><td>PX4 obstacle avoidance</td><td>Search-based generation of obstacle placements that force the drone to fly unsafely close to obstacles.</td></tr>
+      </tbody>
+    </table>
+    <h3>Running an ArduPilot SITL target</h3>
+    <p>No hardware is needed. ArduPilot&rsquo;s build system has a documented AddressSanitizer option for SITL builds:</p>
+    <div class="snippet">
+      <div class="snip-label">Shell — ArduPilot SITL with AddressSanitizer</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="cmt"># 1. Build ArduCopter for SITL with clang&#x27;s AddressSanitizer</span>
+cd ardupilot
+CC=clang CXX=clang++ ./waf configure --board sitl --asan
+./waf copter
+<span class="cmt"># 2. Start the simulated vehicle; its primary MAVLink port listens on TCP 5760</span>
+Tools/autotest/sim_vehicle.py -v ArduCopter
+<span class="cmt"># 3. Point your own mutator (e.g. the Section 3 code, sent with pymavlink) at tcp:127.0.0.1:5760</span></pre>
+    </div>
+    <p>Port <code>14550</code> is where MAVProxy forwards telemetry for ground-control software; to inject mutated frames into the
+    vehicle itself, connect to the SITL port directly.</p>
+
+    <h2>7. Choosing a toolchain</h2>
+    <table>
+      <thead><tr><th>Target</th><th>Good starting point</th></tr></thead>
+      <tbody>
+        <tr><td>Linux x86/ARM binary, no source</td><td><strong>AFL++</strong> in QEMU or Frida mode</td></tr>
+        <tr><td>Library you can link against</td><td><strong>libFuzzer</strong> or <strong>LibAFL</strong> harness (build your own fuzzer from LibAFL&rsquo;s mutators, observers, and feedbacks)</td></tr>
+        <tr><td>Raw Cortex-M firmware (<code>.bin</code> / <code>.hex</code>)</td><td><strong>Fuzzware</strong> (automatic MMIO modeling) or <strong>Hoedur</strong> (separate input streams per peripheral); <strong>Renode</strong> for full-board emulation; <strong>Avatar&sup2;</strong> to bridge an emulator and real hardware</td></tr>
+        <tr><td>Kernels, hypervisors, full RTOS images</td><td><strong>kAFL</strong> or <strong>Nyx</strong> (snapshot-based, Intel PT)</td></tr>
+        <tr><td>Network and serial protocols</td><td><strong>Boofuzz</strong> for stateful protocol fuzzing; <strong>Scapy</strong> for crafting and mangling packets</td></tr>
+        <tr><td>Drone autopilot behavior</td><td>SITL plus <strong>PGFuzz</strong>- or <strong>RoboFuzz</strong>-style oracles</td></tr>
+        <tr><td>Radio and over-the-air links</td><td>A software-defined radio (HackRF, USRP) with GNU Radio &mdash; only on equipment and spectrum you are authorized to test</td></tr>
+      </tbody>
+    </table>
+
+    <h2>8. What good looks like</h2>
+    <p>For a ground-control station or telemetry app, a parser that has survived serious fuzzing should:</p>
+    <ul>
+      <li><strong>Reject malformed input without crashing</strong> &mdash; including on the UI thread of a mobile app.</li>
+      <li><strong>Flag or discard corrupted coordinates</strong> instead of turning them into waypoints or map offsets.</li>
+      <li><strong>Fail predictably</strong>, keeping the link, the telemetry log, and the operator&rsquo;s situational awareness intact.</li>
+    </ul>
+
+    <h2>References</h2>
+    <p><strong>Books</strong></p>
+    <ul>
+      <li>Zeller, Gopinath, B&ouml;hme, Fraser, Holler &mdash; <a href="https://www.fuzzingbook.org/"><em>The Fuzzing Book</em></a> (free, interactive).</li>
+      <li>Dowd, McDonald, Schuh &mdash; <em>The Art of Software Security Assessment</em> (Addison-Wesley, 2006).</li>
+    </ul>
+    <p><strong>Papers</strong></p>
+    <ul>
+      <li>Zalewski &mdash; <a href="https://lcamtuf.coredump.cx/afl/technical_details.txt">AFL technical whitepaper</a>.</li>
+      <li>Fioraldi, Maier, Ei&szlig;feldt, Heuse &mdash; <a href="https://www.usenix.org/conference/woot20/presentation/fioraldi">AFL++: Combining Incremental Steps of Fuzzing Research</a> (WOOT 2020).</li>
+      <li>Nagy, Hicks &mdash; Full-speed Fuzzing: Reducing Fuzzing Overhead through Coverage-Guided Tracing (IEEE S&amp;P 2019).</li>
+      <li>Schumilo et al. &mdash; <a href="https://www.usenix.org/conference/usenixsecurity17/technical-sessions/presentation/schumilo">kAFL</a> (USENIX Security 2017) and <a href="https://www.usenix.org/conference/usenixsecurity21/presentation/schumilo">Nyx</a> (USENIX Security 2021).</li>
+      <li>Scharnowski et al. &mdash; <a href="https://www.usenix.org/conference/usenixsecurity22/presentation/scharnowski">Fuzzware</a> (USENIX Security 2022) and <a href="https://www.usenix.org/conference/usenixsecurity23/presentation/scharnowski">Hoedur</a> (USENIX Security 2023).</li>
+      <li>Kim et al. &mdash; <a href="https://www.ndss-symposium.org/ndss-paper/pgfuzz-policy-guided-fuzzing-for-robotic-vehicles/">PGFuzz: Policy-Guided Fuzzing for Robotic Vehicles</a> (NDSS 2021).</li>
+      <li>Kim, Kim &mdash; <a href="https://github.com/sslab-gatech/RoboFuzz">RoboFuzz</a> (ESEC/FSE 2022).</li>
+      <li>Khatiri et al. &mdash; <a href="https://dl.acm.org/doi/10.1145/3643659.3643931">SBFT Tool Competition 2024 &mdash; CPS-UAV Test Case Generation Track</a>.</li>
+    </ul>
+    <p><strong>Tools and documentation</strong></p>
+    <ul>
+      <li><a href="https://github.com/AFLplusplus/AFLplusplus">AFL++</a> &middot; <a href="https://github.com/AFLplusplus/LibAFL">LibAFL</a> &middot; <a href="https://github.com/google/honggfuzz">Honggfuzz</a> &middot; <a href="https://github.com/jtpereyda/boofuzz">Boofuzz</a> &middot; <a href="https://github.com/avatartwo/avatar2">Avatar&sup2;</a> &middot; <a href="https://renode.io/">Renode</a></li>
+      <li><a href="https://mavlink.io/en/guide/serialization.html">MAVLink serialization and CRC</a> &middot; <a href="https://github.com/ArduPilot/ardupilot/blob/master/BUILD.md">ArduPilot build options</a></li>
+    </ul>
+
+    <p><a href="/">&larr; All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-mutation-based-fuzzing-drone-firmware",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
