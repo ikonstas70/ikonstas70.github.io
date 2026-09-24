@@ -22,13 +22,26 @@
 <meta name="twitter:image" content="https://ikonstas70.github.io/articles/gh-mutation-fuzzing-og.jpg">
 <link rel="stylesheet" href="/style.css">
 <style>
-body{
-  background:
-    linear-gradient(180deg, hsl(0 0% 4% / .90), hsl(0 0% 4% / .96) 40%, hsl(0 0% 4% / 1) 85%),
-    url("/articles/gh-mutation-fuzzing-bg.jpg") center 120px / 1100px auto no-repeat fixed;
+body{ background: hsl(0 0% 4%); }
+body::before{
+  content:""; position:fixed; inset:0; z-index:-1;
+  background: url("/articles/gh-mutation-fuzzing-bg.jpg") center / cover no-repeat;
+  filter: blur(1.5px) brightness(.72) saturate(.85);
+  transform: scale(1.02);
 }
+.wrap{
+  margin: 48px auto 64px;
+  padding: 0 44px 56px;
+  background: linear-gradient(180deg, hsl(220 12% 6% / .74), hsl(220 12% 5% / .84));
+  border: 1px solid hsl(43 45% 56% / .22);
+  border-radius: 18px;
+  box-shadow: 0 30px 80px hsl(0 0% 0% / .45), inset 0 1px 0 hsl(0 0% 100% / .04);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+}
+header.site{ padding-top: 44px; }
 @media (max-width:900px){
-  body{ background-attachment:scroll; background-size:100% auto; }
+  .wrap{ margin: 0; border-radius: 0; border-left: 0; border-right: 0; padding: 0 18px 40px; }
 }
 @media (max-width:700px){
   main table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
