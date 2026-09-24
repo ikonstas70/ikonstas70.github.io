@@ -87,6 +87,7 @@ ip prefix-list FILTER-INTERNAL permit 0.0.0.0/0 le 32</pre></div>
 <div class="verify-block"><div class="cmd">show ip ospf database nssa-external</div><div class="expected">Expected: Type-7 NSSA LSAs from ASBR (CE-CORP-1) visible within the NSSA. ABR translates these to Type-5 in the backbone.</div></div>
 <div class="verify-block"><div class="cmd">show ip route ospf</div><div class="expected">Expected: CE router only sees O*IA 0.0.0.0/0 default route from ABR (totally-stubby). All other destinations reached via default.</div></div></div>
 </div>
+<p class="ai-note" style="max-width:780px;margin:28px auto 8px;padding:0 20px;font-size:.82rem;font-style:italic;color:#8a8a8a;text-align:center">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
 <footer class="footer">Ioannis Alexander Konstas — Cybersecurity &amp; Infrastructure Engineer · Miami, FL<br>Advanced CCIE RS Lab — Educational/Reference Use Only</footer>
 
 <div class="cfg-section">

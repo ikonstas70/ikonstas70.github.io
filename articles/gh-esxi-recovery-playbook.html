@@ -88,6 +88,7 @@ Get-VM | Where-Object { (Get-Snapshot -VM $_).Count -gt 1 } |
     Select-Object Name, @{N="SnapshotCount"; E={(Get-Snapshot -VM $_).Count}}
 </code></pre><p>VMware recommends deleting snapshots within 24–72 hours for production VMs; chains that have grown large or aged significantly increase the risk of disk space exhaustion during consolidation. Orphaned snapshot chains are one of the most common causes of vSphere disk space emergencies.</p>
     <p><a href="/">← All articles</a></p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
     <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>

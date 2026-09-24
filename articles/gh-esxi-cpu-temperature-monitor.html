@@ -86,6 +86,7 @@ nohup /vmfs/volumes/datastore1/scripts/cpu_monitor.sh \
 - 10 s — normal monitoring, default.
 - 30 s — background logging without <code>clear</code>, append output to a file instead.</p><p>If your server has more than two CPUs or uses a non-standard naming convention, change <code>grep "CPU"</code> to <code>grep -i "temp"</code> to catch all temperature sensors regardless of label.</p><hr></hr><h2>Limitations and What This Doesn't Replace</h2><p>This script is a lightweight operational tool, not a replacement for a proper monitoring stack. It has no persistent alerting, no trend history, no multi-host view, and no integration with incident management. For production environments, pair it with Prometheus + node_exporter (IPMI exporter), vCenter alarms, or your organisation's SIEM.</p><p>Where this script excels is in situations where none of the above are available: a standalone lab ESXi host, a quick post-maintenance thermal check, or an environment where deploying Prometheus is more overhead than the task warrants.</p>
     <p><a href="/">← All articles</a></p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
     <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>

@@ -55,6 +55,7 @@ Targets raw console ports (2301–2310) via socat. Provides out-of-band engineer
 - <strong>AI agents</strong> — LLM-driven network operations using the REST API as a tool.
 - <strong>Monitoring platforms</strong> — polling router state via scheduled API calls.</p><hr></hr><h2>Conclusion: Consoles Are Now Endpoints</h2><p>The Alexander Full-Stack Project successfully solves the "last mile" automation problem for virtualized Cisco hardware. By layering Flask (logic), socat (transport), Cloudflare (global access), and Tailscale (private fabric), it transforms 20 legacy serial consoles into a secure, scalable, API-driven fleet.</p><p>The architecture is deliberately modular. Adding a new router means updating a port in the socat range and a value in the Flask allowlist. Changing the physical transport — from Telnet to SSH, or from a Point-to-Point link to a VPN — means editing <code>telnet.sh</code> without touching the core API. This separation of concerns is what makes it a professional-grade template rather than a one-off script.</p><p>You no longer manage consoles — you manage API endpoints. The routers are serverless.</p>
     <p><a href="/">← All articles</a></p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
     <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>

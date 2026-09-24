@@ -49,6 +49,7 @@ t₂ = t₀ − x · t₁ = 0 − x · 1 = −x  ≡  x  (in GF(2), −1 = 1)
 x³ + x  mod  (x³ + x + 1) = (x³ + x) − (x³ + x + 1) = 1  ✓
 </code></pre><hr></hr><h2>Connection to AES</h2><p>The operations described here are used directly in the <strong>SubBytes</strong> and <strong>MixColumns</strong> steps of AES:</p><table><thead><tr><th>AES Step</th><th>GF(2⁸) Operation</th></tr></thead><tbody><tr><td>SubBytes (S-box)</td><td>Compute multiplicative inverse of each byte in GF(2⁸), then apply affine transformation</td></tr><tr><td>MixColumns</td><td>Multiply each column's bytes by a fixed polynomial over GF(2⁸)</td></tr><tr><td>AddRoundKey</td><td>XOR — equivalent to polynomial addition in GF(2⁸)</td></tr></tbody></table><p>The security of AES relies on the non-linearity introduced by S-box inversion in GF(2⁸), making it resistant to linear and differential cryptanalysis.</p><hr></hr><p>
     <p><a href="/">← All articles</a></p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
     <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>

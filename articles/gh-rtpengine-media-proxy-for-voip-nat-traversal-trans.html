@@ -60,6 +60,7 @@ route[RTPENGINE] {
     }
 }</pre><p>The <code>replace-origin replace-session-connection</code> flags tell RTPEngine to replace both the <code>o=</code> (origin) and <code>c=</code> (connection) lines in the SDP with its own IP address. This is what forces audio to flow through RTPEngine.</p><h2>Capacity Reference</h2><table><thead><tr><th>Server Spec</th><th>G.711 Pass-through</th><th>With Transcoding</th></tr></thead><tbody><tr><td>4 core / 8 GB</td><td>~1,000 concurrent calls</td><td>~500 concurrent calls</td></tr><tr><td>8 core / 16 GB</td><td>~2,500 concurrent calls</td><td>~1,200 concurrent calls</td></tr><tr><td>16 core / 32 GB</td><td>~5,000+ concurrent calls</td><td>~2,500 concurrent calls</td></tr></tbody></table><p>Transcoding (codec conversion) roughly halves capacity because it requires CPU-intensive audio encoding/decoding for every packet. Use pass-through (same codec both sides) wherever possible and reserve transcoding for endpoints that cannot negotiate a common codec.</p>
     <p><a href="/">← All articles</a></p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
     <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>

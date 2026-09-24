@@ -89,6 +89,7 @@ router bgp 65000
 <div class="verify-block"><div class="cmd">show ip route vrf CORP ospf</div><div class="expected">Expected: Remote CE prefixes show as "O" (intra-area) NOT "O E2" — confirms sham-link is working and MPLS path wins.</div></div>
 <div class="verify-block"><div class="cmd">show ip ospf database external vrf CORP</div><div class="expected">Expected: No external LSAs for customer prefixes — they appear as intra-area via sham-link.</div></div></div>
 </div>
+<p class="ai-note" style="max-width:780px;margin:28px auto 8px;padding:0 20px;font-size:.82rem;font-style:italic;color:#8a8a8a;text-align:center">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
 <footer class="footer">Ioannis Alexander Konstas — Cybersecurity &amp; Infrastructure Engineer · Miami, FL<br>Advanced CCIE RS Lab — Educational/Reference Use Only</footer>
 
 <div class="cfg-section">

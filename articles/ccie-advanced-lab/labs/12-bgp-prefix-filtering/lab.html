@@ -86,6 +86,7 @@ router bgp 65001
 <div class="verify-block"><div class="cmd">show ip bgp neighbors 198.51.100.2 | include ORF</div><div class="expected">Expected: "Outbound Route Filter (ORF) capability" negotiated. Prefix-list sent to peer visible.</div></div>
 <div class="verify-block"><div class="cmd">show ip bgp neighbors 198.51.100.2 prefix-list CORP-OUT</div><div class="expected">Expected: Only corporate prefix ranges advertised outbound — no internal subnets leaked to ISP.</div></div></div>
 </div>
+<p class="ai-note" style="max-width:780px;margin:28px auto 8px;padding:0 20px;font-size:.82rem;font-style:italic;color:#8a8a8a;text-align:center">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
 <footer class="footer">Ioannis Alexander Konstas — Cybersecurity &amp; Infrastructure Engineer · Miami, FL<br>Advanced CCIE RS Lab — Educational/Reference Use Only</footer>
 
 <div class="cfg-section">

@@ -106,6 +106,7 @@ router eigrp DMVPN-FABRIC
 <div class="verify-block"><div class="cmd">show ip nhrp shortcut</div><div class="expected">Expected: After spoke-to-spoke ping, shortcut entries appear with NBMA address of remote spoke and expiry timer.</div></div>
 <div class="verify-block"><div class="cmd">traceroute 10.10.12.1 source 10.10.11.1</div><div class="expected">Initially via hub (3 hops: spoke → hub → spoke). After Phase 3 shortcut established: 2 hops (direct spoke-to-spoke). Verify NHRP redirect worked.</div></div></div>
 </div>
+<p class="ai-note" style="max-width:780px;margin:28px auto 8px;padding:0 20px;font-size:.82rem;font-style:italic;color:#8a8a8a;text-align:center">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
 <footer class="footer">Ioannis Alexander Konstas — Cybersecurity &amp; Infrastructure Engineer · Miami, FL<br>Advanced CCIE RS Lab — Educational/Reference Use Only</footer>
 
 <div class="cfg-section">
