@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/gh-owasp-top-10-file-scanner">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>An OWASP Top 10 File Scanner with Live Malware Lookups — Konstas Engineering Notes</title>
+<meta name="description" content="How a laptop-side scanner combines an OWASP Top 10 regex pattern engine with four free online signature databases — VirusTotal, CIRCL hashlookup, MalwareBazaar, and the NIST NVD — behind an HTTPS localhost dashboard, with the detection patterns and hash-lookup code shown in full.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/gh-owasp-top-10-file-scanner">
+<meta property="og:title" content="An OWASP Top 10 File Scanner with Live Malware Lookups">
+<meta property="og:description" content="A laptop-side scanner that pairs an OWASP Top 10 regex engine with four free online signature databases behind an HTTPS localhost dashboard — detection patterns and hash-lookup code shown in full.">
+<meta property="og:image" content="https://ikonstas70.github.io/ioannis-share.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="An OWASP Top 10 File Scanner with Live Malware Lookups">
+<meta name="twitter:description" content="A laptop-side scanner that pairs an OWASP Top 10 regex engine with four free online signature databases behind an HTTPS localhost dashboard.">
+<meta name="twitter:image" content="https://ikonstas70.github.io/ioannis-share.png">
+<link rel="stylesheet" href="/style.css">
+<script>
+function copyCode(btn){
+  var pre = btn.parentElement.querySelector("pre");
+  if(!pre) return;
+  navigator.clipboard.writeText(pre.textContent).then(function(){
+    var orig = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(function(){ btn.textContent = orig; }, 1400);
+  }).catch(function(){});
+}
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="https://ikonstas70.github.io/information-security/">Information Security</a>
+      <a href="https://ikonstas70.github.io/music/" class="nav-gold">Music</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Defensive Security</span>
+    <h1>An OWASP Top 10 File Scanner with Live Malware Lookups</h1>
+    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas</p>
+
+    <div class="callout insight">
+      <strong>Summary.</strong> This note walks through a small, self-hosted scanner that does two jobs at once: it matches source
+      files against an OWASP Top&nbsp;10 pattern engine, and it checks each file&rsquo;s hash against four free online reputation
+      databases &mdash; VirusTotal, CIRCL hashlookup, MalwareBazaar, and the NIST NVD. Everything runs on the laptop behind an
+      HTTPS localhost dashboard; nothing but a SHA-256 hash and a package name ever leaves the machine. The code is on
+      <a href="https://github.com/ikonstas70/owasp-security-scanner">GitHub</a>, and the detection patterns and lookup logic are
+      reproduced below.
+    </div>
+
+    <div class="header-tags">
+      <span class="tag">OWASP Top 10</span>
+      <span class="tag">VirusTotal</span>
+      <span class="tag">CIRCL hashlookup</span>
+      <span class="tag">MalwareBazaar</span>
+      <span class="tag">NIST NVD</span>
+      <span class="tag">Flask</span>
+      <span class="tag">HTTPS</span>
+    </div>
+
+    <h2>1. Two questions, one pass over the file</h2>
+    <p>Most laptop scanners answer only one of two questions. A linter or SAST tool asks &ldquo;does this code contain a risky
+    pattern?&rdquo; An antivirus engine asks &ldquo;does this file match a known-bad signature?&rdquo; This scanner asks both on the
+    same pass, because the answers are complementary: a pattern match tells you the code you wrote is dangerous, and a hash match
+    tells you the file you received is dangerous.</p>
+    <table>
+      <thead><tr><th></th><th>Pattern engine</th><th>Online reputation</th></tr></thead>
+      <tbody>
+        <tr><td>Input</td><td>The file&rsquo;s text content</td><td>The file&rsquo;s SHA-256 hash (and package names)</td></tr>
+        <tr><td>Question</td><td>Does this code introduce an OWASP Top&nbsp;10 weakness?</td><td>Has this exact file been seen as malware?</td></tr>
+        <tr><td>Runs</td><td>Fully offline, on-device</td><td>Sends only the hash to public APIs</td></tr>
+        <tr><td>Output</td><td>Severity-ranked findings by OWASP category</td><td>Detection ratios and known-sample flags</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. The OWASP Top 10 pattern engine</h2>
+    <p>The engine is a table of <code>(category, severity, label, regex)</code> rows &mdash; one or more per OWASP&nbsp;2021
+    category. Keeping the rules as data rather than code means a new detection is one line, and the same table drives both the Bash
+    terminal scanner and the Python dashboard. A representative slice:</p>
+    <div class="snippet">
+      <div class="snip-label">Python — detection rules (excerpt)</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="cmt"># (OWASP ID, severity, label, regex)</span>
+PATTERNS = [
+    (<span class="str">&quot;A01&quot;</span>, <span class="str">&quot;HIGH&quot;</span>,     <span class="str">&quot;Path traversal&quot;</span>,            <span class="str">r&quot;\.\./\.\./&quot;</span>),
+    (<span class="str">&quot;A02&quot;</span>, <span class="str">&quot;CRITICAL&quot;</span>, <span class="str">&quot;Hardcoded password&quot;</span>,        <span class="str">r&quot;password\s*=\s*[\&quot;'][^\&quot;']{4,}[\&quot;']&quot;</span>),
+    (<span class="str">&quot;A02&quot;</span>, <span class="str">&quot;CRITICAL&quot;</span>, <span class="str">&quot;Hardcoded secret or API key&quot;</span>, <span class="str">r&quot;(secret|api_key)\s*=\s*[\&quot;'][^\&quot;']{4,}[\&quot;']&quot;</span>),
+    (<span class="str">&quot;A03&quot;</span>, <span class="str">&quot;CRITICAL&quot;</span>, <span class="str">&quot;SQL injection sink&quot;</span>,        <span class="str">r&quot;execute\(.*%.*\)&quot;</span>),
+    (<span class="str">&quot;A04&quot;</span>, <span class="str">&quot;MEDIUM&quot;</span>,   <span class="str">&quot;Insecure randomness&quot;</span>,       <span class="str">r&quot;random\.random\(&quot;</span>),
+    (<span class="str">&quot;A05&quot;</span>, <span class="str">&quot;CRITICAL&quot;</span>, <span class="str">&quot;AWS secret key&quot;</span>,           <span class="str">r&quot;(aws_secret|AWS_SECRET)\s*=&quot;</span>),
+    (<span class="str">&quot;A07&quot;</span>, <span class="str">&quot;HIGH&quot;</span>,     <span class="str">&quot;Hardcoded bearer token&quot;</span>,   <span class="str">r&quot;Bearer [A-Za-z0-9_.~+/-]{20,}&quot;</span>),
+    (<span class="str">&quot;A08&quot;</span>, <span class="str">&quot;HIGH&quot;</span>,     <span class="str">&quot;Unsafe deserialization&quot;</span>,   <span class="str">r&quot;pickle\.loads?\(&quot;</span>),
+    (<span class="str">&quot;A09&quot;</span>, <span class="str">&quot;MEDIUM&quot;</span>,   <span class="str">&quot;Password/secret in log&quot;</span>,   <span class="str">r&quot;(log|print|logger)\s*.*(password|secret|api_key)&quot;</span>),
+    (<span class="str">&quot;A10&quot;</span>, <span class="str">&quot;HIGH&quot;</span>,     <span class="str">&quot;SSRF / metadata endpoint&quot;</span>, <span class="str">r&quot;169\.254\.169\.254&quot;</span>),
+]
+
+<span class="kw">def</span> <span class="fn">scan_text</span>(text: str):
+    <span class="str">&quot;&quot;&quot;Yield one finding per matching line, ordered as the file reads.&quot;&quot;&quot;</span>
+    <span class="kw">for</span> lineno, line <span class="kw">in</span> <span class="fn">enumerate</span>(text.<span class="fn">splitlines</span>(), <span class="num">1</span>):
+        <span class="kw">for</span> owasp_id, severity, label, rx <span class="kw">in</span> PATTERNS:
+            <span class="kw">if</span> re.<span class="fn">search</span>(rx, line):
+                <span class="kw">yield</span> {<span class="str">&quot;id&quot;</span>: owasp_id, <span class="str">&quot;severity&quot;</span>: severity, <span class="str">&quot;label&quot;</span>: label, <span class="str">&quot;line&quot;</span>: lineno}</pre>
+    </div>
+    <p>Full OWASP&nbsp;2021 coverage in the scanner spans all ten categories:</p>
+    <table>
+      <thead><tr><th>ID</th><th>Category</th><th>Examples detected</th></tr></thead>
+      <tbody>
+        <tr><td>A01</td><td>Broken Access Control</td><td>Admin bypass, path traversal, IDOR</td></tr>
+        <tr><td>A02</td><td>Cryptographic Failures</td><td>Hardcoded secrets, weak hash (MD5/SHA1), private keys</td></tr>
+        <tr><td>A03</td><td>Injection</td><td>SQL, command, LDAP, template, prompt injection</td></tr>
+        <tr><td>A04</td><td>Insecure Design</td><td>Debug mode, insecure randomness</td></tr>
+        <tr><td>A05</td><td>Security Misconfiguration</td><td>AWS keys, wildcard CORS, disabled SSL</td></tr>
+        <tr><td>A06</td><td>Vulnerable Components</td><td>Outdated packages, unsafe pickle</td></tr>
+        <tr><td>A07</td><td>Auth Failures</td><td>JWT <code>none</code> alg, hardcoded tokens, insecure cookies</td></tr>
+        <tr><td>A08</td><td>Software &amp; Data Integrity</td><td>Unvalidated deserialization, <code>eval</code> on external data</td></tr>
+        <tr><td>A09</td><td>Logging Failures</td><td>Passwords/secrets in logs</td></tr>
+        <tr><td>A10</td><td>SSRF</td><td>User-controlled URLs, metadata endpoint access</td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip">
+      <strong>Why regex, and where it stops.</strong> Line-level patterns are fast, dependency-free, and easy to audit &mdash; ideal
+      for a live file watcher. They are deliberately not a replacement for a data-flow SAST engine: a regex sees
+      <code>execute(&quot;... %s ...&quot;)</code> but cannot prove the argument is attacker-controlled. Treat findings as
+      &ldquo;look here,&rdquo; not &ldquo;proven exploitable.&rdquo;
+    </div>
+
+    <h2>3. Four reputation databases, hash-only</h2>
+    <p>The second half of a scan is reputation. Every file is hashed once with SHA-256, and that hash &mdash; never the file &mdash;
+    is checked against four services. Three need no API key at all; only VirusTotal requires one, and its free tier is generous
+    (500 lookups/day).</p>
+    <table>
+      <thead><tr><th>Database</th><th>What it answers</th><th>Key required</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://www.virustotal.com">VirusTotal</a></td><td>File hash vs 70+ AV engines</td><td>Yes (free tier: 500/day)</td></tr>
+        <tr><td><a href="https://hashlookup.circl.lu">CIRCL hashlookup</a></td><td>Is this hash known-good or known-bad?</td><td>No</td></tr>
+        <tr><td><a href="https://bazaar.abuse.ch">MalwareBazaar</a></td><td>Is this hash a catalogued malware sample?</td><td>No</td></tr>
+        <tr><td><a href="https://nvd.nist.gov">NIST NVD</a></td><td>Known CVEs for a package name</td><td>No</td></tr>
+      </tbody>
+    </table>
+    <p>The VirusTotal lookup is a single authenticated GET keyed on the hash. The response&rsquo;s
+    <code>last_analysis_stats</code> gives the detection ratio directly:</p>
+    <div class="snippet">
+      <div class="snip-label">Python — VirusTotal hash lookup</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="kw">import</span> os, hashlib, urllib.request, urllib.error, json
+
+<span class="kw">def</span> <span class="fn">sha256_file</span>(path: str) -&gt; str:
+    h = hashlib.<span class="fn">sha256</span>()
+    <span class="kw">with</span> <span class="fn">open</span>(path, <span class="str">&quot;rb&quot;</span>) <span class="kw">as</span> f:
+        <span class="kw">for</span> chunk <span class="kw">in</span> <span class="fn">iter</span>(<span class="kw">lambda</span>: f.<span class="fn">read</span>(<span class="num">65536</span>), <span class="str">b&quot;&quot;</span>):
+            h.<span class="fn">update</span>(chunk)
+    <span class="kw">return</span> h.<span class="fn">hexdigest</span>()
+
+<span class="kw">def</span> <span class="fn">virustotal</span>(sha256: str):
+    vt_key = os.<span class="fn">environ</span>.<span class="fn">get</span>(<span class="str">&quot;VIRUSTOTAL_API_KEY&quot;</span>)
+    <span class="kw">if</span> <span class="kw">not</span> vt_key:
+        <span class="kw">return</span> {<span class="str">&quot;source&quot;</span>: <span class="str">&quot;VIRUSTOTAL&quot;</span>, <span class="str">&quot;status&quot;</span>: <span class="str">&quot;UNKNOWN&quot;</span>,
+                <span class="str">&quot;detail&quot;</span>: <span class="str">&quot;Set VIRUSTOTAL_API_KEY env var&quot;</span>}
+    req = urllib.request.<span class="fn">Request</span>(
+        <span class="str">f&quot;https://www.virustotal.com/api/v3/files/{sha256}&quot;</span>,
+        headers={<span class="str">&quot;x-apikey&quot;</span>: vt_key, <span class="str">&quot;User-Agent&quot;</span>: <span class="str">&quot;owasp-scanner/2.0&quot;</span>})
+    <span class="kw">try</span>:
+        data = json.<span class="fn">loads</span>(urllib.request.<span class="fn">urlopen</span>(req, timeout=<span class="num">15</span>).<span class="fn">read</span>())
+        stats = data[<span class="str">&quot;data&quot;</span>][<span class="str">&quot;attributes&quot;</span>][<span class="str">&quot;last_analysis_stats&quot;</span>]
+        hits, total = stats[<span class="str">&quot;malicious&quot;</span>], <span class="fn">sum</span>(stats.<span class="fn">values</span>())
+        status = <span class="str">&quot;MALICIOUS&quot;</span> <span class="kw">if</span> hits <span class="kw">else</span> <span class="str">&quot;CLEAN&quot;</span>
+        <span class="kw">return</span> {<span class="str">&quot;source&quot;</span>: <span class="str">&quot;VIRUSTOTAL&quot;</span>, <span class="str">&quot;status&quot;</span>: status, <span class="str">&quot;detail&quot;</span>: <span class="str">f&quot;{hits}/{total} engines&quot;</span>}
+    <span class="kw">except</span> urllib.error.HTTPError <span class="kw">as</span> e:
+        <span class="kw">if</span> e.code == <span class="num">404</span>:                         <span class="cmt"># hash never submitted = not known-bad</span>
+            <span class="kw">return</span> {<span class="str">&quot;source&quot;</span>: <span class="str">&quot;VIRUSTOTAL&quot;</span>, <span class="str">&quot;status&quot;</span>: <span class="str">&quot;UNKNOWN&quot;</span>, <span class="str">&quot;detail&quot;</span>: <span class="str">&quot;not in dataset&quot;</span>}
+        <span class="kw">raise</span></pre>
+    </div>
+    <div class="callout tip">
+      <strong>A 404 is not &ldquo;clean.&rdquo;</strong> If VirusTotal has never seen the hash it returns 404 &mdash; which means
+      unknown, not safe. The scanner reports that as <code>UNKNOWN</code> rather than a green tick, so a novel sample is never
+      mislabelled as harmless. CIRCL and MalwareBazaar are queried the same hash-only way, and the NVD lookup takes a package name
+      via <code>keywordSearch</code> to surface known CVEs for a dependency.
+    </div>
+
+    <h2>4. The HTTPS localhost dashboard</h2>
+    <p>The dashboard is a small Flask app that serves the same engine over a browser UI. It binds to localhost only and speaks TLS
+    with a self-signed certificate, so scan results and any pasted content never cross the network in cleartext &mdash; even though
+    they never leave the machine either. Findings are ranked by severity, and each file row carries its four reputation verdicts.</p>
+    <div class="snippet">
+      <div class="snip-label">Python — Flask over TLS, localhost only</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="kw">import</span> os
+<span class="kw">from</span> flask <span class="kw">import</span> Flask, request, jsonify
+
+SSL_CERT = os.path.<span class="fn">expanduser</span>(<span class="str">&quot;~/.owasp_ssl/cert.pem&quot;</span>)
+SSL_KEY  = os.path.<span class="fn">expanduser</span>(<span class="str">&quot;~/.owasp_ssl/key.pem&quot;</span>)
+
+app = <span class="fn">Flask</span>(__name__)
+
+<span class="matched">@app.route(<span class="str">&quot;/scan&quot;</span>, methods=[<span class="str">&quot;POST&quot;</span>])</span>
+<span class="kw">def</span> <span class="fn">scan</span>():
+    text = request.<span class="fn">get_json</span>(force=<span class="kw">True</span>).<span class="fn">get</span>(<span class="str">&quot;content&quot;</span>, <span class="str">&quot;&quot;</span>)
+    findings = <span class="fn">sorted</span>(<span class="fn">scan_text</span>(text),
+                      key=<span class="kw">lambda</span> f: [<span class="str">&quot;CRITICAL&quot;</span>, <span class="str">&quot;HIGH&quot;</span>, <span class="str">&quot;MEDIUM&quot;</span>, <span class="str">&quot;LOW&quot;</span>].<span class="fn">index</span>(f[<span class="str">&quot;severity&quot;</span>]))
+    <span class="kw">return</span> <span class="fn">jsonify</span>(findings=findings)
+
+<span class="kw">if</span> __name__ == <span class="str">&quot;__main__&quot;</span>:
+    <span class="cmt"># bind to loopback only; never 0.0.0.0</span>
+    app.<span class="fn">run</span>(host=<span class="str">&quot;127.0.0.1&quot;</span>, port=<span class="num">8443</span>, ssl_context=(SSL_CERT, SSL_KEY))</pre>
+    </div>
+
+    <h2>5. Setup and daily use</h2>
+    <p>Two dependencies, one self-signed certificate, and an optional VirusTotal key:</p>
+    <div class="snippet">
+      <div class="snip-label">Shell — one-time setup</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre>brew install fswatch
+pip3 install flask
+
+<span class="cmt"># self-signed cert for the localhost dashboard</span>
+mkdir -p ~/.owasp_ssl
+openssl req -x509 -newkey rsa:4096 \
+  -keyout ~/.owasp_ssl/key.pem \
+  -out ~/.owasp_ssl/cert.pem \
+  -days 365 -nodes -subj <span class="str">&quot;/CN=localhost&quot;</span>
+
+<span class="cmt"># optional: enable VirusTotal lookups</span>
+export VIRUSTOTAL_API_KEY=your_key_here</pre>
+    </div>
+    <p>The Bash side installs as shell functions, so scanning is part of the prompt rather than a separate tool to remember:</p>
+    <div class="snippet">
+      <div class="snip-label">Shell — terminal scanner</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre>source owasp_terminal_prompt.sh
+
+oscan &lt;file&gt;       <span class="cmt"># scan a single file</span>
+odir  &lt;path&gt;       <span class="cmt"># scan all code under a directory</span>
+ogit  [repo]       <span class="cmt"># scan only git-changed files</span>
+owatch             <span class="cmt"># live watcher — auto-scans new files (fswatch)</span>
+olog               <span class="cmt"># show recent findings
+
+# HTTPS dashboard</span>
+python3 owasp_dashboard.py   <span class="cmt"># then open https://localhost:8443</span></pre>
+    </div>
+    <p>The <code>owatch</code> mode is the one that changes habits: <code>fswatch</code> feeds new and changed files into the
+    engine as they land, so a secret pasted into a config or a malicious dependency dropped into a project is flagged at write
+    time rather than at some later audit.</p>
+
+    <h2>6. What it is and is not</h2>
+    <ul>
+      <li><strong>It is</strong> a fast, auditable first line of defense: OWASP pattern hits plus a hash reputation check, on-device, with a clear severity order.</li>
+      <li><strong>It is not</strong> a full SAST platform or an antivirus engine &mdash; the regex layer has no data-flow analysis, and reputation only catches files that have already been seen elsewhere.</li>
+      <li><strong>It is private by construction:</strong> only a SHA-256 hash and package names are sent to public APIs; file contents stay on the laptop, and the dashboard is loopback-only over TLS.</li>
+    </ul>
+
+    <h2>References</h2>
+    <ul>
+      <li><a href="https://github.com/ikonstas70/owasp-security-scanner">owasp-security-scanner</a> &mdash; source for the scanner, dashboard, and terminal functions.</li>
+      <li><a href="https://owasp.org/Top10/">OWASP Top 10 (2021)</a> &middot; <a href="https://cheatsheetseries.owasp.org/">OWASP Cheat Sheet Series</a>.</li>
+      <li><a href="https://docs.virustotal.com/reference/overview">VirusTotal API v3</a> &middot; <a href="https://www.circl.lu/services/hashlookup/">CIRCL hashlookup</a> &middot; <a href="https://bazaar.abuse.ch/api/">MalwareBazaar API</a> &middot; <a href="https://nvd.nist.gov/developers">NIST NVD API</a>.</li>
+    </ul>
+
+    <p class="meta" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+    <p><a href="/">&larr; All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-owasp-top-10-file-scanner",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
