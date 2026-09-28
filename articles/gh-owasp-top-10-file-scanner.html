@@ -22,12 +22,18 @@
 <meta name="twitter:image" content="https://ikonstas70.github.io/articles/gh-owasp-mesh-og.jpg">
 <link rel="stylesheet" href="/style.css">
 <style>
-body{ background: hsl(0 0% 4%); }
+body{ background: hsl(0 0% 3%); }
 body::before{
-  content:""; position:fixed; inset:0; z-index:-1;
+  content:""; position:fixed; inset:0; z-index:-2;
   background: url("/articles/gh-owasp-mesh-bg.jpg") center / cover no-repeat;
-  filter: blur(1.5px) brightness(.72) saturate(.85);
-  transform: scale(1.02);
+  filter: blur(3px) brightness(.46) saturate(.62) contrast(.96);
+  transform: scale(1.08);
+}
+body::after{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(125% 95% at 50% 28%, transparent 0%, hsl(220 20% 4% / .55) 58%, hsl(220 22% 3% / .92) 100%),
+    linear-gradient(180deg, hsl(220 20% 4% / .40), hsl(220 22% 3% / .72));
 }
 .wrap{
   margin: 48px auto 64px;
