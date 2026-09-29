@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/gh-ad-administrator-500-break-glass">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gatekeeping the Built-In Administrator: A Break-Glass Blueprint for the RID-500 Account — Konstas Engineering Notes</title>
+<meta name="description" content="Most organizations still have the built-in Active Directory Administrator (RID 500) enabled and reachable. How to turn it into a vaulted, dual-custody break-glass account: Tier 0 isolation, deny-by-default GPOs, account hardening, and kill-switch alerts.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/gh-ad-administrator-500-break-glass">
+<meta property="og:title" content="Gatekeeping the Built-In Administrator: A Break-Glass Blueprint for the RID-500 Account">
+<meta property="og:description" content="Most organizations still have the built-in Active Directory Administrator (RID 500) enabled and reachable. Here is how to vault it, isolate it, and alarm it.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/gh-ad-administrator-500-og.jpg">
+<meta property="og:image:secure_url" content="https://ikonstas70.github.io/articles/gh-ad-administrator-500-og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Gatekeeping the Built-In Administrator — a break-glass blueprint for the RID-500 account, over an ocean and digital world map">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Gatekeeping the Built-In Administrator: A Break-Glass Blueprint for the RID-500 Account">
+<meta name="twitter:description" content="Most organizations still have the built-in Active Directory Administrator (RID 500) enabled and reachable. Here is how to vault it, isolate it, and alarm it.">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/gh-ad-administrator-500-og.jpg">
+<link rel="stylesheet" href="/style.css">
+<style>
+body{ background: hsl(0 0% 4%); }
+body::before{
+  content:""; position:fixed; inset:0; z-index:-1;
+  background: url("/articles/gh-ad-administrator-500-bg.jpg") center / cover no-repeat;
+  filter: blur(2px) brightness(.55) saturate(.85);
+  transform: scale(1.03);
+}
+.wrap{
+  margin: 48px auto 64px;
+  padding: 0 44px 56px;
+  background: linear-gradient(180deg, hsl(220 12% 6% / .76), hsl(220 12% 5% / .86));
+  border: 1px solid hsl(43 45% 56% / .22);
+  border-radius: 18px;
+  box-shadow: 0 30px 80px hsl(0 0% 0% / .45), inset 0 1px 0 hsl(0 0% 100% / .04);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+}
+header.site{ padding-top: 44px; }
+.hero{ margin: 22px 0 26px; }
+.hero img{
+  display:block; width:100%; height:auto; border-radius: 12px;
+  border: 1px solid hsl(43 45% 56% / .35);
+  box-shadow: 0 18px 50px hsl(0 0% 0% / .5);
+}
+.hero figcaption{ margin-top: 8px; font-size: .85rem; color: hsl(40 12% 62%); font-style: italic; }
+.steps-list li{ margin-bottom: 6px; }
+@media (max-width:900px){
+  .wrap{ margin: 0; border-radius: 0; border-left: 0; border-right: 0; padding: 0 18px 40px; }
+}
+@media (max-width:700px){
+  main table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  main pre{ overflow-x:auto; }
+}
+</style>
+<script>
+function copyCode(btn){
+  var pre = btn.parentElement.querySelector("pre");
+  if(!pre) return;
+  navigator.clipboard.writeText(pre.textContent).then(function(){
+    var orig = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(function(){ btn.textContent = orig; }, 1400);
+  }).catch(function(){});
+}
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="https://ikonstas70.github.io/information-security/">Information Security</a>
+      <a href="https://ikonstas70.github.io/music/" class="nav-gold">Music</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Identity Security</span>
+    <h1>Gatekeeping the Built-In Administrator: A Break-Glass Blueprint for the RID-500 Account</h1>
+    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas</p>
+
+    <figure class="hero">
+      <img src="/articles/gh-ad-administrator-500-hero.jpg" width="780" height="505"
+           alt="Aerial view of a stormy ocean overlaid with a glowing digital world map and data grid">
+      <figcaption>One account, every domain-joined system within reach.</figcaption>
+    </figure>
+
+    <div class="callout insight">
+      <strong>Summary.</strong> Every Active Directory domain ships with a built-in Administrator account whose security
+      identifier always ends in <code>-500</code>. <strong>Most organizations still have this account enabled, reachable
+      from ordinary workstations, and known to more people than anyone can list.</strong> This note treats it the way
+      it should be treated: as a <em>break-glass</em> account that is never used for daily work, held under dual custody,
+      isolated to Tier&nbsp;0, denied everywhere else by policy, and wired to an alarm that fires the moment anyone touches it.
+    </div>
+
+    <h2>1. Why the RID-500 account is the crown jewel</h2>
+    <p>In most organizations, the built-in Administrator is still there, still enabled, and often still used
+    &mdash; for a scheduled task someone set up years ago, a service that &ldquo;needs admin,&rdquo; or simply because it
+    was the first account anyone knew. That makes it the single most valuable credential in the directory:</p>
+    <ul>
+      <li><strong>It is predictable.</strong> Its SID is always <code>S-1-5-21-&lt;domain&gt;-500</code>. Renaming it changes the
+      name, not the RID, so attackers and their tools find it instantly.</li>
+      <li><strong>It cannot be deleted.</strong> You can rename, disable, and restrict it &mdash; but it is always part of the domain.</li>
+      <li><strong>It holds the keys to everything.</strong> By default it is a member of Administrators, Domain Admins,
+      Enterprise Admins, and Schema Admins in the forest root domain.</li>
+      <li><strong>Its credentials travel.</strong> Every interactive or RDP logon leaves reusable credential material in the
+      memory of that machine. One logon on a compromised laptop can hand an attacker the whole forest.</li>
+    </ul>
+    <p>The goal is not to delete it (you can&rsquo;t) but to make it <strong>unusable in normal life and loud in an emergency.</strong></p>
+
+    <h2>2. The break-glass principle</h2>
+    <p>Day-to-day administration belongs to <em>named</em> admin accounts, one per person, each with only the rights that
+    person needs. The RID-500 account is reserved for one scenario: every other path into the directory has failed.
+    Everything below follows from that rule.</p>
+
+    <h2>3. Dual custody: the two-person rule</h2>
+    <ul class="steps-list">
+      <li><strong>Split the secret.</strong> Generate a random password of 30+ characters and split it in two. Give one half
+      to the CISO and the other to the Director of Infrastructure. Neither can sign in alone.</li>
+      <li><strong>Seal the vault.</strong> Alternatively, print the full password, seal it in a tamper-evident envelope, and keep it in
+      a safe that needs two keys or two combinations. Log every time the safe is opened.</li>
+      <li><strong>Reset after every use.</strong> Once the envelope is opened or the halves are combined, the password is
+      burned. Rotate it, re-split or re-seal it, and document why it was used.</li>
+    </ul>
+    <div class="callout tip">
+      <strong>Smart card instead of a password?</strong> If you enable <em>&ldquo;Smart card is required for interactive
+      logon&rdquo;</em> on the account, Windows replaces its password with a random value. In that design the vault holds the
+      smart card and its PIN &mdash; again under two-person custody &mdash; not a written password.
+    </div>
+
+    <h2>4. Harden the account itself</h2>
+    <table>
+      <thead><tr><th>Setting</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Account is sensitive and cannot be delegated</strong></td><td>Stops services from impersonating the account through Kerberos delegation.</td></tr>
+        <tr><td><strong>Smart card is required for interactive logon</strong> (optional, see above)</td><td>Removes the reusable password from the equation.</td></tr>
+        <tr><td><strong>Rename it</strong></td><td>Only slows down casual scripts &mdash; the RID stays 500 &mdash; but it removes the obvious target name.</td></tr>
+        <tr><td><strong>Disable it</strong> when your recovery plan allows</td><td>Many organizations keep it disabled until needed. Test the recovery path <em>before</em> you depend on it.</td></tr>
+        <tr><td><strong>Remove every dependency</strong></td><td>Nothing &mdash; no service, scheduled task, or script &mdash; should run as this account.</td></tr>
+      </tbody>
+    </table>
+    <p>Find the account by its RID, whatever it has been renamed to, and check its current state:</p>
+    <div class="snippet">
+      <div class="snip-label">PowerShell &mdash; locate and review the RID-500 account</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="kw">Import-Module</span> ActiveDirectory
+
+<span class="cmt"># The domain SID + "-500" always identifies the built-in Administrator</span>
+$domainSid = (<span class="fn">Get-ADDomain</span>).DomainSID.Value
+$admin = <span class="fn">Get-ADUser</span> -Identity <span class="str">"$domainSid-500"</span> `
+  -Properties Enabled, LastLogonDate, PasswordLastSet, AccountNotDelegated, SmartcardLogonRequired
+
+$admin | <span class="fn">Select-Object</span> SamAccountName, Enabled, LastLogonDate, PasswordLastSet,
+                  AccountNotDelegated, SmartcardLogonRequired</pre>
+    </div>
+    <div class="snippet">
+      <div class="snip-label">PowerShell &mdash; apply the protections</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="fn">Set-ADUser</span> -Identity $admin -AccountNotDelegated <span class="num">$true</span>
+<span class="cmt"># Optional: enforce smart-card logon (this randomizes the password)</span>
+<span class="cmt"># Set-ADUser -Identity $admin -SmartcardLogonRequired $true</span>
+<span class="cmt"># Optional, once recovery has been tested:</span>
+<span class="cmt"># Disable-ADAccount -Identity $admin</span></pre>
+    </div>
+
+    <h2>5. Tier 0 isolation and Privileged Access Workstations</h2>
+    <ul>
+      <li><strong>Keep it in Tier 0.</strong> Tier 0 is anything that controls identity: domain controllers, AD itself, PKI, and the
+      systems that manage them. The RID-500 account should only ever authenticate there.</li>
+      <li><strong>Use a Privileged Access Workstation (PAW).</strong> A dedicated, hardened device &mdash; no email, no web
+      browsing, no standard VPN &mdash; is the only place Tier&nbsp;0 credentials are typed. If an attacker dumps the memory
+      of a normal employee laptop, this account&rsquo;s credentials are simply not there.</li>
+      <li><strong>Block everything else.</strong> The policies in the next section make every Tier&nbsp;1 server and Tier&nbsp;2
+      workstation refuse the account outright.</li>
+    </ul>
+
+    <h2>6. Deny-by-default Group Policy</h2>
+    <p>Create a dedicated GPO, link it to the OUs that contain <strong>member servers and workstations</strong> &mdash;
+    <strong>not</strong> the Domain Controllers OU &mdash; and add the account to these User Rights Assignments:</p>
+    <p><code>Computer Configuration &rarr; Policies &rarr; Windows Settings &rarr; Security Settings &rarr; Local Policies &rarr; User Rights Assignment</code></p>
+    <table>
+      <thead><tr><th>User right</th><th>Blocks</th></tr></thead>
+      <tbody>
+        <tr><td>Deny access to this computer from the network</td><td>SMB, remote management, and other network logons</td></tr>
+        <tr><td>Deny log on through Remote Desktop Services</td><td>RDP sessions</td></tr>
+        <tr><td>Deny log on as a batch job</td><td>Scheduled tasks running as the account</td></tr>
+        <tr><td>Deny log on as a service</td><td>Services configured to run as the account</td></tr>
+        <tr><td>Deny log on locally</td><td>Console logons on those servers and workstations</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn">
+      <strong>Test before you enforce.</strong> Run the PowerShell check above and search for services and scheduled tasks
+      that still use the account. Anything still depending on it will break the moment this GPO applies &mdash; which is
+      exactly the dependency you want to find and remove.
+    </div>
+
+    <h2>7. The kill-switch alert</h2>
+    <p>If the account is vaulted and unused, <strong>any</strong> activity is either a declared emergency or an intrusion.
+    Configure your SIEM or Microsoft Defender for Identity to raise a high-severity alert on these Security log events
+    (collect them from the domain controllers):</p>
+    <table>
+      <thead><tr><th>Event ID</th><th>Meaning</th><th>Watch for</th></tr></thead>
+      <tbody>
+        <tr><td>4624</td><td>Successful logon</td><td>Target SID ending in <code>-500</code></td></tr>
+        <tr><td>4625</td><td>Failed logon</td><td>Password guessing against the account</td></tr>
+        <tr><td>4648</td><td>Logon with explicit credentials</td><td>Someone using <em>runas</em> or similar with the account</td></tr>
+        <tr><td>4768 / 4769 / 4776</td><td>Kerberos ticket / service ticket / NTLM validation</td><td>Any authentication by the account at a DC</td></tr>
+        <tr><td>4722</td><td>Account enabled</td><td>The moment someone re-enables the disabled account</td></tr>
+        <tr><td>4724 / 4738</td><td>Password reset attempt / account changed</td><td>Tampering with the account&rsquo;s password or settings</td></tr>
+        <tr><td>4720</td><td>User account created</td><td>New accounts appearing outside your provisioning process</td></tr>
+        <tr><td>4728 / 4732 / 4756</td><td>Member added to a security group</td><td>New members of Domain Admins, Administrators, or Enterprise Admins</td></tr>
+      </tbody>
+    </table>
+    <div class="snippet">
+      <div class="snip-label">KQL &mdash; Microsoft Sentinel detection (SecurityEvent table)</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre>SecurityEvent
+| <span class="kw">where</span> EventID <span class="kw">in</span> (<span class="num">4624</span>, <span class="num">4625</span>, <span class="num">4648</span>, <span class="num">4722</span>, <span class="num">4724</span>, <span class="num">4738</span>)
+| <span class="kw">where</span> TargetSid <span class="kw">endswith</span> <span class="str">"-500"</span>
+| <span class="kw">project</span> TimeGenerated, Computer, EventID, Activity, TargetAccount, IpAddress, SubjectAccount</pre>
+    </div>
+
+    <h2>8. After the glass is broken</h2>
+    <ol class="steps-list">
+      <li>Record who opened the vault, when, and why.</li>
+      <li>Do only the recovery work required, from a PAW.</li>
+      <li>Rotate the password (or re-issue the smart card), then re-split or re-seal it.</li>
+      <li>Disable the account again if that is your standard state.</li>
+      <li>Review every alert the use generated and close them with the incident record.</li>
+    </ol>
+
+    <h2>9. One-page checklist</h2>
+    <table>
+      <thead><tr><th>Control</th><th>Done when</th></tr></thead>
+      <tbody>
+        <tr><td>Dual custody</td><td>No single person can sign in as RID&nbsp;500</td></tr>
+        <tr><td>No dependencies</td><td>No service, task, or script runs as the account</td></tr>
+        <tr><td>Account hardening</td><td>Cannot be delegated; smart card or vaulted password; disabled if recovery allows</td></tr>
+        <tr><td>Tier 0 only</td><td>Logons only on domain controllers from a PAW</td></tr>
+        <tr><td>Deny GPO</td><td>All five deny rights applied to servers and workstations</td></tr>
+        <tr><td>Kill-switch alerts</td><td>A test logon produces a high-severity alert within minutes</td></tr>
+        <tr><td>Post-use procedure</td><td>Rotation and review are written down and rehearsed</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Related</h2>
+    <ul>
+      <li><a href="/articles/gh-active-directory-management">Active Directory Management: Domain Controllers, FSMO Roles, Replication, DNS &amp; Best Practices</a></li>
+      <li><a href="/articles/gh-powershell-ad-reference">PowerShell Active Directory Reference</a></li>
+    </ul>
+
+    <h2>References</h2>
+    <ul>
+      <li>Microsoft &mdash; <a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/security-best-practices/appendix-d--securing-built-in-administrator-accounts-in-active-directory">Appendix D: Securing Built-In Administrator Accounts in Active Directory</a></li>
+      <li>Microsoft &mdash; <a href="https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-access-model">Enterprise access model</a></li>
+      <li>Microsoft &mdash; <a href="https://learn.microsoft.com/en-us/security/privileged-access-workstations/privileged-access-devices">Securing devices as part of the privileged access story</a></li>
+      <li>Microsoft &mdash; <a href="https://learn.microsoft.com/en-us/defender-for-identity/what-is">Microsoft Defender for Identity</a></li>
+    </ul>
+
+    <p class="meta" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+    <p><a href="/">&larr; All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-ad-administrator-500-break-glass",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
