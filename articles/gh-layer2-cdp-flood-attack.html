@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/gh-layer2-cdp-flood-attack">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The CDP Flood: A Layer 2 Denial-of-Service Demo and How to Defend Against It — Konstas Engineering Notes</title>
+<meta name="description" content="A hands-on lab demonstration of a Cisco Discovery Protocol flood: how the attack overwhelms a switched network and spikes router CPU in seconds, why it is so hard to trace across many ports, and the Layer 2 controls that stop it. Built on VMware ESXi with Cisco CSR 1000V routers.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/gh-layer2-cdp-flood-attack">
+<meta property="og:title" content="The CDP Flood: A Layer 2 Denial-of-Service Demo and How to Defend Against It">
+<meta property="og:description" content="A hands-on lab demo of a Cisco Discovery Protocol flood: how it overwhelms a switched network in seconds, why it is hard to trace, and the switch controls that stop it.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/gh-cdp-flood-og.jpg">
+<meta property="og:image:secure_url" content="https://ikonstas70.github.io/articles/gh-cdp-flood-og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The CDP Flood — a Layer 2 denial-of-service, over a blue digital data grid">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The CDP Flood: A Layer 2 Denial-of-Service Demo and How to Defend Against It">
+<meta name="twitter:description" content="A hands-on lab demo of a Cisco Discovery Protocol flood: how it overwhelms a switched network in seconds, why it is hard to trace, and the switch controls that stop it.">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/gh-cdp-flood-og.jpg">
+<link rel="stylesheet" href="/style.css">
+<style>
+body{ background: hsl(214 60% 5%); }
+body::before{
+  content:""; position:fixed; inset:0; z-index:-1;
+  background: url("/articles/gh-cdp-flood-bg.jpg") center / cover no-repeat;
+  filter: blur(2px) brightness(.5) saturate(1.05);
+  transform: scale(1.03);
+}
+.wrap{
+  margin: 48px auto 64px;
+  padding: 0 44px 56px;
+  background: linear-gradient(180deg, hsl(214 40% 7% / .78), hsl(214 40% 5% / .88));
+  border: 1px solid hsl(205 55% 60% / .22);
+  border-radius: 18px;
+  box-shadow: 0 30px 80px hsl(0 0% 0% / .5), inset 0 1px 0 hsl(0 0% 100% / .04);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+}
+header.site{ padding-top: 44px; }
+.hero{ margin: 22px 0 26px; }
+.hero img{
+  display:block; width:100%; height:auto; border-radius: 12px;
+  border: 1px solid hsl(205 55% 60% / .35);
+  box-shadow: 0 18px 50px hsl(0 0% 0% / .5);
+}
+.hero figcaption{ margin-top: 8px; font-size: .85rem; color: hsl(205 18% 66%); font-style: italic; }
+.demo{ margin: 26px 0 30px; }
+.demo video{
+  display:block; width:100%; height:auto; border-radius: 12px;
+  border: 1px solid hsl(205 55% 60% / .35);
+  box-shadow: 0 18px 50px hsl(0 0% 0% / .5); background:#000;
+}
+.demo figcaption{ margin-top: 8px; font-size: .85rem; color: hsl(205 18% 66%); font-style: italic; }
+.steps-list li{ margin-bottom: 6px; }
+@media (max-width:900px){
+  .wrap{ margin: 0; border-radius: 0; border-left: 0; border-right: 0; padding: 0 18px 40px; }
+}
+@media (max-width:700px){
+  main table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  main pre{ overflow-x:auto; }
+}
+</style>
+<script>
+function copyCode(btn){
+  var pre = btn.parentElement.querySelector("pre");
+  if(!pre) return;
+  navigator.clipboard.writeText(pre.textContent).then(function(){
+    var orig = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(function(){ btn.textContent = orig; }, 1400);
+  }).catch(function(){});
+}
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="https://ikonstas70.github.io/information-security/">Information Security</a>
+      <a href="https://ikonstas70.github.io/music/" class="nav-gold">Music</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Offensive Security</span>
+    <h1>The CDP Flood: A Layer&nbsp;2 Denial-of-Service Demo and How to Defend Against It</h1>
+    <p class="meta">Articles &middot; September 2026 &middot; Ioannis Konstas</p>
+
+    <figure class="hero">
+      <img src="/articles/gh-cdp-flood-hero.jpg" width="973" height="642"
+           alt="A Layer 2 attack tool showing the CDP tab filling with fabricated Cisco Discovery Protocol neighbours on a lab interface">
+      <figcaption>The CDP neighbour table filling with fabricated devices &mdash; each a forged Cisco neighbour that never existed.</figcaption>
+    </figure>
+
+    <div class="callout insight">
+      <strong>Summary.</strong> Layer&nbsp;2 attack tools abuse the protocols switches trust by default &mdash; CDP, STP,
+      DTP, DHCP, 802.1Q, HSRP, VTP and more. This note walks through a lab demonstration of one of the simplest and most
+      effective of them: a <strong>Cisco Discovery Protocol (CDP) flood</strong>. In the recording below, a single host
+      fills a switched network with thousands of forged CDP neighbours in seconds and drives the routers&rsquo; CPU up as
+      they struggle to process them &mdash; a denial of service built entirely out of a &ldquo;harmless&rdquo; discovery
+      protocol. Then we cover what actually stops it.
+    </div>
+
+    <h2>1. The lab</h2>
+    <p>The demonstration runs in an isolated virtual lab built on <strong>VMware ESXi</strong>, with
+    <strong>Cisco CSR 1000V</strong> routers (<code>R1</code>&ndash;<code>R10</code>) and a Catalyst switch, reached over
+    SSH, and a Linux host running a Layer&nbsp;2 attack tool attached to the same segment (interface <code>ens160</code>).
+    Nothing here touches a production network. That matters, and we come back to it at the end.</p>
+
+    <div class="demo">
+      <figure>
+        <video controls preload="none" width="1000" height="780"
+               poster="/articles/gh-cdp-flood-poster.jpg">
+          <source src="/articles/gh-cdp-flood-demo.mp4" type="video/mp4">
+          Your browser does not support embedded video.
+          <a href="/articles/gh-cdp-flood-demo.mp4">Download the demonstration (MP4)</a>.
+        </video>
+        <figcaption>A Layer&nbsp;2 CDP flood against a Cisco CSR 1000V lab on VMware ESXi, and the CPU impact on the routers.</figcaption>
+      </figure>
+    </div>
+
+    <h2>2. What CDP is &mdash; and why it is a target</h2>
+    <p>The <strong>Cisco Discovery Protocol</strong> is a Layer&nbsp;2 protocol that Cisco devices use to announce themselves
+    to their direct neighbours: device ID, model, IOS version, the port they are connected through, native VLAN and more.
+    It is convenient for mapping a network &mdash; and for the same reason it is a gift to an attacker. CDP frames are sent
+    to the multicast address <code>01:00:0C:CC:CC:CC</code>, they are not authenticated, and by default a switch believes
+    every one it receives.</p>
+    <p>Before the attack, the neighbour table is small and real &mdash; the lab switch and routers
+    <code>R1</code>&ndash;<code>R10</code>:</p>
+    <div class="snippet">
+      <div class="snip-label">R7 &mdash; a legitimate CDP neighbour table</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre>R7# show cdp neighbors
+Device ID   Local Intrfce   Holdtme   Capability   Platform    Port ID
+Switch      Gig 1/0/1       168       S I          WS-C3750G   Gig 2/0/1
+R10         Gig 1           178       R I          CSR1000V    Gig 1
+R2          Gig 1           154       R I          CSR1000V    Gig 1
+...
+Total cdp entries displayed : 11</pre>
+    </div>
+
+    <h2>3. The attack: flooding CDP</h2>
+    <p>The attack tool offers a <em>&ldquo;flood CDP table&rdquo;</em> function. One action and the host begins emitting a
+    torrent of CDP frames, each with a <strong>randomly generated device ID and source MAC address</strong>. Within moments
+    the neighbour table is full of devices that do not exist:</p>
+    <div class="snippet">
+      <div class="snip-label">The CDP table after a few seconds of flooding</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre>TTL   DevID      Interface   Count   Last seen
+FF    BPPPPPP    ens160      1       24 Dec 12:04:17
+FF    YYYYYYY    ens160      1       24 Dec 12:04:17
+FF    TTTBBBB    ens160      1       24 Dec 12:04:17
+FF    K222222    ens160      1       24 Dec 12:04:17
+FF    NNNNNNN    ens160      1       24 Dec 12:04:17
+...</pre>
+    </div>
+
+    <div class="callout warn">
+      <strong>It is extremely rapid.</strong> Notice the timestamps &mdash; every forged neighbour above arrives in the
+      <em>same second</em> (<code>12:04:17</code>). The frames are emitted thousands per second, so the table fills and the
+      network starts to suffer almost the instant the attack begins. There is no slow build-up to notice and react to; it is
+      immediate.
+    </div>
+
+    <div class="callout warn">
+      <strong>It is very hard to trace.</strong> Every forged frame carries a <em>random</em> source MAC and a <em>random</em>
+      device ID, and each one looks like a perfectly ordinary CDP advertisement. On a switch with many access ports, nothing
+      in the neighbour table tells you which <em>physical port</em> the flood is entering through &mdash; the entries do not
+      point back to a source. Without per-port packet captures, interface-level CDP counters, or port security already in
+      place, localising the attacker among dozens of live ports is slow and painful &mdash; exactly when you have the least
+      time to spare.
+    </div>
+
+    <h2>4. The impact</h2>
+    <p>CDP processing happens in software on the route processor. Flooding thousands of unique advertisements forces each
+    device to parse, store and age them continuously, and the cost shows up directly as CPU. In the demonstration, the
+    routers&rsquo; <strong>CDP Protocol</strong> process climbs from idle to a large share of the CPU:</p>
+    <div class="snippet">
+      <div class="snip-label">R1 &mdash; CPU consumed by the CDP Protocol process during the flood</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre>R1# show processes cpu sorted | include CPU | PID Runtime | CDP Protocol
+CPU utilization for five seconds: 68%/13%; one minute: 53%; five minutes: 22%
+ PID  Runtime(ms)   Invoked      5Sec     1Min     5Min   Process
+ 570  73245         300          41.54%   48.65%   19.70%  CDP Protocol</pre>
+    </div>
+    <p>On real hardware with many ports and neighbours, a sustained flood can starve the control plane of CPU &mdash;
+    delaying or dropping the legitimate control traffic that keeps the network converged (routing adjacencies, spanning
+    tree, management). That is the denial of service: not a dramatic crash, but a network slowly choking on fake discovery
+    data.</p>
+
+    <h2>5. The defence</h2>
+    <p>CDP flooding has a clean answer: <strong>CDP is almost never needed on an access port</strong>, and where it is not
+    needed it should be off. Everything else is defence-in-depth around the same idea.</p>
+
+    <h3>Turn CDP off where it is not needed</h3>
+    <div class="snippet">
+      <div class="snip-label">Cisco IOS &mdash; disable CDP globally, or per edge port</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="cmt">! Disable CDP entirely (if nothing depends on it)</span>
+Switch(config)# no cdp run
+
+<span class="cmt">! Or leave it on for infrastructure links, off on access/edge ports</span>
+Switch(config)# interface range Gi1/0/1 - 48
+Switch(config-if-range)# no cdp enable</pre>
+    </div>
+    <p>In the demonstration, this is exactly the lever that is pulled &mdash; <code>no cdp run</code> on the routers, after
+    which <code>show cdp neighbors</code> reports <em>&ldquo;CDP is not enabled&rdquo;</em> and the flood has nothing to land on.</p>
+
+    <h3>Harden the access edge so one port cannot do this</h3>
+    <table>
+      <thead><tr><th>Control</th><th>What it stops</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Port security</strong> &mdash; <code>switchport port-security maximum 2</code>, <code>violation shutdown</code></td><td>Caps the number of MAC addresses a port may learn. A host spraying thousands of random source MACs trips the violation and the port is <code>err-disabled</code> &mdash; which also tells you exactly where the attack is.</td></tr>
+        <tr><td><strong>BPDU Guard</strong> &mdash; <code>spanning-tree bpduguard enable</code></td><td>Shuts a port the instant it sees a rogue BPDU, killing spanning-tree attacks.</td></tr>
+        <tr><td><strong>DHCP Snooping</strong> + <strong>Dynamic ARP Inspection</strong></td><td>Stops DHCP starvation / rogue-server and ARP-spoofing attacks from the same class of toolkit.</td></tr>
+        <tr><td><strong>Disable DTP</strong> &mdash; <code>switchport mode access</code>, <code>switchport nonegotiate</code></td><td>Prevents DTP negotiation and 802.1Q VLAN hopping.</td></tr>
+        <tr><td><strong>Storm control</strong> &mdash; <code>storm-control broadcast level 1.00</code></td><td>Caps any flood that slips past the controls above.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="snippet">
+      <div class="snip-label">Cisco IOS &mdash; a hardened access-port baseline</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre>interface range Gi1/0/1 - 48
+ switchport mode access
+ switchport nonegotiate
+ no cdp enable
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ switchport port-security
+ switchport port-security maximum 2
+ switchport port-security violation shutdown
+ switchport port-security aging time 2
+ storm-control broadcast level 1.00</pre>
+    </div>
+
+    <div class="callout tip">
+      <strong>The auditor&rsquo;s test.</strong> Plug a test machine into an access port and run the flood. With this
+      baseline in place, the port should <code>err-disable</code> within seconds &mdash; which both stops the attack
+      <em>and</em> pinpoints the source port in your logs. If the port instead stays up and the neighbour table fills with
+      strangers, you have your finding.
+    </div>
+
+    <h2>6. Why this matters beyond the lab</h2>
+    <p>Layer&nbsp;2 is the floor the whole network stands on, and it is frequently the least-hardened layer because the
+    protocols involved are old, chatty and &ldquo;just work.&rdquo; Attack tools exist to prove that those defaults are a
+    liability. The lesson is not the tool &mdash; it is that <strong>every trust a switch extends by default is a control
+    you have to make a conscious decision about</strong>: which ports speak CDP, how many MACs a port may learn, whether a
+    port may become a trunk, who is allowed to be the root bridge. Decide each one on purpose, and the whole class of
+    attacks closes.</p>
+
+    <div class="callout warn">
+      <strong>Authorisation, not enthusiasm.</strong> These are disruption and denial-of-service techniques. Run them only
+      on equipment you own, in an isolated lab, or under a written, scoped engagement. Pointing them at a network you do not
+      own is a crime in the United States (CFAA) and almost everywhere else &mdash; and the &ldquo;it&rsquo;s a security
+      tool&rdquo; argument is no defence. Authorisation is the entire line between a penetration tester and an attacker.
+    </div>
+
+    <h2>Related</h2>
+    <ul>
+      <li><a href="/articles/gh-layered-security-stack">Layered Security Stack</a></li>
+    </ul>
+
+    <h2>References</h2>
+    <ul>
+      <li>Cisco &mdash; <a href="https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst3750/software/release/12-2_55_se/configuration/guide/scg3750/swcdp.html">Configuring CDP</a></li>
+      <li>Cisco &mdash; <a href="https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst3750/software/release/12-2_55_se/configuration/guide/scg3750/swtrafc.html">Configuring Port Security</a></li>
+    </ul>
+
+    <p class="meta" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research, lab demonstration and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+    <p><a href="/">&larr; All articles</a></p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-layer2-cdp-flood-attack",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
