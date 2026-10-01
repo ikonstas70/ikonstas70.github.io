@@ -267,18 +267,17 @@ Switch(config-if-range)# no cdp enable</pre>
     port may become a trunk, who is allowed to be the root bridge. Decide each one on purpose, and the whole class of
     attacks closes.</p>
 
-    <div class="callout warn">
-      <strong>The convenience trap.</strong> In practice, most networks leave CDP enabled everywhere &mdash; it is on by
-      default, it makes troubleshooting and network mapping easier, and IP phones lean on it for voice-VLAN and PoE
-      negotiation, so administrators simply never turn it off. At the same time, buildings are full of <strong>live wall
-      jacks</strong> &mdash; in lobbies, reception areas, conference rooms, empty offices, behind printers &mdash; that are
-      patched straight back to access switches which <em>uplink to the core switches and routers</em>. Put those two
-      together and the picture is uncomfortable: anyone who can reach a network jack &mdash; an insider, a contractor, a
-      visitor left alone in a meeting room &mdash; is one cable away from launching this attack against the core, with CDP
-      obligingly enabled to receive it. The flaw is rarely the protocol alone; it is a trusted protocol left on for
-      convenience, reachable from an untrusted physical port. Disable CDP where it is not needed, and treat every
-      accessible jack as hostile until port security, 802.1X and the rest of the baseline prove otherwise.
-    </div>
+    <h3>The convenience trap</h3>
+    <p>The deeper exposure is rarely technical &mdash; it is habit. CDP is enabled by default, it makes troubleshooting and
+    network mapping effortless, and IP phones rely on it for voice-VLAN and PoE negotiation, so it quietly stays on
+    everywhere and is never revisited. Meanwhile, every building holds a reserve of live wall jacks: the lobby, the empty
+    conference room, the socket behind a printer, the desk no one sits at &mdash; each patched back through an access switch
+    that uplinks to the core.</p>
+    <p>The two habits meet badly. A contractor, a visitor left alone in a meeting room, an insider with a few unobserved
+    minutes &mdash; anyone who can reach a jack is a single cable from the core, with CDP already enabled to answer. The
+    weakness is almost never the protocol in isolation; it is <strong>a trusted protocol, left on for comfort, reachable
+    from an untrusted port</strong>. Turn it off where it earns nothing, and treat every accessible jack as hostile until
+    port security, 802.1X and the rest of the baseline have proven otherwise.</p>
 
     <div class="callout warn">
       <strong>Authorisation, not enthusiasm.</strong> These are disruption and denial-of-service techniques. Run them only
