@@ -6,7 +6,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Galois Fields in AES: GF(2^8), Irreducible Polynomials, and the Extended Euclidean Algorithm — Konstas Engineering Notes</title>
 <meta name="description" content="AES — the symmetric cipher protecting the majority of encrypted data on the internet — is built on a branch of mathematics that most engineers never encounter outside a c">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/gh-galois-fields-aes">
+<meta property="og:title" content="Galois Fields in AES: GF(2⁸), Irreducible Polynomials, and the Extended Euclidean Algorithm">
+<meta property="og:description" content="The finite-field math under AES: why GF(2⁸), how bytes become polynomials, and what the SubBytes S-box actually computes.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/gh-aes-galois-fields-og.jpg">
+<meta property="og:image:secure_url" content="https://ikonstas70.github.io/articles/gh-aes-galois-fields-og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Galois Fields in AES — polynomial curves on a teal background">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Galois Fields in AES: GF(2⁸), Irreducible Polynomials, and the Extended Euclidean Algorithm">
+<meta name="twitter:description" content="The finite-field math under AES: why GF(2⁸), how bytes become polynomials, and what the SubBytes S-box actually computes.">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/gh-aes-galois-fields-og.jpg">
 <link rel="stylesheet" href="/style.css">
+<style>
+.hero{ margin: 22px 0 26px; }
+.hero img{
+  display:block; width:100%; height:auto; border-radius: 12px;
+  border: 1px solid hsl(43 45% 56% / .35);
+  box-shadow: 0 18px 50px hsl(0 0% 0% / .5);
+}
+</style>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
@@ -33,6 +55,12 @@
     <span class="tag">Cryptography</span>
     <h1>Galois Fields in AES: GF(2^8), Irreducible Polynomials, and the Extended Euclidean Algorithm</h1>
     <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+
+    <figure class="hero">
+      <img src="/articles/gh-aes-galois-fields-hero.jpg" width="990" height="456"
+           alt="Family of yellow polynomial curves plotted on a teal background">
+    </figure>
+
 </hr><p>AES — the symmetric cipher protecting the majority of encrypted data on the internet — is built on a branch of mathematics that most engineers never encounter outside a cryptography course: finite field arithmetic, specifically the Galois Field GF(2⁸). Understanding this foundation is not merely academic. It explains why AES is structured the way it is, why its operations are so efficient in hardware and software, and what the SubBytes S-box actually computes.</p><hr></hr><h2>What Is a Galois Field?</h2><p>A Galois Field GF(pⁿ) is a finite set of elements with two operations — addition and multiplication — that obey all the standard rules of arithmetic: associativity, commutativity, distributivity, identity elements, and (for every nonzero element) a multiplicative inverse. The distinctive property is that the set is finite: there are exactly pⁿ elements, and every result of an operation lands back in the same set.</p><p>For AES, p = 2 and n = 8, giving GF(2⁸) with 256 elements. The choice of base 2 is deliberate: it aligns directly with binary computing. Each of the 256 elements corresponds to a unique 8-bit byte.</p><hr></hr><h2>Representing Elements as Polynomials</h2><p>Each element of GF(2⁸) is represented as a polynomial of degree at most 7 with coefficients drawn from GF(2) — that is, each coefficient is either 0 or 1. A general element looks like:</p><pre><code>a₇x⁷ + a₆x⁶ + a₅x⁵ + a₄x⁴ + a₃x³ + a₂x² + a₁x + a₀
 </code></pre><p>where each aᵢ ∈ {0, 1}. This maps directly to an 8-bit binary representation: the byte <code>0x57</code> = <code>0101 0111</code> represents the polynomial x⁶ + x⁴ + x² + x + 1.</p><h3>GF(2³) Elements (illustrative — same structure as GF(2⁸), smaller)</h3><table><thead><tr><th>Binary</th><th>Polynomial</th></tr></thead><tbody><tr><td>000</td><td>0</td></tr><tr><td>001</td><td>1</td></tr><tr><td>010</td><td>x</td></tr><tr><td>011</td><td>x + 1</td></tr><tr><td>100</td><td>x²</td></tr><tr><td>101</td><td>x² + 1</td></tr><tr><td>110</td><td>x² + x</td></tr><tr><td>111</td><td>x² + x + 1</td></tr></tbody></table><hr></hr><h2>Addition in GF(2⁸): Bitwise XOR</h2><p>Adding two elements in GF(2⁸) is performed coefficient-by-coefficient modulo 2 — which is exactly XOR. There are no carries, no overflow, no reduction needed.</p><p><strong>Example:</strong> <code>0x57 ⊕ 0x83 = 0xD4</code></p><pre><code>0101 0111  (x⁶ + x⁴ + x² + x + 1)
 1000 0011  (x⁷ + x + 1)
