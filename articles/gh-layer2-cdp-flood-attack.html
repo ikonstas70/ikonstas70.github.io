@@ -268,6 +268,19 @@ Switch(config-if-range)# no cdp enable</pre>
     attacks closes.</p>
 
     <div class="callout warn">
+      <strong>The convenience trap.</strong> In practice, most networks leave CDP enabled everywhere &mdash; it is on by
+      default, it makes troubleshooting and network mapping easier, and IP phones lean on it for voice-VLAN and PoE
+      negotiation, so administrators simply never turn it off. At the same time, buildings are full of <strong>live wall
+      jacks</strong> &mdash; in lobbies, reception areas, conference rooms, empty offices, behind printers &mdash; that are
+      patched straight back to access switches which <em>uplink to the core switches and routers</em>. Put those two
+      together and the picture is uncomfortable: anyone who can reach a network jack &mdash; an insider, a contractor, a
+      visitor left alone in a meeting room &mdash; is one cable away from launching this attack against the core, with CDP
+      obligingly enabled to receive it. The flaw is rarely the protocol alone; it is a trusted protocol left on for
+      convenience, reachable from an untrusted physical port. Disable CDP where it is not needed, and treat every
+      accessible jack as hostile until port security, 802.1X and the rest of the baseline prove otherwise.
+    </div>
+
+    <div class="callout warn">
       <strong>Authorisation, not enthusiasm.</strong> These are disruption and denial-of-service techniques. Run them only
       on equipment you own, in an isolated lab, or under a written, scoped engagement. Pointing them at a network you do not
       own is a crime in the United States (CFAA) and almost everywhere else &mdash; and the &ldquo;it&rsquo;s a security
