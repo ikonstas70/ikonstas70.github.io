@@ -6,7 +6,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Galois Fields in AES — Reference — Konstas Engineering Notes</title>
 <meta name="description" content="Mathematical reference for the Galois Field arithmetic that underpins AES encryption. Covers GF(2⁸) structure, polynomial representation, the AES irreducible polynomial, ">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/gh-aes-galois-fields-reference">
+<meta property="og:title" content="Galois Fields in AES — Reference">
+<meta property="og:description" content="GF(2⁸) arithmetic behind AES: polynomial representation, the irreducible polynomial x⁸ + x⁴ + x³ + x + 1, and inverses via the Extended Euclidean Algorithm.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/gh-aes-galois-fields-og.jpg">
+<meta property="og:image:secure_url" content="https://ikonstas70.github.io/articles/gh-aes-galois-fields-og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Galois Fields in AES — polynomial curves on a teal background">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Galois Fields in AES — Reference">
+<meta name="twitter:description" content="GF(2⁸) arithmetic behind AES: polynomial representation, the irreducible polynomial x⁸ + x⁴ + x³ + x + 1, and inverses via the Extended Euclidean Algorithm.">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/gh-aes-galois-fields-og.jpg">
 <link rel="stylesheet" href="/style.css">
+<style>
+.hero{ margin: 22px 0 26px; }
+.hero img{
+  display:block; width:100%; height:auto; border-radius: 12px;
+  border: 1px solid hsl(43 45% 56% / .35);
+  box-shadow: 0 18px 50px hsl(0 0% 0% / .5);
+}
+</style>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
@@ -33,6 +55,12 @@
     <span class="tag">Cryptography</span>
     <h1>Galois Fields in AES — Reference</h1>
     <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+
+    <figure class="hero">
+      <img src="/articles/gh-aes-galois-fields-hero.jpg" width="990" height="456"
+           alt="Family of yellow polynomial curves plotted on a teal background">
+    </figure>
+
 <p>Mathematical reference for the Galois Field arithmetic that underpins AES encryption. Covers GF(2⁸) structure, polynomial representation, the AES irreducible polynomial, and the Extended Euclidean Algorithm for computing multiplicative inverses.</p><hr></hr><h2>What is GF(2⁸)?</h2><p>AES operates over <strong>GF(2⁸)</strong> — a Galois Field with 256 elements. Every element in GF(2⁸) is represented as a polynomial of degree ≤ 7 with coefficients in GF(2) (i.e., each coefficient is either 0 or 1).</p><h3>Polynomial Representation</h3><p>An element looks like:</p><pre><code>a₇x⁷ + a₆x⁶ + a₅x⁵ + a₄x⁴ + a₃x³ + a₂x² + a₁x + a₀
 </code></pre><p>where each <code>aᵢ ∈ {0, 1}</code>.</p><p>Each polynomial maps exactly to one <strong>8-bit byte</strong>, with each bit representing a coefficient. This alignment with computer memory is why GF(2⁸) was chosen for AES.</p><h3>Why GF(2⁸)?</h3><table><thead><tr><th>Property</th><th>Benefit</th></tr></thead><tbody><tr><td>Byte alignment</td><td>Each field element = 1 byte — natural fit for CPU architecture</td></tr><tr><td>Closed arithmetic</td><td>Addition, subtraction, multiplication, and division always stay within the field</td></tr><tr><td>Finite and deterministic</td><td>Results are always predictable — essential for a cryptographic standard</td></tr></tbody></table><hr></hr><h2>The Irreducible Polynomial</h2><p>AES uses the following irreducible polynomial as the modulus for all multiplication:</p><pre><code>P(x) = x⁸ + x⁴ + x³ + x + 1
 </code></pre><p><strong>Why irreducible?</strong> Just as prime numbers are the foundation of modular integer arithmetic, irreducible polynomials are the foundation of Galois Field arithmetic. Multiplying two polynomials can produce a result of degree &gt; 7, which falls outside GF(2⁸). The irreducible polynomial is used to reduce that result back into the field via modulo operation — analogous to clock arithmetic (e.g., 10 + 5 = 3 on a 12-hour clock).</p><hr></hr><h2>Extended Euclidean Algorithm — Finding Inverses in GF(2ᵐ)</h2><p>The MixColumns step in AES requires the <strong>multiplicative inverse</strong> of field elements. The Extended Euclidean Algorithm computes these efficiently.</p><h3>Goal</h3><p>Given element A(x) in GF(2ᵐ) and irreducible polynomial P(x), find A⁻¹(x) such that:</p><pre><code>A⁻¹(x) · A(x) ≡ 1  (mod P(x))
