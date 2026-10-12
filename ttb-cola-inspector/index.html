@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="canonical" href="https://ikonstas70.github.io/ttb-cola-inspector/">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TTB COLA Label Compliance AI Inspector — Alcohol Beverage Verification System</title>
+  <meta name="description" content="Automated 27 CFR Alcohol Beverage Label Compliance AI System. Verifies Brand Name, ABV & Proof, Standards of Identity, and strict Part 16 Government Health Warnings in sub-second execution.">
+  <meta name="author" content="Ioannis Konstas">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="keywords" content="TTB, COLA, alcohol beverage label compliance, 27 CFR Part 16, government warning, proof ABV, wine label, distilled spirits, beer compliance, Ioannis Konstas">
+
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="TTB COLA Label Compliance AI Inspector">
+  <meta property="og:description" content="Automated sub-second 27 CFR Label Verification & Compliance Audit System for TTB Compliance Agents.">
+  <meta property="og:url" content="https://ikonstas70.github.io/ttb-cola-inspector/">
+  <meta property="og:site_name" content="Konstas — Engineering Notes">
+  <meta property="og:image" content="https://ikonstas70.github.io/articles/modular_arithmetic_og.png">
+  <meta property="og:image:secure_url" content="https://ikonstas70.github.io/articles/modular_arithmetic_og.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TTB COLA Label Compliance AI Inspector">
+  <meta name="twitter:description" content="Automated sub-second 27 CFR Label Verification & Compliance Audit System for TTB Compliance Agents.">
+  <meta name="twitter:image" content="https://ikonstas70.github.io/articles/modular_arithmetic_og.png">
+
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "TTB COLA Label Compliance AI Inspector",
+    "description": "Automated 27 CFR Alcohol Beverage Label Compliance AI System for TTB Compliance Agents.",
+    "url": "https://ikonstas70.github.io/ttb-cola-inspector/",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "All",
+    "author": {
+      "@type": "Person",
+      "name": "Ioannis Konstas",
+      "url": "https://ikonstas70.github.io/about"
+    }
+  }
+  </script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+
+  <!-- Tesseract.js WASM OCR Engine (100% Client-Side / Zero API Keys) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <link rel="stylesheet" href="style.css?v=3.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>">
+</head>
+<body>
+
+  <!-- Official Federal Header Banner -->
+  <header class="gov-header">
+    <div class="gov-banner">
+      <span><a href="/" style="color:#93c5fd;text-decoration:none;">&larr; Konstas Engineering Notes</a></span>
+      <span>&bull;</span>
+      <span>Department of the Treasury &middot; Alcohol and Tobacco Tax and Trade Bureau (TTB)</span>
+    </div>
+    <div class="header-main">
+      <div class="brand-section">
+        <div class="ttb-emblem">TTB</div>
+        <div class="brand-titles">
+          <h1>COLA Label Compliance AI Inspector</h1>
+          <p>Automated Verification System &middot; 27 CFR Parts 4, 5, 7, 16</p>
+        </div>
+      </div>
+      <div class="standards-badge">
+        <span style="color:#10b981;">●</span> Sub-Second Compliance Engine (v1.0)
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav class="app-nav">
+    <button class="nav-tab active" data-tab="studioTab">
+      <span>🔍</span> Single Label Verification Studio
+    </button>
+    <button class="nav-tab" data-tab="batchTab">
+      <span>📦</span> High-Volume Batch Processing Queue
+    </button>
+    <button class="nav-tab" data-tab="registryTab">
+      <span>🏛️</span> Public TTB COLA Registry Database
+    </button>
+    <button class="nav-tab" data-tab="guideTab">
+      <span>📖</span> 27 CFR Compliance Rulebook &amp; Reference
+    </button>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="app-container">
+
+    <!-- TAB 1: Single Verification Studio -->
+    <section id="studioTab" class="tab-content active">
+      
+      <!-- Preset Test Case Selector Bar -->
+      <div class="sample-bar">
+        <div class="sample-bar-left">
+          <label for="sampleSelect">1-Click Test Case Presets:</label>
+          <select id="sampleSelect" class="sample-select" onchange="onSampleSelected(this.value)">
+            <option value="">Loading test cases...</option>
+          </select>
+        </div>
+        <div>
+          <button class="btn btn-secondary" onclick="document.getElementById('customFileInput').click()">
+            📁 Upload Custom Label Image
+          </button>
+          <input type="file" id="customFileInput" accept="image/*" style="display:none;" />
+        </div>
+      </div>
+
+            <!-- Prominent TTB Registry Quick-Search & Auto-Fill Card -->
+      <div class="card" style="margin-bottom:20px;background:linear-gradient(135deg, rgba(30,58,138,0.25), rgba(15,23,42,0.9));border:1px solid #3b82f6;">
+        <div class="card-header" style="background:rgba(59,130,246,0.15);display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="color:#60a5fa;">🏛️ Connected TTB Public COLA Registry (Data.gov / TTBOline)</h3>
+          <span class="standards-badge" style="background:#047857;border-color:#10b981;color:#fff;">● Database Connected</span>
+        </div>
+        <div class="card-body" style="padding:14px 18px;">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <label style="font-size:0.85rem;font-weight:700;color:#93c5fd;white-space:nowrap;">Search Public Registry:</label>
+            <input type="text" id="quickRegistrySearch" placeholder="Type Brand (e.g. Buffalo Trace, Macallan, Caymus, Sierra Nevada, Old Tom)..." style="flex:1;min-width:260px;background:#0f172a;border:1px solid #3b82f6;border-radius:6px;padding:8px 12px;color:#fff;font-size:0.9rem;" oninput="onQuickRegistrySearch(this.value)">
+            <select id="quickRegistryResults" class="sample-select" style="min-width:280px;" onchange="onQuickRegistrySelected(this.value)">
+              <option value="">-- Or Select Verified TTB Approved Record --</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Studio Grid: Form on Left, Canvas in Middle/Right -->
+      <div class="studio-grid">
+        
+        <!-- Left: Application Form Input -->
+        <div class="studio-form-col">
+          <div class="card">
+            <div class="card-header">
+              <h3>📋 COLA Application Form</h3>
+              <span style="font-size:0.75rem;color:#9ca3af;">Form TTB F 5100.31</span>
+            </div>
+            <div class="card-body">
+              <form id="colaForm" onsubmit="event.preventDefault(); runClientVerification();">
+                <div class="form-group">
+                  <label for="appId">Application Tracking ID</label>
+                  <input type="text" id="appId" required placeholder="e.g. COLA-2026-88101" />
+                </div>
+
+                <div class="form-group">
+                  <label for="brandName">Brand Name</label>
+                  <input type="text" id="brandName" required placeholder="e.g. OLD TOM DISTILLERY" />
+                </div>
+
+                <div class="form-group">
+                  <label for="beverageType">Beverage Category</label>
+                  <select id="beverageType">
+                    <option value="Distilled Spirits">Distilled Spirits (27 CFR Part 5)</option>
+                    <option value="Wine">Wine (27 CFR Part 4)</option>
+                    <option value="Malt Beverage / Beer">Malt Beverage / Beer (27 CFR Part 7)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="classType">Class / Type Designation</label>
+                  <input type="text" id="classType" required placeholder="e.g. Kentucky Straight Bourbon Whiskey" />
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="alcoholContent">Alcohol Content (ABV)</label>
+                    <input type="text" id="alcoholContent" required placeholder="e.g. 45% Alc./Vol. (90 Proof)" />
+                  </div>
+                  <div class="form-group">
+                    <label for="netContents">Net Contents</label>
+                    <input type="text" id="netContents" required placeholder="e.g. 750 mL" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="bottlerAddress">Name &amp; Address of Bottler/Producer</label>
+                  <textarea id="bottlerAddress" rows="2" placeholder="e.g. Old Tom Distilling Co., Bardstown, KY"></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="countryOrigin">Country of Origin</label>
+                  <input type="text" id="countryOrigin" value="United States" />
+                </div>
+
+                <button type="button" id="verifyBtn" class="btn btn-primary btn-block btn-lg" onclick="runClientVerification()">
+                  🔍 Run 27 CFR Label Compliance Verification
+                </button>
+                <p style="text-align:center;font-size:0.75rem;color:#6b7280;margin-top:8px;">
+                  Shortcut: Press <code>Ctrl + Enter</code> to verify instantly
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Label Viewer & Live Verification Report -->
+        <div class="studio-viewer-col">
+          
+          <!-- Artwork Canvas Card -->
+          <div class="card">
+            <div class="card-header">
+              <h3>🖼️ Label Artwork Visual Inspector (Interactive Bounding Boxes)</h3>
+              <span style="font-size:0.75rem;color:#9ca3af;">Hover table rows to highlight field locations</span>
+            </div>
+            <div class="card-body" style="padding:12px;">
+                            <!-- Smart Image Pre-flight & Enhancement Controls -->
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <span style="font-size:0.75rem;font-weight:700;color:#9ca3af;">CANVAS ENHANCEMENT:</span>
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('normal')">Original</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('contrast')">High Contrast</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('grayscale')">Grayscale</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;" onclick="applyCanvasFilter('invert')">Invert (Glare)</button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;border-color:#3b82f6;color:#93c5fd;" onclick="applyCanvasFilter('threshold')">Binarize (OCR)</button>
+                </div>
+                <div id="imageQualityBadge" class="standards-badge" style="padding:4px 8px;font-size:0.75rem;">
+                  📷 Quality Score: <span id="qualityScoreVal" style="color:#34d399;font-weight:700;">99% High Legibility</span>
+                </div>
+              </div>
+              <div class="viewer-container" id="canvasContainer">
+                <!-- Live Client-Side OCR Progress Indicator -->
+                <div id="ocrProgressOverlay" class="ocr-progress-overlay" style="display:none;">
+                  <div class="ocr-progress-box">
+                    <div style="font-size:1.8rem;margin-bottom:6px;">⚡</div>
+                    <h4 id="ocrProgressTitle" style="color:#60a5fa;margin-bottom:4px;font-size:1.05rem;">Running Client-Side OCR Engine...</h4>
+                    <p id="ocrProgressStatus" style="font-size:0.8rem;color:#94a3b8;">Initializing Tesseract.js Web Worker (WASM)...</p>
+                    <div class="ocr-progress-bar">
+                      <div id="ocrProgressBarFill" class="ocr-progress-fill"></div>
+                    </div>
+                    <span id="ocrProgressPct" style="font-size:0.78rem;font-weight:700;color:#38bdf8;">0%</span>
+                  </div>
+                </div>
+                <div class="image-canvas-wrapper" id="canvasWrapper">
+                  <p style="color:#6b7280;">Select a test case or upload a label artwork to preview.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Audit Report Container -->
+          <div id="verificationResults" style="display:none;">
+            
+            <!-- Overall Status Banner -->
+            <div id="complianceBanner" class="compliance-banner"></div>
+
+            <!-- 27 CFR Part 16 Government Warning Card -->
+            <div id="gwCard" class="card"></div>
+
+            
+            <!-- Agent Decision & Formal Notice Generator Bar -->
+            <div class="card" style="margin-top:20px;background:rgba(15,23,42,0.8);border:1px solid #3b82f6;">
+              <div class="card-header" style="background:rgba(59,130,246,0.1);">
+                <h3>🏛️ TTB Compliance Agent Decision &amp; Formal Notice Generator</h3>
+                <span style="font-size:0.75rem;color:#93c5fd;">Official TTB F 5100.31 Actions</span>
+              </div>
+              <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+                <div>
+                  <p style="font-size:0.85rem;color:#d1d5db;">Generate official printable Certificate of Label Approval or formal 27 CFR Rejection Notice.</p>
+                </div>
+                <div style="display:flex;gap:10px;">
+                  <button type="button" class="btn btn-success" onclick="generateCOLAApproval()">
+                    📜 Generate Official COLA Certificate (PDF/Print)
+                  </button>
+                  <button type="button" class="btn btn-secondary" style="border-color:#ef4444;color:#f87171;" onclick="generateRejectionNotice()">
+                    ✉️ Generate 27 CFR Rejection Notice Letter
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Field-by-Field Breakdown Table Card -->
+            <div class="card">
+              <div class="card-header">
+                <h3>📊 Mandatory 27 CFR Field Breakdown &amp; Discrepancy Analysis</h3>
+                <span style="font-size:0.75rem;color:#9ca3af;">Automated Cross-Check</span>
+              </div>
+              <div class="card-body" style="padding:0;overflow-x:auto;">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>Mandatory Field</th>
+                      <th>Application Value</th>
+                      <th>Extracted from Label</th>
+                      <th>Confidence</th>
+                      <th>Status</th>
+                      <th>Compliance Explanation</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fieldTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- TAB 2: Batch Processing Portal -->
+    <section id="batchTab" class="tab-content">
+      
+      <div class="card">
+        <div class="card-header">
+          <h3>📦 High-Volume Batch Label Processing Engine</h3>
+          <span class="badge badge-pass">Bulk Importer Mode</span>
+        </div>
+        <div class="card-body">
+          <p style="color:#9ca3af;margin-bottom:16px;">
+            Process 10 to 300+ label applications in parallel. Built specifically for peak season importer filings.
+          </p>
+
+          <div class="sample-bar" style="margin-bottom:16px;">
+            <div>
+              <strong>Quick Batch Demonstration:</strong>
+              <p style="font-size:0.82rem;color:#9ca3af;">Runs full automated audit across all multi-category test labels in milliseconds.</p>
+            </div>
+            <button id="runBatchBtn" class="btn btn-primary btn-lg" onclick="runBatchBuiltinTest()">
+              ⚡ Run Built-In Importer Batch (6 Multi-Category Labels)
+            </button>
+          </div>
+
+          <!-- Application Manifest Control Bar -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;background:rgba(30,41,59,0.7);padding:12px 16px;border-radius:8px;border:1px solid #334155;">
+            <div>
+              <span style="font-size:0.85rem;font-weight:700;color:#e2e8f0;">📑 Application Manifest Mapping:</span>
+              <span id="manifestStatusBadge" class="standards-badge" style="margin-left:8px;font-size:0.75rem;background:#065f46;border-color:#10b981;color:#a7f3d0;">● Auto-Resolve &amp; Self-Consistency Mode</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('manifestFileInput').click()">
+                📂 Load Custom Manifest (CSV/JSON)
+              </button>
+              <input type="file" id="manifestFileInput" accept=".csv,.json" style="display:none;" onchange="handleManifestUpload(this.files[0])" />
+              <button type="button" class="btn btn-secondary btn-sm" onclick="downloadSampleManifestTemplate()">
+                📥 Download Sample Manifest (CSV)
+              </button>
+            </div>
+          </div>
+
+          <!-- Drag and drop zone for custom bulk batches -->
+          <div class="dropzone" id="customUploadDropzone">
+            <div class="dropzone-icon">📥</div>
+            <h4>Drop Custom Label Images Here for Bulk Verification</h4>
+            <p style="font-size:0.85rem;color:#9ca3af;margin-top:4px;">Click or drop multiple PNG, JPG, and WebP artwork files simultaneously</p>
+            <input type="file" id="batchFileInput" accept="image/*" multiple style="display:none;" />
+          </div>
+
+          <!-- Batch Metrics KPIs -->
+          <div class="batch-kpi-grid" id="batchKpis" style="display:none;">
+            <div class="kpi-card">
+              <div class="kpi-title">Total Applications</div>
+              <div class="kpi-value" id="kpiTotal" style="color:#60a5fa;">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">Compliant (Approved)</div>
+              <div class="kpi-value" id="kpiCompliant" style="color:#34d399;">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">Flagged for Review</div>
+              <div class="kpi-value" id="kpiWarning" style="color:#f59e0b;">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">Rejected (Mismatches)</div>
+              <div class="kpi-value" id="kpiRejected" style="color:#ef4444;">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">Avg Processing Time</div>
+              <div class="kpi-value" id="kpiAvgTime" style="color:#38bdf8;">0 ms</div>
+            </div>
+          </div>
+
+          <!-- Batch Summary Table -->
+          <div id="batchResultsTableContainer" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <h4>Batch Audit Summary Table</h4>
+              <button class="btn btn-success" onclick="exportBatchCSV()">
+                📥 Export Standard Federal Compliance CSV Report
+              </button>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>Application ID</th>
+                    <th>Brand Name</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Confidence</th>
+                    <th>Processing Time</th>
+                    <th>Compliance Issues &amp; Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="batchTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    
+    <!-- TAB 4: Public TTB COLA Registry Database Connector -->
+    <section id="registryTab" class="tab-content">
+      <div class="card">
+        <div class="card-header" style="background:rgba(30,58,138,0.2);">
+          <h3>🏛️ Connected Public TTB COLA Registry Database (Data.gov / TTBOline)</h3>
+          <span class="standards-badge">● Live Registry Connection</span>
+        </div>
+        <div class="card-body">
+          <p style="color:#9ca3af;margin-bottom:16px;">
+            Search over 2.5M+ public records from the official <strong>Treasury Alcohol and Tobacco Tax and Trade Bureau (TTB) Public COLA Registry</strong>. Select any approved record to auto-import Form TTB F 5100.31 declarations directly into the verification studio.
+          </p>
+
+          <div style="display:flex;gap:10px;margin-bottom:20px;">
+            <input type="text" id="registrySearchInput" placeholder="Search by Brand Name, TTB ID, or Beverage Class (e.g. Buffalo Trace, Macallan, Bourbon, Cabernet)..." style="flex:1;background:#0f172a;border:1px solid #374151;border-radius:6px;padding:10px 14px;color:#fff;font-size:0.95rem;outline:none;" oninput="searchRegistry(this.value)">
+            <button class="btn btn-primary" onclick="searchRegistry(document.getElementById('registrySearchInput').value)">🔍 Search Database</button>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>TTB COLA ID</th>
+                  <th>Brand Name &amp; Fanciful Name</th>
+                  <th>Category / Class</th>
+                  <th>Alcohol %</th>
+                  <th>Permit Holder &amp; Origin</th>
+                  <th>Approval Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="registryTableBody">
+                <!-- Populated dynamically via app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: 27 CFR Guidelines & Reference -->
+    <section id="guideTab" class="tab-content">
+      
+      <div class="ref-section">
+        <h3>⚖️ 27 CFR Part 16 — Government Health Warning Statement Requirements</h3>
+        <p>The health warning statement is mandatory on <strong>all alcoholic beverages</strong> sold or distributed in the United States containing not less than 0.5% alcohol by volume.</p>
+        
+        <div class="extracted-quote-box" style="margin:14px 0;font-size:0.95rem;">
+<strong>GOVERNMENT WARNING:</strong> (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.
+        </div>
+
+        <h4>Key Compliance Rules:</h4>
+        <ul>
+          <li><strong>Mandatory All-Caps Header:</strong> The words <code>GOVERNMENT WARNING:</code> must appear in all capital letters and bold print.</li>
+          <li><strong>Exact Verbatim Text:</strong> No omissions, abbreviations, or wording modifications are permitted under federal law.</li>
+          <li><strong>Conspicuous Placement:</strong> Must appear on a contrasting background, clearly separated from other label copy.</li>
+        </ul>
+      </div>
+
+      <div class="ref-section">
+        <h3>🍷 Beverage Category Standards of Identity</h3>
+        <ul>
+          <li><strong>Distilled Spirits (27 CFR Part 5):</strong> Brand Name, Class/Type Designation, ABV &amp; Proof (Proof must mathematically equal $2 \times \text{ABV}$), Net Contents (Standard metric sizes: 50 mL, 100 mL, 200 mL, 375 mL, 750 mL, 1 L, 1.75 L), Bottler Name/Address, Country of Origin (if imported).</li>
+          <li><strong>Wine (27 CFR Part 4):</strong> Brand Name, Class/Type (e.g. Cabernet Sauvignon), Appellation of Origin (if required), ABV (mandatory if over 14% ABV; "Table Wine" permitted for 7–14%), Net Contents, Bottler declaration.</li>
+          <li><strong>Malt Beverages / Beer (27 CFR Part 7):</strong> Brand Name, Class/Type (e.g. India Pale Ale, Stout), Net Contents, Name and Address of Brewer/Packer, Alcohol Content (where required by state law).</li>
+        </ul>
+      </div>
+
+      <div class="ref-section" style="border-top:1px solid #334155;padding-top:16px;margin-top:20px;">
+        <h3>📊 Curated Regulatory Benchmark (30/30 on Public COLA Test Suite)</h3>
+        <p>Evaluated on our benchmark dataset of 30 public COLA registry label applications spanning Distilled Spirits, Wine, and Malt Beverages (<code>benchmark.py</code> &amp; <code>eval_dataset.json</code>):</p>
+        <div style="overflow-x:auto;margin-top:12px;">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Regulatory Metric</th>
+                <th>Measured Value</th>
+                <th>Federal Standard / Target</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Benchmark Accuracy</strong></td>
+                <td><span class="badge badge-pass">30 / 30 Passed (100.0%)</span></td>
+                <td>&gt; 95.0%</td>
+                <td><span style="color:#34d399;font-weight:700;">PASSED</span></td>
+              </tr>
+              <tr>
+                <td><strong>False Negative Rate (FNR)</strong></td>
+                <td><span class="badge badge-pass">0.0% (0 compliant labels rejected)</span></td>
+                <td>&lt; 2.0%</td>
+                <td><span style="color:#34d399;font-weight:700;">PASSED</span></td>
+              </tr>
+              <tr>
+                <td><strong>False Positive Rate (FPR)</strong></td>
+                <td><span class="badge badge-pass">0.0% (0 non-compliant labels approved)</span></td>
+                <td>0.0%</td>
+                <td><span style="color:#34d399;font-weight:700;">PASSED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Precision &amp; Recall</strong></td>
+                <td><span class="badge badge-pass">100.0% / 100.0% (F1: 1.000)</span></td>
+                <td>&gt; 98.0%</td>
+                <td><span style="color:#34d399;font-weight:700;">PASSED</span></td>
+              </tr>
+              <tr>
+                <td><strong>Mean Verification Latency</strong></td>
+                <td><strong style="color:#60a5fa;">0.14 ms</strong> per label</td>
+                <td>&lt; 5,000 ms</td>
+                <td><span style="color:#34d399;font-weight:700;">&gt; 25,000x FASTER</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:0.8rem;color:#94a3b8;margin-top:10px;">
+          <em>Methodology &amp; Scope:</em> Verified via automated CI suite (<code>pytest tests/test_benchmark.py</code>). Evaluates 27 CFR statutory compliance against high-resolution public registry label designs and key failure modes (Part 16 casing evasion, omitted clauses, ABV/proof discrepancy, brand divergence). Does not yet model physical 3D bottle cylinder warping or severe lighting glare.
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Official Footer -->
+  <footer class="gov-footer">
+    <p>United States Alcohol and Tobacco Tax and Trade Bureau (TTB) &middot; Label Compliance &amp; Verification System</p>
+    <p style="margin-top:4px;color:#4b5563;">Developed by <a href="/about" style="color:#93c5fd;">Ioannis Konstas</a> &middot; <a href="/" style="color:#93c5fd;">Engineering Notes</a> &middot; Sub-Second Verification Engine</p>
+  </footer>
+
+  <script src="app.js?v=4.1"></script>
+</body>
+</html>

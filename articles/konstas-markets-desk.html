@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/konstas-markets-desk">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konstas Markets Desk: An FX Dealing Room on One Mac — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="A complete FX dealing-room training system: eight competing banks, Reuters-style conversations, client calls, orders, forwards and money markets, a back office with double-entry accounting, and all ACI Dealing Certificate formulas.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/konstas-markets-desk">
+<meta property="og:title" content="Konstas Markets Desk: An FX Dealing Room on One Mac">
+<meta property="og:description" content="A complete FX dealing-room training system: eight competing banks, Reuters-style conversations, client calls, orders, forwards and money markets, a back office with double-entry accounting, and all ACI Dealing Certificate formulas.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/konstas-markets-desk/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/konstas-markets-desk/og.jpg">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .55);margin:6px 22px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Trading Systems</span>
+    <h1>Konstas Markets Desk: An FX Dealing Room on One Mac</h1>
+    <p class="meta">Articles &middot; October 2026 &middot; Ioannis Konstas</p>
+
+<blockquote>A complete foreign-exchange dealing room that runs on one Mac mini: live two-way prices from eight banks, Reuters-style dealing conversations, client calls, orders, forwards and money markets, a full back office with double-entry accounting, and every formula of the ACI Dealing Certificate.</blockquote>
+<p>Interbank FX is learnt on the desk, not in a textbook. The Markets Desk recreates that desk: a market that never stops moving, counterparties who answer in dealer shorthand and refuse stale prices, clients who call with fifteen seconds to quote, and a back office that confirms, settles and books every deal. It was built as a study companion for the <b>ACI Dealing Certificate</b> (exam 002-101) and grew into a full trading simulator with a web dealing room and an old-school terminal.</p>
+<p>Everything runs locally. The server listens only on the Mac's loopback address, so nothing on the network or the internet can reach it. The only things it fetches are public reference prices.</p>
+<h2 id="capabilities">Capabilities</h2>
+<ul><li><strong>Live interbank market</strong> — EUR/USD, GBP/USD, USD/JPY, USD/CHF, AUD/USD, USD/CAD, EUR/GBP and gold, anchored to ECB reference rates and the live gold price, moving continuously.</li><li><strong>Eight competing banks</strong> — Each quotes its own two-way price and size, shades prices with its inventory, goes off-line, and refuses stale prices with “last look”.</li><li><strong>Reuters-style dealing</strong> — Open a conversation with a bank code, ask “EUR 10”, deal with MINE or YOURS, close with BIBI. Confirmations come back with value date and settlement instructions.</li><li><strong>Clients who call you</strong> — Corporates, funds and a central bank ask for two-way prices. Quote within fifteen seconds; tougher clients need tighter prices.</li><li><strong>Orders</strong> — AT BEST, limit and stop orders, GTC and GFD validity, one-cancels-other take-profit and stop-loss, immediate-or-cancel.</li><li><strong>Forwards, swaps, money markets</strong> — Forward curves from overnight to one year, outright forwards, B/S and S/B FX swaps, deposits and loans with interest accrual.</li><li><strong>Back office</strong> — Trade tickets, confirmation matching with random breaks, settlement through nostro accounts, end of day at 17:00 New York.</li><li><strong>Double-entry ledger</strong> — Every settlement, revaluation, carry and interest posting is a journal; the trial balance balances in every currency.</li><li><strong>Risk and performance</strong> — Positions, average rates, realised and open P&amp;L in USD, position and stop-loss limits, win rate, drawdown, client hit rate.</li><li><strong>Study tools</strong> — 46 ACI formula calculators verified against the official sample answers, an exam-practice quiz on live numbers, and more than 100 HELP topics.</li><li><strong>Two front ends</strong> — A web dealing room with click-to-deal prices and an amber terminal with candlestick charts and Tab completion, on the same live market.</li><li><strong>Always on</strong> — Starts at login, opens both screens, saves its book continuously and backs itself up, encrypted, every night.</li></ul>
+<h2 id="screens">The screens</h2>
+<figure style="margin:22px 0 28px">
+<img alt="Web dealing room: rate tiles on the left, EUR/USD candlestick chart, eight-bank depth table, order ticket, conversations and news wire on the right, positions table at the bottom" height="1103" loading="lazy" src="/articles/konstas-markets-desk/dealing.jpg" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:4px;background:#000" width="1800"/>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><b>Web dealing room</b> (localhost:9300/dealing). Prices are shown the Reuters way, big figure small and pips large. Click the bid to sell or the offer to buy. The chart marks your average price and working orders; the depth table shows every bank's price and size.</figcaption>
+</figure>
+<figure style="margin:22px 0 28px">
+<img alt="Terminal dealing screen: amber header, rates board with bid, ask, spread, change, high, low, position and open P&amp;L, incoming calls bar, news and street tape, and HELP MINE output" height="1028" loading="lazy" src="/articles/konstas-markets-desk/terminal.jpg" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:4px;background:#000" width="1800"/>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><b>Terminal dealing screen</b> (the <code>desk</code> command). The top of the screen redraws four times a second; commands are typed at the <code>DEAL&gt;</code> prompt. Shown here: the depth for EUR/USD and the built-in help for MINE.</figcaption>
+</figure>
+<figure style="margin:22px 0 28px">
+<img alt="Terminal candlestick chart of EUR/USD in one-minute candles with a price scale and time axis" height="1028" loading="lazy" src="/articles/konstas-markets-desk/terminal-chart.jpg" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:4px;background:#000" width="1800"/>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><b>Terminal chart</b> (<code>CHART EUR</code>). One-minute candles in simulated time, drawn with block characters; 5, 15 and 60-minute views are available.</figcaption>
+</figure>
+<figure style="margin:22px 0 28px">
+<img alt="Forward curve table for EUR/USD with tenor, start and end dates, days, bid and offer points, outright prices and deal buttons" height="383" loading="lazy" src="/articles/konstas-markets-desk/forwards.jpg" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:4px;background:#000" width="1800"/>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><b>Forwards.</b> The EUR/USD forward curve from overnight to one year: value dates under modified-following, swap points from the interest differential, outright prices, and buttons for outrights and swaps.</figcaption>
+</figure>
+<figure style="margin:22px 0 28px">
+<img alt="Back office tab listing trade tickets with trade date, value date, deal, counterparty and status, including one unmatched confirmation with a MATCH button" height="383" loading="lazy" src="/articles/konstas-markets-desk/backoffice.jpg" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:4px;background:#000" width="1800"/>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><b>Back office.</b> Every deal becomes a ticket. Here one confirmation disagrees on the value date and waits to be resolved with MATCH.</figcaption>
+</figure>
+<figure style="margin:22px 0 28px">
+<img alt="Ledger tab showing the trial balance marked balanced and account balances" height="383" loading="lazy" src="/articles/konstas-markets-desk/ledger.jpg" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:4px;background:#000" width="1800"/>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><b>Ledger.</b> The trial balance of the general ledger, which must read balanced in every currency, followed by the latest journals.</figcaption>
+</figure>
+<figure style="margin:22px 0 28px">
+<img alt="Performance tab with deal count, win rate, realised P&amp;L, best and worst trades and results by pair" height="383" loading="lazy" src="/articles/konstas-markets-desk/performance.jpg" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:4px;background:#000" width="1800"/>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><b>Performance.</b> Win rate, average win and loss, best and worst trades, results by pair and by deal type, drawdown, and the hit rate on client calls.</figcaption>
+</figure>
+<figure style="margin:22px 0 28px">
+<img alt="Exam tab presenting a multiple-choice question built from live simulator prices" height="383" loading="lazy" src="/articles/konstas-markets-desk/exam.jpg" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:4px;background:#000" width="1800"/>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><b>Exam practice.</b> Multiple-choice questions in the style of the Dealing Certificate, built from the live prices, with an explanation after each answer and a score by topic.</figcaption>
+</figure>
+<p>Screenshots are from a demonstration copy of the simulator. All prices, banks, clients and amounts are simulated; the banks are fictional.</p>
+<h2 id="deal">Life of a deal</h2>
+<ol>
+<li><b>Price.</b> Eight banks quote two-way prices around the market mid. In a conversation you ask for a price: <code>EUR 10</code> → <code>1.1203/05</code>.</li>
+<li><b>Deal.</b> <code>MINE</code> buys at 1.1205. The bank confirms: <code>TO CONFIRM AT 1.1205 I SELL 10 MIO EUR VAL 13OCT26 · MY USD TO ATLB NY</code>.</li>
+<li><b>Position.</b> The position, average rate and open P&amp;L update at once; limits are checked.</li>
+<li><b>Ticket.</b> The back office captures a ticket: trade date, value date, both currency amounts.</li>
+<li><b>Confirmation.</b> The counterparty's confirmation arrives seconds later and is matched. About one in twenty disagrees and becomes an exception.</li>
+<li><b>End of day.</b> At 17:00 New York, positions are revalued at closing rates, P&amp;L and carry are posted, and the business date rolls forward.</li>
+<li><b>Settlement.</b> On the value date the two currencies move through the nostro accounts and the ticket is marked settled.</li>
+</ol>
+<h2 id="commands">Command reference</h2>
+<p>Commands are typed at the <code>DEAL&gt;</code> prompt and are not case-sensitive. Amounts are in millions of the first currency (gold in thousands of ounces). <kbd>Tab</kbd> completes words, and <code>HELP</code> followed by any word explains it with an example.</p>
+<h3>Dealing conversations</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>ATLB</code></td><td>Open a conversation with a bank: ATLB, NRDC, MRDN, HLVT, PCFT, CRWN, SKRA, LBTY, or BRKR for the voice broker.</td></tr>
+<tr><td><code>EUR 10</code></td><td>Ask for a two-way price in 10 million. Pair words: EUR, CABLE, YEN, SWISSY, AUSSIE, LOONIE, EURGBP, GOLD.</td></tr>
+<tr><td><code>MINE</code> · <code>MINE 5</code></td><td>Buy at the bank's offer, all or part of the size.</td></tr>
+<tr><td><code>YOURS</code> · <code>YOURS 5</code></td><td>Sell at the bank's bid.</td></tr>
+<tr><td><code>NTG</code></td><td>Nothing, no deal.</td></tr>
+<tr><td><code>BIBI</code></td><td>Close the conversation.</td></tr>
+<tr><td><code>20/22</code></td><td>Answer a client who is calling: your bid and offer in pips, or in full as <code>1.1220/22</code>.</td></tr>
+<tr><td><code>q 7 20 22</code></td><td>Answer a specific call when two clients call at once.</td></tr>
+</tbody>
+</table></div>
+<h3>Electronic broker and orders</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>BUY 5 EUR AT BEST</code></td><td>Buy now at the best offer. Fast key: <code>b eur 5</code>; from one bank: <code>b eur 5 mrdn</code>.</td></tr>
+<tr><td><code>SELL 5 EUR AT BEST</code></td><td>Sell now at the best bid. Fast key: <code>s eur 5</code>.</td></tr>
+<tr><td><code>ok</code></td><td>Take the smaller size a bank offered after “only good for 2 MIO”.</td></tr>
+<tr><td><code>BUY 50 YEN IOC</code></td><td>Immediate or cancel: take the size available now, cancel the rest.</td></tr>
+<tr><td><code>SELL 5 EUR AT 1.1250 GTC</code></td><td>Limit order, good till cancelled.</td></tr>
+<tr><td><code>SELL 5 EUR STOP 1.1180 GFD</code></td><td>Stop order, good for the day.</td></tr>
+<tr><td><code>OCO EUR 1.1250 1.1180</code></td><td>Take profit and stop loss on the whole position; when one fills, the other is cancelled. Also <code>tp eur 1.1250</code>, <code>sl eur 1.1180</code>.</td></tr>
+<tr><td><code>ORDERS</code> · <code>CXL 3</code></td><td>List working orders with their distance in pips; cancel order 3.</td></tr>
+<tr><td><code>sq eur</code></td><td>Square the whole EUR/USD position at best.</td></tr>
+<tr><td><code>d eur</code></td><td>Depth: every bank's bid, offer and size.</td></tr>
+</tbody>
+</table></div>
+<h3>Forwards, swaps and money markets</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>FWD EUR</code></td><td>Forward curve: ON, TN, SN, 1W, 2W, 1M, 2M, 3M, 6M, 9M, 1Y with dates, points and outrights.</td></tr>
+<tr><td><code>BUY 5 EUR 3M</code></td><td>Outright forward for the 3-month value date.</td></tr>
+<tr><td><code>SWAP B/S EUR 10 1M</code></td><td>FX swap: buy near, sell far. <code>S/B</code> is the opposite; <code>TN</code> rolls a position.</td></tr>
+<tr><td><code>MM USD</code></td><td>Deposit and loan rates by tenor (you lend at the bid, borrow at the offer).</td></tr>
+<tr><td><code>LEND USD 10 1M</code> · <code>BORROW EUR 5 3M</code></td><td>Place a deposit or take a loan; interest accrues each night.</td></tr>
+<tr><td><code>MMBOOK</code></td><td>Your deposits and loans with accrued interest.</td></tr>
+</tbody>
+</table></div>
+<h3>Book, back office and study</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>pos</code> · <code>deals</code></td><td>Positions with average and P&amp;L; recent trades with value dates.</td></tr>
+<tr><td><code>news</code> · <code>tape</code></td><td>Recent headlines; trades between other banks.</td></tr>
+<tr><td><code>BO</code> · <code>CONF</code></td><td>Back-office overview and exceptions; all tickets and their status.</td></tr>
+<tr><td><code>MATCH D1010</code></td><td>Resolve a confirmation break or a failed settlement.</td></tr>
+<tr><td><code>SETT</code> · <code>NOSTRO</code></td><td>Settlement ladder by value date; cash per currency at each correspondent bank.</td></tr>
+<tr><td><code>GL</code> · <code>JNL 12</code> · <code>PNL</code></td><td>Trial balance; latest journals; daily P&amp;L history including carry and interest.</td></tr>
+<tr><td><code>EOD</code></td><td>Run end of day now (it also runs by itself at 17:00 New York).</td></tr>
+<tr><td><code>CHART EUR 5</code> · <code>CHART OFF</code></td><td>Candlestick chart, 1, 5, 15 or 60-minute candles.</td></tr>
+<tr><td><code>QUIZ</code> then <code>A</code>–<code>D</code></td><td>Exam practice with explanations and a running score.</td></tr>
+<tr><td><code>PERF</code></td><td>Performance report.</td></tr>
+<tr><td><code>HELP</code> · <code>HELP OCO</code></td><td>All help topics by group; one topic with usage and example.</td></tr>
+<tr><td><code>speed 1</code> · <code>pause</code> · <code>resume</code></td><td>Market speed (1, 5, 10, 30, 60) and freeze.</td></tr>
+<tr><td><code>HOURS REAL</code> · <code>HOURS ALWAYS</code></td><td>Close at weekends like real FX (Friday 17:00 to Sunday 17:00 New York), or stay open.</td></tr>
+<tr><td><code>quit</code></td><td>Close the screen; the market keeps running.</td></tr>
+</tbody>
+</table></div>
+<h2 id="market">How the market works</h2>
+<h3>Price process</h3>
+<p>Each currency pair follows a random walk scaled to its typical annual volatility (EUR/USD 7%, USD/JPY 10%, gold 15%) over a 252-day trading year. EUR/GBP is derived from EUR/USD and GBP/USD so the crosses never disagree. Prices are pulled back towards their real reference levels with a half-life of about six simulated hours, more firmly beyond ±3%, so the simulation stays close to the real market over time.</p>
+<h3>Reference data</h3>
+<p>Currencies anchor to the European Central Bank's daily reference rates; gold anchors to the live spot price. Both refresh every four hours. Money-market rate levels and forward points are computed from simulated interest rates, labelled as such on every screen.</p>
+<h3>Banks and liquidity</h3>
+<p>Eight fictional banks quote around the mid with their own spread and size. A bank that is long shades its prices lower, quotes update at different moments, and a quote the market has moved through is refreshed so the best bid never crosses the best offer. Dealing on a stale price, or for more than the size shown, can be refused with last look.</p>
+<h3>Events</h3>
+<p>News shocks (central banks, data releases, intervention, risk-off, the occasional flash crash) jump prices and widen spreads, with a one-hour cooldown per currency. Other banks trade with each other on the tape, and clients call at random with sizes that fit their type.</p>
+<h3>Reproducibility</h3>
+<p>Randomness comes from a seeded xoshiro128** generator, the same family as C++'s standard generators, so a session can be replayed from its seed.</p>
+<h3>Limits</h3>
+<p>50 million per pair (gold 20,000 oz), 150 million net open position, and a USD 250,000 daily stop-loss, with warnings when breached.</p>
+<h2 id="backoffice">Back office &amp; accounting</h2>
+<p>Spot FX is off-balance-sheet between trade date and value date. On the value date each deal settles: the currency bought arrives in its nostro, the currency sold leaves it, and each leg is booked against a currency position account so every journal balances in its own currency. End of day revalues open positions at closing mids and posts the unrealised result in USD, reversed the next day; realised results, tom/next carry and interest are posted alongside.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Account</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>1100 Nostro (per currency)</td><td>Cash at the correspondent bank: JPMorgan Chase New York (USD), Deutsche Bank Frankfurt (EUR), Barclays London (GBP), MUFG Tokyo, UBS Zurich, Westpac Sydney, RBC Toronto, loco London for gold. Each is pre-funded.</td></tr>
+<tr><td>1200 / 2200</td><td>Money-market deposits placed / deposits taken.</td></tr>
+<tr><td>1210 / 2210</td><td>Interest receivable / payable.</td></tr>
+<tr><td>1900 FX position</td><td>Currency position accounts, the other side of each settlement leg.</td></tr>
+<tr><td>1950 Revaluation adjustment</td><td>Mark-to-market of open positions at the last close.</td></tr>
+<tr><td>1960 P&amp;L clearing</td><td>Offset for realised trading results.</td></tr>
+<tr><td>3000 Capital</td><td>Opening funding of the desk.</td></tr>
+<tr><td>4000 / 4100</td><td>FX trading P&amp;L realised / revaluation P&amp;L unrealised.</td></tr>
+<tr><td>4200</td><td>FX swap carry from the nightly tom/next roll.</td></tr>
+<tr><td>4300 / 4310</td><td>Interest income / interest expense.</td></tr>
+</tbody>
+</table></div>
+<p>Ticket statuses run <b>captured → matched → settled</b>. A break shows as <b>unmatched</b>; if it is still unmatched on the value date the ticket <b>fails</b> and settles late once resolved. Dates follow market conventions: spot is T+2 (USD/CAD T+1), month tenors use modified-following with the end/end rule, and money markets use ACT/360 or ACT/365 by currency.</p>
+<h2 id="architecture">Architecture</h2>
+<pre><code>              Mac mini — listens on 127.0.0.1 only
+  ┌────────────────────────────────────────────────────┐
+  │  server.mjs ── HTTP, event stream, JSON API         │
+  │      │                                              │
+  │  sim/engine.mjs ── market, banks, orders, risk      │
+  │      ├── sim/backoffice.mjs  tickets · settlement · ledger
+  │      ├── sim/rates.mjs       tenors · points · money markets
+  │      ├── sim/quiz.mjs        exam questions          │
+  │      └── data/sim-state.json the live book           │
+  └───────────▲───────────────▲───────────────▲────────┘
+              │               │               │
+      Terminal client   Web dealing room   Formula desk
+       (cli/desk.mjs)      (/dealing)     (46 calculators)
+  every 4 h ──► ECB reference rates · live gold price
+</code></pre>
+<p>The server is plain Node.js with no third-party packages. The engine ticks four times a second, saves the book every five seconds and on every deal, and pushes a snapshot to every connected screen over a server-sent event stream. Both front ends are thin: they render the snapshot and send commands back as JSON.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Component</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td><code>server.mjs</code></td><td>Static files, the event stream, the JSON API, security headers.</td></tr>
+<tr><td><code>sim/engine.mjs</code></td><td>Market dynamics, bank quotes, news, clients, conversations, orders, positions, limits, performance.</td></tr>
+<tr><td><code>sim/backoffice.mjs</code></td><td>Tickets, confirmations, settlement, end of day, ledger, reports.</td></tr>
+<tr><td><code>sim/rates.mjs</code></td><td>Tenor dates, forward points, forward and money-market tables.</td></tr>
+<tr><td><code>sim/quiz.mjs</code> · <code>sim/rng.mjs</code></td><td>Exam questions; seeded random numbers.</td></tr>
+<tr><td><code>cli/desk.mjs</code> · <code>cli/help.mjs</code></td><td>Terminal client; the help topics (over 100).</td></tr>
+<tr><td><code>public/</code></td><td>Formula desk, web dealing room, offline service worker, KaTeX for formulas.</td></tr>
+</tbody>
+</table></div>
+<h2 id="api">API reference</h2>
+<p>All routes live under <code>/api/sim</code> on 127.0.0.1:9300. Requests that change anything must be JSON and carry the header <code>X-Desk: 1</code>; a web page from another site cannot send that header, which protects the local server from cross-site requests.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Route</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>GET /stream</code></td><td>Server-sent events: a full snapshot about four times a second.</td></tr>
+<tr><td><code>GET /state</code></td><td>One full snapshot.</td></tr>
+<tr><td><code>GET /bars?pair=&amp;tf=&amp;n=</code></td><td>OHLC candles in simulated minutes.</td></tr>
+<tr><td><code>GET /fwd?pair=</code> · <code>GET /mmq?ccy=</code></td><td>Forward curve; money-market rates.</td></tr>
+<tr><td><code>GET /perf</code></td><td>Performance report.</td></tr>
+<tr><td><code>GET /bo/{summary,tickets,nostro,ladder,gl,journal,pnl,mm}</code></td><td>Back-office views.</td></tr>
+<tr><td><code>POST /deal</code></td><td>Deal on a bank's price: pair, side, amount, bank.</td></tr>
+<tr><td><code>POST /quote</code></td><td>Answer a client call: id, bid, offer.</td></tr>
+<tr><td><code>POST /chat</code></td><td>Send a conversation line to a bank or the broker.</td></tr>
+<tr><td><code>POST /order</code> · <code>/protect</code> · <code>/order/cancel</code></td><td>Limit or stop order; take-profit and stop-loss pair; cancel.</td></tr>
+<tr><td><code>POST /forward</code> · <code>/swap</code> · <code>/mm</code></td><td>Outright forward; FX swap; deposit or loan.</td></tr>
+<tr><td><code>POST /bo/match</code> · <code>/cancel</code></td><td>Resolve a break; back-office deal cancellation.</td></tr>
+<tr><td><code>POST /quiz</code> · <code>/quiz/answer</code></td><td>New question; answer it.</td></tr>
+<tr><td><code>POST /control</code></td><td>pause, resume, speed, hours, eod, reset.</td></tr>
+</tbody>
+</table></div>
+<h2 id="operations">Operations</h2>
+<ul>
+<li><strong>Always on</strong> — the server starts automatically at login and opens both screens once the market is up.</li>
+<li><strong>Persistence</strong> — the whole book (positions, deals, orders, back office, ledger, price history) is saved continuously and survives restarts.</li>
+<li><strong>Backups</strong> — code and the live book are backed up every night, encrypted, off the machine.</li>
+<li><strong>Testing</strong> — every change is tested on a separate copy of the simulator, never against the live book.</li>
+<li><strong>Security</strong> — loopback-only listener, host-header check, a custom header required for every change, a strict Content-Security-Policy, and no third-party server packages.</li>
+</ul>
+<h2 id="formulas">Formula desk</h2>
+<figure style="margin:22px 0 28px">
+<img alt="Formula desk showing the FRA settlement calculator with the formula, deal inputs and the result You receive 6,720.26" height="585" loading="lazy" src="/articles/konstas-markets-desk/formula.jpg" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:4px;background:#000" width="1800"/>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><b>Formula desk</b> (localhost:9300). The FRA settlement calculator with its formula, inputs, result and the check against the ACI sample question.</figcaption>
+</figure>
+<p>Forty-six calculators cover the ACI FMA formula sheet effective 22 June 2026 for the Dealing Certificate (002-101), Operations Certificate (002-201) and Diploma (003-102): spot amounts and cross rates, forward points and outrights, short dates, interpolation, deposits and rollovers, discount instruments and CDs, repo with margin or haircut, forward-forwards, FRAs and single-period swaps, futures, bonds, swaps, options strategies, volatility, VaR and the Basel III ratios. Each shows the formula, an explanation, the working, and can be saved to a blotter. A test script checks the results against every numeric answer in the official sample questions.</p>
+<p>
+  Konstas Markets Desk is a training system. Prices are simulated around public reference rates, the banks and clients are fictional, and no real money is involved. ACI and ACI FMA are trademarks of their owners; the formula sheet is referenced for study purposes.
+</p>
+
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=konstas-markets-desk",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

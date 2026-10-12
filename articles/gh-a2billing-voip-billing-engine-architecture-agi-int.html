@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/gh-a2billing-voip-billing-engine-architecture-agi-int">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A2Billing VoIP Billing Engine: Architecture, AGI Integration, and Rate Management — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="How A2Billing integrates with Asterisk via AGI for real-time call billing, rate deck structure, calling card IVR flow, and MySQL database schema.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Telecom</span>
+    <h1>A2Billing VoIP Billing Engine: Architecture, AGI Integration, and Rate Management</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+
+    <p>Asterisk handles the media and signaling for a call — it has no concept of what that call should cost, or whether the caller can afford it. Left alone, a PBX will happily connect a prepaid customer with a zero balance to an international destination and let the call run until someone notices the invoice. <strong>A2Billing</strong> closes that gap: an open-source (AGPLv3) billing engine that hooks into the dialplan itself, so authorization happens <em>before</em> the call connects, not after it's already cost money.</p>
+
+    <p>The mechanism is the Asterisk Gateway Interface (AGI) — Asterisk calls out to an external script mid-dialplan and waits for an answer before proceeding. A2Billing uses that hook to check the account balance, look up the destination rate, calculate the maximum call duration the balance actually covers, and reject the call outright if there's nothing left to charge against.</p>
+
+    <h2>Architecture</h2>
+    <p>Three pieces do the work: the AGI script sits between Asterisk and the database, and a web interface sits on top for administration and customer self-service.</p>
+    <pre>┌──────────────────────────────────────────┐
+│              ASTERISK                    │
+│  extensions.conf calls AGI script        │
+└──────────────▬──────────────────────────┘
+               │ AGI call (real-time auth)
+┌──────────────▼──────────────────────────┐
+│           A2BILLING AGI                  │
+│  a2billing.php                           │
+│  - Check customer balance                │
+│  - Authorise call                        │
+│  - Calculate max call duration           │
+│  - Deduct credit in real time            │
+└──────────────▬──────────────────────────┘
+               │ Reads/Writes
+┌──────────────▼──────────────────────────┐
+│              MYSQL DATABASE              │
+│  Customers, accounts, rates, CDRs        │
+└──────────────▬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│         A2BILLING WEB INTERFACE          │
+│  Admin │ Agent │ Customer self-service  │
+└──────────────────────────────────────────┘</pre>
+    <p>On top of core prepaid/postpaid billing, the same platform handles the things that tend to get bolted on separately: calling-card access via PIN, DID inventory and per-account assignment, reseller sub-accounts with their own markup over cost, and a self-service portal so customers can top up and review call history without a support ticket. USD and international currencies both work out of the box.</p>
+    <h2>The AGI hook, in the dialplan</h2>
+    <p>The whole system hinges on one line placed before the actual <code>Dial()</code>:</p><pre>; extensions.conf — A2Billing called before every outbound call
+[from-pstn-inbound]
+exten =&gt; _NXXNXXXXXX,1,AGI(a2billing.php,1)
+exten =&gt; _NXXNXXXXXX,n,Dial(PJSIP/${EXTEN},30)
+exten =&gt; _NXXNXXXXXX,n,Hangup()
+
+[outbound-calls]
+exten =&gt; _1NXXNXXXXXX,1,AGI(a2billing.php,1)
+exten =&gt; _1NXXNXXXXXX,n,Dial(PJSIP/${EXTEN}@carrier-trunk,60)
+exten =&gt; _1NXXNXXXXXX,n,Hangup()</pre><p>When Asterisk hits <code>AGI(a2billing.php,1)</code>, execution pauses on that channel while the script looks up the account, checks the balance, resolves the rate for the destination prefix, and calculates the maximum duration that balance actually covers. Zero balance or an unrated destination means the call gets rejected right there — the dialplan never reaches <code>Dial()</code> at all.</p>
+    <h2>Rate decks, and why the match order matters</h2>
+    <p>A rate deck is just a per-destination price list, but the matching logic is the part worth understanding before populating one:</p><pre>-- Example rate entries (cc_rate table)
+destination         | prefix | rate_usd_per_min
+--------------------|--------|------------------
+USA Domestic        | 1      | 0.0120
+Mexico Mobile       | 5219   | 0.1800
+Dominican Republic  | 1809   | 0.0850
+Brazil Mobile       | 5511   | 0.2200
+UK Landline         | 4411   | 0.0250</pre><p>Matching is always longest-prefix-first — a call to a Brazil mobile number (5511...) matches the specific <code>5511</code> entry over the generic <code>55</code> Brazil entry, the same logic as IP routing. Get that backwards in a manually-edited rate table and every mobile call in Brazil silently bills at the landline rate. Separate rate decks can exist per customer tier — retail, wholesale, reseller — each pointed at the same prefix logic with different numbers.</p>
+    <h2>The calling-card path</h2>
+    <p>Prepaid access without an account at all — PIN in, destination in, call connects at whatever rate the card's own deck specifies:</p><pre>Customer dials access number (DID)
+         │
+         ▼
+Asterisk IVR answers
+"Please enter your PIN followed by #"
+         │
+         ▼
+A2Billing AGI validates PIN → checks balance
+         │
+         ▼
+"Please enter the number you wish to call"
+         │
+         ▼
+A2Billing calculates max duration at destination rate
+         │
+         ▼
+Call connects → real-time credit deduction per second
+         │
+         ▼
+"You have 2 minutes remaining" (warning prompt)
+         │
+         ▼
+Credit exhausted → call terminated → CDR written</pre>
+    <h2>What's actually in the database</h2>
+    <p>Nine tables cover the whole lifecycle — accounts and balances, the call detail records everything else derives from, DID inventory, rate structure, and the reseller layer on top:</p>
+    <table><thead><tr><th>Table</th><th>Purpose</th></tr></thead><tbody><tr><td>cc_card</td><td>Customer accounts, PINs, and balances</td></tr><tr><td>cc_call</td><td>CDR — every call detail record with cost and duration</td></tr><tr><td>cc_did</td><td>DID number inventory and routing rules</td></tr><tr><td>cc_did_use</td><td>DID assignment to customer accounts</td></tr><tr><td>cc_tariffplan</td><td>Rate deck definitions and tier names</td></tr><tr><td>cc_rate</td><td>Per-destination rates within each tariff plan</td></tr><tr><td>cc_invoice</td><td>Generated postpaid invoices</td></tr><tr><td>cc_agent</td><td>Agent and reseller sub-accounts with markup settings</td></tr><tr><td>cc_voucher</td><td>Top-up voucher codes for prepaid top-up</td></tr></tbody></table>
+    <p><a href="/">← All articles</a></p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-a2billing-voip-billing-engine-architecture-agi-int",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

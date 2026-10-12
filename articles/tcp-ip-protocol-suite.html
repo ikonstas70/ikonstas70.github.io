@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/tcp-ip-protocol-suite">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TCP/IP: The Protocol Suite Behind the Internet — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="How TCP/IP grew from ARPA experiments into the Internet&#x27;s common language: key milestones, the four layers, Microsoft TCP/IP, Internet governance (ISOC, IAB, IETF, IANA) and the RFC standards process.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/tcp-ip-protocol-suite">
+<meta property="og:title" content="TCP/IP: The Protocol Suite Behind the Internet">
+<meta property="og:description" content="How TCP/IP grew from ARPA experiments into the Internet&#x27;s common language: key milestones, the four layers, Microsoft TCP/IP, Internet governance (ISOC, IAB, IETF, IANA) and the RFC standards process.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/tcp-ip-protocol-suite/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/tcp-ip-protocol-suite/og.jpg">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .55);margin:6px 22px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Networking</span>
+    <h1>TCP/IP: The Protocol Suite Behind the Internet</h1>
+    <p class="meta">Articles &middot; October 2026 &middot; Ioannis Konstas</p>
+    <figure style="margin:18px 0 26px"><img src="/articles/tcp-ip-protocol-suite/hero.jpg" alt="Collage of a silicon chip die under magnification and source code on a dark screen" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:4px"></figure>
+
+<blockquote>How a defence research experiment became the common language of every network on Earth, and who keeps its standards today.</blockquote>
+<h2>Overview</h2>
+<p>The Transmission Control Protocol/Internet Protocol (TCP/IP) is the suite of networking protocols that carries communication across wide area networks and the Internet. Its development began in the late 1960s and early 1970s with the U.S. Department of Defense's Advanced Research Projects Agency (ARPA, later DARPA). ARPA's pioneering experiments in packet-switched networking led to the creation and standardisation of TCP/IP, which has since become the backbone of modern networking.</p>
+<h2>The suite in four layers</h2>
+<p>TCP/IP is usually described in four layers, each relying on the one below it:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Layer</th><th>Job</th><th>Examples</th></tr></thead>
+<tbody>
+<tr><td>Application</td><td>Services that people and programs use</td><td>HTTP, DNS, FTP, Telnet, SMTP</td></tr>
+<tr><td>Transport</td><td>End-to-end delivery between programs</td><td>TCP (reliable, ordered), UDP (lightweight)</td></tr>
+<tr><td>Internet</td><td>Addressing and routing between networks</td><td>IP, ICMP</td></tr>
+<tr><td>Network access</td><td>Moving frames over the local medium</td><td>Ethernet, Wi-Fi</td></tr>
+</tbody>
+</table></div>
+<h2>Key milestones</h2>
+<ul>
+<li><strong>1970</strong> — ARPANET hosts adopt the Network Control Protocol (NCP), the network's first host-to-host protocol.</li>
+<li><strong>1972</strong> — The first Telnet specification is published as RFC 318, enabling remote terminal access.</li>
+<li><strong>1973</strong> — The File Transfer Protocol is specified in RFC 454, building on the first FTP proposal of 1971 (RFC 114).</li>
+<li><strong>1974</strong> — Vint Cerf and Bob Kahn describe the Transmission Control Program, and RFC 675 specifies it in December, laying the foundation of TCP/IP.</li>
+<li><strong>1981</strong> — RFC 791 defines the Internet Protocol (addressing and routing) and RFC 793 defines TCP, the versions still in use today.</li>
+<li><strong>1982</strong> — The Defense Communications Agency and ARPA establish TCP/IP as the standard protocol suite for military networking.</li>
+<li><strong>1983</strong> — On 1 January, ARPANET switches from NCP to TCP/IP, the official adoption of the suite. The Domain Name System is specified the same year (RFCs 882 and 883).</li>
+<li><strong>1984</strong> — DNS begins to replace the single shared hosts file, simplifying hostname resolution as the network grows.</li>
+</ul>
+<h2>Microsoft TCP/IP and enterprise networking</h2>
+<p>Microsoft built TCP/IP into Windows NT from its first release, and with Windows NT 4.0 it became the core protocol of the enterprise Windows network. That brought several advantages:</p>
+<ul>
+<li><b>Universal compatibility.</b> TCP/IP is a standardised, routable protocol supported across modern operating systems and enterprise networks.</li>
+<li><b>Cross-platform connectivity.</b> Standard utilities such as FTP and Telnet move data and provide remote access between very different systems.</li>
+<li><b>Scalability and robustness.</b> The Windows Sockets (Winsock) interface lets developers build client/server applications that talk to any TCP/IP system.</li>
+<li><b>Internet access.</b> As the Internet's own protocol suite, TCP/IP connects research institutions, government agencies and enterprises worldwide.</li>
+</ul>
+<h2>Who governs the Internet's protocols</h2>
+<p>No single organisation owns or controls the Internet. Its protocols and standards are developed and coordinated by several bodies:</p>
+<h3>Internet Society (ISOC)</h3>
+<p>Founded in 1992, ISOC promotes the open development, evolution and use of the Internet worldwide, and provides the organisational home for the standards process.</p>
+<h3>Internet Architecture Board (IAB)</h3>
+<p>The IAB oversees the Internet's technical architecture and the standards process. It dates from the 1980s and was chartered as part of ISOC in 1992. It oversees:</p>
+<ul>
+<li><b>Internet Engineering Task Force (IETF)</b>, which develops and maintains Internet protocols.</li>
+<li><b>Internet Research Task Force (IRTF)</b>, which pursues longer-term research on protocols and future networking.</li>
+<li><b>Internet Assigned Numbers Authority (IANA)</b>, which manages protocol parameters, IP address allocation and the DNS root. The IAB provides policy direction for the protocol registries; since 1998 the IANA functions have been performed under ICANN.</li>
+</ul>
+<h2>Requests for Comments and Internet standards</h2>
+<p>TCP/IP standards are published as Requests for Comments (RFCs), which set out the technical specifications and operational guidance for Internet protocols. The process is open and consensus-based, captured in the IETF's motto of "rough consensus and running code", rather than decided by a formal committee vote.</p>
+<h3>Requirement levels</h3>
+<p>Specifications carry a requirement level that says how they apply to implementations:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Level</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>Required</td><td>Must be implemented by all TCP/IP-based systems.</td></tr>
+<tr><td>Recommended</td><td>Strongly encouraged for widespread adoption.</td></tr>
+<tr><td>Elective</td><td>Optional, but recognised as useful.</td></tr>
+<tr><td>Limited use</td><td>Intended for specialised applications.</td></tr>
+<tr><td>Not recommended</td><td>Generally discouraged.</td></tr>
+</tbody>
+</table></div>
+<h3>Maturity levels</h3>
+<p>Before it becomes a full standard, a specification passes through stages of review and real-world use. The classic standards track had three:</p>
+<ol>
+<li><b>Proposed Standard</b>: a stable, well-reviewed specification with initial implementation.</li>
+<li><b>Draft Standard</b>: widely implemented, interoperable and proven in practice.</li>
+<li><b>Internet Standard</b>: fully mature and widely deployed, recognised for its significant contribution to the Internet.</li>
+</ol>
+<p>Since 2011 (RFC 6410) the track has two levels: Proposed Standard and Internet Standard. The Draft Standard stage was retired.</p>
+<p>Every RFC keeps its number permanently. When a specification needs to change, a new RFC is published that updates or obsoletes the old one, giving clear versioning and a complete historical record.</p>
+<h2>Conclusion</h2>
+<p>TCP/IP remains the cornerstone of modern networking, supporting enterprise communication, cross-platform interoperability and global connectivity. Its continued evolution, guided by open standards and international organisations, will keep shaping the future of digital communication.</p>
+
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=tcp-ip-protocol-suite",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/gh-discrete-logarithm-cryptosystems">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Public-Key Cryptosystems Based on the Discrete Logarithm Problem — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Technical reference on the Discrete Logarithm Problem (DLP), ℤₚ* Multiplicative Group Operations, Diffie-Hellman Key Exchange (DHKE), ElGamal Encryption, Elliptic Curve Cryptography (ECC), and security bit-length equivalents.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" class="active">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <span class="tag">Cryptography</span>
+    <h1>Public-Key Cryptosystems Based on the Discrete Logarithm Problem</h1>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+
+    <p>Public-key cryptography depends on <strong>trapdoor one-way functions</strong>: mathematical operations that are computationally efficient in the forward direction but intractable to reverse without specific private trapdoor knowledge. Alongside integer factorization (the basis of RSA), the <strong>Discrete Logarithm Problem (DLP)</strong> constitutes the primary mathematical foundation for secure key exchange, asymmetric encryption, and digital signature algorithms across the global internet infrastructure.</p>
+
+    <pre><code>                    ┌────────────────────────────────────────────────────────┐
+                    │               Discrete Logarithm Problem               │
+                    │               Given (g, p, y), find x in:             │
+                    │                    y ≡ gˣ (mod p)                      │
+                    └───────────────────────────┬────────────────────────────┘
+                                                │
+       ┌────────────────────────┬───────────────┴───────────────┬────────────────────────┐
+       ▼                        ▼                               ▼                        ▼
+┌──────────────┐      ┌────────────────────┐          ┌────────────────────┐    ┌─────────────────┐
+│ Multiplicative│     │   Diffie-Hellman   │          │      ElGamal       │    │ Elliptic Curves │
+│ Group ℤₚ*    │      │    Key Exchange    │          │  Asymmetric Scheme │    │     E(𝔽ₚ)       │
+│ • Order p-1  │      │ • Forward Secrecy  │          │ • IND-CPA Security │    │ • Chord & Tangent│
+│ • Generators │      │ • CDH / DDH Proofs │          │ • Homomorphic Mult │    │ • ECDLP Hardness│
+└──────────────┘      └────────────────────┘          └────────────────────┘    └─────────────────┘</code></pre>
+
+    <hr></hr>
+
+    <h2>1. The Multiplicative Group &#8484;<sub>p</sub><sup>*</sup> and the DLP</h2>
+
+    <h3>Group Structure & Algebraic Properties</h3>
+    <p>For any prime <em>p</em>, the set of integers coprime to <em>p</em> forms a finite cyclic group under modular multiplication, denoted <strong>&#8484;<sub>p</sub><sup>*</sup></strong>:</p>
+
+    <pre><code>&#8484;<sub>p</sub><sup>*</sup> = {1, 2, 3, ..., p &minus; 1}
+</code></pre>
+
+    <ul>
+      <li><strong>Group Order:</strong> <code>|&#8484;<sub>p</sub><sup>*</sup>| = &phi;(p) = p &minus; 1</code>.</li>
+      <li><strong>Group Operation:</strong> Binary modular multiplication <code>(a &middot; b) mod p</code>, satisfying closure, associativity, and commutativity.</li>
+      <li><strong>Identity Element:</strong> <code>e = 1</code>.</li>
+      <li><strong>Multiplicative Inverses:</strong> For every <code>a &isin; &#8484;<sub>p</sub><sup>*</sup></code>, there exists a unique <code>a⁻¹ &isin; &#8484;<sub>p</sub><sup>*</sup></code> satisfying <code>a &middot; a⁻¹ &equiv; 1 (mod p)</code>, computed via the Extended Euclidean Algorithm or Fermat's Little Theorem (<code>a^{p&minus;2} mod p</code>).</li>
+      <li><strong>Generators / Primitive Roots:</strong> The group is strictly cyclic. There exists at least one generator <em>g</em> whose successive powers generate all elements of the group:
+        <pre><code>&lang;g&rang; = {g¹, g², g³, ..., g^{p&minus;1}} = &#8484;<sub>p</sub><sup>*</sup>
+</code></pre>
+        The total number of primitive roots in &#8484;<sub>p</sub><sup>*</sup> is <code>&phi;(p &minus; 1)</code>.
+      </li>
+    </ul>
+
+    <h3>The Discrete Logarithm Problem Formulation</h3>
+    <p>Given a generator <em>g &isin; &#8484;<sub>p</sub><sup>*</sup></em>, a modulus <em>p</em>, and a target element <em>y &isin; &#8484;<sub>p</sub><sup>*</sup></em>, find the unique integer <em>x &isin; &#8484;<sub>p&minus;1</sub></em> such that:</p>
+
+    <pre><code>y ≡ gˣ (mod p)
+</code></pre>
+
+    <ul>
+      <li><strong>Forward Direction (Modular Exponentiation):</strong> Computing <code>y ≡ gˣ (mod p)</code> takes polynomial time <em>O(log x &middot; log² p)</em> via repeated squaring.</li>
+      <li><strong>Reverse Direction (Discrete Logarithm):</strong> Extracting <code>x = log_g(y)</code> is computationally intractable for sufficiently large primes.</li>
+    </ul>
+
+    <hr></hr>
+
+    <h2>2. Diffie-Hellman Key Exchange (DHKE)</h2>
+    <p>Introduced in 1976 by Whitfield Diffie and Martin Hellman, DHKE was the first published mechanism enabling two parties to establish a shared cryptographic secret over an unencrypted channel without transmitting the secret itself.</p>
+
+    <pre><code>       Alice (Private: a)                                  Bob (Private: b)
+  ─────────────────────────────                       ───────────────────────────
+   Public Parameters: (p, g)                           Public Parameters: (p, g)
+   
+   Computes: A = gᵃ mod p          ─── Public A ───►   Computes: B = gᵇ mod p
+                                   ◄─── Public B ───
+   
+   Computes Shared Secret:                             Computes Shared Secret:
+   K = Bᵃ mod p                                        K = Aᵇ mod p
+     = (gᵇ)ᵃ = gᵃᵇ mod p                                 = (gᵃ)ᵇ = gᵃᵇ mod p
+</code></pre>
+
+    <h3>Protocol Execution</h3>
+    <ol>
+      <li><strong>Parameter Selection:</strong> Public prime <em>p</em> and generator <em>g &isin; &#8484;<sub>p</sub><sup>*</sup></em>.</li>
+      <li><strong>Key Generation:</strong>
+        <ul>
+          <li>Alice picks private exponent <code>a &isin; [2, p &minus; 2]</code> and sends <code>A = gᵃ mod p</code>.</li>
+          <li>Bob picks private exponent <code>b &isin; [2, p &minus; 2]</code> and sends <code>B = gᵇ mod p</code>.</li>
+        </ul>
+      </li>
+      <li><strong>Shared Secret Derivation:</strong>
+        <ul>
+          <li>Alice computes: <code>K = Bᵃ mod p = gᵃᵇ mod p</code>.</li>
+          <li>Bob computes: <code>K = Aᵇ mod p = gᵃᵇ mod p</code>.</li>
+          <li>Both arrive at identical secret <strong>K = g<sup>ab</sup> mod p</strong>.</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h3>Why Diffie-Hellman Is Critical</h3>
+    <ul>
+      <li><strong>Eliminated Pre-Shared Secrets:</strong> Solved the foundational key exchange dilemma of cryptography.</li>
+      <li><strong>Perfect Forward Secrecy (PFS):</strong> In Ephemeral Diffie-Hellman (<strong>DHE</strong> / <strong>ECDHE</strong>), keys are generated per session and discarded immediately, preventing retroactive decryption if server private keys leak.</li>
+      <li><strong>Ubiquitous Deployment:</strong> Powers <strong>TLS 1.3</strong>, <strong>SSH-2</strong>, <strong>IPsec (IKEv2)</strong>, <strong>Signal Protocol</strong>, and <strong>WireGuard</strong>.</li>
+    </ul>
+
+    <hr></hr>
+
+    <h2>3. ElGamal Public-Key Encryption</h2>
+    <p>Published in 1985 by Taher Elgamal, this system adapted Diffie-Hellman into a full asymmetric encryption and digital signature scheme.</p>
+
+    <pre><code>                                  ElGamal Encryption
+  
+   Public Key: (p, g, y = gˣ mod p)                    Private Key: x
+  
+   Sender (Alice):                                     Receiver (Bob):
+   - Choose ephemeral random k                         - Receives (c₁, c₂)
+   - Compute c₁ = gᵏ mod p                             - Computes shared mask: s = c₁ˣ mod p
+   - Compute shared mask s = yᵏ mod p                  - Computes s⁻¹ mod p via EEA
+   - Compute c₂ = m · s mod p                          - Recovers message: m = c₂ · s⁻¹ mod p
+   
+   Ciphertext: C = (c₁, c₂)
+</code></pre>
+
+    <h3>Mathematical Specification</h3>
+    <ol>
+      <li><strong>Key Generation (Bob):</strong> Selects private key <code>x &isin; [2, p &minus; 2]</code>; computes public key <code>y = gˣ mod p</code>. Full public key: <strong>(p, g, y)</strong>.</li>
+      <li><strong>Encryption (Alice):</strong> Plaintext <code>m &isin; &#8484;<sub>p</sub><sup>*</sup></code>, fresh ephemeral nonce <code>k &isin; [2, p &minus; 2]</code> with <code>gcd(k, p &minus; 1) = 1</code>:
+        <pre><code>c₁ = gᵏ mod p
+c₂ = (m · yᵏ) mod p
+</code></pre>
+      </li>
+      <li><strong>Decryption (Bob):</strong> Computes mask <code>s = c₁ˣ mod p = gᵏˣ mod p</code>, inverts <code>s⁻¹ mod p</code> via Extended Euclidean Algorithm, and recovers plaintext:
+        <pre><code>m = (c₂ · s⁻¹) mod p = m mod p
+</code></pre>
+      </li>
+    </ol>
+
+    <h3>Distinct Capabilities</h3>
+    <ul>
+      <li><strong>Semantic Security (IND-CPA):</strong> Randomized encryption ensures identical plaintexts yield different ciphertexts.</li>
+      <li><strong>Multiplicative Homomorphism:</strong> <code>(c₁,₁c₂,₁, c₁,₂c₂,₂)</code> decrypts directly to <code>m₁ &middot; m₂ mod p</code> — foundational for electronic voting tallying and privacy-preserving computation.</li>
+      <li><strong>Signature Origin:</strong> Direct precursor to the <strong>Digital Signature Algorithm (DSA)</strong> in NIST FIPS 186, <strong>ECDSA</strong>, and <strong>Schnorr (BIP-340)</strong>.</li>
+    </ul>
+
+    <hr></hr>
+
+    <h2>4. Introduction to Elliptic Curves over Finite Fields E(&#120125;<sub>p</sub>)</h2>
+    <p>Elliptic Curve Cryptography (ECC) transfers the discrete logarithm problem from the multiplicative group &#8484;<sub>p</sub><sup>*</sup> to the additive group formed by points on an algebraic curve.</p>
+
+    <h3>Short Weierstrass Equation</h3>
+    <p>Over a prime field &#120125;<sub>p</sub> (for <em>p &gt; 3</em>), an elliptic curve <em>E(&#120125;<sub>p</sub>)</em> is defined by the set of solutions <em>(x, y)</em> satisfying:</p>
+
+    <pre><code>y² ≡ x³ + ax + b (mod p)
+</code></pre>
+
+    <p>along with a point at infinity <strong>&Omicron;</strong> acting as the group identity, subject to the non-singularity discriminant condition <code>4a³ + 27b² &ne; 0 (mod p)</code>.</p>
+
+    <pre><code>        Point Addition (P ≠ Q)                      Point Doubling (P = Q)
+   
+        y │       . (Curve)                         y │       . (Curve)
+          │      / \                                  │      / \
+        P ┼─────/───\─── Q                          P ┼─────*   (Tangent Line)
+          │    /     \                                │    / \
+          │   /       \                               │   /   \
+        ──┼──/─────────\────── x                    ──┼──/─────\────── x
+          │ /           \                             │ /       \
+      P+Q ┼* (Reflect -R)                         2P  ┼* (Reflect -R)
+          │                                           │
+</code></pre>
+
+    <h3>The Group Law (Chord-and-Tangent)</h3>
+    <p>For points <em>P = (x₁, y₁)</em> and <em>Q = (x₂, y₂)</em>:</p>
+    <ol>
+      <li><strong>Identity:</strong> <code>P + &Omicron; = P</code> and <code>P + (&minus;P) = &Omicron;</code>, where <code>&minus;P = (x₁, &minus;y₁ mod p)</code>.</li>
+      <li><strong>Slope &lambda;:</strong>
+        <pre><code>&lambda; = (y₂ &minus; y₁) / (x₂ &minus; x₁) mod p    (if P &ne; Q: Secant Line)
+&lambda; = (3x₁² + a) / (2y₁) mod p          (if P = Q: Tangent Line)
+</code></pre>
+      </li>
+      <li><strong>Point Sum R = P + Q = (x₃, y₃):</strong>
+        <pre><code>x₃ ≡ &lambda;² &minus; x₁ &minus; x₂ (mod p)
+y₃ ≡ &lambda;(x₁ &minus; x₃) &minus; y₁ (mod p)
+</code></pre>
+      </li>
+    </ol>
+
+    <h3>Elliptic Curve Discrete Logarithm Problem (ECDLP)</h3>
+    <p>Given a generator base point <em>P &isin; E(&#120125;<sub>p</sub>)</em> of prime order <em>n</em> and a public point <code>Q = [k]P = P + P + ... + P (k times)</code>, finding the scalar multiplier <code>k &isin; &#8484;<sub>n</sub></code> is the <strong>ECDLP</strong>.</p>
+
+    <hr></hr>
+
+    <h2>5. Bit Lengths of Public-Key Algorithms for Different Security Levels</h2>
+    <p>Because subexponential algorithms (GNFS and Index Calculus) exist for integer factorization and finite field discrete logarithms, their key sizes must grow superlinearly to keep pace with security levels. In contrast, elliptic curves lack subexponential structure, allowing key lengths to scale linearly (<code>2 &times; security bits</code>):</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Algorithm Family</th>
+          <th>Cryptosystems</th>
+          <th>80-bit Security (Legacy)</th>
+          <th>128-bit Security (Standard)</th>
+          <th>192-bit Security (High)</th>
+          <th>256-bit Security (Top-Secret)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Integer Factorization</strong></td>
+          <td>RSA</td>
+          <td>1024 bit</td>
+          <td>3072 bit</td>
+          <td>7680 bit</td>
+          <td>15360 bit</td>
+        </tr>
+        <tr>
+          <td><strong>Discrete Logarithm (Finite Field)</strong></td>
+          <td>DH, DSA, ElGamal</td>
+          <td>1024 bit (q &ge; 160)</td>
+          <td>3072 bit (q &ge; 256)</td>
+          <td>7680 bit (q &ge; 384)</td>
+          <td>15360 bit (q &ge; 512)</td>
+        </tr>
+        <tr>
+          <td><strong>Elliptic Curves (ECDLP)</strong></td>
+          <td>ECDH, ECDSA, Ed25519</td>
+          <td>160 bit</td>
+          <td>256 bit (P-256, Curve25519)</td>
+          <td>384 bit (P-384)</td>
+          <td>512–521 bit (P-521, Ed448)</td>
+        </tr>
+        <tr>
+          <td><strong>Symmetric Key (Baseline)</strong></td>
+          <td>AES, 3DES</td>
+          <td>80 bit (2TDEA / 3DES)</td>
+          <td>128 bit (AES-128)</td>
+          <td>192 bit (AES-192)</td>
+          <td>256 bit (AES-256)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr></hr>
+
+    <h2>6. Algebraic Correspondence & Cryptanalytic Comparison</h2>
+    <p>The mathematical operations and security parameters compare directly:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Mathematical Property</th>
+          <th>Multiplicative Group &#8484;<sub>p</sub><sup>*</sup></th>
+          <th>Elliptic Curve Group E(&#120125;<sub>p</sub>)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Elements</strong></td>
+          <td>Integers {1, 2, ..., p &minus; 1}</td>
+          <td>Point pairs (x, y) &isin; &#120125;<sub>p</sub> &times; &#120125;<sub>p</sub> plus &Omicron;</td>
+        </tr>
+        <tr>
+          <td><strong>Group Operation</strong></td>
+          <td>Modular Multiplication (a &middot; b mod p)</td>
+          <td>Point Addition (P + Q) via Chord-and-Tangent</td>
+        </tr>
+        <tr>
+          <td><strong>Identity Element</strong></td>
+          <td>e = 1</td>
+          <td>Point at infinity &Omicron;</td>
+        </tr>
+        <tr>
+          <td><strong>Inverse Element</strong></td>
+          <td>Modular Inverse a⁻¹ mod p (EEA)</td>
+          <td>Reflection across x-axis: &minus;P = (x, &minus;y mod p)</td>
+        </tr>
+        <tr>
+          <td><strong>Repeated Operation</strong></td>
+          <td>Modular Exponentiation: gᵏ mod p</td>
+          <td>Scalar Multiplication: [k]P</td>
+        </tr>
+        <tr>
+          <td><strong>Discrete Logarithm</strong></td>
+          <td>Find x in y &equiv; gˣ (mod p)</td>
+          <td>Find k in Q = [k]P (<strong>ECDLP</strong>)</td>
+        </tr>
+        <tr>
+          <td><strong>Best Classical Attack</strong></td>
+          <td><strong>Subexponential:</strong> Index Calculus (L_p[1/3])</td>
+          <td><strong>Exponential:</strong> Pollard's &rho; (O(&radic;n))</td>
+        </tr>
+        <tr>
+          <td><strong>NIST 128-bit Key Size</strong></td>
+          <td><strong>3072 bits</strong></td>
+          <td><strong>256 bits</strong> (Curve25519, secp256r1)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Hardening Requirements</h3>
+    <ul>
+      <li><strong>Finite Fields:</strong> Use safe primes (<code>p = 2q + 1</code> with <em>q</em> prime) to defend against Pohlig-Hellman factorization attacks.</li>
+      <li><strong>Elliptic Curves:</strong> Verify public points lie on the curve and have prime order <em>n</em> (<code>[n]P = &Omicron;</code>) to avoid invalid-curve / small-subgroup attacks.</li>
+      <li><strong>Side-Channel Defense:</strong> Employ constant-time scalar multiplication (e.g., Montgomery Ladder) to prevent timing attacks (SPA/DPA).</li>
+      <li><strong>Post-Quantum Transition:</strong> Shor's algorithm solves both DLP and ECDLP in polynomial time <em>O((log p)³)</em> on quantum hardware, requiring migration to NIST Post-Quantum standards (<strong>ML-KEM-768</strong> / <strong>ML-DSA</strong>).</li>
+    </ul>
+
+    <hr></hr>
+    <p><a href="/">← All articles</a></p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+  </main>
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=gh-discrete-logarithm-cryptosystems",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
