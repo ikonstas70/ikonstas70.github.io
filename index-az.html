@@ -510,9 +510,5 @@ fetch("/search-index.json")
   .then(data => { INDEX = data; render(); })
   .catch(() => { $("empty").textContent = "Could not load the index."; $("empty").style.display = "block"; });
 </script>
-<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
-<script>
-(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=index-az",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
-</script>
 </body>
 </html>
