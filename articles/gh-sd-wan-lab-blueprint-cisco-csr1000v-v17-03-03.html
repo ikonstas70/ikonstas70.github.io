@@ -33,7 +33,7 @@
   <main>
     <span class="tag">Networking</span>
     <h1>SD-WAN Lab Blueprint — Cisco CSR1000v v17.03.03</h1>
-    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis (John) Konstas</p>
 <h2>Topology · Dual-Transport IP Plan · OSPF Underlay · Overlay Config · Failover Testing</h2><p>Three CSR1000v edges — a hub and two branches — each dual-homed across two independent transports (ISP-A and ISP-B), with one WAN interface per transport so a single provider failure doesn't take the site offline. Three controllers run the overlay: vBond handles device onboarding, vSmart distributes policy, and vManage handles configuration and monitoring.</p><h2>IP Addressing</h2><h3>Transport Layer (VPN 0)</h3><table><tr><th>Device</th><th>ISP-A Gig0/0</th><th>ISP-B Gig0/2</th></tr><tr><td>CSR-Hub</td><td>10.10.0.1/24</td><td>10.20.0.1/24</td></tr><tr><td>CSR-Branch1</td><td>10.10.0.11/24</td><td>10.20.0.11/24</td></tr><tr><td>CSR-Branch2</td><td>10.10.0.21/24</td><td>10.20.0.21/24</td></tr></table><h3>LAN Layer (VPN 1)</h3><table><tr><th>Device</th><th>Interface</th><th>IP Address</th></tr><tr><td>CSR-Hub</td><td>Gig0/1</td><td>192.168.1.1/24</td></tr><tr><td>CSR-Branch1</td><td>Gig0/1</td><td>192.168.2.1/24</td></tr><tr><td>CSR-Branch2</td><td>Gig0/1</td><td>192.168.3.1/24</td></tr></table><h3>Controllers</h3><table><tr><th>Device</th><th>IP</th><th>Role</th></tr><tr><td>vBond</td><td>10.10.0.100</td><td>Orchestrator — device onboarding</td></tr><tr><td>vSmart</td><td>10.10.0.101</td><td>Controller — policy distribution</td></tr><tr><td>vManage</td><td>10.10.0.102</td><td>Manager — config and monitoring</td></tr></table><h2>Underlay Configuration (OSPF — VPN 0 Transport Only)</h2><blockquote>Underlay OSPF covers <strong>transport interfaces only</strong>. LAN subnets (VPN 1) are distributed across the SD-WAN overlay by vSmart — do not include them in underlay OSPF.</blockquote><h3>CSR-Hub</h3><pre>router ospf 1
  router-id 1.1.1.1
  network 10.10.0.0 0.0.0.255 area 0
@@ -66,10 +66,10 @@ show sdwan tunnel statistics
 interface GigabitEthernet0/0
  no shutdown</pre><h2>Prerequisites</h2><ul><li>Licensed CSR1000v v17.03.03 images (Cisco DevNet Sandbox or direct download)</li><li>vManage, vSmart, vBond OVA/QCOW2 images (Cisco SD-WAN controller bundle)</li><li>GNS3 2.x, EVE-NG Pro, or CML 2.x</li><li>Minimum 32 GB RAM for full controller + 3-edge topology</li></ul>
     <p><a href="/">← All articles</a></p>
-    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis (John) Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
-    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+    <p>&copy; 2026 Ioannis (John) Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
   </footer>
 </div>
 <div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>

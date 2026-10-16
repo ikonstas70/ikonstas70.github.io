@@ -33,7 +33,7 @@
   <main>
     <span class="tag">Virtualization</span>
     <h1>ESXi Recovery Playbook: hostd, localcli, vim-cmd, and Log Triage</h1>
-    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis (John) Konstas</p>
 </hr><p>When the vSphere client cannot reach an ESXi host and PowerCLI connections time out, the management agent (hostd) has likely crashed or failed to start. This playbook covers the full recovery sequence: check and restart hostd, read the right logs to find the root cause, fall back to <code>localcli</code> when <code>esxcli</code> is unavailable, manage VMs directly from the ESXi Shell with <code>vim-cmd</code>, and audit snapshots with PowerCLI once connectivity is restored.</p><hr></hr><h2>Step 1 — Check and Restart the hostd Service</h2><p>The hostd management agent handles all vSphere API calls — the vSphere client, PowerCLI, and the REST API all talk to hostd. If it is down, no remote management works. Connect via SSH or the DCUI console and run these commands in order:</p><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody><tr><td><code>/etc/init.d/hostd status</code></td><td>Check whether the hostd management agent is currently running. Returns a PID if running, or 'hostd is not running' if crashed or never started.</td></tr><tr><td><code>/etc/init.d/hostd start</code></td><td>Start the hostd service. If this command completes without error, wait 30–60 seconds then verify the vSphere client can reconnect before proceeding.</td></tr><tr><td><code>/etc/init.d/hostd restart</code></td><td>Restart a hostd service that is running but unresponsive. Terminates the existing process and starts a fresh one — less disruptive than a full host reboot.</td></tr></tbody></table><p><strong>Decision tree:</strong>
 1. <code>/etc/init.d/hostd status</code> — if running but unresponsive, jump to restart.
 2. If not running: attempt start and wait 60 seconds for the vSphere client to reconnect.
@@ -89,10 +89,10 @@ Get-VM | Where-Object { (Get-Snapshot -VM $_).Count -gt 1 } |
     Select-Object Name, @{N="SnapshotCount"; E={(Get-Snapshot -VM $_).Count}}
 </code></pre><p>VMware recommends deleting snapshots within 24–72 hours for production VMs; chains that have grown large or aged significantly increase the risk of disk space exhaustion during consolidation. Orphaned snapshot chains are one of the most common causes of vSphere disk space emergencies.</p>
     <p><a href="/">← All articles</a></p>
-    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis (John) Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
-    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+    <p>&copy; 2026 Ioannis (John) Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
   </footer>
 </div>
 <div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>

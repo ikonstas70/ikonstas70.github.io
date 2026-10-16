@@ -32,10 +32,10 @@
   </header>
 
   <main>
-    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:80px;height:80px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .55);margin:6px 24px 10px 0;">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis (John) Konstas" style="float:left;width:80px;height:80px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .55);margin:6px 24px 10px 0;">
     <span class="tag">Email Security</span>
     <h1>Restoring Microsoft 365 Mail Flow After a Domain Re-Add</h1>
-    <p class="meta" style="clear:none;">Articles &middot; July 2026 &middot; Ioannis Konstas</p>
+    <p class="meta" style="clear:none;">Articles &middot; July 2026 &middot; Ioannis (John) Konstas</p>
     <div style="clear:both;"></div>
 
     <p>Removing an accepted domain from a Microsoft 365 tenant and adding it back sounds like a no-op. It is not. The re-add silently regenerates parts of the mail infrastructure that your DNS zone still describes in the past tense, and the failure modes are scattered: inbound mail may keep flowing while Outlook profiles refuse to configure, or outbound mail lands in spam while everything looks green in the admin center. This is the recovery procedure I use — it takes a zone from "email is acting weird" back to fully authenticated mail flow, and it applies equally when you inherit a tenant someone else broke.</p>
@@ -140,11 +140,11 @@ example.com.  1800  IN  SOA  ns1.example-dns.com. hostmaster.example.com. ...
     <blockquote>A domain re-add is a partial rebuild wearing the mask of a no-op. Treat it as one: enumerate what the tenant regenerated, republish what changed, keep every mail record out of the proxy path, and let message headers — not dashboards — declare the incident closed.</blockquote>
 
     <p><a href="/">← All articles</a></p>
-    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis (John) Konstas; compiled and finalized with AI assistance.</p>
   </main>
 
   <footer class="site">
-    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+    <p>&copy; 2026 Ioannis (John) Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
   </footer>
 </div>
 <div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>

@@ -33,7 +33,7 @@
   <main>
     <span class="tag">Telecom</span>
     <h1>RTPEngine: Media Proxy for VoIP — NAT Traversal, Transcoding, and SRTP</h1>
-    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis (John) Konstas</p>
 <a href="../index.html">← All Articles</a>
     <p>How RTPEngine solves NAT, codec mismatches, and media security in a Kamailio-based VoIP platform, with configuration and capacity reference.</p><h2>Why a Media Proxy Is Required</h2><p>Without a media proxy, audio streams travel directly between devices — creating four classes of problems.</p><p>In a SIP call, the <strong>signaling</strong> (call setup, teardown) and the <strong>media</strong> (RTP audio) travel on separate paths. Without a media proxy, audio goes directly between the calling device and the destination. This causes:</p><ul><li><strong>NAT issues</strong> — devices behind NAT advertise private IPs in SDP; the remote party cannot route audio back</li><li><strong>No call recording</strong> — audio never touches the platform, so it cannot be captured</li><li><strong>No transcoding</strong> — codec mismatches (G.711 vs G.729 vs Opus) cause one-way or silent calls</li><li><strong>Security exposure</strong> — media endpoints are visible on the internet, enabling interception and DoS</li></ul><p>RTPEngine solves all four by being the <strong>anchor point for all audio</strong>.</p><h2>How RTPEngine Works</h2><p>Kamailio rewrites SDP in SIP messages so all audio flows through RTPEngine ports.</p><pre>Caller (SIP Phone)           RTPEngine              Called Party
        │                         │                       │
@@ -61,10 +61,10 @@ route[RTPENGINE] {
     }
 }</pre><p>The <code>replace-origin replace-session-connection</code> flags tell RTPEngine to replace both the <code>o=</code> (origin) and <code>c=</code> (connection) lines in the SDP with its own IP address. This is what forces audio to flow through RTPEngine.</p><h2>Capacity Reference</h2><table><thead><tr><th>Server Spec</th><th>G.711 Pass-through</th><th>With Transcoding</th></tr></thead><tbody><tr><td>4 core / 8 GB</td><td>~1,000 concurrent calls</td><td>~500 concurrent calls</td></tr><tr><td>8 core / 16 GB</td><td>~2,500 concurrent calls</td><td>~1,200 concurrent calls</td></tr><tr><td>16 core / 32 GB</td><td>~5,000+ concurrent calls</td><td>~2,500 concurrent calls</td></tr></tbody></table><p>Transcoding (codec conversion) roughly halves capacity because it requires CPU-intensive audio encoding/decoding for every packet. Use pass-through (same codec both sides) wherever possible and reserve transcoding for endpoints that cannot negotiate a common codec.</p>
     <p><a href="/">← All articles</a></p>
-    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis (John) Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
-    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+    <p>&copy; 2026 Ioannis (John) Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
   </footer>
 </div>
 <div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>

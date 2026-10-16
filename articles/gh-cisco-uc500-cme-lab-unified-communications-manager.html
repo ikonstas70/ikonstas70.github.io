@@ -33,7 +33,7 @@
   <main>
     <span class="tag">Networking</span>
     <h1>Cisco UC500 / CME Lab: Unified Communications Manager Express Configuration</h1>
-    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis (John) Konstas</p>
 <a href="../index.html">← All Articles</a>
     <p>Architecture of CME 8.6 on a UC520, SCCP ephone configuration, FXO/FXS voice ports, DHCP for phones, CUE module, and Python serial console automation.</p><h2>What Is Cisco CME</h2><p>Unified Communications Manager Express — a full PBX embedded in a Cisco IOS router.</p><p>Cisco Unified Communications Manager Express (CME) is a PBX system embedded directly in Cisco IOS. Unlike CUCM (which requires dedicated servers), CME runs on a Cisco router — the UC500 series integrates CME, switching, wireless, and analog ports into a single appliance. This makes it ideal for small office deployments (2–50 phones) and lab environments for testing SCCP/SIP phone provisioning, call routing, and IVR.</p><h3>UC500 Hardware Overview</h3><table><thead><tr><th>Component</th><th>Description</th></tr></thead><tbody><tr><td>Platform</td><td>Cisco UC520W (8-user, 4 FXO)</td></tr><tr><td>IOS</td><td>15.1(4)M6 with CME 8.6</td></tr><tr><td>LAN</td><td>8-port 10/100 switch + WiFi (802.11a/b/g/n)</td></tr><tr><td>FXS Ports</td><td>4 × FXS (analog phones, fax machines)</td></tr><tr><td>FXO Ports</td><td>4 × FXO (PSTN analog lines / DID trunks)</td></tr><tr><td>CUE Module</td><td>ISE slot — Cisco Unity Express for voicemail/IVR</td></tr></tbody></table><h2>Network Layout</h2><pre>┌─────────────────────────────────────────┐
 │          Cisco UC500 / CME                 │
@@ -156,10 +156,10 @@ boot system flash:uc500-advipservicesk9-mz.151-4.M6
 write memory
 reload</pre><p>Always keep a TFTP server on the management LAN with all IOS images for any device in your lab. ROMMON recovery without a TFTP server requires USB or compact flash — far more complex.</p>
     <p><a href="/">← All articles</a></p>
-    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis (John) Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
-    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+    <p>&copy; 2026 Ioannis (John) Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
   </footer>
 </div>
 <div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
