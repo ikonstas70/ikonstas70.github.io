@@ -33,7 +33,7 @@
   <main>
     <span class="tag">Networking</span>
     <h1>Voice VLAN Design: PoE Switch Configuration and Cisco IP Phone Provisioning</h1>
-    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis (John) Konstas</p>
 <a href="../index.html">← All Articles</a>
     <p>Separating voice and data traffic with IEEE 802.1Q VLANs, PoE switch configuration, TFTP/DHCP provisioning for Cisco IP phones, and the SCCP boot sequence.</p><h2>Why a Separate Voice VLAN</h2><p>Mixing voice and data traffic on the same VLAN causes QoS problems, broadcast interference, and security exposure.</p><p>VoIP traffic is latency-sensitive — a 150ms one-way delay is noticeable, and jitter above 30ms degrades call quality significantly. When IP phones share a data VLAN with computers and servers, their traffic competes for the same bandwidth and switch buffers. A dedicated voice VLAN solves three problems:</p><ul><li><strong>QoS isolation</strong> — voice packets can be marked with 802.1p priority and treated differently by the switch</li><li><strong>Broadcast domain</strong> — phones do not see data VLAN broadcasts, reducing unnecessary CPU load on phone firmware</li><li><strong>Security</strong> — phones on VLAN 10 cannot directly reach servers on VLAN 1 without routing through a firewall or router</li></ul><h2>Network Design</h2><pre>PBX Server (en0) ─────────── PoE Switch ───── Cisco IP Phone 1
   10.0.0.1 (data)                 │                (VLAN 10, ext 1001)
@@ -102,10 +102,10 @@ tftp 10.10.0.1
 tftp&gt; get XMLDefault.cnf.xml
 # Should download successfully</pre><p>TFTP has no authentication or encryption. Keep the TFTP server on the voice VLAN only, and restrict access via firewall rules. Never expose a TFTP server to the internet.</p>
     <p><a href="/">← All articles</a></p>
-    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis (John) Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
-    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+    <p>&copy; 2026 Ioannis (John) Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
   </footer>
 </div>
 <div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>

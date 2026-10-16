@@ -33,7 +33,7 @@
   <main>
     <span class="tag">Telecom</span>
     <h1>Kamailio SIP Server: Proxy, Load Balancer, and Session Border Controller</h1>
-    <p class="meta">Articles &middot; 2026 &middot; Ioannis Konstas</p>
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis (John) Konstas</p>
 <a href="../index.html">← All Articles</a>
     <p>Architecture, core modules, dispatcher load balancing, fraud protection, TLS, and RTPEngine integration for Kamailio in a production VoIP platform.</p><h2>What Is Kamailio</h2><p>A high-performance open source SIP proxy, registrar, load balancer, and Session Border Controller.</p><p>Kamailio is an open source SIP server that processes <strong>millions of SIP messages per second</strong> on modest hardware. In a carrier-grade VoIP platform it sits in front of all Asterisk PBX nodes and performs signaling-plane functions — it does not process media (audio), which is handled by RTPEngine.</p><h3>Core Functions</h3><ul><li><strong>Load balancing</strong> — distributes SIP calls across Asterisk nodes via the dispatcher module</li><li><strong>SIP proxy</strong> — routes all SIP signaling between carriers and PBX nodes</li><li><strong>SBC (Session Border Controller)</strong> — NAT traversal, topology hiding, TLS termination</li><li><strong>STIR/SHAKEN</strong> — digitally signs outbound calls for caller ID authentication</li><li><strong>Fraud protection</strong> — rate limiting via the pike module, IP blocklisting</li><li><strong>Failover</strong> — automatically removes failed Asterisk nodes from rotation</li></ul><h2>Architecture Position</h2><pre>Internet / SIP Trunk Provider
          │
@@ -98,10 +98,10 @@ route[RTPENGINE] {
     }
 }</pre><p>The <code>nat_uac_test("19")</code> bitmask checks for: private IP in Contact header, private IP in Via header, and source IP different from Contact IP — the three classic NAT indicators.</p><h2>Capacity Reference</h2><table><thead><tr><th>Server Spec</th><th>Concurrent SIP Sessions</th><th>SIP Messages/sec</th></tr></thead><tbody><tr><td>4 core / 8 GB</td><td>5,000+</td><td>50,000+</td></tr><tr><td>8 core / 16 GB</td><td>15,000+</td><td>150,000+</td></tr></tbody></table><p>A single Kamailio node far exceeds the signaling requirements of a launch-phase carrier. A second node for high availability can be added later using the <code>usrloc</code> replication feature to share registration state.</p>
     <p><a href="/">← All articles</a></p>
-    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Konstas; compiled and finalized with AI assistance.</p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis (John) Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
-    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+    <p>&copy; 2026 Ioannis (John) Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
   </footer>
 </div>
 <div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
