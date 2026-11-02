@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/portfolio/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security Engineering Portfolio — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Portfolio of Ioannis Alexander Konstas: a self-hosted security control plane, penetration-testing and IDS live-fire toolkits, post-quantum attack simulation, network diagnostics and macOS hardening and forensics.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/portfolio/">
+<meta property="og:title" content="Security Engineering Portfolio">
+<meta property="og:description" content="Portfolio of Ioannis Alexander Konstas: a self-hosted security control plane, penetration-testing and IDS live-fire toolkits, post-quantum attack simulation, network diagnostics and macOS hardening and forensics.">
+<meta property="og:image" content="https://ikonstas70.github.io/portfolio/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "CollectionPage", "headline": "Security Engineering Portfolio", "author": {"@type": "Person", "name": "Ioannis Alexander Konstas", "alternateName": "Ioannis Konstas", "url": "https://ikonstas70.github.io/about"}, "datePublished": "2026-11-02", "license": "https://opensource.org/licenses/MIT", "copyrightHolder": "Ioannis Alexander Konstas", "image": "https://ikonstas70.github.io/portfolio/share.jpg"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <img src="/portfolio/banner.jpg" width="1400" height="280" loading="eager" alt="Close-up of an integrated circuit beside source code" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;margin:0 0 22px">
+    <span class="tag">Portfolio</span>
+    <h1>Security Engineering Portfolio</h1>
+    <p class="meta">Portfolio &middot; 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>A working security lab, documented the way I would document it for a client: what each tool does, why it exists, how it is built, and which controls it satisfies. Everything here runs on infrastructure I own, and every test targets only systems I am authorized to test.</blockquote>
+
+<p>Most portfolios show finished screenshots. This one shows the engineering underneath: the scripts that attack my own services to prove the defenses hold, the tools that measure a network instead of guessing about it, and the audits that turn a laptop into evidence. The series starts with the control plane that ties them together, then goes deep on each toolkit.</p>
+
+    <h2>The Series</h2>
+    <a class="card card-gold" href="/articles/security-automation-lab" style="padding:0;overflow:hidden">
+      <img src="/articles/security-automation-lab/semaphore-pentest-toolkits.jpg" width="1260" height="952" loading="eager" alt="Semaphore control plane showing the Pentest Toolkits subgroup" style="display:block;width:100%;height:auto;max-height:260px;object-fit:cover;object-position:top">
+      <div style="padding:18px 22px 20px">
+        <h3>1 &middot; From Scripts to a Security Control Plane</h3>
+        <p>Four hundred security scripts behind one web console: Ansible, Semaphore and a hardened Kubernetes cluster, with run history, schedules and inline blast-radius warnings.</p>
+        <span class="date">Overview &middot; Ansible &middot; Semaphore &middot; Kubernetes</span>
+      </div>
+    </a>
+    <a class="card" href="/portfolio/pentest-toolkits">
+      <h3>2 &middot; Pentest Toolkits: Attacking My Own Stack on Purpose</h3>
+      <p>Self-penetration testing, IDS live-fire with evasion variants, an analyzer-to-blocklist pipeline, post-quantum attack simulation, an OWASP file scanner with four threat-intel lookups, and a pentest report generator.</p>
+      <span class="date">Pentest &middot; IDS/WAF &middot; Post-Quantum &middot; OWASP</span>
+    </a>
+    <a class="card" href="/portfolio/network-testing">
+      <h3>3 &middot; Network Testing: Measuring Instead of Guessing</h3>
+      <p>IPv6 Neighbor Discovery and EUI-64 tooling, jitter and bandwidth measurement, DHCP and WHOIS diagnostics, DNS-leak verification, TLS hardening and multi-console lab sessions.</p>
+      <span class="date">Network &middot; IPv6 &middot; DNS &middot; TLS</span>
+    </a>
+    <a class="card" href="/portfolio/hardening-monitoring">
+      <h3>4 &middot; Hardening &amp; Monitoring: Turning a Machine into Evidence</h3>
+      <p>A 13-domain macOS forensic and vulnerability assessment, network forensics, live log monitors, an SSH regression suite, encrypted vaults and educational factoring algorithms.</p>
+      <span class="date">Forensics &middot; Hardening &middot; SSH &middot; Cryptography</span>
+    </a>
+
+    <h2>What the work demonstrates</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Discipline</th><th>Evidence in this portfolio</th></tr></thead>
+<tbody>
+<tr><td>Offensive security</td><td>Self-pentest suite, IDS live-fire with evasion, post-quantum adversary simulation</td></tr>
+<tr><td>Detection engineering</td><td>Signature validation, analyzer &#8594; blocklist automation, alert pipelines</td></tr>
+<tr><td>Cryptography</td><td>Hybrid ML-KEM-768 + X25519 with ML-DSA-65; AES-256-GCM vaults; integer factoring</td></tr>
+<tr><td>Network engineering</td><td>IPv6 NDP, jitter statistics, DNS-leak and route verification, TLS hardening</td></tr>
+<tr><td>Platform &amp; automation</td><td>Ansible, Semaphore, Kubernetes, launchd, least-privilege containers</td></tr>
+<tr><td>Audit &amp; compliance</td><td>Findings with severities, mapped to NIST SP 800-53, reproducible reports</td></tr>
+</tbody></table></div>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

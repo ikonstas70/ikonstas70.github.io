@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/portfolio/hardening-monitoring">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hardening & Monitoring: Turning a Machine into Evidence — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="A 13-domain macOS forensic and vulnerability assessment, network forensics, IPv6 privacy remediation, live web and HIDS log monitors, an SSH regression suite, encrypted vaults and educational integer-factoring algorithms.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/portfolio/hardening-monitoring">
+<meta property="og:title" content="Hardening & Monitoring: Turning a Machine into Evidence">
+<meta property="og:description" content="A 13-domain macOS forensic and vulnerability assessment, network forensics, IPv6 privacy remediation, live web and HIDS log monitors, an SSH regression suite, encrypted vaults and educational integer-factoring algorithms.">
+<meta property="og:image" content="https://ikonstas70.github.io/portfolio/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Hardening & Monitoring: Turning a Machine into Evidence", "author": {"@type": "Person", "name": "Ioannis Alexander Konstas", "alternateName": "Ioannis Konstas", "url": "https://ikonstas70.github.io/about"}, "datePublished": "2026-11-02", "license": "https://opensource.org/licenses/MIT", "copyrightHolder": "Ioannis Alexander Konstas", "image": "https://ikonstas70.github.io/portfolio/share.jpg"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <img src="/portfolio/banner.jpg" width="1400" height="280" loading="eager" alt="Close-up of an integrated circuit beside source code" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;margin:0 0 22px">
+    <span class="tag">Portfolio &middot; Hardening</span>
+    <h1>Hardening &amp; Monitoring: Turning a Machine into Evidence</h1>
+    <p class="meta">Portfolio &middot; Part 4 &middot; November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>An auditor does not ask whether a machine is secure. They ask what you checked, how, and what you found. This toolkit answers those three questions automatically: it inspects a system across thirteen domains, rates every finding, watches the logs that matter, and keeps the evidence encrypted.</blockquote>
+
+<p>The fifty-eight jobs in this group fall into five families: assessment, remediation, live monitoring, SSH assurance, and cryptography. Together they cover the three verbs of defensive work: <em>assess</em>, <em>fix</em>, <em>watch</em>.</p>
+
+<h2 id="assessment">1. Assessment: a 13-domain macOS audit</h2>
+<p>The macOS assessment is the centerpiece. It walks the system section by section and records every result as a rated finding (CRITICAL, HIGH, MEDIUM, LOW or OK), so the output reads like an audit workpaper rather than a log:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Domain</th><th>#</th><th>Domain</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>System information</td><td>8</td><td>Installed software</td></tr>
+<tr><td>2</td><td>Security configuration (SIP, Gatekeeper, FileVault, firewall)</td><td>9</td><td>Log analysis</td></tr>
+<tr><td>3</td><td>User accounts</td><td>10</td><td>Privacy &amp; permissions (TCC)</td></tr>
+<tr><td>4</td><td>Network analysis</td><td>11</td><td>Certificates &amp; keychain</td></tr>
+<tr><td>5</td><td>Process forensics</td><td>12</td><td>Known malware indicators (IOCs)</td></tr>
+<tr><td>6</td><td>Persistence (launch agents &amp; daemons)</td><td>13</td><td>Bluetooth &amp; wireless</td></tr>
+<tr><td>7</td><td>File system security</td><td></td><td>Assessment summary</td></tr>
+</tbody></table></div>
+<p>The configuration checks show the style: ask the operating system directly, then judge the answer.</p>
+<pre><code>SIP_STATUS=$(csrutil status 2&gt;/dev/null)
+if echo "$SIP_STATUS" | grep -q "enabled"; then
+    finding OK "SIP is enabled"
+else
+    finding CRITICAL "SIP is DISABLED - system files can be modified"
+fi
+
+GATEKEEPER=$(spctl --status 2&gt;/dev/null)
+if echo "$GATEKEEPER" | grep -q "enabled"; then
+    finding OK "Gatekeeper is enabled"
+else
+    finding HIGH "Gatekeeper is DISABLED - unsigned apps can run"
+fi
+
+FV_STATUS=$(fdesetup status 2&gt;/dev/null)
+if echo "$FV_STATUS" | grep -q "On"; then
+    finding OK "FileVault is ON - disk is encrypted"
+else
+    finding HIGH "FileVault is OFF - disk is unencrypted"
+fi</code></pre>
+<p>Section 6, persistence, is where real intrusions hide on macOS: anything that survives a reboot does so through a launch agent, launch daemon or login item. Listing them with their programs and signatures is the single most valuable forensic step on a Mac.</p>
+<p>A sibling <strong>network forensics</strong> audit covers ten more areas: interfaces, IPv6 privacy, listening ports and the processes behind them, active connections, DNS configuration and leaks, the routing table and neighbor caches, firewall state, VPN and tunnel interfaces, sharing services, and suspicious traffic. A third, broader <strong>vulnerability audit</strong> adds patch level and exposed services. A converter turns the HTML reports into PDFs for the record.</p>
+
+<h2 id="remediation">2. Remediation: fixing what the audit finds</h2>
+<p>The clearest example is <strong>IPv6 privacy</strong>. When an interface derives its IPv6 address from its MAC (EUI-64, explained in <a href="/portfolio/network-testing#ipv6">Part 3</a>), the hardware identity is broadcast to every network the machine joins. The fix script detects MAC-derived addresses, enables temporary privacy addresses (RFC 8981) and confirms the change took effect. It is detect, fix, verify, in that order, every time.</p>
+
+<h2 id="monitoring">3. Live monitoring: logs you can actually read</h2>
+<p>Raw logs are written for machines. These monitors make them readable for a person under pressure:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Monitor</th><th>What it shows</th></tr></thead>
+<tbody>
+<tr><td>Web POST-attack monitor</td><td>Every few minutes, POST requests per source and per URL, ranked: the shape of brute-force and form-spam campaigns</td></tr>
+<tr><td>Access-log viewer</td><td>Each request as a colored card: source, method, operating system, device and URL</td></tr>
+<tr><td>Source drill-down</td><td>Everything one address prefix touched, with hit counts</td></tr>
+<tr><td>Registry lookup</td><td>Allocation range, network name and country for an address, next to its request count</td></tr>
+<tr><td>HIDS log monitor</td><td>The host intrusion detection system's event and alert logs side by side, compact or with full field history</td></tr>
+</tbody></table></div>
+<p>The POST monitor is a good example of how little code real insight needs. One pipeline turns a log into a ranked list of what each source tried to submit:</p>
+<pre><code>display_post_counts() {
+    local ip_address="$1"
+    white_text "      IP Address: $(red_text "$ip_address")"
+    grep "POST" "$log_file" \
+      | awk -v ip="$ip_address" '$1 == ip {print $7}' \
+      | sort | uniq -c | sort -nr
+}</code></pre>
+
+<h2 id="ssh">4. SSH assurance: regression tests, not assumptions</h2>
+<p>Hardening <code>sshd_config</code> is easy. Knowing that the hardening still holds after an upgrade is not. Seven regression tests, adapted from the OpenSSH project's own <code>regress</code> suite, verify the behaviors I depend on: AllowUsers/DenyUsers enforcement, restriction of accepted public-key types, host-key rotation, session re-keying, re-exec, port forwarding and <code>scp</code>. Using the upstream suite rather than writing my own means the tests encode what OpenSSH's maintainers consider correct.</p>
+
+<h2 id="crypto">5. Cryptography: vaults, and why RSA needs big numbers</h2>
+<p><strong>Encrypted vaults.</strong> Sensitive directories are encrypted to my GPG key before they are backed up, so a backup can live anywhere without becoming a liability. Backups to private Git repositories are encrypted at rest as well.</p>
+<p><strong>A large-file encryptor</strong> processes files in 1 MB chunks so a multi-gigabyte file never has to fit in memory. It uses AES-256 in CBC mode. An honest note, because this is a teaching collection: CBC alone provides confidentiality but not integrity, so a modified ciphertext is not detected. Anything protecting real data in this lab uses an authenticated mode (AES-GCM, as in the <a href="/portfolio/pentest-toolkits#pqc">post-quantum shield</a>) or GPG, which authenticates its payloads.</p>
+<p><strong>Factoring algorithms.</strong> RSA is safe only because factoring a product of two large primes is hard. Seven educational implementations show <em>how</em> hard, by doing it: Dixon's method, the Quadratic Sieve (with a Miller&ndash;Rabin primality test to stop early on primes), a pipelined QS, Large Prime Quadratic Sieve variants and a driver for CADO-NFS, the Number Field Sieve implementation used for record factorizations. Watching the running time climb from milliseconds to hours as the modulus grows makes key-length guidance tangible in a way a table cannot.</p>
+
+<h2 id="controls">Controls covered</h2>
+<ul>
+<li><strong>CA-2</strong> Control Assessments &middot; <strong>RA-5</strong> Vulnerability Monitoring and Scanning</li>
+<li><strong>CM-6</strong> Configuration Settings &middot; <strong>CM-7</strong> Least Functionality</li>
+<li><strong>AU-6</strong> Audit Record Review &middot; <strong>SI-4</strong> System Monitoring &middot; <strong>IR-4</strong> Incident Handling</li>
+<li><strong>IA-2 / AC-17</strong> Remote Access (SSH assurance)</li>
+<li><strong>SC-12 / SC-13 / SC-28</strong> Key Management, Cryptographic Protection, Protection of Information at Rest</li>
+</ul>
+<p style="font-size:.85rem;color:var(--fg-dim)">All assessments were run on systems I own. Hostnames, addresses, log paths, account names and detection details have been removed. Back to the <a href="/portfolio/">Portfolio</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

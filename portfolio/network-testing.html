@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/portfolio/network-testing">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network Testing: Measuring Instead of Guessing — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Network testing tools built for real diagnostics: IPv6 Neighbor Discovery and EUI-64 analysis, jitter and bandwidth statistics, DHCP and WHOIS diagnostics, DNS-leak verification, TLS hardening, tunnel route repair and multi-console lab sessions.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/portfolio/network-testing">
+<meta property="og:title" content="Network Testing: Measuring Instead of Guessing">
+<meta property="og:description" content="Network testing tools built for real diagnostics: IPv6 Neighbor Discovery and EUI-64 analysis, jitter and bandwidth statistics, DHCP and WHOIS diagnostics, DNS-leak verification, TLS hardening, tunnel route repair and multi-console lab sessions.">
+<meta property="og:image" content="https://ikonstas70.github.io/portfolio/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Network Testing: Measuring Instead of Guessing", "author": {"@type": "Person", "name": "Ioannis Alexander Konstas", "alternateName": "Ioannis Konstas", "url": "https://ikonstas70.github.io/about"}, "datePublished": "2026-11-02", "license": "https://opensource.org/licenses/MIT", "copyrightHolder": "Ioannis Alexander Konstas", "image": "https://ikonstas70.github.io/portfolio/share.jpg"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <img src="/portfolio/banner.jpg" width="1400" height="280" loading="eager" alt="Close-up of an integrated circuit beside source code" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;margin:0 0 22px">
+    <span class="tag">Portfolio &middot; Network</span>
+    <h1>Network Testing: Measuring Instead of Guessing</h1>
+    <p class="meta">Portfolio &middot; Part 3 &middot; November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>"The network is slow" is not a diagnosis. "Round-trip times vary by 34 ms around a 41 ms mean, DNS is answering from outside the tunnel, and IPv6 is still announcing the hardware address" is. These tools exist to get from the first sentence to the second.</blockquote>
+
+<p>Seventeen tools, in four families: IPv6 and Neighbor Discovery, path quality, privacy verification (DNS, routes, TLS), and lab session management. Most are small and do one thing, which is the point. In an outage you want a tool you can read in thirty seconds.</p>
+
+<h2 id="ipv6">1. IPv6 and Neighbor Discovery: who is really on the link</h2>
+<p>IPv6 replaces ARP with the Neighbor Discovery Protocol (RFC 4861), and the neighbor cache becomes the authoritative answer to "which hardware is behind this address?" Five tools work that cache: a direct IPv6-to-MAC lookup, an interactive version that lists or bulk-dumps every neighbor, and three shell menus that add format validation and an explanation of each entry.</p>
+<p>The explanation matters because of <strong>EUI-64</strong>. When an interface builds its address the old way, the 64-bit interface identifier is derived from the MAC: split the 48-bit MAC in half, insert <code>FF:FE</code>, and flip the universal/local bit of the first byte.</p>
+<pre><code>MAC address          00:1A:2B:3C:4D:5E
+split + insert FFFE  00 1A 2B FF FE 3C 4D 5E
+flip U/L bit (0x02)  02 1A 2B FF FE 3C 4D 5E
+interface ID         021A:2BFF:FE3C:4D5E</code></pre>
+<p>That is a privacy problem: the same hardware identifier follows the device across every network it joins. Spotting <code>FF:FE</code> in the middle of an interface ID is the fastest tell, and it is why the hardening toolkit includes a fix that enables temporary addresses (RFC 8981). See <a href="/portfolio/hardening-monitoring">Part 4</a>.</p>
+
+<h2 id="quality">2. Path quality: jitter, done honestly</h2>
+<p>The jitter calculators run a configurable ping series (count, interval, packet size), then report mean, min, max, standard deviation and a variability figure, classified as Excellent (&le; 5 ms), Good (6&ndash;20), Fair (21&ndash;50) or Poor. The bandwidth variant adds a download/upload measurement in Mbps for the same session, so latency and throughput are read together.</p>
+<pre><code>count  = len(times)
+avg    = sum(times) / count
+sumsq  = sum(t ** 2 for t in times)
+jitter = math.sqrt(sumsq / count - avg ** 2)          # spread of RTTs
+std_dev = math.sqrt(sum((t - avg) ** 2 for t in times) / (count - 1)) if count &gt; 1 else 0</code></pre>
+<p>A precise note, because precision is the point of a measurement tool: the figure above is the <em>population standard deviation</em> of round-trip times, which answers "how consistent is this path?" RFC 3550, used by RTP for voice and video, defines jitter differently: a smoothed average of the change between <em>consecutive</em> packets, <code>J += (|D(i-1,i)| - J) / 16</code>. A path that drifts slowly has a high standard deviation but low RFC 3550 jitter; a path that alternates fast and slow has both. For VoIP troubleshooting I read both numbers, and the classification thresholds follow common voice-quality guidance.</p>
+
+<h2 id="diagnostics">3. Diagnostics: leases and ownership</h2>
+<ul>
+<li><strong>DHCP lease viewer:</strong> reads the macOS DHCP server's lease database to show which hardware got which address and when. Useful when a lab network hands out addresses from a shared Mac.</li>
+<li><strong>RIPE NCC WHOIS lookups (two versions):</strong> query the registry for an address and print the allocation range, network name and country, the first step in deciding whether traffic from a source is expected.</li>
+</ul>
+
+<h2 id="privacy">4. Privacy verification: trust, but verify the tunnel</h2>
+<p>A VPN that leaks DNS is a VPN that tells your ISP every site you visit. The DNS-leak check does four things in order: confirms the tunnel's resolver answers, checks <em>which</em> resolver actually answered a normal lookup, compares the visible public IP with the expected exit node, and repeats for IPv6.</p>
+<pre><code># 2. Which resolver is actually answering?
+RESOLVER=$(dig google.com 2&gt;/dev/null | awk '/SERVER:/{print $2}' | head -1)
+if echo "$RESOLVER" | grep -q "$VPN_DNS"; then
+    check "Queries routed through the tunnel's DNS" "ok"
+else
+    check "Primary resolver" "WARNING: using $RESOLVER - possible DNS leak"
+fi
+
+# 3. Does the world see the exit node, or me?
+ACTUAL_IP=$(curl -s --max-time 5 https://api.ipify.org || echo "unavailable")</code></pre>
+<p>Three companion scripts close the loop:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Script</th><th>Problem it solves</th></tr></thead>
+<tbody>
+<tr><td>TLS hardening</td><td>Removes TLS 1.0 and 1.1 (deprecated by RFC 8996; 1.0 is exposed to BEAST), enforces TLS 1.2/1.3 with a strong cipher suite, then reloads with zero downtime</td></tr>
+<tr><td>Route repair</td><td>When two WireGuard tunnels claim overlapping subnets, the secondary can silently steal the primary's routes; the script restores the correct next hop</td></tr>
+<tr><td>Threat-feed updater</td><td>Loads public botnet C2, compromised-host and Tor exit lists into kernel sets for fast firewall matching, refreshed daily</td></tr>
+<tr><td>Tunnel startup</td><td>Waits for the network to be genuinely up before bringing the tunnel up, avoiding a race at login</td></tr>
+</tbody></table></div>
+<p>The route-repair problem deserves its own sentence, because it is the hardest kind of failure to diagnose: nothing errors. Packets to the VPN server's internal address are routed into the wrong tunnel and dropped, so SSH and DNS through the tunnel just stop. <code>netstat -rn</code> shows it in one line once you know to look.</p>
+
+<h2 id="sessions">5. Lab sessions: ten consoles, one window</h2>
+<p>CCIE practice means many router consoles open at once. Two session tools open every console in one go: one builds a detached <code>tmux</code> session with a window per device, the other drives iTerm2 through AppleScript to open a tab per device. The same idea grew into the <a href="/articles/csr-cloud-lab">CSR Cloud Lab</a> console.</p>
+
+<h2 id="controls">Controls covered</h2>
+<ul>
+<li><strong>SC-8</strong> Transmission Confidentiality and Integrity (TLS, tunnel and DNS verification)</li>
+<li><strong>SC-7</strong> Boundary Protection (threat-feed blocking) &middot; <strong>SC-20/21</strong> Secure Name Resolution</li>
+<li><strong>CM-8</strong> System Component Inventory (NDP and DHCP visibility)</li>
+<li><strong>SI-4</strong> System Monitoring (path quality as a health signal)</li>
+</ul>
+<p style="font-size:.85rem;color:var(--fg-dim)">Addresses shown are documentation examples. Real hostnames, addresses and tunnel parameters have been removed. Next in the series: <a href="/portfolio/hardening-monitoring">Hardening &amp; Monitoring</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

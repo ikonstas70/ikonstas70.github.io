@@ -11,13 +11,15 @@
 <meta property="og:url" content="https://ikonstas70.github.io/articles/security-automation-lab">
 <meta property="og:title" content="From Scripts to a Security Control Plane">
 <meta property="og:description" content="A year of pentest, IDS live-fire and post-quantum attack-simulation scripts, turned into one self-hosted control plane with Ansible, Semaphore and Kubernetes.">
-<meta property="og:image" content="https://ikonstas70.github.io/articles/security-automation-lab/semaphore-pentest-toolkits.jpg">
+<meta property="og:image" content="https://ikonstas70.github.io/portfolio/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"From Scripts to a Security Control Plane: Pentest Automation with Ansible, Semaphore and Kubernetes","author":{"@type":"Person","name":"Ioannis Alexander Konstas","alternateName":"Ioannis Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-02","image":"https://ikonstas70.github.io/articles/security-automation-lab/semaphore-pentest-toolkits.jpg","keywords":"penetration testing, IDS, Ansible, Semaphore, Kubernetes, Headlamp, post-quantum cryptography, ML-KEM, security automation"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"From Scripts to a Security Control Plane: Pentest Automation with Ansible, Semaphore and Kubernetes","author":{"@type":"Person","name":"Ioannis Alexander Konstas","alternateName":"Ioannis Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-02","image":"https://ikonstas70.github.io/portfolio/share.jpg","keywords":"penetration testing, IDS, Ansible, Semaphore, Kubernetes, Headlamp, post-quantum cryptography, ML-KEM, security automation"}</script>
 </head>
 <body>
 <div class="wrap">
@@ -29,6 +31,7 @@
     <div class="rule"></div>
     <nav class="top">
       <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
       <a href="/awareness/">Security Awareness</a>
       <a href="/data-science/">Data Science</a>
       <a href="/readings">Readings</a>
@@ -41,7 +44,8 @@
   </header>
 
   <main>
-    <span class="tag">Security Automation &middot; Portfolio</span>
+    <img src="/portfolio/banner.jpg" width="1400" height="280" loading="eager" alt="Close-up of an integrated circuit beside source code" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;margin:0 0 22px">
+    <span class="tag">Portfolio &middot; Part 1</span>
     <h1>From Scripts to a Security Control Plane: Pentest Automation with Ansible, Semaphore and Kubernetes</h1>
     <p class="meta">Articles &middot; November 2026 &middot; Ioannis Konstas</p>
 
@@ -230,11 +234,11 @@ except Exception:
 
 <h2 id="takeaway">The takeaway</h2>
 <p>Tools are easy; operations are hard. The scripts were already good. What changed is that they now have the properties an enterprise security team expects: discoverable, repeatable, scheduled, logged, least-privileged and honest when something fails. The same structure transfers directly to AWX or Ansible Automation Platform, and the Kubernetes manifests to any managed cluster. The home lab is simply where the discipline is cheapest to practice.</p>
-<p style="font-size:.85rem;color:var(--fg-dim)">All testing described here was performed only against systems I own and operate. Hostnames, addresses, internal paths and detection details have been removed from the screenshots and code.</p>
+<p style="font-size:.85rem;color:var(--fg-dim)">Next in the series: <a href="/portfolio/pentest-toolkits">Pentest Toolkits</a>. All testing described here was performed only against systems I own and operate. Hostnames, addresses, internal paths and detection details have been removed from the screenshots and code.</p>
   </main>
 
   <footer class="site">
-    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
   </footer>
 </div>
 </body>
