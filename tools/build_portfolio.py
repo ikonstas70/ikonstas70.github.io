@@ -37,7 +37,7 @@ HEAD = '''<!DOCTYPE html>
 <body>
 <div class="wrap">
   <header class="site">
-    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <img src="/ioannis-portrait.jpg?v=3" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
     <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
     <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
     <div style="clear:both;"></div>
