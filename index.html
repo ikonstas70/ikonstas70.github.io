@@ -74,16 +74,21 @@
  └─ <a href="/about">About</a></code></pre>
 
     <h2>Latest Report</h2>
+    <div class="card card-gold bgp-feature" style="cursor:default;border:1px solid var(--accent);background:linear-gradient(135deg, hsl(43 45% 56% / .10), hsl(0 0% 6%) 55%);box-shadow:0 0 0 1px hsl(43 45% 56% / .10), 0 10px 30px hsl(0 0% 0% / .45)" aria-label="Coming soon: Special Topics in BGP, subscribers only">
+      <span style="display:inline-block;margin:0 0 12px;padding:3px 10px;border:1px solid var(--accent);border-radius:999px;color:var(--accent);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase">Subscribers only &middot; Coming soon</span>
+      <h3 style="font-size:1.42rem;line-height:1.25">Special Topics in BGP: Reading the Internet's Routing Table</h3>
+      <p style="color:var(--fg);font-size:.95rem">Most engineers configure BGP. Few ever look at the Internet through it.</p>
+      <p>This series logs in to the public route servers and looking glasses that carriers and exchanges operate for everyone, and reads the global routing table live: how traffic really reaches a network, which providers stand in between, how leaks and hijacks show up in plain sight, and how much a single public BGP view reveals.</p>
+      <pre style="margin:12px 0 14px;padding:10px 12px;background:hsl(0 0% 3%);border:1px solid hsl(43 45% 56% / .30);border-radius:6px;font-size:.78rem;line-height:1.55;overflow-x:auto"><code><span style="color:var(--accent)">route-server&gt;</span> show ip bgp 192.0.2.0/24
+  Paths: (24 available, best #1)
+  <span style="color:var(--fg-dim)">... who carries it, who prefers it, and why</span></code></pre>
+      <span class="date">Series &middot; CCIE &middot; Advanced &middot; For engineers who already know the protocol</span>
+    </div>
     <a class="card card-gold" href="/portfolio/hybrid-cloud-platform">
       <h3>Hybrid Cloud Platform: A Private Overlay WAN, Kubernetes and Everything as Code</h3>
       <p>The capstone of the portfolio: a one-person, enterprise-style platform. A WireGuard overlay that behaves like a private Metro Ethernet service, a Kubernetes cluster spanning cloud and on-premises nodes, infrastructure and configuration as code, a private PKI, and one automation console.</p>
       <span class="date">New &middot; Portfolio Part 6 &middot; Capstone</span>
     </a>
-    <div class="card card-gold" style="cursor:default;border-style:dashed" aria-label="Coming soon: Special Topics in BGP">
-      <h3>Special Topics in BGP: Reading the Internet's Routing Table</h3>
-      <p>Most engineers configure BGP. Few ever look at the Internet through it. This series logs in to the public route servers and looking glasses that carriers and exchanges operate for everyone, and reads the global routing table live: how traffic really reaches a network, which providers stand in between, how leaks and hijacks show up in plain sight, and how much a single public BGP view reveals. Written for engineers who already know the protocol, and available to subscribers only.</p>
-      <span class="date">Coming soon &middot; Subscribers only &middot; Series &middot; CCIE &middot; Advanced</span>
-    </div>
     <a class="card" href="/articles/security-automation-lab">
       <h3>From Scripts to a Security Control Plane: Pentest Automation with Ansible, Semaphore and Kubernetes</h3>
       <p>A year of penetration tests, IDS live-fire drills and post-quantum attack simulations, turned into one self-hosted control plane: 400 one-click jobs with run history, Ansible health checks, and a hardened Kubernetes cluster watched through Headlamp.</p>
