@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://ikonstas70.github.io/</loc><lastmod>2026-11-02</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/about</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/about</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/bgp-security</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/bitcoin-leveldb</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/blinken-rsa-diplomacy-in-the-age-of-code</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/blinken-rsa-diplomacy-in-the-age-of-code</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/ccie-advanced-lab/</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/ccie-advanced-lab/labs/01-mpls-core-ldp/lab</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/ccie-advanced-lab/labs/02-mpls-vpn-corp/lab</loc><lastmod>2026-10-16</lastmod></url>
@@ -57,7 +57,7 @@
   <url><loc>https://ikonstas70.github.io/articles/gh-acl-analytics-excel-reference</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-acl-name-standardization-manual</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-active-directory-management</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/gh-ad-administrator-500-break-glass</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/gh-ad-administrator-500-break-glass</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-aes-galois-fields-reference</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-asterisk-pbx-architecture-channel-drivers-dialplan</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-asterisk22-kamailio-a2billing-docker-integration</loc><lastmod>2026-10-16</lastmod></url>
@@ -86,13 +86,13 @@
   <url><loc>https://ikonstas70.github.io/articles/gh-ibm-powerha-vs-journal-based-replication</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-infosec-fundamentals</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-kamailio-sip-server-proxy-load-balancer-and-sessio</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/gh-layer2-cdp-flood-attack</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/gh-layer2-cdp-flood-attack</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-layered-security-stack</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-macos-ssv-tdm-restore</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/gh-mutation-based-fuzzing-drone-firmware</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/gh-mutation-based-fuzzing-drone-firmware</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-network-jitter-bandwidth-reference</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-nexus-1000v-port-channels</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/gh-owasp-top-10-file-scanner</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/gh-owasp-top-10-file-scanner</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-pentest-professional-reference</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-powercli-esxi-shutdown-rewrite</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-powershell-ad-reference</loc><lastmod>2026-10-16</lastmod></url>
@@ -106,9 +106,9 @@
   <url><loc>https://ikonstas70.github.io/articles/gh-voice-vlan-design-poe-switch-configuration-and-cis</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/gh-vsphere7-security-config-guide</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/hf-radio</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/konstas-markets-desk</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/m365-domain-readd-mail-recovery</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/miami-911-mission-critical-migration</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/konstas-markets-desk</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/m365-domain-readd-mail-recovery</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/miami-911-mission-critical-migration</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/modular-arithmetic-equivalence-classes</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/network-automation-api</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/osi-tcpip-model</loc><lastmod>2026-10-16</lastmod></url>
@@ -119,32 +119,32 @@
   <url><loc>https://ikonstas70.github.io/articles/security-automation-lab</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/security-models</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/security-monitoring-stack</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/sentinel-mobile-shield</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/sentinel-platform</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/sentinel-mobile-shield</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/sentinel-platform</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/software-defined-systems</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/strategic-business-impact-planning</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/articles/tcp-ip-protocol-suite</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/articles/tcp-ip-protocol-suite</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/timing-attacks</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/tooling-platform-resources</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/articles/why-26-factorial-equals-2-to-the-88</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/digital-home</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/executives</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/family</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/gaming</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/identity-theft</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/insider-threat</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/malware</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/mobile</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/online-payments</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/passwords</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/phishing</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/privacy</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/reporting-cybercrime</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/small-business</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/social-media</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/travel</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/awareness/wifi</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/digital-home</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/executives</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/family</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/gaming</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/identity-theft</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/insider-threat</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/malware</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/mobile</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/online-payments</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/passwords</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/phishing</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/privacy</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/reporting-cybercrime</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/small-business</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/social-media</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/travel</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/awareness/wifi</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/ccie-ospf/</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/ccie-ospf/dmvpn-gre-mgre-nhrp.html</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/ccie-ospf/ospf-area-types-and-hierarchy.html</loc><lastmod>2026-10-16</lastmod></url>
@@ -152,20 +152,20 @@
   <url><loc>https://ikonstas70.github.io/ccie-ospf/ospf-microloops-transient-convergence.html</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/ccie-ospf/ospf-type5-lsa-external-reachability.html</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://ikonstas70.github.io/ccie-ospf/ospf-vs-bgp-summarization.html</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/classical-ml</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/data-wrangling</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/deep-learning</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/llms</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/mlops</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/monte-carlo-simulation</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/python-stack</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/security-analytics</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/statistics</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/the-field</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/data-science/visualization</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/ikonstas70/</loc><lastmod>2026-10-12</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/index-az</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/classical-ml</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/data-wrangling</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/deep-learning</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/llms</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/mlops</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/monte-carlo-simulation</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/python-stack</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/security-analytics</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/statistics</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/the-field</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/data-science/visualization</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/ikonstas70/</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/index-az</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/information-security/</loc><lastmod>2026-10-12</lastmod></url>
   <url><loc>https://ikonstas70.github.io/information-security/ccie-enterprise-infrastructure-v1-1-blueprint.html</loc><lastmod>2026-10-12</lastmod></url>
   <url><loc>https://ikonstas70.github.io/information-security/cissp-exam-outline.html</loc><lastmod>2026-10-12</lastmod></url>
@@ -192,8 +192,9 @@
   <url><loc>https://ikonstas70.github.io/portfolio/hardening-monitoring</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/portfolio/network-testing</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/portfolio/pentest-toolkits</loc><lastmod>2026-11-02</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/readings</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/search</loc><lastmod>2026-10-16</lastmod></url>
-  <url><loc>https://ikonstas70.github.io/stack</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/portfolio/threat-hunting</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/readings</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/search</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://ikonstas70.github.io/stack</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://ikonstas70.github.io/ttb-cola-inspector/</loc><lastmod>2026-10-16</lastmod></url>
 </urlset>

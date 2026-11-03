@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/portfolio/threat-hunting">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Threat Hunting: Reading a SIEM Like an Investigator — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="How I hunt in a self-hosted Wazuh SIEM: the Threat Hunting dashboard and events views, rule levels, MITRE ATT&CK mapping, DQL queries that start an investigation, custom rules for my own log feeds, and turning every hunt into a detection.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/portfolio/threat-hunting">
+<meta property="og:title" content="Threat Hunting: Reading a SIEM Like an Investigator">
+<meta property="og:description" content="How I hunt in a self-hosted Wazuh SIEM: the Threat Hunting dashboard and events views, rule levels, MITRE ATT&CK mapping, DQL queries that start an investigation, custom rules for my own log feeds, and turning every hunt into a detection.">
+<meta property="og:image" content="https://ikonstas70.github.io/portfolio/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Threat Hunting: Reading a SIEM Like an Investigator", "author": {"@type": "Person", "name": "Ioannis Alexander Konstas", "alternateName": "Ioannis Konstas", "url": "https://ikonstas70.github.io/about"}, "datePublished": "2026-11-02", "license": "https://opensource.org/licenses/MIT", "copyrightHolder": "Ioannis Alexander Konstas", "image": "https://ikonstas70.github.io/portfolio/share.jpg"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=3" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <img src="/portfolio/banner.jpg" width="1400" height="280" loading="eager" alt="Close-up of an integrated circuit beside source code" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;margin:0 0 22px">
+    <span class="tag">Portfolio &middot; Threat Hunting</span>
+    <h1>Threat Hunting: Reading a SIEM Like an Investigator</h1>
+    <p class="meta">Portfolio &middot; Part 5 &middot; November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>Alerts tell you what a rule already knew to look for. Hunting is the work of asking what the rules missed. A SIEM is only as useful as the questions you bring to it, so this part is about the questions: where I start, how I pivot, and how a finding becomes a rule that never needs hunting again.</blockquote>
+
+<p>Every system in my lab reports to a self-hosted <strong>Wazuh</strong> SIEM, the open-source platform built on a manager that decodes and scores events, an OpenSearch indexer that stores them, and a dashboard for searching them. Alongside its standard agents it receives feeds I wrote myself: sign-in activity, firewall block decisions, source-control pushes and container lifecycle events, so one search covers the host, the network edge and the software supply chain.</p>
+<p>Wazuh's <em>Threat Hunting</em> module has two views. The <strong>Dashboard</strong> answers <em>what is the shape of the last 24 hours?</em> The <strong>Events</strong> view answers <em>what exactly happened, and when?</em> A hunt moves between them constantly.</p>
+
+<figure style="margin:26px 0">
+<svg viewBox="0 0 960 470" role="img" aria-labelledby="th-fig-t" style="display:block;width:100%;height:auto;background:#0f1726;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+  <title id="th-fig-t">Schematic of the Threat Hunting dashboard: four headline counters, an alert-level timeline, a MITRE ATT&amp;CK breakdown, and per-source panels</title>
+  <g font-family="Georgia, serif" fill="#e9e4d8">
+    <text x="24" y="34" font-size="15" fill="#c9a858" letter-spacing="2">THREAT HUNTING &#183; DASHBOARD</text>
+    <g font-size="13" text-anchor="middle">
+      <rect x="24" y="52" width="216" height="74" rx="6" fill="#16213a" stroke="#2c3a5c"/><text x="132" y="86" font-size="22" fill="#7fc8a9">Total</text><text x="132" y="110" fill="#9aa4b8">every scored event</text>
+      <rect x="252" y="52" width="216" height="74" rx="6" fill="#16213a" stroke="#2c3a5c"/><text x="360" y="86" font-size="22" fill="#e07a6a">Level 12+</text><text x="360" y="110" fill="#9aa4b8">high-severity alerts</text>
+      <rect x="480" y="52" width="216" height="74" rx="6" fill="#16213a" stroke="#2c3a5c"/><text x="588" y="86" font-size="22" fill="#e07a6a">Auth failure</text><text x="588" y="110" fill="#9aa4b8">rejected sign-ins</text>
+      <rect x="708" y="52" width="228" height="74" rx="6" fill="#16213a" stroke="#2c3a5c"/><text x="822" y="86" font-size="22" fill="#7fc8a9">Auth success</text><text x="822" y="110" fill="#9aa4b8">accepted sign-ins</text>
+    </g>
+    <rect x="24" y="140" width="560" height="170" rx="6" fill="#16213a" stroke="#2c3a5c"/>
+    <text x="40" y="164" font-size="13" fill="#c9a858">Alert level evolution</text>
+    <path d="M40 290 L90 286 L120 282 L140 200 L160 284 L230 286 L300 284 L330 236 L350 284 L430 286 L500 282 L520 250 L540 286 L568 286 L568 296 L40 296 Z" fill="#c9a858" opacity=".35"/>
+    <path d="M40 292 L120 290 L140 252 L160 290 L330 288 L350 290 L520 278 L540 292 L568 292" fill="none" stroke="#e07a6a" stroke-width="1.6"/>
+    <rect x="600" y="140" width="336" height="170" rx="6" fill="#16213a" stroke="#2c3a5c"/>
+    <text x="616" y="164" font-size="13" fill="#c9a858">MITRE ATT&amp;CK techniques</text>
+    <g transform="translate(700 236)" fill="none" stroke-width="22">
+      <circle r="48" stroke="#5b8fd6" stroke-dasharray="150 302"/>
+      <circle r="48" stroke="#d46a8a" stroke-dasharray="60 302" stroke-dashoffset="-150"/>
+      <circle r="48" stroke="#a487d6" stroke-dasharray="40 302" stroke-dashoffset="-210"/>
+      <circle r="48" stroke="#c9a858" stroke-dasharray="52 302" stroke-dashoffset="-250"/>
+    </g>
+    <g font-size="12" fill="#9aa4b8"><text x="780" y="206">tactic</text><text x="780" y="228">technique</text><text x="780" y="250">frequency</text><text x="780" y="272">trend</text></g>
+    <rect x="24" y="324" width="300" height="126" rx="6" fill="#16213a" stroke="#2c3a5c"/>
+    <text x="40" y="348" font-size="13" fill="#c9a858">Top sources</text>
+    <circle cx="174" cy="398" r="34" fill="none" stroke="#7fc8a9" stroke-width="16"/>
+    <rect x="340" y="324" width="596" height="126" rx="6" fill="#16213a" stroke="#2c3a5c"/>
+    <text x="356" y="348" font-size="13" fill="#c9a858">Alerts over time, per source</text>
+    <g fill="#7fc8a9">
+      <rect x="360" y="420" width="12" height="16"/><rect x="380" y="414" width="12" height="22"/><rect x="400" y="370" width="12" height="66"/><rect x="420" y="418" width="12" height="18"/><rect x="440" y="420" width="12" height="16"/><rect x="460" y="416" width="12" height="20"/><rect x="480" y="420" width="12" height="16"/><rect x="500" y="418" width="12" height="18"/><rect x="520" y="420" width="12" height="16"/><rect x="540" y="384" width="12" height="52"/><rect x="560" y="418" width="12" height="18"/><rect x="580" y="420" width="12" height="16"/><rect x="600" y="416" width="12" height="20"/><rect x="620" y="420" width="12" height="16"/><rect x="640" y="418" width="12" height="18"/><rect x="660" y="420" width="12" height="16"/><rect x="680" y="414" width="12" height="22"/><rect x="700" y="420" width="12" height="16"/><rect x="720" y="418" width="12" height="18"/><rect x="740" y="420" width="12" height="16"/><rect x="760" y="392" width="12" height="44"/><rect x="780" y="418" width="12" height="18"/><rect x="800" y="420" width="12" height="16"/><rect x="820" y="416" width="12" height="20"/><rect x="840" y="420" width="12" height="16"/><rect x="860" y="418" width="12" height="18"/><rect x="880" y="420" width="12" height="16"/><rect x="900" y="418" width="12" height="18"/>
+    </g>
+  </g>
+</svg>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Schematic of the dashboard layout, drawn for this article. It is an illustration, not a screenshot: real counts, sources and detections from my environment are deliberately not published.</figcaption>
+</figure>
+
+<h2 id="dashboard">1. The Dashboard: the shape of a day</h2>
+<p>The dashboard is a triage surface. I read it top to bottom, and each panel answers one question:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Panel</th><th>The question it answers</th><th>What makes me look closer</th></tr></thead>
+<tbody>
+<tr><td>Total</td><td>How much happened?</td><td>A sudden change from the usual volume, in either direction. Silence can mean a broken agent.</td></tr>
+<tr><td>Level 12 or above</td><td>Did anything serious fire?</td><td>Anything other than zero gets read before coffee.</td></tr>
+<tr><td>Authentication failure / success</td><td>Who is trying to get in, and who succeeded?</td><td>Failures followed by a success from the same source: the classic password-guessing win.</td></tr>
+<tr><td>Alert level evolution</td><td>When did it happen, and how bad was it?</td><td>Spikes, and above all spikes outside the hours I work.</td></tr>
+<tr><td>MITRE ATT&amp;CK techniques</td><td>What kind of behavior is this?</td><td>A technique that has never appeared before, or a familiar one that suddenly doubles.</td></tr>
+<tr><td>Top sources and alerts per source</td><td>Where is it coming from?</td><td>One machine dominating a chart it normally barely appears in.</td></tr>
+</tbody></table></div>
+<p>The MITRE panel is the most useful of the six. Wazuh tags each rule with the ATT&amp;CK technique it represents, so the chart turns thousands of log lines into a short list of <em>behaviors</em>: brute force, valid accounts, file deletion, data manipulation. Thinking in techniques rather than log messages is what makes a hunt systematic. It also lets me ask the inverse question: <em>which techniques would I expect to see if an attacker were here, and am I even collecting the data to detect them?</em></p>
+
+<h2 id="events">2. The Events view: from shape to evidence</h2>
+<p>The Events view is where a hunch becomes a timeline. A histogram sits above a table of individual events, and each event is a full document with several hundred searchable fields. The default columns are the five I need to triage anything:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Column</th><th>Why it matters</th></tr></thead>
+<tbody>
+<tr><td><code>timestamp</code></td><td>Ordering. Every investigation is ultimately a sequence of events.</td></tr>
+<tr><td><code>agent.name</code></td><td>Which system reported it: the first pivot.</td></tr>
+<tr><td><code>rule.description</code></td><td>What the rule believes happened, in plain language.</td></tr>
+<tr><td><code>rule.level</code></td><td>How much it matters, from 0 to 15.</td></tr>
+<tr><td><code>rule.id</code></td><td>Which rule fired: the link back to detection logic you can read and tune.</td></tr>
+</tbody></table></div>
+<p>Expanding a single event shows everything the decoder extracted: source address, user, process, file path, hash, MITRE mapping, compliance tags and the raw log line itself. The raw line matters most: a decoder is an interpretation, and an investigator always checks the original.</p>
+
+<h2 id="levels">3. Rule levels: a common language for severity</h2>
+<p>Every event is scored from 0 to 15. I treat the bands as a service-level agreement with myself:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Level</th><th>Meaning</th><th>My response</th></tr></thead>
+<tbody>
+<tr><td>0&ndash;3</td><td>Informational: health metrics, routine success</td><td>Kept for context and baselines, never paged</td></tr>
+<tr><td>4&ndash;7</td><td>Notable: configuration changes, integrity changes, new listening ports</td><td>Reviewed in the daily hunt</td></tr>
+<tr><td>8&ndash;11</td><td>Suspicious: repeated failures, policy violations, first-seen behavior</td><td>Investigated the same day</td></tr>
+<tr><td>12&ndash;15</td><td>High importance: likely compromise or attack in progress</td><td>Investigated immediately</td></tr>
+</tbody></table></div>
+<p>A good rule set keeps the high bands quiet. If level 12 fires every day, the problem is the rules, not the network, and an alert that is always red is soon ignored by everyone.</p>
+
+<h2 id="method">4. The hunting method</h2>
+<p>I follow the same five steps every time, adapted from the hypothesis-driven approach used by most mature hunt teams:</p>
+<ol>
+<li><strong>Hypothesis.</strong> Start from a behavior, not a log: <em>"If someone had a valid password, they would sign in successfully after a run of failures."</em></li>
+<li><strong>Query.</strong> Translate it into a search and a time window.</li>
+<li><strong>Pivot.</strong> Take one interesting field (a source, a user, a file) and search for everything else it touched.</li>
+<li><strong>Conclude.</strong> Benign, suspicious, or confirmed. Write down why, in one sentence.</li>
+<li><strong>Codify.</strong> If the hunt found something real, or something a rule should have caught, write the rule so the next occurrence is an alert instead of a hunt.</li>
+</ol>
+<p>The search bar speaks <strong>DQL</strong>, the dashboard query language. A handful of queries opens most of my hunts:</p>
+<pre><code># Anything serious, newest first
+rule.level &gt;= 12
+
+# Rejected sign-ins, grouped by where they came from
+rule.groups: "authentication_failed"
+
+# A successful sign-in from a source that has also failed recently
+rule.groups: "authentication_success" and data.srcip: &lt;source from the previous query&gt;
+
+# Hunt by behavior instead of by message
+rule.mitre.technique: "Brute Force" or rule.mitre.technique: "Valid Accounts"
+
+# File integrity: something changed that should not have
+rule.groups: "syscheck" and not syscheck.path: *cache*
+
+# A new port started listening
+rule.description: "Listened ports status*"</code></pre>
+<p>The third query shows the core of hunting. It is not a search anyone writes from scratch: it comes from a <em>pivot</em> on a value the previous result revealed. Hunts are chains of small questions, each one narrower than the last.</p>
+
+<h2 id="custom">5. Custom feeds and rules: hunting my own telemetry</h2>
+<p>The standard agent covers the operating system well. The events I care about most come from software I run myself, so I write decoders and rules for them. Custom rules live in their own ID range so they never collide with the vendor rule set, and each one carries its own level, groups and MITRE mapping. A simplified example, with names generalized:</p>
+<pre><code>&lt;group name="lab,authentication,"&gt;
+  &lt;!-- One rejected sign-in to a lab web application --&gt;
+  &lt;rule id="100100" level="5"&gt;
+    &lt;decoded_as&gt;lab-webapp&lt;/decoded_as&gt;
+    &lt;field name="result"&gt;denied&lt;/field&gt;
+    &lt;description&gt;Lab app: sign-in rejected for $(user)&lt;/description&gt;
+    &lt;mitre&gt;&lt;id&gt;T1110&lt;/id&gt;&lt;/mitre&gt;
+  &lt;/rule&gt;
+
+  &lt;!-- Many rejections from one source in a short window --&gt;
+  &lt;rule id="100101" level="10" frequency="8" timeframe="120"&gt;
+    &lt;if_matched_sid&gt;100100&lt;/if_matched_sid&gt;
+    &lt;same_source_ip /&gt;
+    &lt;description&gt;Lab app: possible password guessing&lt;/description&gt;
+    &lt;mitre&gt;&lt;id&gt;T1110.001&lt;/id&gt;&lt;/mitre&gt;
+  &lt;/rule&gt;
+&lt;/group&gt;</code></pre>
+<p>The second rule shows the most useful idea in SIEM rule writing: <strong>correlation</strong>. A single failed sign-in is noise; eight from one source in two minutes is a pattern. Wazuh evaluates the frequency and time window for me, so the alert means something when it arrives.</p>
+<p>My feeds follow one convention: health metrics and routine successes are scored low, so they build a baseline without crowding the high bands. That baseline is what makes a spike visible at all.</p>
+
+<h2 id="tuning">6. Tuning: the part nobody puts in a screenshot</h2>
+<p>Most of the time spent in a SIEM goes into making it quieter, not louder. After every hunt I ask three questions:</p>
+<ul>
+<li><strong>Was this alert worth reading?</strong> If not, lower its level or narrow its conditions.</li>
+<li><strong>Did a rule miss something the hunt found?</strong> Then write one (step 5 above).</li>
+<li><strong>Is a source silent that should not be?</strong> A missing heartbeat is itself a finding: an attacker's first move is often to stop the logging.</li>
+</ul>
+<p>Tuning is documented like any other change: what changed, why, and what it would have caught. A rule set with a history can be audited. A rule set without one is folklore.</p>
+
+<h2 id="controls">Controls covered</h2>
+<ul>
+<li><strong>RA-10</strong> Threat Hunting &middot; <strong>SI-4</strong> System Monitoring &middot; <strong>CA-7</strong> Continuous Monitoring</li>
+<li><strong>AU-6</strong> Audit Record Review, Analysis and Reporting &middot; <strong>AU-12</strong> Audit Record Generation</li>
+<li><strong>IR-4</strong> Incident Handling &middot; <strong>IR-5</strong> Incident Monitoring</li>
+<li><strong>SI-7</strong> Software, Firmware and Information Integrity (file integrity monitoring)</li>
+<li><strong>AC-7</strong> Unsuccessful Logon Attempts</li>
+</ul>
+<p style="font-size:.85rem;color:var(--fg-dim)">Everything described here runs on systems I own. Hostnames, addresses, counts, detections, rule identifiers and log sources from my environment have been removed or generalized, and the figure is a drawn illustration. Previous: <a href="/portfolio/hardening-monitoring">Part 4, Hardening &amp; Monitoring</a>. Back to the <a href="/portfolio/">Portfolio</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>
