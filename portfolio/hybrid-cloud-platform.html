@@ -194,6 +194,18 @@ k3s agent --server https://10.99.0.51:6443 --node-ip 10.99.0.52 \
 <figure style="margin:22px 0"><img src="/portfolio/img/hcp-map-by-instance.png" alt="Cluster map grouped by instance: application deployments, storage drivers, Longhorn and Traefik" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
 <figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Grouped by instance: every moving part of the platform on one screen.</figcaption></figure>
 
+<h3 id="interactions">Following the connections</h3>
+<p>Clicking any object on the map draws its relationships. Three of them explain most of the platform.</p>
+
+<figure style="margin:22px 0"><img src="/portfolio/img/hcp-graph-app.png" alt="Relationship graph of one application: Deployment to ReplicaSets to Pod, the Pod mounting three replicated volumes and exposed through a Service with Endpoints" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><strong>One application, end to end.</strong> The Deployment owns ReplicaSets (two remain after the failover: one per placement), the live ReplicaSet owns exactly one Pod, the Pod mounts three replicated volumes (<code>-ha</code>), and a Service publishes it through Endpoints. Moving the app between nodes changes only the Pod; every other link stays put.</figcaption></figure>
+
+<figure style="margin:22px 0"><img src="/portfolio/img/hcp-graph-storage.png" alt="Relationship graph of the storage manager: one DaemonSet with a Pod on each node, three NetworkPolicies and three Services with their Endpoints" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><strong>The storage control plane.</strong> A DaemonSet guarantees one manager Pod per storage node (two here). Each Pod sits behind three NetworkPolicies, so only the traffic Longhorn needs is allowed, and serves three Services: the backend API, the admission webhook that validates every storage change before Kubernetes accepts it, and the recovery backend used when a replica has to be rebuilt.</figcaption></figure>
+
+<figure style="margin:22px 0"><img src="/portfolio/img/hcp-graph-router.png" alt="Relationship graph of the HTTP router: Deployment, ReplicaSet, two Pods, Service and Endpoints" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><strong>The router after recovery.</strong> Two Traefik Pods behind one Service: the replacement is serving while the copy from the node that went down is still being cleaned up (amber badge). The Service only routes to Pods that pass their readiness checks, which is why the switch is invisible to clients.</figcaption></figure>
+
 <div class="table-wrap"><table>
 <thead><tr><th>On the map</th><th>Role, and how it interacts</th></tr></thead>
 <tbody>
