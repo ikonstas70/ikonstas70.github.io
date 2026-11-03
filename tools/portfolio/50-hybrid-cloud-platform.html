@@ -1,0 +1,144 @@
+<!--{"slug": "portfolio/hybrid-cloud-platform", "title": "Hybrid Cloud Platform: A Private Overlay WAN, Kubernetes and Everything as Code", "desc": "Capstone of the portfolio: a one-person, enterprise-style platform. A WireGuard overlay that behaves like a private Metro Ethernet service, a Kubernetes cluster spanning cloud and on-premises nodes, infrastructure and configuration as code, a private PKI, and one automation console."}-->
+    <span class="tag">Portfolio &middot; Capstone</span>
+    <h1>Hybrid Cloud Platform: A Private Overlay WAN, Kubernetes and Everything as Code</h1>
+    <p class="meta">Portfolio &middot; Part 6 &middot; November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>The first five parts describe tools. This one describes the platform they live on: how a single engineer can run a small, enterprise-shaped environment across a home office and two clouds, with no administrative door open to the internet, every server described in code, and every change reversible.</blockquote>
+
+<p>The goal was simple to state and demanding to build. Any machine, including the main workstation, should be disposable: wipe it, rebuild it from code, and lose nothing. That single requirement forces almost every good practice in modern operations: a private network that does not depend on any one site, workloads that can move between machines, servers and configuration expressed as code, and trust (certificates) that is issued and controlled in-house.</p>
+
+<h2 id="overlay">1. The network: a private overlay WAN</h2>
+<p>Every machine (workstation, laptop, phone, cloud servers) is a member of one private WireGuard network. A small virtual machine in one cloud acts as the hub; every other member connects out to it. Members reach each other through the hub, and only traffic for the private range enters the tunnel (split tunnel), so normal internet use is unaffected.</p>
+
+<figure style="margin:22px 0">
+<svg viewBox="0 0 900 360" role="img" aria-labelledby="ov-t" style="display:block;width:100%;height:auto;background:#0f1726;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+  <title id="ov-t">Hub-and-spoke WireGuard overlay connecting an office, mobile devices and two clouds</title>
+  <g font-family="Georgia, serif" fill="#e9e4d8" font-size="13">
+    <rect x="345" y="140" width="210" height="80" rx="10" fill="#1b2a48" stroke="#c9a858"/>
+    <text x="450" y="170" text-anchor="middle" fill="#c9a858" font-size="15">Overlay hub</text>
+    <text x="450" y="190" text-anchor="middle">Cloud B, free-tier VM</text>
+    <text x="450" y="208" text-anchor="middle" fill="#9aa4b8" font-size="11">10.99.0.1 · public 203.0.113.10</text>
+    <g stroke="#c9a858" stroke-dasharray="6 4" stroke-width="2"><line x1="345" y1="160" x2="200" y2="70"/><line x1="345" y1="180" x2="190" y2="180"/><line x1="345" y1="200" x2="200" y2="290"/><line x1="555" y1="160" x2="700" y2="70"/><line x1="555" y1="180" x2="710" y2="180"/><line x1="555" y1="200" x2="700" y2="290"/></g>
+    <g fill="#16213a" stroke="#2c3a5c"><rect x="30" y="40" width="200" height="56" rx="8"/><rect x="30" y="152" width="200" height="56" rx="8"/><rect x="30" y="262" width="200" height="56" rx="8"/><rect x="670" y="40" width="200" height="56" rx="8"/><rect x="670" y="152" width="200" height="56" rx="8"/><rect x="670" y="262" width="200" height="56" rx="8"/></g>
+    <g text-anchor="middle"><text x="130" y="64">Office workstation</text><text x="130" y="84" fill="#9aa4b8" font-size="11">10.99.0.11</text>
+    <text x="130" y="176">Laptop</text><text x="130" y="196" fill="#9aa4b8" font-size="11">10.99.0.12</text>
+    <text x="130" y="286">Phone</text><text x="130" y="306" fill="#9aa4b8" font-size="11">10.99.0.13</text>
+    <text x="770" y="64">Cloud A server</text><text x="770" y="84" fill="#9aa4b8" font-size="11">10.99.0.51 · K8s control plane</text>
+    <text x="770" y="176">Office K8s worker VM</text><text x="770" y="196" fill="#9aa4b8" font-size="11">10.99.0.52</text>
+    <text x="770" y="286">Web standby (Cloud B)</text><text x="770" y="306" fill="#9aa4b8" font-size="11">10.99.0.61</text></g>
+    <text x="450" y="345" text-anchor="middle" fill="#9aa4b8" font-size="11">All addresses in this article are illustrative (documentation ranges), not real.</text>
+  </g>
+</svg>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Hub-and-spoke overlay. Each member holds its own private key; joining the network means adding the member's public key on the hub.</figcaption>
+</figure>
+
+<h3>Is this like Metro Ethernet?</h3>
+<p>Functionally, yes, and the comparison is useful. A carrier Metro Ethernet (E-LAN) or MPLS L3VPN service gives an enterprise private addressing, any-to-any reachability between sites and isolation from the public internet. The overlay gives the same <em>logical</em> result. The difference is how it is built:</p>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>Carrier Metro Ethernet / MPLS VPN</th><th>This overlay (WireGuard)</th></tr></thead>
+<tbody>
+<tr><td>Private addressing, sites reach each other</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>Isolation from the internet</td><td>Separate carrier circuits and labels</td><td>Cryptography: every packet encrypted and authenticated</td></tr>
+<tr><td>Layer</td><td>Layer 2 (E-LAN) or Layer 3 (L3VPN)</td><td>Layer 3 overlay on top of the public internet</td></tr>
+<tr><td>Topology</td><td>Any-to-any in the carrier core</td><td>Hub-and-spoke (members can also peer directly)</td></tr>
+<tr><td>SLA, bandwidth, QoS guarantees</td><td>Contracted</td><td>None; best effort over the internet</td></tr>
+<tr><td>New site</td><td>Order a circuit (weeks)</td><td>Add a public key (minutes)</td></tr>
+<tr><td>Cost</td><td>Monthly per circuit</td><td>Near zero (free-tier hub)</td></tr>
+</tbody></table></div>
+<p>The honest summary: a software-defined private WAN that provides the isolation of a dedicated circuit through encryption instead of physical separation. For a small business that is usually the better trade; for latency-critical or contractually guaranteed traffic, a carrier circuit still wins.</p>
+
+<h2 id="kubernetes">2. One Kubernetes cluster across cloud and office</h2>
+<p>Workloads run on a lightweight, production-grade Kubernetes distribution (k3s). The control plane lives on a cloud server that is always on. The office machine contributes a small, capped worker inside a Linux VM, joined over the overlay. Pod traffic between the two nodes is encrypted again by the cluster's own WireGuard backend, so it is protected even inside the private network.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Decision</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Control plane in the cloud</td><td>The cluster survives the office machine being switched off or rebuilt.</td></tr>
+<tr><td>Office worker tainted "use only if needed"</td><td>Workloads prefer the cloud; the workstation keeps its resources for its owner.</td></tr>
+<tr><td>Node addresses on the overlay</td><td>Nodes never talk to each other over the open internet.</td></tr>
+<tr><td>Secrets encrypted at rest; default-deny NetworkPolicies</td><td>A compromised app cannot read other apps' secrets or reach their ports.</td></tr>
+<tr><td>Per-app namespaces, requests and limits, location labels</td><td>Every resource is visible, attributable and bounded.</td></tr>
+</tbody></table></div>
+<p>Joining the second node is two flags away from a single-node install:</p>
+<pre><code># control plane (cloud server)
+k3s server --node-ip 10.99.0.51 --advertise-address 10.99.0.51 \
+           --flannel-backend wireguard-native --flannel-iface wg0 \
+           --secrets-encryption --write-kubeconfig-mode 600
+
+# worker (office VM), joining over the overlay
+k3s agent --server https://10.99.0.51:6443 --node-ip 10.99.0.52 \
+          --flannel-iface wg0 --node-taint workstation=only-if-needed:PreferNoSchedule</code></pre>
+
+<h2 id="iac">3. Infrastructure as code: the server is a file</h2>
+<p>The cloud server is not clicked together in a console. It is described in OpenTofu (the open-source Terraform), so it can be destroyed and recreated identically. The network definition does the security work before any software is installed:</p>
+<pre><code># Provider-neutral sketch of the network definition (resource names generalized)
+resource "cloud_network" "vpc" {
+  name                    = "platform-vpc"
+  auto_create_subnetworks = false      # no default "allow ssh/rdp from anywhere" rules
+}
+
+resource "cloud_firewall" "proxy_ssh" {           # the ONLY inbound rule
+  network       = cloud_network.vpc.name
+  source_ranges = [var.provider_access_proxy]     # provider's identity-aware proxy, not the internet
+  allow { protocol = "tcp"  ports = ["22"] }
+}
+
+resource "cloud_firewall" "deny_all_in" {
+  network       = cloud_network.vpc.name
+  priority      = 65000
+  source_ranges = ["0.0.0.0/0"]
+  deny { protocol = "all" }
+}</code></pre>
+<p>A first-boot script installs WireGuard, generates the private key <em>on the server</em> (it never leaves it) and publishes only the public key, so the hub can admit the new member. After creation, an external scan confirmed every port closed from the internet, while the server answered normally over the overlay.</p>
+
+<h2 id="config">4. Configuration as code: hardening with Ansible</h2>
+<p>Once a server exists, an Ansible playbook brings it to a known baseline. It is idempotent: a second run reports zero changes, which is how you know the state is stable rather than accidental.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Control</th><th>Implementation</th></tr></thead>
+<tbody>
+<tr><td>Host firewall (second layer)</td><td>ufw: default deny inbound; SSH only from the overlay and the provider's proxy</td></tr>
+<tr><td>Authentication</td><td>SSH keys only, no passwords, no root login; identities tied to the cloud account</td></tr>
+<tr><td>Brute-force protection</td><td>fail2ban, with the overlay range explicitly exempt so it can never lock out administration</td></tr>
+<tr><td>Accountability</td><td>auditd system audit log</td></tr>
+<tr><td>Patching</td><td>Unattended security updates, no surprise reboots</td></tr>
+<tr><td>Kernel</td><td>Redirect and source-route protection, SYN cookies, restricted kernel pointers</td></tr>
+</tbody></table></div>
+<pre><code>- name: Brute-force protection that can never lock out the overlay
+  ansible.builtin.copy:
+    dest: /etc/fail2ban/jail.d/platform.local
+    content: |
+      [DEFAULT]
+      ignoreip = 127.0.0.1/8 ::1 10.99.0.0/24
+      bantime  = 1h
+      maxretry = 5
+      [sshd]
+      enabled = true
+      backend = systemd</code></pre>
+
+<h2 id="pki">5. A private PKI instead of ad-hoc certificates</h2>
+<p>Internal services use certificates from an in-house certificate authority (EJBCA). One root, trusted once per device, makes every certificate it issues trusted automatically: no browser warnings, no per-service exceptions, and revocation in one place.</p>
+<p>A practical lesson came from HSTS. The public website correctly tells browsers to always use HTTPS for the domain <em>and all subdomains</em>, so internal names under the same domain cannot be served over plain HTTP. The fix was a small local HTTPS front door: it answers on a private loopback address with a certificate from the internal CA and forwards to each internal application, translating only its own origin for apps with strict cross-origin checks. The public site keeps its HSTS policy; the internal names work; nothing is exposed.</p>
+<p>Why not a free public CA such as Let's Encrypt for everything? Public CAs issue certificates <em>for names</em>, not CA certificates that let you issue your own; and publicly logged certificates would list internal host names. Internal trust stays internal.</p>
+
+<h2 id="console">6. One console for everything</h2>
+<p>All operations run from one web console (Semaphore): scripts, Ansible playbooks and OpenTofu stacks, by button or on a schedule, each run logged. Destructive actions are gated: creating cloud resources shows the plan and waits for an explicit confirmation; destroying them requires typing a confirmation word. Every script's code is versioned automatically, with the original kept forever and one-click restore, so an edit is never a risk.</p>
+
+<h2 id="principles">7. Principles</h2>
+<ul>
+<li><strong>No administrative door on the internet.</strong> Management is overlay-only; public websites are published through an outbound tunnel, so nothing listens publicly.</li>
+<li><strong>Two layers of firewall</strong> (provider and host), and the overlay is never blocked by either.</li>
+<li><strong>Everything as code:</strong> servers (OpenTofu), configuration (Ansible), workloads (Kubernetes manifests, Dockerfiles).</li>
+<li><strong>Every change reversible:</strong> backups before changes, versioned scripts, rollback paths documented next to each change.</li>
+<li><strong>Least privilege:</strong> non-root containers, read-only filesystems, resource limits, isolated namespaces.</li>
+<li><strong>Measure, don't assume:</strong> every claim in this article (closed ports, idempotent runs, blocked cross-app traffic) was tested, not inferred.</li>
+</ul>
+
+<h2 id="controls">Controls covered</h2>
+<ul>
+<li><strong>SC-7</strong> Boundary Protection &middot; <strong>SC-8 / SC-13</strong> Transmission Confidentiality, Cryptographic Protection</li>
+<li><strong>SC-12 / SC-17</strong> Key Management, Public Key Infrastructure Certificates</li>
+<li><strong>AC-17</strong> Remote Access &middot; <strong>IA-2 / IA-5</strong> Authentication, Authenticator Management</li>
+<li><strong>CM-2 / CM-3 / CM-6</strong> Baseline Configuration, Change Control, Configuration Settings</li>
+<li><strong>CP-9 / CP-10</strong> System Backup, System Recovery</li>
+<li><strong>SI-2</strong> Flaw Remediation &middot; <strong>AU-2 / AU-12</strong> Event Logging</li>
+</ul>
+<p style="font-size:.85rem;color:var(--fg-dim)">All systems described are owned and operated by the author. Addresses, host names, account identifiers, provider details, counts and configuration values have been replaced or generalized; the figure is an illustration. Code samples are released under the <a href="/license">MIT License</a>; text and figures &copy; Ioannis Alexander Konstas, all rights reserved. Previous: <a href="/portfolio/threat-hunting">Part 5, Threat Hunting</a>. Back to the <a href="/portfolio/">Portfolio</a>.</p>
