@@ -100,6 +100,81 @@ k3s agent --server https://10.99.0.51:6443 --node-ip 10.99.0.52 \
 
 <p>A lesson worth recording: the first symptom was random TLS handshake timeouts. Packet size was the obvious suspect, but a controlled test (small and 60&nbsp;KB uploads failed at the same rate) ruled it out. The real cause was capacity: the workstation's tunnel sent <em>all</em> of its internet traffic through a free-tier hub. Measuring before changing anything saved a pointless MTU change.</p>
 
+<h3 id="ha">High availability: three votes, two copies, one tested failover</h3>
+<p>Two machines cannot fail over on their own. The cluster database (etcd) needs a majority, and with two members, losing either one leaves no majority. The fix is a third, tiny member that only votes. The result is a cluster that survives losing <em>any</em> one machine, with every application's data stored twice, on two different machines.</p>
+
+<figure style="margin:22px 0">
+<svg viewBox="0 0 900 330" role="img" aria-labelledby="ha-t" style="display:block;width:100%;height:auto;background:#0f1726;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+  <title id="ha-t">Three-member control plane with a witness and two-way replicated storage between the cloud node and the office node</title>
+  <defs><marker id="ha-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9a858"/></marker></defs>
+  <g font-family="Georgia, serif" fill="#e9e4d8" font-size="13" text-anchor="middle">
+    <rect x="40" y="40" width="250" height="190" rx="10" fill="#16213a" stroke="#c9a858"/>
+    <text x="165" y="68" fill="#c9a858" font-size="15">Cloud node A</text><text x="165" y="88" fill="#9aa4b8" font-size="11">x86 · 2 vCPU / 16 GB · preferred</text>
+    <rect x="60" y="102" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c"/><text x="165" y="124">API · scheduler · etcd vote</text>
+    <rect x="60" y="144" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c"/><text x="165" y="166">apps (normal operation)</text>
+    <rect x="60" y="186" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c"/><text x="165" y="208">storage replica 1</text>
+    <rect x="610" y="40" width="250" height="190" rx="10" fill="#16213a" stroke="#c9a858"/>
+    <text x="735" y="68" fill="#c9a858" font-size="15">Office node B</text><text x="735" y="88" fill="#9aa4b8" font-size="11">ARM VM · 4 GB · standby</text>
+    <rect x="630" y="102" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c"/><text x="735" y="124">API · scheduler · etcd vote</text>
+    <rect x="630" y="144" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c" stroke-dasharray="5 4"/><text x="735" y="166">apps (only during failover)</text>
+    <rect x="630" y="186" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c"/><text x="735" y="208">storage replica 2</text>
+    <rect x="345" y="250" width="210" height="62" rx="10" fill="#16213a" stroke="#2c3a5c"/>
+    <text x="450" y="275" fill="#c9a858">Witness node C</text><text x="450" y="295" fill="#9aa4b8" font-size="11">always-free micro VM · etcd vote only</text>
+    <g stroke="#c9a858" stroke-width="2" fill="none"><line x1="270" y1="203" x2="630" y2="203" marker-start="url(#ha-a)" marker-end="url(#ha-a)"/></g>
+    <text x="450" y="195" fill="#9aa4b8" font-size="11">synchronous block replication (Longhorn)</text>
+    <g stroke="#c9a858" stroke-width="1.5" stroke-dasharray="6 4" fill="none"><line x1="270" y1="119" x2="630" y2="119"/><line x1="165" y1="230" x2="360" y2="262"/><line x1="735" y1="230" x2="540" y2="262"/></g>
+    <text x="450" y="111" fill="#9aa4b8" font-size="11">etcd quorum: 2 of 3 votes keep the cluster writable</text>
+  </g>
+</svg>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Everything between the nodes runs over the encrypted overlay. The office node stays nearly idle until it is needed.</figcaption>
+</figure>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Layer</th><th>Technology</th><th>What it guarantees</th></tr></thead>
+<tbody>
+<tr><td>Cluster state</td><td>k3s with embedded etcd, 3 voting members (converted live from single-node SQLite)</td><td>Survives the loss of any one machine; no external database to run.</td></tr>
+<tr><td>Data</td><td>Longhorn, 2 replicas per volume, hard anti-affinity</td><td>Every write lands on both machines; a copy is never on the same host twice.</td></tr>
+<tr><td>Placement</td><td>Preferred affinity for the cloud node, required set = cloud or office, 30&nbsp;s not-ready tolerance</td><td>Normal days cost the workstation nothing; outages move apps automatically.</td></tr>
+<tr><td>Images</td><td>Each app built for both x86 and ARM, loaded on both nodes</td><td>An app can start on either CPU architecture.</td></tr>
+<tr><td>Entry</td><td>HTTPS front door with ordered upstreams (any-node entrance first, direct path second)</td><td>The same name keeps working whichever node runs the app.</td></tr>
+</tbody></table></div>
+
+<h3 id="maps">Reading the cluster maps</h3>
+<p>The screenshots below come from Headlamp, the cluster's web console, taken during the live failover test described next. Node names and addresses are replaced with generic labels.</p>
+<figure style="margin:22px 0"><img src="/portfolio/img/hcp-map-namespaces.png" alt="Cluster map grouped by namespace: system services, storage, and three application namespaces with their volumes" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Grouped by namespace. Each application lives in its own namespace with its own volumes; the small amber badges are warnings raised while a node was down.</figcaption></figure>
+<figure style="margin:22px 0"><img src="/portfolio/img/hcp-map-failover-by-node.png" alt="Cluster map grouped by node during the outage: the cloud node is down and the console itself now runs on the office node" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Grouped by node, mid-outage: the cloud node is down, and the console you are looking at has already restarted on the office node, next to the storage components that will hand it the data.</figcaption></figure>
+<figure style="margin:22px 0"><img src="/portfolio/img/hcp-map-by-instance.png" alt="Cluster map grouped by instance: application deployments, storage drivers, Longhorn and Traefik" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Grouped by instance: every moving part of the platform on one screen.</figcaption></figure>
+
+<div class="table-wrap"><table>
+<thead><tr><th>On the map</th><th>Role, and how it interacts</th></tr></thead>
+<tbody>
+<tr><td><code>Deployment</code> audit-platform, markets-desk, headlamp</td><td>The applications. Each keeps exactly one copy (single writer); Kubernetes recreates it on a healthy node when its node fails.</td></tr>
+<tr><td><code>PersistentVolumeClaim</code></td><td>An app's request for storage. Longhorn answers it with a replicated block volume that follows the app between nodes.</td></tr>
+<tr><td><code>longhorn-manager</code>, <code>instance-manager</code>, <code>engine-image</code></td><td>Longhorn's control loop and data path: one engine per volume, writing synchronously to a replica on each node.</td></tr>
+<tr><td><code>csi-attacher / provisioner / resizer / snapshotter</code></td><td>The standard Container Storage Interface sidecars: create, attach, grow and snapshot volumes on Kubernetes' behalf.</td></tr>
+<tr><td><code>traefik</code>, <code>svclb-traefik</code>, <code>IngressClass</code></td><td>The in-cluster HTTP router and its per-node entry points.</td></tr>
+<tr><td><code>coredns</code>, <code>metrics-server</code></td><td>Service discovery (names to addresses) and live CPU/memory figures for scheduling and dashboards.</td></tr>
+<tr><td><code>NetworkPolicy</code></td><td>Firewall rules inside the cluster; storage components may talk only to what they need.</td></tr>
+</tbody></table></div>
+
+<h3 id="failover">The failover test, measured</h3>
+<p>Not a simulation: the cloud server was powered off while a script recorded the cluster state and the three web addresses every five seconds.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Time</th><th>What happened</th></tr></thead>
+<tbody>
+<tr><td>T+0 s</td><td>Cloud node powered off. All three apps were running there.</td></tr>
+<tr><td>T+47 s</td><td>First web addresses stop answering.</td></tr>
+<tr><td>T+126 s</td><td>Cluster declares the node down (its node controller had to move to a surviving member first). The stateless console restarts on the office node and answers again: <strong>about 2 minutes</strong>.</td></tr>
+<tr><td>T+126 to 450 s</td><td>Data apps wait while Kubernetes refuses to move a volume until it is sure the dead node cannot still be writing to it (a deliberate safety delay).</td></tr>
+<tr><td>T+457 s</td><td>Volumes attach on the office node from its own replica; both data apps answer. <strong>Full recovery: 7 min 37 s, zero data lost.</strong></td></tr>
+</tbody></table></div>
+<p>The test exposed the next improvement: most of the recovery time is that safety delay. Marking a node <em>out of service</em> as soon as it is confirmed powered off (the Kubernetes non-graceful shutdown mechanism) lets volumes move immediately, bringing the data apps close to the 2-minute mark. Measuring first turned a vague "HA works" into a specific, fixable number.</p>
+
+
+
 <h2 id="iac">3. Infrastructure as code: the server is a file</h2>
 <p>The cloud server is not clicked together in a console. It is described in OpenTofu (the open-source Terraform), so it can be destroyed and recreated identically. The network definition does the security work before any software is installed:</p>
 <pre><code># Provider-neutral sketch of the network definition (resource names generalized)
@@ -170,7 +245,15 @@ resource "cloud_firewall" "deny_all_in" {
 <li><strong>SC-12 / SC-17</strong> Key Management, Public Key Infrastructure Certificates</li>
 <li><strong>AC-17</strong> Remote Access &middot; <strong>IA-2 / IA-5</strong> Authentication, Authenticator Management</li>
 <li><strong>CM-2 / CM-3 / CM-6</strong> Baseline Configuration, Change Control, Configuration Settings</li>
-<li><strong>CP-9 / CP-10</strong> System Backup, System Recovery</li>
+<li><strong>CP-7 / CP-9 / CP-10</strong> Alternate Processing Site, System Backup, System Recovery (tested failover)</li>
 <li><strong>SI-2</strong> Flaw Remediation &middot; <strong>AU-2 / AU-12</strong> Event Logging</li>
 </ul>
-<p style="font-size:.85rem;color:var(--fg-dim)">All systems described are owned and operated by the author. Addresses, host names, account identifiers, provider details, counts and configuration values have been replaced or generalized; the figure is an illustration. Code samples are released under the <a href="/license">MIT License</a>; text and figures &copy; Ioannis Alexander Konstas, all rights reserved. Previous: <a href="/portfolio/threat-hunting">Part 5, Threat Hunting</a>. Back to the <a href="/portfolio/">Portfolio</a>.</p>
+<div class="share-bar" style="margin:34px 0 18px;padding:18px 20px;border:1px solid hsl(43 45% 56% / .35);border-radius:12px;background:hsl(220 40% 12% / .5)">
+<p style="margin:0 0 10px;color:var(--fg)"><strong>Build notes like this, as they happen.</strong> New parts of the series land as the platform grows.</p>
+<a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.9rem;background:transparent;cursor:pointer;font-family:inherit;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a>
+<a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fportfolio%2Fhybrid-cloud-platform" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.9rem;background:transparent;cursor:pointer;font-family:inherit" rel="noopener" target="_blank">Share on LinkedIn</a>
+<a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fportfolio%2Fhybrid-cloud-platform&amp;text=Hybrid%20Cloud%20Platform%3A%20a%20private%20overlay%20WAN%2C%20HA%20Kubernetes%20across%20cloud%20and%20office%2C%20and%20a%20measured%20failover" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.9rem;background:transparent;cursor:pointer;font-family:inherit" rel="noopener" target="_blank">Share on X</a>
+<a href="mailto:?subject=Hybrid%20Cloud%20Platform&amp;body=https%3A%2F%2Fikonstas70.github.io%2Fportfolio%2Fhybrid-cloud-platform" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.9rem;background:transparent;cursor:pointer;font-family:inherit">Email</a>
+<button type="button" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.9rem;background:transparent;cursor:pointer;font-family:inherit" onclick="navigator.clipboard.writeText(location.href.split('#')[0]).then(()=>{this.textContent='Link copied'})">Copy link</button>
+</div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All systems described are owned and operated by the author. Addresses, host names, account identifiers, provider details, counts and configuration values have been replaced or generalized; diagrams are illustrations and console screenshots are relabeled. Code samples are released under the <a href="/license">MIT License</a>; text and figures &copy; Ioannis Alexander Konstas, all rights reserved. Previous: <a href="/portfolio/threat-hunting">Part 5, Threat Hunting</a>. Back to the <a href="/portfolio/">Portfolio</a>.</p>
