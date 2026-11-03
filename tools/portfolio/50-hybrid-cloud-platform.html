@@ -11,15 +11,15 @@
 <p>Every machine (workstation, laptop, phone, cloud servers) is a member of one private WireGuard network. A small virtual machine in one cloud acts as the hub; every other member connects out to it. Members reach each other through the hub, and only traffic for the private range enters the tunnel (split tunnel), so normal internet use is unaffected.</p>
 
 <figure style="margin:22px 0">
-<svg viewBox="0 0 900 360" role="img" aria-labelledby="ov-t" style="display:block;width:100%;height:auto;background:#0f1726;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<svg viewBox="0 0 900 360" role="img" aria-labelledby="ov-t" style="display:block;width:100%;height:auto;background:#0a0a0a;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
   <title id="ov-t">Hub-and-spoke WireGuard overlay connecting an office, mobile devices and two clouds</title>
   <g font-family="Georgia, serif" fill="#e9e4d8" font-size="13">
-    <rect x="345" y="140" width="210" height="80" rx="10" fill="#1b2a48" stroke="#c9a858"/>
+    <rect x="345" y="140" width="210" height="80" rx="10" fill="#191919" stroke="#c9a858"/>
     <text x="450" y="170" text-anchor="middle" fill="#c9a858" font-size="15">Overlay hub</text>
     <text x="450" y="190" text-anchor="middle">Cloud B, free-tier VM</text>
     <text x="450" y="208" text-anchor="middle" fill="#9aa4b8" font-size="11">10.99.0.1 · public 203.0.113.10</text>
     <g stroke="#c9a858" stroke-dasharray="6 4" stroke-width="2"><line x1="345" y1="160" x2="200" y2="70"/><line x1="345" y1="180" x2="190" y2="180"/><line x1="345" y1="200" x2="200" y2="290"/><line x1="555" y1="160" x2="700" y2="70"/><line x1="555" y1="180" x2="710" y2="180"/><line x1="555" y1="200" x2="700" y2="290"/></g>
-    <g fill="#16213a" stroke="#2c3a5c"><rect x="30" y="40" width="200" height="56" rx="8"/><rect x="30" y="152" width="200" height="56" rx="8"/><rect x="30" y="262" width="200" height="56" rx="8"/><rect x="670" y="40" width="200" height="56" rx="8"/><rect x="670" y="152" width="200" height="56" rx="8"/><rect x="670" y="262" width="200" height="56" rx="8"/></g>
+    <g fill="#121212" stroke="#5e4f2e"><rect x="30" y="40" width="200" height="56" rx="8"/><rect x="30" y="152" width="200" height="56" rx="8"/><rect x="30" y="262" width="200" height="56" rx="8"/><rect x="670" y="40" width="200" height="56" rx="8"/><rect x="670" y="152" width="200" height="56" rx="8"/><rect x="670" y="262" width="200" height="56" rx="8"/></g>
     <g text-anchor="middle"><text x="130" y="64">Office workstation</text><text x="130" y="84" fill="#9aa4b8" font-size="11">10.99.0.11</text>
     <text x="130" y="176">Laptop</text><text x="130" y="196" fill="#9aa4b8" font-size="11">10.99.0.12</text>
     <text x="130" y="286">Phone</text><text x="130" y="306" fill="#9aa4b8" font-size="11">10.99.0.13</text>
@@ -79,11 +79,11 @@ k3s agent --server https://10.99.0.51:6443 --node-ip 10.99.0.52 \
 </tbody></table></div>
 
 <figure style="margin:22px 0">
-<svg viewBox="0 0 900 250" role="img" aria-labelledby="rl-t" style="display:block;width:100%;height:auto;background:#0f1726;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<svg viewBox="0 0 900 250" role="img" aria-labelledby="rl-t" style="display:block;width:100%;height:auto;background:#0a0a0a;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
   <title id="rl-t">Request path from the workstation browser to an application running on the cloud node</title>
   <defs><marker id="rl-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9a858"/></marker></defs>
   <g font-family="Georgia, serif" fill="#e9e4d8" font-size="13" text-anchor="middle">
-    <g fill="#16213a" stroke="#2c3a5c"><rect x="20" y="80" width="150" height="70" rx="8"/><rect x="200" y="80" width="150" height="70" rx="8"/><rect x="380" y="80" width="160" height="70" rx="8"/><rect x="570" y="80" width="140" height="70" rx="8"/><rect x="740" y="80" width="140" height="70" rx="8"/></g>
+    <g fill="#121212" stroke="#5e4f2e"><rect x="20" y="80" width="150" height="70" rx="8"/><rect x="200" y="80" width="150" height="70" rx="8"/><rect x="380" y="80" width="160" height="70" rx="8"/><rect x="570" y="80" width="140" height="70" rx="8"/><rect x="740" y="80" width="140" height="70" rx="8"/></g>
     <text x="95" y="110">Browser</text><text x="95" y="130" fill="#9aa4b8" font-size="11">https://app.example</text>
     <text x="275" y="110">HTTPS front door</text><text x="275" y="130" fill="#9aa4b8" font-size="11">private-CA certificate</text>
     <text x="460" y="110">Relay in the office VM</text><text x="460" y="130" fill="#9aa4b8" font-size="11">VPN-only traffic</text>
@@ -104,21 +104,21 @@ k3s agent --server https://10.99.0.51:6443 --node-ip 10.99.0.52 \
 <p>Two machines cannot fail over on their own. The cluster database (etcd) needs a majority, and with two members, losing either one leaves no majority. The fix is a third, tiny member that only votes. The result is a cluster that survives losing <em>any</em> one machine, with every application's data stored twice, on two different machines.</p>
 
 <figure style="margin:22px 0">
-<svg viewBox="0 0 900 330" role="img" aria-labelledby="ha-t" style="display:block;width:100%;height:auto;background:#0f1726;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<svg viewBox="0 0 900 330" role="img" aria-labelledby="ha-t" style="display:block;width:100%;height:auto;background:#0a0a0a;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
   <title id="ha-t">Three-member control plane with a witness and two-way replicated storage between the cloud node and the office node</title>
   <defs><marker id="ha-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9a858"/></marker></defs>
   <g font-family="Georgia, serif" fill="#e9e4d8" font-size="13" text-anchor="middle">
-    <rect x="40" y="40" width="250" height="190" rx="10" fill="#16213a" stroke="#c9a858"/>
+    <rect x="40" y="40" width="250" height="190" rx="10" fill="#121212" stroke="#c9a858"/>
     <text x="165" y="68" fill="#c9a858" font-size="15">Cloud node A</text><text x="165" y="88" fill="#9aa4b8" font-size="11">x86 · 2 vCPU / 16 GB · preferred</text>
-    <rect x="60" y="102" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c"/><text x="165" y="124">API · scheduler · etcd vote</text>
-    <rect x="60" y="144" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c"/><text x="165" y="166">apps (normal operation)</text>
-    <rect x="60" y="186" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c"/><text x="165" y="208">storage replica 1</text>
-    <rect x="610" y="40" width="250" height="190" rx="10" fill="#16213a" stroke="#c9a858"/>
+    <rect x="60" y="102" width="210" height="34" rx="6" fill="#191919" stroke="#5e4f2e"/><text x="165" y="124">API · scheduler · etcd vote</text>
+    <rect x="60" y="144" width="210" height="34" rx="6" fill="#191919" stroke="#5e4f2e"/><text x="165" y="166">apps (normal operation)</text>
+    <rect x="60" y="186" width="210" height="34" rx="6" fill="#191919" stroke="#5e4f2e"/><text x="165" y="208">storage replica 1</text>
+    <rect x="610" y="40" width="250" height="190" rx="10" fill="#121212" stroke="#c9a858"/>
     <text x="735" y="68" fill="#c9a858" font-size="15">Office node B</text><text x="735" y="88" fill="#9aa4b8" font-size="11">ARM VM · 4 GB · standby</text>
-    <rect x="630" y="102" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c"/><text x="735" y="124">API · scheduler · etcd vote</text>
-    <rect x="630" y="144" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c" stroke-dasharray="5 4"/><text x="735" y="166">apps (only during failover)</text>
-    <rect x="630" y="186" width="210" height="34" rx="6" fill="#1b2a48" stroke="#2c3a5c"/><text x="735" y="208">storage replica 2</text>
-    <rect x="345" y="250" width="210" height="62" rx="10" fill="#16213a" stroke="#2c3a5c"/>
+    <rect x="630" y="102" width="210" height="34" rx="6" fill="#191919" stroke="#5e4f2e"/><text x="735" y="124">API · scheduler · etcd vote</text>
+    <rect x="630" y="144" width="210" height="34" rx="6" fill="#191919" stroke="#5e4f2e" stroke-dasharray="5 4"/><text x="735" y="166">apps (only during failover)</text>
+    <rect x="630" y="186" width="210" height="34" rx="6" fill="#191919" stroke="#5e4f2e"/><text x="735" y="208">storage replica 2</text>
+    <rect x="345" y="250" width="210" height="62" rx="10" fill="#121212" stroke="#5e4f2e"/>
     <text x="450" y="275" fill="#c9a858">Witness node C</text><text x="450" y="295" fill="#9aa4b8" font-size="11">always-free micro VM · etcd vote only</text>
     <g stroke="#c9a858" stroke-width="2" fill="none"><line x1="270" y1="203" x2="630" y2="203" marker-start="url(#ha-a)" marker-end="url(#ha-a)"/></g>
     <text x="450" y="195" fill="#9aa4b8" font-size="11">synchronous block replication (Longhorn)</text>
@@ -145,6 +145,10 @@ k3s agent --server https://10.99.0.51:6443 --node-ip 10.99.0.52 \
 <figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Grouped by namespace. Each application lives in its own namespace with its own volumes; the small amber badges are warnings raised while a node was down.</figcaption></figure>
 <figure style="margin:22px 0"><img src="/portfolio/img/hcp-map-failover-by-node.png" alt="Cluster map grouped by node during the outage: the cloud node is down and the console itself now runs on the office node" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
 <figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Grouped by node, mid-outage: the cloud node is down, and the console you are looking at has already restarted on the office node, next to the storage components that will hand it the data.</figcaption></figure>
+<figure style="margin:22px 0"><img src="/portfolio/img/hcp-map-by-node.png" alt="Cluster map grouped by node after recovery: applications back on the cloud node, the office node idle" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Grouped by node, after recovery: the applications are back on the cloud node and the office node returns to standby.</figcaption></figure>
+<figure style="margin:22px 0"><img src="/portfolio/img/hcp-map-storage-namespace.png" alt="The storage system namespace: Longhorn manager, UI, CSI drivers, engine image and instance manager" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">The storage system on its own: the manager and UI, the five CSI drivers, the engine image every volume runs, and the instance manager that hosts replicas.</figcaption></figure>
 <figure style="margin:22px 0"><img src="/portfolio/img/hcp-map-by-instance.png" alt="Cluster map grouped by instance: application deployments, storage drivers, Longhorn and Traefik" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
 <figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Grouped by instance: every moving part of the platform on one screen.</figcaption></figure>
 
@@ -158,7 +162,7 @@ k3s agent --server https://10.99.0.51:6443 --node-ip 10.99.0.52 \
 <figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><strong>The storage control plane.</strong> A DaemonSet guarantees one manager Pod per storage node (two here). Each Pod sits behind three NetworkPolicies, so only the traffic Longhorn needs is allowed, and serves three Services: the backend API, the admission webhook that validates every storage change before Kubernetes accepts it, and the recovery backend used when a replica has to be rebuilt.</figcaption></figure>
 
 <figure style="margin:22px 0"><img src="/portfolio/img/hcp-graph-router.png" alt="Relationship graph of the HTTP router: Deployment, ReplicaSet, two Pods, Service and Endpoints" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
-<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><strong>The router after recovery.</strong> Two Traefik Pods behind one Service: the replacement is serving while the copy from the node that went down is still being cleaned up (amber badge). The Service only routes to Pods that pass their readiness checks, which is why the switch is invisible to clients.</figcaption></figure>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px"><strong>The router after recovery.</strong> One Traefik Pod behind one Service. During the outage this view briefly showed two Pods, the replacement serving while the copy on the failed node was cleaned up. The Service routes only to Pods that pass their readiness checks, which is why the switch is invisible to clients.</figcaption></figure>
 
 <div class="table-wrap"><table>
 <thead><tr><th>On the map</th><th>Role, and how it interacts</th></tr></thead>
