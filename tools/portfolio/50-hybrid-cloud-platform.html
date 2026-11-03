@@ -68,6 +68,38 @@ k3s server --node-ip 10.99.0.51 --advertise-address 10.99.0.51 \
 k3s agent --server https://10.99.0.51:6443 --node-ip 10.99.0.52 \
           --flannel-iface wg0 --node-taint workstation=only-if-needed:PreferNoSchedule</code></pre>
 
+<h3 id="migration">Moving live workloads off the workstation</h3>
+<p>The point of the cluster is to empty the workstation. Each application was moved one at a time, with the old copy kept stopped (not deleted) as a one-command rollback. Three details made the moves safe:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+<tbody>
+<tr><td>The workstation is ARM, the cloud server is x86</td><td>Each image is rebuilt for <code>linux/amd64</code> and streamed straight into the node's container runtime (no public registry, nothing leaves the private network).</td></tr>
+<tr><td>Stateful apps must not lose a single write</td><td>Stop the old copy first (single writer), copy the state into a fresh persistent volume, compare checksums file by file, then start the new copy. Encrypted data moves as ciphertext; its key is only ever unlocked in memory by the owner's password.</td></tr>
+<tr><td>Same web address before and after</td><td>The local HTTPS front door keeps every name; only its upstream changes, with automatic retry so a brief network blip never shows an error page.</td></tr>
+</tbody></table></div>
+
+<figure style="margin:22px 0">
+<svg viewBox="0 0 900 250" role="img" aria-labelledby="rl-t" style="display:block;width:100%;height:auto;background:#0f1726;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+  <title id="rl-t">Request path from the workstation browser to an application running on the cloud node</title>
+  <defs><marker id="rl-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9a858"/></marker></defs>
+  <g font-family="Georgia, serif" fill="#e9e4d8" font-size="13" text-anchor="middle">
+    <g fill="#16213a" stroke="#2c3a5c"><rect x="20" y="80" width="150" height="70" rx="8"/><rect x="200" y="80" width="150" height="70" rx="8"/><rect x="380" y="80" width="160" height="70" rx="8"/><rect x="570" y="80" width="140" height="70" rx="8"/><rect x="740" y="80" width="140" height="70" rx="8"/></g>
+    <text x="95" y="110">Browser</text><text x="95" y="130" fill="#9aa4b8" font-size="11">https://app.example</text>
+    <text x="275" y="110">HTTPS front door</text><text x="275" y="130" fill="#9aa4b8" font-size="11">private-CA certificate</text>
+    <text x="460" y="110">Relay in the office VM</text><text x="460" y="130" fill="#9aa4b8" font-size="11">VPN-only traffic</text>
+    <text x="640" y="110">Overlay hub</text><text x="640" y="130" fill="#9aa4b8" font-size="11">10.99.0.1</text>
+    <text x="810" y="110" fill="#c9a858">App pod</text><text x="810" y="130" fill="#9aa4b8" font-size="11">cloud node 10.99.0.51</text>
+    <g stroke="#c9a858" stroke-width="2" marker-end="url(#rl-a)"><line x1="170" y1="115" x2="196" y2="115"/><line x1="350" y1="115" x2="376" y2="115"/><line x1="540" y1="115" x2="566" y2="115"/><line x1="710" y1="115" x2="736" y2="115"/></g>
+    <text x="275" y="60" fill="#9aa4b8" font-size="11">workstation</text><text x="460" y="60" fill="#9aa4b8" font-size="11">workstation VM</text><text x="725" y="60" fill="#9aa4b8" font-size="11">clouds</text>
+    <text x="450" y="200" fill="#9aa4b8" font-size="12">The workstation's own tunnel carried all of its internet traffic (full tunnel) and saturated the small hub;</text>
+    <text x="450" y="220" fill="#9aa4b8" font-size="12">routing app traffic through the VM's split tunnel removed the dropouts without touching the workstation's VPN.</text>
+  </g>
+</svg>
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Same names, new home: the front door and certificates stay on the workstation, the application runs in the cloud.</figcaption>
+</figure>
+
+<p>A lesson worth recording: the first symptom was random TLS handshake timeouts. Packet size was the obvious suspect, but a controlled test (small and 60&nbsp;KB uploads failed at the same rate) ruled it out. The real cause was capacity: the workstation's tunnel sent <em>all</em> of its internet traffic through a free-tier hub. Measuring before changing anything saved a pointless MTU change.</p>
+
 <h2 id="iac">3. Infrastructure as code: the server is a file</h2>
 <p>The cloud server is not clicked together in a console. It is described in OpenTofu (the open-source Terraform), so it can be destroyed and recreated identically. The network definition does the security work before any software is installed:</p>
 <pre><code># Provider-neutral sketch of the network definition (resource names generalized)
