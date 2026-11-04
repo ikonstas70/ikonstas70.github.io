@@ -903,7 +903,58 @@ CPU utilization for five seconds: 42%/1%; one minute: 43%; five minutes: 36%</co
 </div>
 <h2>The session in one table</h2>
 <div class="table-wrap"><table><thead><tr><th>#</th><th>Command</th><th>Result</th></tr></thead><tbody><tr><td>1</td><td>Size and RPKI posture</td><td>70.8% valid, 5,344 invalid</td></tr><tr><td>2</td><td>IPv6 posture</td><td>83.0% valid</td></tr><tr><td>3</td><td>Best path to Google DNS</td><td>tie-breaker, not quality</td></tr><tr><td>4</td><td>Cloudflare more-specifics</td><td>none: textbook</td></tr><tr><td>5</td><td>AGGREGATOR</td><td>11 internal router IDs exposed</td></tr><tr><td>6</td><td>Loose ROA</td><td>2 unannounced /24s pre-authorized</td></tr><tr><td>7</td><td>Typing error</td><td>AS 3 as origin, contained</td></tr><tr><td>8</td><td>Stale provider route</td><td>Lumen still announces leased space</td></tr><tr><td>9</td><td>RPKI caches</td><td>136,000 entries apart</td></tr><tr><td>10</td><td>CPU</td><td>36-43% now, 85-100% earlier</td></tr><tr><td>11</td><td>Background noise</td><td>3.3 billion UDP to closed ports</td></tr></tbody></table></div>
-<p>Each result is explained in depth in Parts 2 to 9, and the fixes are in <a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--accent)">Part 9</a>.</p>
+<p>Each result is explained in depth in Parts 2 to 9, the fixes are in <a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--accent)">Part 9</a>, and the conclusions and recommendations in <a href="/bgp/ch02-11-conclusion-and-recommendations" style="color:var(--accent)">Part 11</a>.</p>
+'''),
+ ('ch02-11-conclusion-and-recommendations', 'Conclusion and Recommendations',
+  'What two live sessions on a public route collector prove, and a prioritized set of recommendations for network operators, organizations that rent address space, providers and exchanges, and collector operators.', f'''
+<blockquote>Two read-only sessions on one public router, a few dozen commands, no access to any network we discussed. This part draws the conclusions and turns them into recommendations, in priority order.</blockquote>
+
+<h2>Conclusions</h2>
+{table(['#', 'Conclusion', 'Evidence'], [
+ ['1', '<strong>The routing table is public, and it is a security report.</strong> Business relationships, traffic engineering, internal addressing and security gaps are readable by anyone, for any network.', 'Communities (Finding 3), action communities (4), AGGREGATOR router IDs (5), prepends and more-specifics (7)'],
+ ['2', '<strong>RPKI works, and it is winning.</strong> Seven in ten IPv4 paths and more than eight in ten IPv6 paths are now valid; invalid announcements reach about one feed in fourteen.', 'Parts 7 and 8: 70.8% and 83.0% valid; invalid paths down 70% between snapshots'],
+ ['3', '<strong>Most "hijacks" are mistakes.</strong> Of 1,329 conflicting origins, none had the shape of a deliberate attack; the real conflicts were stale provider routes, cloud announcements and typing errors.', 'Part 7: 64% authorized, 33% unjudgeable, 3.5% contained misconfiguration, no route leaks in the sample'],
+ ['4', '<strong>Origin validation has blind spots.</strong> It does not check paths, it is weakened by loose maxLength, and it depends on caches that can disagree or disappear.', 'Findings 8, 9 and 10; the one-third of conflicts with no ROA at all'],
+ ['5', '<strong>The control plane is the soft target.</strong> A full-table router is CPU- and memory-bound, and the Internet throws billions of unsolicited packets at it.', 'Part 6: CPU 36-100%, input-queue drops, 3.3 billion UDP packets to closed ports'],
+ ['6', '<strong>The fixes are cheap and verifiable.</strong> Almost every gap closes with minutes to days of work, and every fix can be checked from the same public login.', 'Parts 8 and 9'],
+])}
+
+<h2>Recommendations, in priority order</h2>
+{table(['Priority', 'Recommendation', 'Closes', 'Effort'], [
+ ['1', 'Publish an <strong>exact-length ROA</strong> for every prefix you announce; remove maxLength', 'Sub-prefix and forged-origin hijacks (7, 8)', 'Minutes per prefix'],
+ ['2', '<strong>Drop RPKI-invalid routes</strong> on every external session', 'Hijacks and leaks others did not stop (12)', 'Hours'],
+ ['3', 'Announce from an <strong>explicit export list</strong> only, with internal communities deleted', 'Leaks and business disclosure (3, 4)', 'Hours'],
+ ['4', 'Protect every session: <strong>GTSM, TCP-AO or MD5, infrastructure ACL, maximum-prefix</strong>', 'Session attacks and floods (11)', 'Hours to days'],
+ ['5', 'Put <strong>CoPP</strong> in front of the router CPU and keep management out-of-band', 'Control-plane overload (11)', 'Days'],
+ ['6', 'Run <strong>two RPKI validators</strong> from different software, RTR protected, divergence alarms', 'Cache disagreement and loss (9, 10)', 'A day'],
+ ['7', '<strong>Monitor your prefixes</strong> and their more-specifics on public collectors, with alerts', 'Undetected hijacks and leaks (all)', 'An afternoon'],
+ ['8', 'Remove <strong>stale origins</strong>: old provider announcements, leased space, cloud BYOIP without ROAs', 'Self-inflicted invalids (12)', 'Minutes per prefix'],
+ ['9', 'Set <strong>local preference by relationship</strong> and use upstream communities instead of long prepends', 'Accidental path selection (1, 7)', 'Hours'],
+ ['10', 'Adopt <strong>BGP Roles</strong> now and publish <strong>ASPA</strong> as registries support it', 'Route leaks and forged paths', 'Within a year'],
+])}
+
+<h2>By audience</h2>
+{table(['If you are…', 'Start with', 'Then'], [
+ ['A network that runs BGP', 'Recommendations 1 to 4 this month', '5 to 10 over the next quarter; join MANRS to make the commitment public'],
+ ['An organization renting addresses (cloud, CDN, ISP)', 'List every block you depend on and check it on a collector', 'Ask providers about exact ROAs, invalid filtering and upstream diversity; monitor those blocks'],
+ ['A transit provider or cloud', 'Withdraw announcements for space you have delegated or leased; ROAs for customer BYOIP', 'Strip customers\' action communities after acting on them; neutral aggregator IDs'],
+ ['An Internet exchange', 'RPKI filtering on route servers', 'BGP Roles and maximum-prefix on every member session'],
+ ['A security team (SOC)', 'Add BGP alerts for your prefixes to the incident playbook', 'Treat a new origin or more-specific for your space as a priority incident'],
+])}
+
+<h2>For public collector operators</h2>
+<p>Route Views is a public good, and this chapter could not exist without it. Three small, respectful suggestions emerged from the telemetry: an <strong>idle timeout</strong> on public terminal lines (one session had been idle for over a year), restricting <strong><code>show users</code></strong> so the public cannot see each other\'s addresses, and a pointer to the <strong>BMP and archive feeds</strong> for heavy queries, to keep interactive load off a busy control plane.</p>
+
+<h2>Limits of this report</h2>
+<ul>
+ <li>Two snapshots from one collector on one day. Peer mixes differ between snapshots, so we compare shares, not counts.</li>
+ <li>RPKI states are this router\'s view; other validators may differ slightly at any moment.</li>
+ <li>The leak scan covered the paths collected here, not the full table.</li>
+ <li>No intent is attributed to any network. Conflicts were classified by evidence; where the evidence was insufficient, we said so.</li>
+</ul>
+
+{callout('<strong>Final word.</strong> BGP was built on trust, and the routing table still shows what that trust exposes. It also shows something more important: where networks publish what they own, validate what they accept and announce only what they should, the problems shrink, visibly, from one session to the next. Every network can make that change, and every change can be verified from a public login.')}
+<p style="font-size:.95rem;color:var(--fg-dim)">For a review of your own address space, providers or peering design, write to <a href="mailto:info@konstas.us" style="color:var(--accent)">info@konstas.us</a>. Next chapter: mapping a network from the outside.</p>
 '''),
 ]
 

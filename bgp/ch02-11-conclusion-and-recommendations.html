@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch02-11-conclusion-and-recommendations">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conclusion and Recommendations — Special Topics in BGP, Chapter 2 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="What two live sessions on a public route collector prove, and a prioritized set of recommendations for network operators, organizations that rent address space, providers and exchanges, and collector operators.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch02-11-conclusion-and-recommendations">
+<meta property="og:title" content="Special Topics in BGP · Chapter 2: Reading a Path · Part 11 of 11: Conclusion and Recommendations">
+<meta property="og:description" content="What two live sessions on a public route collector prove, and a prioritized set of recommendations for network operators, organizations that rent address space, providers and exchanges, and collector operators.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 2: Reading a Path · Part 11 of 11: Conclusion and Recommendations","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch02-11-conclusion-and-recommendations"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 2 &middot; Part 11 of 11</span>
+    <h1>Conclusion and Recommendations</h1>
+    <p class="meta">Chapter 2: Reading a Path &middot; A field report from Route Views &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>Two read-only sessions on one public router, a few dozen commands, no access to any network we discussed. This part draws the conclusions and turns them into recommendations, in priority order.</blockquote>
+
+<h2>Conclusions</h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Conclusion</th><th>Evidence</th></tr></thead><tbody><tr><td>1</td><td><strong>The routing table is public, and it is a security report.</strong> Business relationships, traffic engineering, internal addressing and security gaps are readable by anyone, for any network.</td><td>Communities (Finding 3), action communities (4), AGGREGATOR router IDs (5), prepends and more-specifics (7)</td></tr><tr><td>2</td><td><strong>RPKI works, and it is winning.</strong> Seven in ten IPv4 paths and more than eight in ten IPv6 paths are now valid; invalid announcements reach about one feed in fourteen.</td><td>Parts 7 and 8: 70.8% and 83.0% valid; invalid paths down 70% between snapshots</td></tr><tr><td>3</td><td><strong>Most "hijacks" are mistakes.</strong> Of 1,329 conflicting origins, none had the shape of a deliberate attack; the real conflicts were stale provider routes, cloud announcements and typing errors.</td><td>Part 7: 64% authorized, 33% unjudgeable, 3.5% contained misconfiguration, no route leaks in the sample</td></tr><tr><td>4</td><td><strong>Origin validation has blind spots.</strong> It does not check paths, it is weakened by loose maxLength, and it depends on caches that can disagree or disappear.</td><td>Findings 8, 9 and 10; the one-third of conflicts with no ROA at all</td></tr><tr><td>5</td><td><strong>The control plane is the soft target.</strong> A full-table router is CPU- and memory-bound, and the Internet throws billions of unsolicited packets at it.</td><td>Part 6: CPU 36-100%, input-queue drops, 3.3 billion UDP packets to closed ports</td></tr><tr><td>6</td><td><strong>The fixes are cheap and verifiable.</strong> Almost every gap closes with minutes to days of work, and every fix can be checked from the same public login.</td><td>Parts 8 and 9</td></tr></tbody></table></div>
+
+<h2>Recommendations, in priority order</h2>
+<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Recommendation</th><th>Closes</th><th>Effort</th></tr></thead><tbody><tr><td>1</td><td>Publish an <strong>exact-length ROA</strong> for every prefix you announce; remove maxLength</td><td>Sub-prefix and forged-origin hijacks (7, 8)</td><td>Minutes per prefix</td></tr><tr><td>2</td><td><strong>Drop RPKI-invalid routes</strong> on every external session</td><td>Hijacks and leaks others did not stop (12)</td><td>Hours</td></tr><tr><td>3</td><td>Announce from an <strong>explicit export list</strong> only, with internal communities deleted</td><td>Leaks and business disclosure (3, 4)</td><td>Hours</td></tr><tr><td>4</td><td>Protect every session: <strong>GTSM, TCP-AO or MD5, infrastructure ACL, maximum-prefix</strong></td><td>Session attacks and floods (11)</td><td>Hours to days</td></tr><tr><td>5</td><td>Put <strong>CoPP</strong> in front of the router CPU and keep management out-of-band</td><td>Control-plane overload (11)</td><td>Days</td></tr><tr><td>6</td><td>Run <strong>two RPKI validators</strong> from different software, RTR protected, divergence alarms</td><td>Cache disagreement and loss (9, 10)</td><td>A day</td></tr><tr><td>7</td><td><strong>Monitor your prefixes</strong> and their more-specifics on public collectors, with alerts</td><td>Undetected hijacks and leaks (all)</td><td>An afternoon</td></tr><tr><td>8</td><td>Remove <strong>stale origins</strong>: old provider announcements, leased space, cloud BYOIP without ROAs</td><td>Self-inflicted invalids (12)</td><td>Minutes per prefix</td></tr><tr><td>9</td><td>Set <strong>local preference by relationship</strong> and use upstream communities instead of long prepends</td><td>Accidental path selection (1, 7)</td><td>Hours</td></tr><tr><td>10</td><td>Adopt <strong>BGP Roles</strong> now and publish <strong>ASPA</strong> as registries support it</td><td>Route leaks and forged paths</td><td>Within a year</td></tr></tbody></table></div>
+
+<h2>By audience</h2>
+<div class="table-wrap"><table><thead><tr><th>If you are…</th><th>Start with</th><th>Then</th></tr></thead><tbody><tr><td>A network that runs BGP</td><td>Recommendations 1 to 4 this month</td><td>5 to 10 over the next quarter; join MANRS to make the commitment public</td></tr><tr><td>An organization renting addresses (cloud, CDN, ISP)</td><td>List every block you depend on and check it on a collector</td><td>Ask providers about exact ROAs, invalid filtering and upstream diversity; monitor those blocks</td></tr><tr><td>A transit provider or cloud</td><td>Withdraw announcements for space you have delegated or leased; ROAs for customer BYOIP</td><td>Strip customers' action communities after acting on them; neutral aggregator IDs</td></tr><tr><td>An Internet exchange</td><td>RPKI filtering on route servers</td><td>BGP Roles and maximum-prefix on every member session</td></tr><tr><td>A security team (SOC)</td><td>Add BGP alerts for your prefixes to the incident playbook</td><td>Treat a new origin or more-specific for your space as a priority incident</td></tr></tbody></table></div>
+
+<h2>For public collector operators</h2>
+<p>Route Views is a public good, and this chapter could not exist without it. Three small, respectful suggestions emerged from the telemetry: an <strong>idle timeout</strong> on public terminal lines (one session had been idle for over a year), restricting <strong><code>show users</code></strong> so the public cannot see each other's addresses, and a pointer to the <strong>BMP and archive feeds</strong> for heavy queries, to keep interactive load off a busy control plane.</p>
+
+<h2>Limits of this report</h2>
+<ul>
+ <li>Two snapshots from one collector on one day. Peer mixes differ between snapshots, so we compare shares, not counts.</li>
+ <li>RPKI states are this router's view; other validators may differ slightly at any moment.</li>
+ <li>The leak scan covered the paths collected here, not the full table.</li>
+ <li>No intent is attributed to any network. Conflicts were classified by evidence; where the evidence was insufficient, we said so.</li>
+</ul>
+
+<div style="border:1px solid hsl(43 45% 56% / .30);border-left:3px solid var(--accent);background:hsl(0 0% 6%);border-radius:6px;padding:12px 16px;margin:18px 0"><strong>Final word.</strong> BGP was built on trust, and the routing table still shows what that trust exposes. It also shows something more important: where networks publish what they own, validate what they accept and announce only what they should, the problems shrink, visibly, from one session to the next. Every network can make that change, and every change can be verified from a public login.</div>
+<p style="font-size:.95rem;color:var(--fg-dim)">For a review of your own address space, providers or peering design, write to <a href="mailto:info@konstas.us" style="color:var(--accent)">info@konstas.us</a>. Next chapter: mapping a network from the outside.</p>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch02-10-the-session-command-by-command" style="color:var(--accent);text-decoration:none">&larr; Part 10: The Session, Command by Command</a><span><a href="/bgp/" style="color:var(--accent);text-decoration:none">Series overview &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 2 &middot; Reading a Path</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--fg-dim);text-decoration:none">Part 1: Summary and Key Findings</a></li><li><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--fg-dim);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8</a></li><li><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--fg-dim);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a></li><li><a href="/bgp/ch02-4-reading-the-table" style="color:var(--fg-dim);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a></li><li><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--fg-dim);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It</a></li><li><a href="/bgp/ch02-6-router-telemetry" style="color:var(--fg-dim);text-decoration:none">Part 6: Router Telemetry: The Collector Under Load</a></li><li><a href="/bgp/ch02-7-leaks-and-possible-hijacks" style="color:var(--fg-dim);text-decoration:none">Part 7: Leaks and Possible Hijacks, Assessed Fairly</a></li><li><a href="/bgp/ch02-8-from-problem-to-opportunity" style="color:var(--fg-dim);text-decoration:none">Part 8: From Problem to Opportunity</a></li><li><a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--fg-dim);text-decoration:none">Part 9: The Proposal: Secure, Low-Exposure Peering</a></li><li><a href="/bgp/ch02-10-the-session-command-by-command" style="color:var(--fg-dim);text-decoration:none">Part 10: The Session, Command by Command</a></li><li><strong><a href="/bgp/ch02-11-conclusion-and-recommendations" style="color:var(--accent);text-decoration:none">Part 11: Conclusion and Recommendations</a></strong></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-11-conclusion-and-recommendations" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-11-conclusion-and-recommendations&amp;text=Special%20Topics%20in%20BGP%3A%20Conclusion%20and%20Recommendations" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All output is from Route Views, a public collector operated for exactly this purpose. Network names are from public registry data; community meanings are from the operators' public documentation and may change. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>
