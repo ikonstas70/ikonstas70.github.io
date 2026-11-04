@@ -927,6 +927,17 @@ CPU utilization for five seconds: 42%/1%; one minute: 43%; five minutes: 36%</co
   'What two live sessions on a public route collector prove, and a prioritized set of recommendations for network operators, organizations that rent address space, providers and exchanges, and collector operators.', f'''
 <blockquote>Two read-only sessions on one public router, a few dozen commands, no access to any network we discussed. This part draws the conclusions and turns them into recommendations, in priority order.</blockquote>
 
+<h2>Five years at a glance: October 2021 to November 2026</h2>
+{table(['Measure', '17 Oct 2021', '3 Nov 2026', 'Change'], [
+ ['IPv4 paths RPKI-valid', '32.6%', '<strong>70.8%</strong>', 'more than doubled'],
+ ['IPv4 paths with no ROA', '67.3%', '29.1%', 'cut by more than half'],
+ ['IPv4 paths RPKI-invalid', '17,810 (0.09%)', '<strong>5,344</strong> (0.03%)', 'down 70%'],
+ ['IPv6 paths RPKI-valid', 'not captured', '<strong>83.0%</strong>', 'ahead of IPv4'],
+ ['IPv4 networks in the table', '916,896', '1,129,606', 'up 23%'],
+ ['Full-table peers', '22', '15', 'compare shares, not counts'],
+])}
+{callout('<strong>Better protected, same weaknesses.</strong> Five years of adoption changed <em>how many</em> routes are verified. It did not remove the weaknesses this chapter documents: communities and AGGREGATOR still leak information, loose maxLength and missing ROAs still invite hijacks, RPKI caches still disagree over plain TCP, and origin validation still does not check the path. All twelve findings come from the 2026 sessions.')}
+
 <h2>Conclusions</h2>
 {table(['#', 'Conclusion', 'Evidence'], [
  ['1', '<strong>The routing table is public, and it is a security report.</strong> Business relationships, traffic engineering, internal addressing and security gaps are readable by anyone, for any network.', 'Communities (Finding 3), action communities (4), AGGREGATOR router IDs (5), prepends and more-specifics (7)'],
