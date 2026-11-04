@@ -192,6 +192,7 @@ def page(i, slug, title, desc, body):
     <span class="tag">{SERIES} &middot; Chapter 1 &middot; Part {i} of {n}</span>
     <h1>{html.escape(title)}</h1>
     <p class="meta">{CH} &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+<div style="border:1px solid hsl(43 45% 56% / .35);border-left:3px solid var(--accent);background:hsl(0 0% 6%);border-radius:6px;padding:10px 14px;margin:0 0 22px;font-size:.9rem"><strong style="color:var(--accent)">Snapshot note.</strong> The session in this chapter was captured a few years before publication. The figures describe the Internet as it was then; the method is unchanged. For a current session, and how the numbers have moved since, see <a href="/bgp/ch02-8-from-problem-to-opportunity" style="color:var(--accent)">Chapter 2, Part 8</a>.</div>
 {body}
 {nav}
 <div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">

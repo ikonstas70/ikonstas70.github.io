@@ -42,7 +42,7 @@ def kpis(items):
 PARTS = [
  ('ch02-1-summary-and-findings', 'Summary and Key Findings',
   'A field report from one public Route Views session: seven commands, ten findings, and why each one matters to anyone who runs a network.', f'''
-<blockquote>Chapter 1 read the summary of a route collector. This chapter reads the routes themselves. Everything here comes from one public session on Route Views (AS 6447) and seven commands. The output is real; the interpretation is the point.</blockquote>
+<blockquote>Chapter 1 read the summary of a route collector, from a snapshot taken a few years ago. This chapter reads the routes themselves, in a live session. Everything here comes from one public session on Route Views (AS 6447) and seven commands. The output is real; the interpretation is the point.</blockquote>
 
 <h2>Watch the session</h2>
 <video controls playsinline preload="metadata" poster="/bgp/ch02/poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000">
@@ -495,16 +495,16 @@ route-views> show bgp ipv6 unicast inconsistent-as
 <blockquote>Every finding in this chapter is public. That is the uncomfortable part, and it is also the opportunity: the same visibility that helps an attacker plan lets every defender measure, fix and verify, for free, in minutes.</blockquote>
 
 <h2>A second session: the trend</h2>
-<p>The same collector, the same command, two snapshots: the one read in Chapter 1, and a fresh session on 3 November 2026, roughly 375 million best-path changes later.</p>
-{table(['Measure', 'Chapter 1 snapshot', 'This session', 'Change'], [
- ['Table version', '1,142,409,165', '1,517,803,889', '+375 million best-path changes'],
+<p>The same collector, the same command, two snapshots <strong>a few years apart</strong>: the one read in Chapter 1, and a fresh session on 3 November 2026.</p>
+{table(['Measure', 'Chapter 1 (a few years ago)', 'This session (3 Nov 2026)', 'Change'], [
+ ['Table version', '1,142,409,165', '1,517,803,889', 'the counter keeps climbing'],
  ['Paths, RPKI <strong>valid</strong>', '6,502,331 (32.6%)', '11,656,019 (70.8%)', '<strong>more than double</strong> the share'],
  ['Paths, RPKI <strong>not found</strong>', '13,437,858 (67.3%)', '4,793,951 (29.1%)', 'down by more than half'],
  ['Paths, RPKI <strong>invalid</strong>', '17,810 (0.09%)', '5,350 (0.03%)', '<strong>down 70%</strong>'],
  ['IPv4 network entries', '916,896', '1,129,606', 'the table keeps growing'],
  ['Full-table peers', '22', '15', 'a smaller peer mix this time'],
 ], num=(1, 2))}
-<p>A caution before the conclusion: the peer mix changed (fifteen full feeds now, twenty-two then), so absolute path counts are not directly comparable. The <em>shares</em> are, and they moved decisively. Where networks publish ROAs and their providers drop invalid routes, invalid announcements stop spreading. RPKI is not a theory any more; you can watch it work from a public login.</p>
+<p>A caution before the conclusion: the peer mix changed (fifteen full feeds now, twenty-two then), so absolute path counts are not directly comparable. The <em>shares</em> are, and over those few years they moved decisively: the IPv4 table grew by more than 200,000 prefixes while the share of paths with no ROA fell from two thirds to under a third. Where networks publish ROAs and their providers drop invalid routes, invalid announcements stop spreading. RPKI is not a theory any more; you can watch it work from a public login.</p>
 {kpis([('70.8%', 'of paths now RPKI-valid'), ('5,350', 'invalid paths left, down from 17,810'), ('0', 'unexpected more-specifics on the blocks we checked'), ('15', 'paths per block: every major carrier carries them')])}
 
 <h2>The opportunity, in four sentences</h2>
@@ -912,7 +912,7 @@ CPU utilization for five seconds: 42%/1%; one minute: 43%; five minutes: 36%</co
 <h2>Conclusions</h2>
 {table(['#', 'Conclusion', 'Evidence'], [
  ['1', '<strong>The routing table is public, and it is a security report.</strong> Business relationships, traffic engineering, internal addressing and security gaps are readable by anyone, for any network.', 'Communities (Finding 3), action communities (4), AGGREGATOR router IDs (5), prepends and more-specifics (7)'],
- ['2', '<strong>RPKI works, and it is winning.</strong> Seven in ten IPv4 paths and more than eight in ten IPv6 paths are now valid; invalid announcements reach about one feed in fourteen.', 'Parts 7 and 8: 70.8% and 83.0% valid; invalid paths down 70% between snapshots'],
+ ['2', '<strong>RPKI works, and it is winning.</strong> Seven in ten IPv4 paths and more than eight in ten IPv6 paths are now valid; invalid announcements reach about one feed in fourteen.', 'Parts 7 and 8: 70.8% and 83.0% valid today; invalid paths down 70% over a few years'],
  ['3', '<strong>Most "hijacks" are mistakes.</strong> Of 1,329 conflicting origins, none had the shape of a deliberate attack; the real conflicts were stale provider routes, cloud announcements and typing errors.', 'Part 7: 64% authorized, 33% unjudgeable, 3.5% contained misconfiguration, no route leaks in the sample'],
  ['4', '<strong>Origin validation has blind spots.</strong> It does not check paths, it is weakened by loose maxLength, and it depends on caches that can disagree or disappear.', 'Findings 8, 9 and 10; the one-third of conflicts with no ROA at all'],
  ['5', '<strong>The control plane is the soft target.</strong> A full-table router is CPU- and memory-bound, and the Internet throws billions of unsolicited packets at it.', 'Part 6: CPU 36-100%, input-queue drops, 3.3 billion UDP packets to closed ports'],
@@ -947,7 +947,7 @@ CPU utilization for five seconds: 42%/1%; one minute: 43%; five minutes: 36%</co
 
 <h2>Limits of this report</h2>
 <ul>
- <li>Two snapshots from one collector on one day. Peer mixes differ between snapshots, so we compare shares, not counts.</li>
+ <li>Two snapshots from one collector, a few years apart: Chapter 1\'s earlier capture and the sessions of 3 November 2026. Peer mixes differ between them, so we compare shares, not counts.</li>
  <li>RPKI states are this router\'s view; other validators may differ slightly at any moment.</li>
  <li>The leak scan covered the paths collected here, not the full table.</li>
  <li>No intent is attributed to any network. Conflicts were classified by evidence; where the evidence was insufficient, we said so.</li>
