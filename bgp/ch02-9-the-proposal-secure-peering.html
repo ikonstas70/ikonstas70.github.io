@@ -85,8 +85,8 @@
 <p>A compact FRRouting example of the import and export policy for one transit session. The same structure maps directly to IOS XR, Junos or BIRD.</p>
 <pre><code>! FRRouting example. Documentation addresses (RFC 5737) and ASNs (RFC 5398).
 rpki
- rpki cache 10.0.0.10 3323 preference 1        ! validator A, management network
- rpki cache 10.0.0.11 3323 preference 2        ! validator B, different software
+ rpki cache tcp 10.0.0.10 3323 preference 1    ! validator A (FRR 10 syntax; prefer the ssh form)
+ rpki cache tcp 10.0.0.11 3323 preference 2    ! validator B, different software
 exit
 !
 router bgp 64500
@@ -95,7 +95,7 @@ router bgp 64500
  neighbor 198.51.100.1 description TRANSIT-A
  neighbor 198.51.100.1 ttl-security hops 1       ! GTSM: only a directly connected peer
  neighbor 198.51.100.1 password &lt;secret&gt;         ! TCP-AO where both sides support it
- neighbor 198.51.100.1 local-role customer strict ! RFC 9234: leak prevention
+ neighbor 198.51.100.1 local-role customer strict-mode ! RFC 9234: leak prevention
  address-family ipv4 unicast
   neighbor 198.51.100.1 route-map TRANSIT-IN in
   neighbor 198.51.100.1 route-map EDGE-OUT out

@@ -651,8 +651,8 @@ route-views> show bgp ipv6 unicast inconsistent-as
 {term('''
 ! FRRouting example. Documentation addresses (RFC 5737) and ASNs (RFC 5398).
 rpki
- rpki cache 10.0.0.10 3323 preference 1        ! validator A, management network
- rpki cache 10.0.0.11 3323 preference 2        ! validator B, different software
+ rpki cache tcp 10.0.0.10 3323 preference 1    ! validator A (FRR 10 syntax; prefer the ssh form)
+ rpki cache tcp 10.0.0.11 3323 preference 2    ! validator B, different software
 exit
 !
 router bgp 64500
@@ -661,7 +661,7 @@ router bgp 64500
  neighbor 198.51.100.1 description TRANSIT-A
  neighbor 198.51.100.1 ttl-security hops 1       ! GTSM: only a directly connected peer
  neighbor 198.51.100.1 password <secret>         ! TCP-AO where both sides support it
- neighbor 198.51.100.1 local-role customer strict ! RFC 9234: leak prevention
+ neighbor 198.51.100.1 local-role customer strict-mode ! RFC 9234: leak prevention
  address-family ipv4 unicast
   neighbor 198.51.100.1 route-map TRANSIT-IN in
   neighbor 198.51.100.1 route-map EDGE-OUT out
@@ -930,17 +930,17 @@ CPU utilization for five seconds: 42%/1%; one minute: 43%; five minutes: 36%</co
 <h2>Conclusions</h2>
 {table(['#', 'Conclusion', 'Evidence'], [
  ['1', '<strong>The routing table is public, and it is a security report.</strong> Business relationships, traffic engineering, internal addressing and security gaps are readable by anyone, for any network.', 'Communities (Finding 3), action communities (4), AGGREGATOR router IDs (5), prepends and more-specifics (7)'],
- ['2', '<strong>RPKI works, and it is winning.</strong> Seven in ten IPv4 paths and more than eight in ten IPv6 paths are now valid; invalid announcements reach about one feed in fourteen.', 'Parts 7 and 8: 70.8% and 83.0% valid today; invalid paths down 70% since October 2021'],
- ['3', '<strong>Most "hijacks" are mistakes.</strong> Of 1,329 conflicting origins, none had the shape of a deliberate attack; the real conflicts were stale provider routes, cloud announcements and typing errors.', 'Part 7: 64% authorized, 33% unjudgeable, 3.5% contained misconfiguration, no route leaks in the sample'],
+ ['2', '<strong>RPKI works, and it is winning.</strong> Seven in ten IPv4 paths and more than eight in ten IPv6 paths are now valid; in the origin conflicts RPKI could judge, the invalid version typically reached one feed in fourteen.', 'Parts 7 and 8: 70.8% and 83.0% valid today; invalid paths down 70% since October 2021'],
+ ['3', '<strong>Most "hijacks" are mistakes.</strong> Of 1,329 conflicting origins, every one that RPKI could judge was a stale provider route, a cloud announcement or a typing error; none had the shape of a deliberate attack. A third had no ROA and could not be judged at all.', 'Part 7: 64% authorized, 33% unjudgeable, 3.5% contained misconfiguration, no route leaks in the sample'],
  ['4', '<strong>Origin validation has blind spots.</strong> It does not check paths, it is weakened by loose maxLength, and it depends on caches that can disagree or disappear.', 'Findings 8, 9 and 10; the one-third of conflicts with no ROA at all'],
- ['5', '<strong>The control plane is the soft target.</strong> A full-table router is CPU- and memory-bound, and the Internet throws billions of unsolicited packets at it.', 'Part 6: CPU 36-100%, input-queue drops, 3.3 billion UDP packets to closed ports'],
+ ['5', '<strong>The control plane is the soft target.</strong> A full-table router is CPU- and memory-bound, and the Internet throws billions of unsolicited packets at it.', 'Parts 6 and 10: CPU 36-100%, input-queue drops, 3.3 billion UDP packets to closed ports'],
  ['6', '<strong>The fixes are cheap and verifiable.</strong> Almost every gap closes with minutes to days of work, and every fix can be checked from the same public login.', 'Parts 8 and 9'],
 ])}
 
 <h2>Recommendations, in priority order</h2>
 {table(['Priority', 'Recommendation', 'Closes', 'Effort'], [
  ['1', 'Publish an <strong>exact-length ROA</strong> for every prefix you announce; remove maxLength', 'Sub-prefix and forged-origin hijacks (7, 8)', 'Minutes per prefix'],
- ['2', '<strong>Drop RPKI-invalid routes</strong> on every external session', 'Hijacks and leaks others did not stop (12)', 'Hours'],
+ ['2', '<strong>Drop RPKI-invalid routes</strong> on every external session', 'Hijacks and stale routes others did not stop (7, 8, 12)', 'Hours'],
  ['3', 'Announce from an <strong>explicit export list</strong> only, with internal communities deleted', 'Leaks and business disclosure (3, 4)', 'Hours'],
  ['4', 'Protect every session: <strong>GTSM, TCP-AO or MD5, infrastructure ACL, maximum-prefix</strong>', 'Session attacks and floods (11)', 'Hours to days'],
  ['5', 'Put <strong>CoPP</strong> in front of the router CPU and keep management out-of-band', 'Control-plane overload (11)', 'Days'],
