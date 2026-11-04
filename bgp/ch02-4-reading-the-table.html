@@ -81,7 +81,7 @@ V*   1.0.182.0/24     64.71.137.241     0 6939 38040 23969 23969 23969 23969 239
 <p><strong>Why it matters:</strong> RPKI only checks the origin. A ROA that authorizes more than you announce widens the hole it was supposed to close.</p></div></div>
 
 <h2>One community, many networks</h2>
-<p><code>show ip bgp community 3356:2</code> lists everything Lumen tagged with its Europe region value: Cloudflare via Swisscom, China Telecom (AS 4134) and Akamai (AS 20940) space among them. A single community query reconstructs which networks a carrier hears in a region. That is the basis for mapping any network's connectivity from the outside, the subject of Chapter 3.</p>
+<p><code>show ip bgp community 3356:2</code> lists everything Lumen tagged with its Europe region value: Cloudflare via Swisscom, China Telecom (AS 4134) and Akamai (AS 20940) space among them. A single community query reconstructs which networks a carrier hears in a region. That is the basis for mapping any network's connectivity from the outside.</p>
 
 <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--accent);text-decoration:none">&larr; Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a><span><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--accent);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It &rarr;</a></span></div>
 <div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">

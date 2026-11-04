@@ -80,16 +80,20 @@
 
     <h2>Latest Report</h2>
     <div class="card card-gold bgp-feature" style="cursor:default;border:1px solid var(--accent);background:linear-gradient(135deg, hsl(43 45% 56% / .10), hsl(0 0% 6%) 55%);box-shadow:0 0 0 1px hsl(43 45% 56% / .10), 0 10px 30px hsl(0 0% 0% / .45)" aria-label="Special Topics in BGP">
-      <span style="display:inline-block;margin:0 0 12px;padding:3px 10px;border:1px solid var(--accent);border-radius:999px;color:var(--accent);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase">New series</span>
+      <span style="display:inline-block;margin:0 0 12px;padding:3px 10px;border:1px solid var(--accent);border-radius:999px;color:var(--accent);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase">Two chapters published</span>
       <h3 style="font-size:1.42rem;line-height:1.25">Special Topics in BGP: Reading the Internet's Routing Table</h3>
       <p style="color:var(--fg);font-size:.95rem">Most engineers configure BGP. Few ever look at the Internet through it.</p>
       <p>This series logs in to the public route servers and looking glasses that carriers and exchanges operate for everyone, and reads the global routing table live: how traffic really reaches a network, which providers stand in between, how leaks and hijacks show up in plain sight, and how much a single public BGP view reveals.</p>
-      <pre style="margin:12px 0 14px;padding:10px 12px;background:hsl(0 0% 3%);border:1px solid hsl(43 45% 56% / .30);border-radius:6px;font-size:.78rem;line-height:1.55;overflow-x:auto"><code><span style="color:var(--accent)">route-server&gt;</span> show ip bgp 192.0.2.0/24
-  Paths: (24 available, best #1)
-  <span style="color:var(--fg-dim)">... who carries it, who prefers it, and why</span></code></pre>
+      <pre style="margin:12px 0 14px;padding:10px 12px;background:hsl(0 0% 3%);border:1px solid hsl(43 45% 56% / .30);border-radius:6px;font-size:.78rem;line-height:1.55;overflow-x:auto"><code><span style="color:var(--accent)">route-views&gt;</span> show ip bgp summary
+  Path RPKI states: 11656636 valid, 4793762 not found, 5344 invalid
+  1129444 network entries using 280102112 bytes of memory
+  <span style="color:var(--fg-dim)">... 70.8% of the Internet's paths are now RPKI-valid</span></code></pre>
       <span class="date">Series &middot; CCIE &middot; Advanced &middot; For engineers who already know the protocol</span>
-      <p style="margin:12px 0 0"><a href="/bgp/ch01-1-the-session" style="color:var(--accent);text-decoration:none;font-weight:600;letter-spacing:.04em">Read Chapter 1 &rarr;</a> &nbsp;&middot;&nbsp; <a href="/bgp/" style="color:var(--accent);text-decoration:none;font-weight:600;letter-spacing:.04em">Explore the series &rarr;</a></p>
-      <p style="margin:14px 0 0;padding-top:12px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.85rem;color:var(--fg-dim)"><strong style="color:var(--accent);font-weight:600">Hands-on video?</strong> If you would like a hands-on video walkthrough of this advanced topic, email <a href="mailto:info@konstas.us?subject=Special%20Topics%20in%20BGP%20%E2%80%94%20hands-on%20video" style="color:var(--accent)">info@konstas.us</a> and it will be considered.</p>
+      <div style="display:grid;gap:10px;margin:12px 0 0">
+        <a href="/bgp/ch01-1-the-session" style="display:block;padding:10px 12px;border:1px solid hsl(43 45% 56% / .30);border-radius:6px;text-decoration:none;color:var(--fg)"><span style="color:var(--accent);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase">Chapter 1 &middot; 5 parts &middot; video</span><br><strong>One Login, the Whole Internet</strong><br><span style="font-size:.88rem;color:var(--fg-dim)">The size of the global table, its churn, its RPKI posture and what a public view exposes.</span></a>
+        <a href="/bgp/ch02-1-summary-and-findings" style="display:block;padding:10px 12px;border:1px solid hsl(43 45% 56% / .30);border-radius:6px;text-decoration:none;color:var(--fg)"><span style="color:var(--accent);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase">Chapter 2 &middot; 11 parts &middot; video</span><br><strong>Reading a Path: A Field Report from Route Views</strong><br><span style="font-size:.88rem;color:var(--fg-dim)">Twelve findings, router telemetry, a fair look at leaks and hijacks, a secure peering proposal and recommendations.</span></a>
+      </div>
+      <p style="margin:12px 0 0"><a href="/bgp/" style="color:var(--accent);text-decoration:none;font-weight:600;letter-spacing:.04em">Explore the series &rarr;</a></p>
     </div>
     <a class="card card-gold" href="/portfolio/hybrid-cloud-platform">
       <h3>Hybrid Cloud Platform: A Private Overlay WAN, Kubernetes and Everything as Code</h3>

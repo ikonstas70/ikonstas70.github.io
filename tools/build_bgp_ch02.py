@@ -238,7 +238,7 @@ V*   1.0.182.0/24     64.71.137.241     0 6939 38040 23969 23969 23969 23969 239
 <p><strong>Why it matters:</strong> RPKI only checks the origin. A ROA that authorizes more than you announce widens the hole it was supposed to close.</p>''')}
 
 <h2>One community, many networks</h2>
-<p><code>show ip bgp community 3356:2</code> lists everything Lumen tagged with its Europe region value: Cloudflare via Swisscom, China Telecom (AS 4134) and Akamai (AS 20940) space among them. A single community query reconstructs which networks a carrier hears in a region. That is the basis for mapping any network\'s connectivity from the outside, the subject of Chapter 3.</p>
+<p><code>show ip bgp community 3356:2</code> lists everything Lumen tagged with its Europe region value: Cloudflare via Swisscom, China Telecom (AS 4134) and Akamai (AS 20940) space among them. A single community query reconstructs which networks a carrier hears in a region. That is the basis for mapping any network\'s connectivity from the outside.</p>
 '''),
 
  ('ch02-5-rpki-under-the-hood', 'RPKI Under the Hood, and What to Do About It',
@@ -707,7 +707,7 @@ route-map EDGE-OUT deny 100
 
 <h2>The takeaway</h2>
 <p>Secure peering is not one product; it is a short list of controls that each close one gap found in this chapter. Verify what comes in, announce only what you own, keep everything internal inside, and watch from the outside. Done together, they turn a router that tells the world about your business into one that tells it only where your addresses are, which is all BGP ever needed to say.</p>
-<p style="font-size:.95rem;color:var(--fg-dim)">To have this design reviewed against your own network or providers, write to <a href="mailto:info@konstas.us" style="color:var(--accent)">info@konstas.us</a>. Next chapter: mapping a network from the outside.</p>
+<p style="font-size:.95rem;color:var(--fg-dim)">To have this design reviewed against your own network or providers, write to <a href="mailto:info@konstas.us" style="color:var(--accent)">info@konstas.us</a>.</p>
 '''),
  ('ch02-10-the-session-command-by-command', 'The Session, Command by Command',
   'The recorded Route Views session, step by step: eleven read-only commands, their real output, what each shows and why it matters.', '''
@@ -954,7 +954,7 @@ CPU utilization for five seconds: 42%/1%; one minute: 43%; five minutes: 36%</co
 </ul>
 
 {callout('<strong>Final word.</strong> BGP was built on trust, and the routing table still shows what that trust exposes. It also shows something more important: where networks publish what they own, validate what they accept and announce only what they should, the problems shrink, visibly, from one session to the next. Every network can make that change, and every change can be verified from a public login.')}
-<p style="font-size:.95rem;color:var(--fg-dim)">For a review of your own address space, providers or peering design, write to <a href="mailto:info@konstas.us" style="color:var(--accent)">info@konstas.us</a>. Next chapter: mapping a network from the outside.</p>
+<p style="font-size:.95rem;color:var(--fg-dim)">For a review of your own address space, providers or peering design, write to <a href="mailto:info@konstas.us" style="color:var(--accent)">info@konstas.us</a>.</p>
 '''),
 ]
 
