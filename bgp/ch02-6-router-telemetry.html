@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch02-6-router-telemetry">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Router Telemetry: The Collector Under Load — Special Topics in BGP, Chapter 2 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="The collector&#x27;s own health: software, uptime, CPU, memory, interface and protocol counters, per-peer statistics, IPv6 and access control, read with public commands.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch02-6-router-telemetry">
+<meta property="og:title" content="Special Topics in BGP · Chapter 2: Reading a Path · Part 6 of 10: Router Telemetry: The Collector Under Load">
+<meta property="og:description" content="The collector&#x27;s own health: software, uptime, CPU, memory, interface and protocol counters, per-peer statistics, IPv6 and access control, read with public commands.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 2: Reading a Path · Part 6 of 10: Router Telemetry: The Collector Under Load","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch02-6-router-telemetry"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 2 &middot; Part 6 of 10</span>
+    <h1>Router Telemetry: The Collector Under Load</h1>
+    <p class="meta">Chapter 2: Reading a Path &middot; A field report from Route Views &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>So far we read the routes. This part reads the router that holds them. Every command below is available to the public login, and every one says something about how a full-table BGP router behaves, and what it costs to run one.</blockquote>
+
+<h2>The platform</h2>
+<pre><code>route-views&gt; show version
+Cisco IOS XE Software, Version 03.16.10.S - Extended Support Release
+Cisco IOS Software, ASR1000 Software (X86_64_LINUX_IOSD-ADVENTERPRISEK9-M), Version 15.5(3)S10
+Compiled Thu 19-Sep-19
+route-views uptime is 2 years, 42 weeks, 3 days, 4 hours, 12 minutes</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Measure</th><th>Value</th><th>Reading</th></tr></thead><tbody><tr><td>Hardware</td><td>Cisco ASR 1000</td><td>A carrier-class edge router doing a research job</td></tr><tr><td>Software</td><td>IOS XE 3.16.10.S, built September 2019</td><td>An older release train. It explains Finding 6: this code predates native display of Large Communities, so they appear as raw hex</td></tr><tr><td>Uptime</td><td>2 years 42 weeks</td><td>No reload, so no new software image, in almost three years</td></tr><tr><td>Most BGP sessions</td><td>up 1w4d</td><td>The router did not reboot; something reset BGP about 11.6 days ago. The RPKI cache session (1,003,583,971 ms, 11.6 days) reset at the same time</td></tr></tbody></table></div>
+<div style="border:1px solid hsl(43 45% 56% / .30);border-left:3px solid var(--accent);background:hsl(0 0% 6%);border-radius:6px;padding:12px 16px;margin:18px 0"><strong>Correlation, done properly.</strong> In Chapter 1, sessions sharing one uptime pointed to a shared event. Here the router uptime rules out a reboot, and the RPKI session uptime matches the BGP resets to within hours: a control-plane event, not a power cycle. Two counters, one conclusion.</div>
+
+<h2>CPU and memory</h2>
+<pre><code>CPU utilization for five seconds: 100%/1%; one minute: 87%; five minutes: 85%
+ PID  5Sec   1Min   5Min Process
+ 589  0.00% 16.38% 10.79% Virtual Exec
+ 323  0.00%  3.89%  5.07% BGP Scanner
+ 362  1.35%  1.54%  2.58% BGP Router
+
+Processor Pool Total: 10113380176 Used: 8050934976 Free: 2062445200
+ 362  BGP Router   holding 7064510264</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Measure</th><th>Value</th><th>Reading</th></tr></thead><tbody><tr><td>CPU now</td><td>100% (5 s), 87% (1 min), 85% (5 min)</td><td>Running hot. Only 1% is interrupt time; the load is processes</td></tr><tr><td>CPU, last 72 hours</td><td>peaks at 100% most hours, average 30-40%</td><td>Sustained bursts, not a one-off</td></tr><tr><td>Top visible process</td><td><code>Virtual Exec</code>, 10.8% (5 min)</td><td><strong>That is us</strong>: public users running <code>show</code> commands over a million-prefix table</td></tr><tr><td>BGP Scanner and Router</td><td>5.1% and 2.6%</td><td>Walking the table and processing updates. The rest of the load sits outside the IOS process list, which the router itself points out</td></tr><tr><td>Memory</td><td>8.05 GB of 10.1 GB used (79.6%), low-water free 1.78 GB</td><td>Comfortable today, but the table grows every month</td></tr><tr><td>BGP process memory</td><td>7.06 GB</td><td>IPv4 BGP 3.15 GB plus IPv6 BGP 0.85 GB of tables, plus working memory</td></tr></tbody></table></div>
+<p><strong>Why it matters:</strong> a full-table router is sized by CPU and memory, not bandwidth. The public CLI is itself a load: every <code>show ip bgp regexp</code> walks over a million entries. Production routers keep that load off the control plane by exporting data through BMP (the BGP Monitoring Protocol: the <code>BGP BMP Server</code> process is running here) or streaming telemetry, instead of interactive logins.</p>
+
+<h2>Interfaces and traffic</h2>
+<div class="table-wrap"><table><thead><tr><th>Counter</th><th>Value</th><th>Reading</th></tr></thead><tbody><tr><td>Active interface</td><td style="text-align:right">one 10 Gb/s port</td><td>Three other ports administratively down</td></tr><tr><td>Rate</td><td style="text-align:right">278 kb/s in, 70 kb/s out</td><td>Collecting the whole Internet's routing needs almost no bandwidth</td></tr><tr><td>Interface errors</td><td style="text-align:right">0 input, 0 CRC, 0 output</td><td>A clean physical path</td></tr><tr><td>Input queue drops</td><td style="text-align:right">271,639 drops, 22,525 flushes</td><td>Packets for the CPU were dropped when the control-plane queue was full: the hot CPU, seen from the wire</td></tr><tr><td>Unknown protocol drops</td><td style="text-align:right">3,607,986</td><td>Frames for protocols the router does not run</td></tr></tbody></table></div>
+
+<h2>Internet background radiation</h2>
+<pre><code>route-views&gt; show ip traffic
+  UDP  Rcvd: 3301919260 total, 3299988429 no port
+  TCP  Rcvd: 2882739298 total, 20694483 no port
+  ICMP Sent: 248397808 echo reply</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Counter</th><th>Value</th><th>Reading</th></tr></thead><tbody><tr><td>UDP received</td><td style="text-align:right">3.30 billion</td><td><strong>99.94%</strong> to ports nothing listens on: scans, reflection attempts, backscatter</td></tr><tr><td>TCP to closed ports</td><td style="text-align:right">20.7 million</td><td>Port scans against the router</td></tr><tr><td>ICMP echo replies sent</td><td style="text-align:right">248 million</td><td>The router has answered a quarter of a billion pings</td></tr><tr><td>ARP requests received</td><td style="text-align:right">2.23 billion</td><td>A busy shared network segment</td></tr></tbody></table></div>
+<p><strong>Why it matters:</strong> any public address receives this, all the time. Every one of those packets reaches a router's CPU unless it is filtered first. Control-plane policing (CoPP), an infrastructure ACL that permits only BGP from configured peers, and rate-limited ICMP are the standard answer, and the input-queue drops above show what happens when the CPU is already busy.</p>
+
+<h2>BGP at the protocol level</h2>
+<div class="table-wrap"><table><thead><tr><th>Counter</th><th>Received</th><th>Sent</th><th>Reading</th></tr></thead><tbody><tr><td>Messages</td><td style="text-align:right">3.78 billion</td><td style="text-align:right">88.2 million</td><td>A collector listens; it barely talks</td></tr><tr><td>Updates</td><td style="text-align:right">3.72 billion</td><td style="text-align:right">0</td><td>It has never announced a single route</td></tr><tr><td>OPEN</td><td style="text-align:right">5,623</td><td style="text-align:right"><strong>1,080,531</strong></td><td>Over a million attempts to open sessions with peers that do not answer: the <code>Active</code> sessions in the summary, retrying for years</td></tr><tr><td>NOTIFICATION</td><td style="text-align:right">877</td><td style="text-align:right">4,976</td><td>Sessions closed with an error code, mostly by the collector</td></tr></tbody></table></div>
+
+<h2>One session up close: Hurricane Electric</h2>
+<div class="table-wrap"><table><thead><tr><th>Counter</th><th>Value</th><th>Reading</th></tr></thead><tbody><tr><td>Up for</td><td style="text-align:right">12 weeks 2 days</td><td>The longest-lived full feed</td></tr><tr><td>Updates received</td><td style="text-align:right">36.3 million</td><td>About 5 per second, around the clock</td></tr><tr><td>Prefixes received in total</td><td style="text-align:right">89.3 million, for 1.10 million current</td><td>Each prefix replaced about 81 times in 84 days</td></tr><tr><td>Withdrawals</td><td style="text-align:right">74.1 M implicit, 14.1 M explicit</td><td>Most changes replace a route rather than remove it</td></tr><tr><td>Used as best path</td><td style="text-align:right">488,762 prefixes</td><td>43% of the collector's best paths come from this one peer</td></tr><tr><td>Keepalives</td><td style="text-align:right">137,600 sent, 4 received</td><td>HE sends updates so often it never needs to send keepalives: any message resets the hold timer</td></tr><tr><td>Outbound policy denied</td><td style="text-align:right">900,366,637</td><td>Every route the collector could have announced, blocked by policy</td></tr><tr><td>Hold time</td><td style="text-align:right">180 s negotiated (600 configured locally)</td><td>The lower value wins</td></tr><tr><td>Transport</td><td style="text-align:right">multihop up to 255 hops, minimum incoming TTL 0</td><td>No TTL security (GTSM). Normal for a collector peering across the Internet; a risk on a production edge</td></tr><tr><td>Lifetime</td><td style="text-align:right">46 connections established, 45 dropped</td><td>Sessions come and go over the years</td></tr></tbody></table></div>
+<p>Lumen (AS 3356) for comparison: 2.42 million updates in 11.6 days, about 2.4 per second, with a 90-second hold time. Hurricane Electric is roughly twice as busy, consistent with its very large peering footprint.</p>
+
+<h2>IPv6 is ahead of IPv4</h2>
+<div class="table-wrap"><table><thead><tr><th>Measure</th><th>IPv4</th><th>IPv6</th></tr></thead><tbody><tr><td>Prefixes</td><td>1,129,606</td><td>263,159</td></tr><tr><td>Paths RPKI valid</td><td>70.8%</td><td><strong>83.0%</strong></td></tr><tr><td>Paths RPKI not found</td><td>29.1%</td><td>17.0%</td></tr><tr><td>Paths RPKI invalid</td><td>0.03%</td><td>0.05%</td></tr><tr><td>BGP memory</td><td>3.15 GB</td><td>0.85 GB</td></tr></tbody></table></div>
+<p>Newer address space was allocated after RPKI existed, and it shows: IPv6 is better protected than IPv4 by twelve points. AS 20912's IPv6 session reset 1 day 13 hours ago, and Verizon's IPv6 session has been <code>Active</code> for almost two years.</p>
+
+<h2>Access control</h2>
+<div class="table-wrap"><table><thead><tr><th>Observation</th><th>Reading</th></tr></thead><tbody><tr><td><code>show tcp brief</code>: <em>Command authorization failed</em></td><td>Per-command authorization through TACACS+ (the <code>TPLUS</code> process): the public account can read routes but not everything. Least privilege, done right</td></tr><tr><td><code>show ip bgp dampening parameters</code>: not enabled</td><td>Correct for a collector, which must record every change, flaps included</td></tr><tr><td><code>show users</code>: ten public sessions, one idle for over a year</td><td>No idle timeout on the public lines. A handful of forgotten sessions can exhaust the terminal lines and lock everyone out</td></tr><tr><td><code>show users</code> lists other users' addresses and hostnames</td><td>A privacy leak on a shared public service. We do not reproduce them here</td></tr><tr><td><code>show ip interface brief</code> shows the management port's private address</td><td>Minor internal addressing disclosure</td></tr></tbody></table></div>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Finding 11 &middot; Medium</span></p><p style="margin:0 0 6px;font-weight:600">The collector's control plane runs hot and is reachable by anyone</p><div style="font-size:.95rem">
+<p>CPU at 85-100%, input-queue drops, 3.3 billion unsolicited UDP packets, and a public login that adds its own load. None of this breaks the collector's mission, but each is a lesson for a production router.</p>
+<p><strong>What to do on your own routers:</strong> CoPP and an infrastructure ACL in front of the CPU; GTSM on eBGP sessions; idle timeouts on every terminal line; per-command authorization; and BMP or streaming telemetry for monitoring instead of interactive scraping.</p></div></div>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--accent);text-decoration:none">&larr; Part 5: RPKI Under the Hood, and What to Do About It</a><span><a href="/bgp/ch02-7-leaks-and-possible-hijacks" style="color:var(--accent);text-decoration:none">Part 7: Leaks and Possible Hijacks, Assessed Fairly &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 2 &middot; Reading a Path</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--fg-dim);text-decoration:none">Part 1: Summary and Key Findings</a></li><li><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--fg-dim);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8</a></li><li><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--fg-dim);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a></li><li><a href="/bgp/ch02-4-reading-the-table" style="color:var(--fg-dim);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a></li><li><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--fg-dim);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It</a></li><li><strong><a href="/bgp/ch02-6-router-telemetry" style="color:var(--accent);text-decoration:none">Part 6: Router Telemetry: The Collector Under Load</a></strong></li><li><a href="/bgp/ch02-7-leaks-and-possible-hijacks" style="color:var(--fg-dim);text-decoration:none">Part 7: Leaks and Possible Hijacks, Assessed Fairly</a></li><li><a href="/bgp/ch02-8-from-problem-to-opportunity" style="color:var(--fg-dim);text-decoration:none">Part 8: From Problem to Opportunity</a></li><li><a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--fg-dim);text-decoration:none">Part 9: The Proposal: Secure, Low-Exposure Peering</a></li><li><a href="/bgp/ch02-10-the-session-command-by-command" style="color:var(--fg-dim);text-decoration:none">Part 10: The Session, Command by Command</a></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-6-router-telemetry" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-6-router-telemetry&amp;text=Special%20Topics%20in%20BGP%3A%20Router%20Telemetry%3A%20The%20Collector%20Under%20Load" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All output is from Route Views, a public collector operated for exactly this purpose. Network names are from public registry data; community meanings are from the operators' public documentation and may change. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

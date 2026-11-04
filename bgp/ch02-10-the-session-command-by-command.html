@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch02-10-the-session-command-by-command">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Session, Command by Command — Special Topics in BGP, Chapter 2 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="The recorded Route Views session, step by step: eleven read-only commands, their real output, what each shows and why it matters.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch02-10-the-session-command-by-command">
+<meta property="og:title" content="Special Topics in BGP · Chapter 2: Reading a Path · Part 10 of 10: The Session, Command by Command">
+<meta property="og:description" content="The recorded Route Views session, step by step: eleven read-only commands, their real output, what each shows and why it matters.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 2: Reading a Path · Part 10 of 10: The Session, Command by Command","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch02-10-the-session-command-by-command"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 2 &middot; Part 10 of 10</span>
+    <h1>The Session, Command by Command</h1>
+    <p class="meta">Chapter 2: Reading a Path &middot; A field report from Route Views &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>The recorded session, one command at a time: the exact command, the real output, what you are looking at, and why it matters. Every command is read-only and works on the public login, so you can repeat each step yourself.</blockquote>
+<video controls playsinline preload="metadata" poster="/bgp/ch02/poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000">
+  <source src="/bgp/ch02/route-views-field-report.mp4" type="video/mp4">
+</video>
+<p style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Session recorded 3 November 2026 on <code>route-views.routeviews.org</code> (username <code>rviews</code>). Start with <code>terminal length 0</code>. In commands 3, 7 and 8, each path's RPKI line is folded onto the path it belongs to.</p>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 1 of 11</p>
+<h2 style="margin:0 0 12px">The size of the Internet and its RPKI posture</h2>
+<pre><code>route-views&gt; show ip bgp summary | include table version|RPKI|network entries|BGP using
+BGP table version is 1517822914, main routing table version 1517822914
+Path RPKI states: 11656636 valid, 4793762 not found, 5344 invalid
+1129444 network entries using 280102112 bytes of memory
+BGP using 3150829866 total bytes of memory</code></pre>
+<p><strong>What you see.</strong> The table version counts every best-path change since BGP started: over 1.5 billion. Of 16.4 million IPv4 paths, 11.66 million (70.8%) are RPKI-valid, 4.79 million (29.1%) have no ROA, and 5,344 (0.03%) contradict one. The collector holds 1,129,444 IPv4 networks in 3.15 GB of memory.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> This is the Internet's security score in one line. Two thirds of paths are now cryptographically checkable, and the invalid share is tiny because most large carriers drop invalid routes.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 2 of 11</p>
+<h2 style="margin:0 0 12px">IPv6 is better protected than IPv4</h2>
+<pre><code>route-views&gt; show bgp ipv6 unicast summary | include RPKI|network entries
+Path RPKI states: 2314874 valid, 472953 not found, 1425 invalid
+263194 network entries using 71588768 bytes of memory</code></pre>
+<p><strong>What you see.</strong> The IPv6 table: 263,194 networks, 2.31 million valid paths (83.0%), 472,953 not found (17.0%), 1,425 invalid (0.05%).</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> IPv6 space was allocated after RPKI existed, and it is twelve points better protected than IPv4. If you run IPv6, publishing ROAs is the easiest win you have.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 3 of 11</p>
+<h2 style="margin:0 0 12px">Fifteen paths to Google DNS, and why one wins</h2>
+<pre><code>route-views&gt; show ip bgp 8.8.8.8 | include Paths|^  [0-9]|best|RPKI
+Paths: (15 available, best #9, table default)
+  1351 214292 15169                               RPKI valid
+  3303 15169                                      RPKI valid
+  8283 15169                                      RPKI valid
+  3356 15169                                      RPKI valid
+  20130 6939 15169                                RPKI valid
+  3549 3356 15169                                 RPKI valid
+  57866 15169                                     RPKI valid
+  20912 15169                                     RPKI valid
+  101 15169                                       RPKI valid
+      Origin IGP, localpref 100, valid, external, best
+  3333 1257 15169                                 RPKI valid
+  4826 15169                                      RPKI valid
+  7018 15169                                      RPKI valid
+  49788 12552 15169                               RPKI valid
+  6939 15169                                      RPKI valid
+  2497 15169                                      RPKI valid</code></pre>
+<p><strong>What you see.</strong> Fifteen paths to 8.8.8.0/24, every one RPKI-valid. Ten are two hops (provider, then Google AS 15169); five go through one more network. Path #9, through the University of Washington (AS 101), is marked <code>best</code>.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> With equal preference and length, BGP falls through to tie-breakers such as route age. The best path is the oldest stable one, not the fastest. In your own network, set local preference on purpose.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 4 of 11</p>
+<h2 style="margin:0 0 12px">Cloudflare: one prefix, no more-specifics, all valid</h2>
+<pre><code>route-views&gt; show ip bgp 1.1.1.0/24 longer-prefixes
+BGP table version is 1517823485, local router ID is 128.223.51.103
+Status codes: s suppressed, d damped, h history, * valid, &gt; best, i - internal,
+              r RIB-failure, S Stale, m multipath, b backup-path, f RT-Filter,
+              x best-external, a additional-path, c RIB-compressed,
+Origin codes: i - IGP, e - EGP, ? - incomplete
+RPKI validation codes: V valid, I invalid, N Not found
+     Network          Next Hop            Metric LocPrf Weight Path
+V*   1.1.1.0/24       132.198.255.253                        0 1351 13335 i
+V*                    217.192.89.50                          0 3303 3356 13335 i
+V*                    94.142.247.3                           0 8283 13335 i
+V*                    208.51.134.254           0             0 3549 3356 13335 i
+V*                    4.68.4.46                0             0 3356 13335 i
+V*                    140.192.8.16                           0 20130 23352 13335 i
+V*                    162.251.163.2                          0 53767 13335 i
+V*                    209.124.176.223                        0 101 13335 i
+V*                    77.39.192.30                           0 20912 13335 i
+V*                    193.0.0.56                             0 3333 13335 i
+V*                    37.139.139.17            0             0 57866 13335 i
+V*&gt;                   12.0.1.63                              0 7018 13335 i
+V*                    114.31.199.16                          0 4826 13335 i
+V*                    91.218.184.60                          0 49788 13335 i
+V*                    64.71.137.241                          0 6939 3356 13335 i
+V*                    202.232.0.2                            0 2497 13335 i</code></pre>
+<p><strong>What you see.</strong> Only one entry: 1.1.1.0/24 itself, sixteen paths, all <code>V</code>alid, no more-specifics. Twelve paths are direct to Cloudflare (AS 13335); AT&amp;T's path is best (<code>&gt;</code>).</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> This is what good looks like: an exact-length ROA and nobody announcing a smaller block inside it. Run the same command on your own prefixes; any extra line is a leak or a hijack.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 5 of 11</p>
+<h2 style="margin:0 0 12px">Leaked internal router IDs in the AGGREGATOR attribute</h2>
+<pre><code>route-views&gt; show ip bgp 1.1.1.0/24 | include aggregated
+  1351 13335, (aggregated by 13335 10.34.2.204)
+  3303 3356 13335, (aggregated by 13335 10.34.23.128)
+  8283 13335, (aggregated by 13335 10.34.6.80)
+  3549 3356 13335, (aggregated by 13335 10.34.0.16)
+  3356 13335, (aggregated by 13335 10.34.9.112)
+  20130 23352 13335, (aggregated by 13335 10.34.3.248)
+  53767 13335, (aggregated by 13335 10.34.24.72)
+  101 13335, (aggregated by 13335 10.34.9.112)
+  20912 13335, (aggregated by 13335 10.34.130.16)
+  3333 13335, (aggregated by 13335 10.34.6.80)
+  57866 13335, (aggregated by 13335 10.34.6.80)
+  7018 13335, (aggregated by 13335 10.34.2.204)
+  4826 13335, (aggregated by 13335 10.34.8.168)
+  49788 13335, (aggregated by 13335 10.34.130.6)
+  6939 3356 13335, (aggregated by 13335 10.34.0.16)
+  2497 13335, (aggregated by 13335 10.34.7.24)</code></pre>
+<p><strong>What you see.</strong> Each path names the router that built the aggregate: eleven different 10.34.x.x addresses across sixteen paths.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> The AGGREGATOR attribute leaks private router IDs and shows how many sites announce this anycast prefix. If you aggregate, check what your router puts in this field.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 6 of 11</p>
+<h2 style="margin:0 0 12px">A loose ROA: only two of four /24s announced, all four authorized</h2>
+<pre><code>route-views&gt; show ip bgp 1.6.0.0/22 longer-prefixes | include /2
+V*   1.6.0.0/22       209.124.176.223                        0 101 11164 4637 64049 55836 9583 i
+V*   1.6.1.0/24       209.124.176.223                        0 101 11164 4637 64049 55836 9583 i
+V*   1.6.2.0/24       209.124.176.223                        0 101 11164 4637 64049 55836 9583 i</code></pre>
+<p><strong>What you see.</strong> Three entries inside 1.6.0.0/22: the /22 and two /24s (1.6.1.0 and 1.6.2.0). The filter shows one line per prefix. 1.6.0.0/24 and 1.6.3.0/24 are not announced, yet the ROA (maxLength 24) authorizes all four.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> Anyone forging AS 9583 as the origin could announce the two missing /24s, and they would be RPKI-valid and win on longest match. Fix: exact-length ROAs only (RFC 9319).</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 7 of 11</p>
+<h2 style="margin:0 0 12px">Not a hijack: a prepend typing error (AS 3 appended)</h2>
+<pre><code>route-views&gt; show ip bgp 103.182.177.0/24 | include ^  [0-9]|RPKI
+  1351 64049 55836 9583 133296                    RPKI valid
+  3303 2914 9583 133296                           RPKI valid
+  3356 64049 55836 9583 133296                    RPKI valid
+  3549 3356 64049 55836 9583 133296               RPKI valid
+  8283 64049 55836 9583 133296                    RPKI valid
+  57866 50673 133296 133296 133296 133296 133296  RPKI valid
+  20130 6939 64049 55836 9583 133296              RPKI valid
+  20912 9002 2914 9583 133296                     RPKI valid
+  101 11164 4637 64049 55836 9583 133296          RPKI valid
+  3333 64049 55836 9583 133296                    RPKI valid
+  4826 64049 55836 9583 133296                    RPKI valid
+  7018 2914 9583 133296                           RPKI valid
+  49788 12552 6797 9498 133296 3                  RPKI invalid
+  2497 2914 9583 133296                           RPKI valid
+  6939 64049 55836 9583 133296                    RPKI valid</code></pre>
+<p><strong>What you see.</strong> Fourteen valid paths end in the real origin, AS 133296. One, through AS 49788, ends <code>133296 3</code> and is <strong>invalid</strong>: AS 3 appears as the origin.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> AS 3 is a university that would never originate this prefix. Someone meant "prepend three times" and typed the number as an AS. A mistake, not an attack, and RPKI stopped it after one hop.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 8 of 11</p>
+<h2 style="margin:0 0 12px">Not a hijack: a provider still announcing leased space</h2>
+<pre><code>route-views&gt; show ip bgp 8.236.0.0/15 | include ^  [0-9]|RPKI
+  1351 214292 15169 396982                        RPKI valid
+  8283 15169 396982                               RPKI valid
+  3303 15169 396982                               RPKI valid
+  3356                                            RPKI invalid
+  3549 3356                                       RPKI invalid
+  20130 6939 3356                                 RPKI invalid
+  20912 15169 396982                              RPKI valid
+  57866 15169 396982                              RPKI valid
+  101 15169 396982                                RPKI valid
+  3333 1257 15169 396982                          RPKI valid
+  4826 15169 396982                               RPKI valid
+  7018 15169 396982                               RPKI valid
+  49788 12552 15169 396982                        RPKI valid
+  6939 3356                                       RPKI invalid
+  2497 15169 396982                               RPKI valid</code></pre>
+<p><strong>What you see.</strong> Eleven paths end in Google Cloud (AS 396982) and are valid. Four end in Lumen (AS 3356) and are invalid, all of them through Lumen.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> 8.236.0.0/15 is part of Lumen's 8.0.0.0/8 and has been leased to Google Cloud, which holds the ROA. Lumen's old announcement was never withdrawn. Stale, not malicious; the fix is one line in Lumen's configuration.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 9 of 11</p>
+<h2 style="margin:0 0 12px">The RPKI caches behind origin validation</h2>
+<pre><code>route-views&gt; show ip bgp rpki servers | include neighbor is|Prefixes|attempts|failures
+BGP SOVC neighbor is 128.223.157.83/3323 connected to port 3323
+  Prefixes 1029922
+  Connection attempts: 1920
+  Connection failures: 1390
+BGP SOVC neighbor is 128.223.157.89/3323 connected to port 3323
+  Prefixes 1165839
+  Connection attempts: 3046
+  Connection failures: 2958</code></pre>
+<p><strong>What you see.</strong> Two RPKI caches, both connected. They hold 1,029,922 and 1,165,839 entries, about 136,000 apart. Lifetime failure counts are 1,390 of 1,920 and 2,958 of 3,046 connection attempts.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> Origin validation is only as good as its cache. Run at least two validators from different software, protect the RTR session, and alert when they disagree.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 10 of 11</p>
+<h2 style="margin:0 0 12px">The collector under load</h2>
+<pre><code>route-views&gt; show processes cpu | include CPU utilization
+CPU utilization for five seconds: 42%/1%; one minute: 43%; five minutes: 36%</code></pre>
+<p><strong>What you see.</strong> CPU at 42% over five seconds, 43% over one minute and 36% over five minutes. An hour earlier, during the telemetry run, the same command showed 85-100%.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> Load swings with BGP churn and with the number of people querying the public login. Production routers keep monitoring off the control plane with BMP or streaming telemetry.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 11 of 11</p>
+<h2 style="margin:0 0 12px">Internet background radiation hitting the router</h2>
+<pre><code>route-views&gt; show ip traffic | include no port|echo reply
+        248400084 echo, 8852167 echo reply, 1360 mask requests, 0 mask replies, 0 quench
+  Sent: 0 redirects, 6527233 unreachable, 10679955 echo, 248400084 echo reply
+  Rcvd: 3301919288 total, 522 checksum errors, 3299988430 no port 0 finput
+  Rcvd: 2882788712 total, 39971 checksum errors, 20694751 no port</code></pre>
+<p><strong>What you see.</strong> ICMP: 248.4 million echo requests received and answered. UDP: 3.30 billion packets received, 3.2999 billion to ports nothing listens on. TCP: 2.88 billion received, 20.7 million to closed ports.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> This is the background noise every public address receives. All of it reaches a router's CPU unless control-plane policing and an infrastructure ACL filter it first.</p>
+</div>
+<h2>The session in one table</h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Command</th><th>Result</th></tr></thead><tbody><tr><td>1</td><td>Size and RPKI posture</td><td>70.8% valid, 5,344 invalid</td></tr><tr><td>2</td><td>IPv6 posture</td><td>83.0% valid</td></tr><tr><td>3</td><td>Best path to Google DNS</td><td>tie-breaker, not quality</td></tr><tr><td>4</td><td>Cloudflare more-specifics</td><td>none: textbook</td></tr><tr><td>5</td><td>AGGREGATOR</td><td>11 internal router IDs exposed</td></tr><tr><td>6</td><td>Loose ROA</td><td>2 unannounced /24s pre-authorized</td></tr><tr><td>7</td><td>Typing error</td><td>AS 3 as origin, contained</td></tr><tr><td>8</td><td>Stale provider route</td><td>Lumen still announces leased space</td></tr><tr><td>9</td><td>RPKI caches</td><td>136,000 entries apart</td></tr><tr><td>10</td><td>CPU</td><td>36-43% now, 85-100% earlier</td></tr><tr><td>11</td><td>Background noise</td><td>3.3 billion UDP to closed ports</td></tr></tbody></table></div>
+<p>Each result is explained in depth in Parts 2 to 9, and the fixes are in <a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--accent)">Part 9</a>.</p>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--accent);text-decoration:none">&larr; Part 9: The Proposal: Secure, Low-Exposure Peering</a><span><a href="/bgp/" style="color:var(--accent);text-decoration:none">Series overview &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 2 &middot; Reading a Path</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--fg-dim);text-decoration:none">Part 1: Summary and Key Findings</a></li><li><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--fg-dim);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8</a></li><li><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--fg-dim);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a></li><li><a href="/bgp/ch02-4-reading-the-table" style="color:var(--fg-dim);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a></li><li><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--fg-dim);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It</a></li><li><a href="/bgp/ch02-6-router-telemetry" style="color:var(--fg-dim);text-decoration:none">Part 6: Router Telemetry: The Collector Under Load</a></li><li><a href="/bgp/ch02-7-leaks-and-possible-hijacks" style="color:var(--fg-dim);text-decoration:none">Part 7: Leaks and Possible Hijacks, Assessed Fairly</a></li><li><a href="/bgp/ch02-8-from-problem-to-opportunity" style="color:var(--fg-dim);text-decoration:none">Part 8: From Problem to Opportunity</a></li><li><a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--fg-dim);text-decoration:none">Part 9: The Proposal: Secure, Low-Exposure Peering</a></li><li><strong><a href="/bgp/ch02-10-the-session-command-by-command" style="color:var(--accent);text-decoration:none">Part 10: The Session, Command by Command</a></strong></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-10-the-session-command-by-command" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-10-the-session-command-by-command&amp;text=Special%20Topics%20in%20BGP%3A%20The%20Session%2C%20Command%20by%20Command" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All output is from Route Views, a public collector operated for exactly this purpose. Network names are from public registry data; community meanings are from the operators' public documentation and may change. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

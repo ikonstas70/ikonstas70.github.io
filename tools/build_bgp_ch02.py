@@ -44,6 +44,12 @@ PARTS = [
   'A field report from one public Route Views session: seven commands, ten findings, and why each one matters to anyone who runs a network.', f'''
 <blockquote>Chapter 1 read the summary of a route collector. This chapter reads the routes themselves. Everything here comes from one public session on Route Views (AS 6447) and seven commands. The output is real; the interpretation is the point.</blockquote>
 
+<h2>Watch the session</h2>
+<video controls playsinline preload="metadata" poster="/bgp/ch02/poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000">
+  <source src="/bgp/ch02/route-views-field-report.mp4" type="video/mp4">
+</video>
+<p style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Eleven read-only commands on the public Route Views collector, 3 November 2026, with what to notice in each (1 min 34 s). Follow it step by step in <a href="/bgp/ch02-10-the-session-command-by-command" style="color:var(--accent)">Part 10: The Session, Command by Command</a>.</p>
+
 <h2>Scope and method</h2>
 <p>Vantage point: <code>route-views.routeviews.org</code>, the University of Oregon collector that peers with more than twenty full-table providers and filters nothing. Because it filters nothing, it shows the Internet as it actually is, including what a production router would have dropped.</p>
 {table(['#', 'Command', 'What it answers'], [
@@ -71,7 +77,7 @@ PARTS = [
  ['10', 'RTR runs over plain TCP; one cache failed 97% of connection attempts', 'Origin validation is only as strong as the transport and cache behind it', 'High'],
 ])}
 {callout('<strong>What matters, in one sentence.</strong> A public collector shows not only where traffic goes, but why: business relationships, engineering intent, internal addressing and security gaps, for any network, without touching it.')}
-<p>The next four parts take the findings one by one, with the output that proves each.</p>
+<p>Parts 2 to 5 take the findings one by one, with the output that proves each. <a href="/bgp/ch02-6-router-telemetry" style="color:var(--accent)">Part 6</a> reads the router's own telemetry: CPU, memory, traffic, per-peer counters and access control. <a href="/bgp/ch02-7-leaks-and-possible-hijacks" style="color:var(--accent)">Part 7</a> investigates every multiple-origin conflict for leaks and possible hijacks, fairly. <a href="/bgp/ch02-8-from-problem-to-opportunity" style="color:var(--accent)">Part 8</a> turns it all around, and <a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--accent)">Part 9</a> proposes a peering design that is more secure and exposes far less. Part 8 uses a second session on the same collector to show the problems shrinking where operators act, and why that is an opportunity rather than a threat.</p>
 '''),
 
  ('ch02-2-anatomy-of-a-route', 'Anatomy of a Route: 8.8.8.8',
@@ -319,7 +325,585 @@ uptime: 27750949 ms
 ])}
 <p><strong>Exercise.</strong> Find a prefix with an AGGREGATOR attribute from a network other than Cloudflare. How many distinct router IDs can you collect, and what do they say about the network\'s size?</p>
 <h2>The takeaway</h2>
-<p>Seven commands showed how BGP chooses among equal paths, how carriers label routes by region and relationship, how a content network\'s policy and internal addressing leak through attributes, how prepends and more-specifics shape traffic, and where RPKI is strong and where it is thin. None of it required access to any of those networks. Next: mapping a network from the outside.</p>
+<p>Seven commands showed how BGP chooses among equal paths, how carriers label routes by region and relationship, how a content network\'s policy and internal addressing leak through attributes, how prepends and more-specifics shape traffic, and where RPKI is strong and where it is thin. None of it required access to any of those networks. The last part asks the more useful question: what can be done about it, and why that is an opportunity.</p>
+'''),
+ ('ch02-6-router-telemetry', 'Router Telemetry: The Collector Under Load',
+  'The collector\'s own health: software, uptime, CPU, memory, interface and protocol counters, per-peer statistics, IPv6 and access control, read with public commands.', f'''
+<blockquote>So far we read the routes. This part reads the router that holds them. Every command below is available to the public login, and every one says something about how a full-table BGP router behaves, and what it costs to run one.</blockquote>
+
+<h2>The platform</h2>
+{term('''
+route-views> show version
+Cisco IOS XE Software, Version 03.16.10.S - Extended Support Release
+Cisco IOS Software, ASR1000 Software (X86_64_LINUX_IOSD-ADVENTERPRISEK9-M), Version 15.5(3)S10
+Compiled Thu 19-Sep-19
+route-views uptime is 2 years, 42 weeks, 3 days, 4 hours, 12 minutes
+''')}
+{table(['Measure', 'Value', 'Reading'], [
+ ['Hardware', 'Cisco ASR 1000', 'A carrier-class edge router doing a research job'],
+ ['Software', 'IOS XE 3.16.10.S, built September 2019', 'An older release train. It explains Finding 6: this code predates native display of Large Communities, so they appear as raw hex'],
+ ['Uptime', '2 years 42 weeks', 'No reload, so no new software image, in almost three years'],
+ ['Most BGP sessions', 'up 1w4d', 'The router did not reboot; something reset BGP about 11.6 days ago. The RPKI cache session (1,003,583,971 ms, 11.6 days) reset at the same time'],
+])}
+{callout('<strong>Correlation, done properly.</strong> In Chapter 1, sessions sharing one uptime pointed to a shared event. Here the router uptime rules out a reboot, and the RPKI session uptime matches the BGP resets to within hours: a control-plane event, not a power cycle. Two counters, one conclusion.')}
+
+<h2>CPU and memory</h2>
+{term('''
+CPU utilization for five seconds: 100%/1%; one minute: 87%; five minutes: 85%
+ PID  5Sec   1Min   5Min Process
+ 589  0.00% 16.38% 10.79% Virtual Exec
+ 323  0.00%  3.89%  5.07% BGP Scanner
+ 362  1.35%  1.54%  2.58% BGP Router
+
+Processor Pool Total: 10113380176 Used: 8050934976 Free: 2062445200
+ 362  BGP Router   holding 7064510264
+''')}
+{table(['Measure', 'Value', 'Reading'], [
+ ['CPU now', '100% (5 s), 87% (1 min), 85% (5 min)', 'Running hot. Only 1% is interrupt time; the load is processes'],
+ ['CPU, last 72 hours', 'peaks at 100% most hours, average 30-40%', 'Sustained bursts, not a one-off'],
+ ['Top visible process', '<code>Virtual Exec</code>, 10.8% (5 min)', '<strong>That is us</strong>: public users running <code>show</code> commands over a million-prefix table'],
+ ['BGP Scanner and Router', '5.1% and 2.6%', 'Walking the table and processing updates. The rest of the load sits outside the IOS process list, which the router itself points out'],
+ ['Memory', '8.05 GB of 10.1 GB used (79.6%), low-water free 1.78 GB', 'Comfortable today, but the table grows every month'],
+ ['BGP process memory', '7.06 GB', 'IPv4 BGP 3.15 GB plus IPv6 BGP 0.85 GB of tables, plus working memory'],
+])}
+<p><strong>Why it matters:</strong> a full-table router is sized by CPU and memory, not bandwidth. The public CLI is itself a load: every <code>show ip bgp regexp</code> walks over a million entries. Production routers keep that load off the control plane by exporting data through BMP (the BGP Monitoring Protocol: the <code>BGP BMP Server</code> process is running here) or streaming telemetry, instead of interactive logins.</p>
+
+<h2>Interfaces and traffic</h2>
+{table(['Counter', 'Value', 'Reading'], [
+ ['Active interface', 'one 10 Gb/s port', 'Three other ports administratively down'],
+ ['Rate', '278 kb/s in, 70 kb/s out', 'Collecting the whole Internet\'s routing needs almost no bandwidth'],
+ ['Interface errors', '0 input, 0 CRC, 0 output', 'A clean physical path'],
+ ['Input queue drops', '271,639 drops, 22,525 flushes', 'Packets for the CPU were dropped when the control-plane queue was full: the hot CPU, seen from the wire'],
+ ['Unknown protocol drops', '3,607,986', 'Frames for protocols the router does not run'],
+], num=(1,))}
+
+<h2>Internet background radiation</h2>
+{term('''
+route-views> show ip traffic
+  UDP  Rcvd: 3301919260 total, 3299988429 no port
+  TCP  Rcvd: 2882739298 total, 20694483 no port
+  ICMP Sent: 248397808 echo reply
+''')}
+{table(['Counter', 'Value', 'Reading'], [
+ ['UDP received', '3.30 billion', '<strong>99.94%</strong> to ports nothing listens on: scans, reflection attempts, backscatter'],
+ ['TCP to closed ports', '20.7 million', 'Port scans against the router'],
+ ['ICMP echo replies sent', '248 million', 'The router has answered a quarter of a billion pings'],
+ ['ARP requests received', '2.23 billion', 'A busy shared network segment'],
+], num=(1,))}
+<p><strong>Why it matters:</strong> any public address receives this, all the time. Every one of those packets reaches a router\'s CPU unless it is filtered first. Control-plane policing (CoPP), an infrastructure ACL that permits only BGP from configured peers, and rate-limited ICMP are the standard answer, and the input-queue drops above show what happens when the CPU is already busy.</p>
+
+<h2>BGP at the protocol level</h2>
+{table(['Counter', 'Received', 'Sent', 'Reading'], [
+ ['Messages', '3.78 billion', '88.2 million', 'A collector listens; it barely talks'],
+ ['Updates', '3.72 billion', '0', 'It has never announced a single route'],
+ ['OPEN', '5,623', '<strong>1,080,531</strong>', 'Over a million attempts to open sessions with peers that do not answer: the <code>Active</code> sessions in the summary, retrying for years'],
+ ['NOTIFICATION', '877', '4,976', 'Sessions closed with an error code, mostly by the collector'],
+], num=(1, 2))}
+
+<h2>One session up close: Hurricane Electric</h2>
+{table(['Counter', 'Value', 'Reading'], [
+ ['Up for', '12 weeks 2 days', 'The longest-lived full feed'],
+ ['Updates received', '36.3 million', 'About 5 per second, around the clock'],
+ ['Prefixes received in total', '89.3 million, for 1.10 million current', 'Each prefix replaced about 81 times in 84 days'],
+ ['Withdrawals', '74.1 M implicit, 14.1 M explicit', 'Most changes replace a route rather than remove it'],
+ ['Used as best path', '488,762 prefixes', '43% of the collector\'s best paths come from this one peer'],
+ ['Keepalives', '137,600 sent, 4 received', 'HE sends updates so often it never needs to send keepalives: any message resets the hold timer'],
+ ['Outbound policy denied', '900,366,637', 'Every route the collector could have announced, blocked by policy'],
+ ['Hold time', '180 s negotiated (600 configured locally)', 'The lower value wins'],
+ ['Transport', 'multihop up to 255 hops, minimum incoming TTL 0', 'No TTL security (GTSM). Normal for a collector peering across the Internet; a risk on a production edge'],
+ ['Lifetime', '46 connections established, 45 dropped', 'Sessions come and go over the years'],
+], num=(1,))}
+<p>Lumen (AS 3356) for comparison: 2.42 million updates in 11.6 days, about 2.4 per second, with a 90-second hold time. Hurricane Electric is roughly twice as busy, consistent with its very large peering footprint.</p>
+
+<h2>IPv6 is ahead of IPv4</h2>
+{table(['Measure', 'IPv4', 'IPv6'], [
+ ['Prefixes', '1,129,606', '263,159'],
+ ['Paths RPKI valid', '70.8%', '<strong>83.0%</strong>'],
+ ['Paths RPKI not found', '29.1%', '17.0%'],
+ ['Paths RPKI invalid', '0.03%', '0.05%'],
+ ['BGP memory', '3.15 GB', '0.85 GB'],
+])}
+<p>Newer address space was allocated after RPKI existed, and it shows: IPv6 is better protected than IPv4 by twelve points. AS 20912's IPv6 session reset 1 day 13 hours ago, and Verizon\'s IPv6 session has been <code>Active</code> for almost two years.</p>
+
+<h2>Access control</h2>
+{table(['Observation', 'Reading'], [
+ ['<code>show tcp brief</code>: <em>Command authorization failed</em>', 'Per-command authorization through TACACS+ (the <code>TPLUS</code> process): the public account can read routes but not everything. Least privilege, done right'],
+ ['<code>show ip bgp dampening parameters</code>: not enabled', 'Correct for a collector, which must record every change, flaps included'],
+ ['<code>show users</code>: ten public sessions, one idle for over a year', 'No idle timeout on the public lines. A handful of forgotten sessions can exhaust the terminal lines and lock everyone out'],
+ ['<code>show users</code> lists other users\' addresses and hostnames', 'A privacy leak on a shared public service. We do not reproduce them here'],
+ ['<code>show ip interface brief</code> shows the management port\'s private address', 'Minor internal addressing disclosure'],
+])}
+
+{finding(11, 'The collector\'s control plane runs hot and is reachable by anyone', 'Medium', '''
+<p>CPU at 85-100%, input-queue drops, 3.3 billion unsolicited UDP packets, and a public login that adds its own load. None of this breaks the collector\'s mission, but each is a lesson for a production router.</p>
+<p><strong>What to do on your own routers:</strong> CoPP and an infrastructure ACL in front of the CPU; GTSM on eBGP sessions; idle timeouts on every terminal line; per-command authorization; and BMP or streaming telemetry for monitoring instead of interactive scraping.</p>''')}
+'''),
+ ('ch02-7-leaks-and-possible-hijacks', 'Leaks and Possible Hijacks, Assessed Fairly',
+  'Every prefix with conflicting origins on the collector, classified with RPKI: what is authorized, what cannot be judged, what is a mistake, and whether anything looks like a deliberate hijack.', f'''
+<blockquote>A route with two origins is the classic signature of a hijack. It is also the signature of anycast, DDoS protection, a network migration and a typing error. Calling something a hijack is an accusation, so this part follows one rule: classify with evidence, and say plainly when the evidence is not enough.</blockquote>
+
+<h2>The method</h2>
+{term('''
+route-views> show ip bgp inconsistent-as
+route-views> show bgp ipv6 unicast inconsistent-as
+''')}
+<p>Both commands list every prefix that reaches the collector with <strong>more than one origin AS</strong> (a MOAS conflict). For each one we compared the RPKI state of each origin's paths, counted how many of the collector's feeds carry each origin, and checked whether the conflicting origin is simply the other origin's upstream provider. We also scanned the collected paths for the shape of a route leak: a smaller network sitting between two large carriers.</p>
+
+<h2>What it looks like</h2>
+<figure style="margin:22px 0"><img src="/bgp/ch02/ipv6-origin-conflicts.jpg" alt="IPv6 prefixes with conflicting origins on Route Views" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Three classes in one screen, from <code>show bgp ipv6 unicast inconsistent-as</code>. <strong>2A13:EDC0:FFFF::/48</strong>: two origins (AS 216211 and AS 40792), both <code>V</code>alid: authorized. <strong>2C0F:EEA8:9000::/36</strong>: two origins (AS 328306 and AS 39356), both <code>N</code>ot found: cannot be judged. <strong>2C0F:EF68::/32</strong>: an <code>{{211612}}</code> AS_SET left by aggregation at AS 37662, the deprecated form that makes the true origin ambiguous.</figcaption></figure>
+
+<h2>What we found</h2>
+{kpis([('1,329', 'prefixes with conflicting origins (1,125 IPv4, 204 IPv6)'), ('64%', 'authorized: every origin has a valid ROA'), ('33%', 'cannot be judged: no ROA for any origin'), ('3.5%', 'one origin valid, the other invalid')])}
+{table(['Class', 'IPv4', 'IPv6', 'What it usually is', 'Verdict'], [
+ ['Every origin RPKI-valid', '678', '170', 'Anycast, DDoS scrubbing services, migrations, multi-homed customers with ROAs for both origins', 'Authorized'],
+ ['No ROA for any origin', '402', '30', 'Could be anything, legitimate or not', 'Not enough evidence'],
+ ['One origin valid, one invalid', '42', '4', 'See below: mostly stale or mistaken announcements', 'Misconfiguration, contained'],
+ ['Every path invalid', '1', '0', 'A ROA that does not match the route actually used', 'Report to the owner'],
+ ['AS_SET or mixed', '2', '0', 'Old-style aggregation (deprecated by RFC 9774)', 'Not enough evidence'],
+], num=(1, 2))}
+
+<h2>The 46 real conflicts, read one by one</h2>
+<p>In every one of them, the RPKI-valid origin is seen by almost the whole collector (median <strong>14</strong> feeds), and the invalid origin by almost nobody (median <strong>1</strong> feed). That is origin validation working: the invalid announcement exists, but the large networks that drop invalid routes do not pass it on. The patterns behind them:</p>
+{table(['Pattern', 'Example', 'Reading'], [
+ ['A provider still announcing space it delegated', '38.51.236.0/24: ROA for AS 271907, also announced by AS 174 (Cogent, whose block 38.0.0.0/8 it is)', 'The customer has a ROA for its own origin; the provider\'s old announcement was never removed. Seven Cogent cases, five GTT (four in IPv6), one Lumen'],
+ ['Address space leased to a cloud', '8.236.0.0/15: ROA for AS 396982 (Google Cloud); Lumen (AS 3356) also originates it from its 8.0.0.0/8 block', 'A lease or transfer where the original holder still announces the block. Four feeds carry the Lumen version, all through Lumen itself'],
+ ['Bring-your-own-IP in a cloud', '212.103.45.0/24: ROA for AS 202280, also originated by Microsoft (AS 8075)', 'A customer prefix announced by the cloud without a matching ROA for the cloud\'s AS'],
+ ['A prepend typing error', '103.182.177.0/24: path ends <code>… 9498 133296 3</code>; 103.234.137.0/24 ends <code>… 9498 133317 8</code>', 'AS 3 and AS 8 are universities that would never originate these prefixes. Someone meant "prepend three times" and appended the number 3 as an AS. A classic configuration mistake, not an attack'],
+ ['Every path invalid', '112.142.192.0/21: two origins, neither authorized, carried by all fifteen feeds', 'The ROA does not match the route in use. Either it changed very recently or it is simply wrong: a case for a quiet message to the owner'],
+])}
+
+<h2>Route leaks</h2>
+<p>A leak shows up as a <em>valley</em> in the AS path: a smaller network between two large carriers, for example a customer re-announcing one provider\'s routes to another. Scanning every path collected in this chapter for a large carrier, then a non-carrier, then another large carrier found <strong>no such pattern</strong>. That is a sample, not the whole table, but it is the expected result where BGP Roles, maximum-prefix limits and RPKI filtering are in place.</p>
+
+<h2>Is anything a deliberate hijack?</h2>
+{finding(12, 'No evidence of an active, deliberate hijack in this snapshot', 'Info', '''
+<p>A deliberate hijack has a recognizable shape: an unrelated origin, often for a more-specific prefix, spreading through many networks. Nothing in this snapshot has that shape. Every invalid origin is either the legitimate holder's own provider, a cloud acting for a customer, or a typing error, and almost all of them were stopped after one hop.</p>
+<p>What the data <strong>does</strong> show is plenty of misconfiguration, and RPKI containing it. The 432 conflicts with no ROA at all are the honest gap: for those, a collector alone cannot tell legitimate from malicious, and no one should claim otherwise.</p>''')}
+
+<h2>Fairness in reporting</h2>
+{table(['Do', 'Do not'], [
+ ['Call a conflict "invalid" or "unauthorized" when RPKI says so', 'Call it a "hijack" without evidence of intent and spread'],
+ ['Note how many networks carry it, and through whom', 'Name a network as an attacker because it appears in a path'],
+ ['Check the obvious explanations first: provider, cloud, typo, migration', 'Publish other people\'s session details or addresses'],
+ ['Tell the prefix holder privately and give them time to fix it', 'Treat a single snapshot as a history'],
+])}
+<p>Confirming intent takes more than one view: route history (when did the origin first appear?), several collectors (RIPE RIS, other Route Views collectors), registry data, and ideally a word with the operators involved.</p>
+'''),
+ ('ch02-8-from-problem-to-opportunity', 'From Problem to Opportunity',
+  'A second session on the same collector shows routing security improving where operators act. What can be done about each finding, by whom, and why it is an opportunity.', f'''
+<blockquote>Every finding in this chapter is public. That is the uncomfortable part, and it is also the opportunity: the same visibility that helps an attacker plan lets every defender measure, fix and verify, for free, in minutes.</blockquote>
+
+<h2>A second session: the trend</h2>
+<p>The same collector, the same command, two snapshots: the one read in Chapter 1, and a fresh session on 3 November 2026, roughly 375 million best-path changes later.</p>
+{table(['Measure', 'Chapter 1 snapshot', 'This session', 'Change'], [
+ ['Table version', '1,142,409,165', '1,517,803,889', '+375 million best-path changes'],
+ ['Paths, RPKI <strong>valid</strong>', '6,502,331 (32.6%)', '11,656,019 (70.8%)', '<strong>more than double</strong> the share'],
+ ['Paths, RPKI <strong>not found</strong>', '13,437,858 (67.3%)', '4,793,951 (29.1%)', 'down by more than half'],
+ ['Paths, RPKI <strong>invalid</strong>', '17,810 (0.09%)', '5,350 (0.03%)', '<strong>down 70%</strong>'],
+ ['IPv4 network entries', '916,896', '1,129,606', 'the table keeps growing'],
+ ['Full-table peers', '22', '15', 'a smaller peer mix this time'],
+], num=(1, 2))}
+<p>A caution before the conclusion: the peer mix changed (fifteen full feeds now, twenty-two then), so absolute path counts are not directly comparable. The <em>shares</em> are, and they moved decisively. Where networks publish ROAs and their providers drop invalid routes, invalid announcements stop spreading. RPKI is not a theory any more; you can watch it work from a public login.</p>
+{kpis([('70.8%', 'of paths now RPKI-valid'), ('5,350', 'invalid paths left, down from 17,810'), ('0', 'unexpected more-specifics on the blocks we checked'), ('15', 'paths per block: every major carrier carries them')])}
+
+<h2>The opportunity, in four sentences</h2>
+<ol>
+ <li><strong>Visibility is symmetric.</strong> What an attacker reads on a collector, you can read first, and every hijack or leak of your space appears there within seconds.</li>
+ <li><strong>The fixes are cheap.</strong> A ROA takes minutes in the registry portal. Stripping communities and aggregator data is a few lines of policy. Monitoring is free.</li>
+ <li><strong>The enforcement is already built.</strong> Lumen, AT&amp;T, Hurricane Electric, Arelion, NTT and most large carriers drop RPKI-invalid routes. Publish a correct ROA and the world's largest networks enforce it for you, at no cost.</li>
+ <li><strong>The gaps are measurable.</strong> Every finding here can be checked before and after a fix with the same public command. Few security controls are that easy to prove.</li>
+</ol>
+
+<h2>From each finding to a fix</h2>
+{table(['Finding', 'Problem', 'What can be done', 'Who', 'Effort'], [
+ ['1 Tie-breakers', 'Exit choice decided by session age', 'Explicit local preference per customer, peer and transit', 'Your network', 'Hours'],
+ ['3 Communities', 'Region and business relationships published', 'Strip informational communities you do not need to send; document the ones you do', 'Every AS', 'Hours'],
+ ['4 Action communities', 'Engineering intent readable by anyone', 'Ask upstreams to remove action communities after acting on them', 'Upstream carriers', 'A request'],
+ ['5 AGGREGATOR', 'Internal router IDs exposed', 'Set a neutral router ID on aggregating routers, or originate the aggregate without it', 'Content and cloud networks', 'Minutes'],
+ ['6 Unknown attributes', 'Malformed data can cross networks', 'Run code with RFC 7606 error handling; filter attributes you do not use at the edge', 'Every AS', 'Upgrade cycle'],
+ ['7 Unprotected more-specifics', 'Sub-prefix hijack target', 'One ROA per announced prefix; aggregate where traffic engineering allows', 'Address holders', 'Minutes per prefix'],
+ ['8 Loose maxLength', 'Forged-origin hijack becomes valid', 'Replace maxLength ROAs with exact-length ROAs (RFC 9319)', 'Address holders', 'Minutes per prefix'],
+ ['9 Cache divergence', 'Validity depends on which cache answers', 'Two or more caches, different software, alert on count and serial drift', 'Router operators', 'A day'],
+ ['10 Plain RTR', 'Validation feed can be tampered with or lost', 'Protected management network, SSH or TLS transport, alarm on total cache loss', 'Router operators', 'A day'],
+ ['12 Origin conflicts', 'Stale and mistaken origins look like hijacks', 'Remove old provider announcements; ROAs for every origin that should announce; ROA updates with every lease or cloud move', 'Address holders and providers', 'Minutes per prefix'],
+ ['11 Control plane', 'Hot CPU, queue drops, scan traffic reaching the router', 'CoPP, infrastructure ACL, GTSM, idle timeouts, BMP or streaming telemetry', 'Router operators', 'Days'],
+])}
+
+<h2>Proof that the fixes work: three clean blocks</h2>
+<p>The same session checked three blocks that serve ordinary websites and cloud servers: a CDN block, a static-site hosting block and a public-cloud block. All three are what good looks like.</p>
+{table(['Block', 'Operator', 'Paths', 'RPKI', 'More-specifics', 'Upstreams visible'], [
+ ['104.21.32.0/20', 'Cloudflare (13335)', '16', 'all valid', 'none', 'direct peering with almost every network'],
+ ['185.199.110.0/24', 'Fastly, serving GitHub Pages (54113)', '15', 'all valid', '(a /24: none possible)', 'direct peering, plus Internet2, RETN, Liberty Global'],
+ ['150.136.0.0/16', 'Oracle Cloud (31898)', '15', 'all valid, maxLength 16', 'none', 'Arelion, NTT, Lumen, Cogent, GTT, Internet2'],
+], num=(2,))}
+<p>The Oracle block is the model case. Its ROA authorizes exactly the /16, at exactly length 16. If anyone announced a /24 inside it, every origin-validating carrier would mark it <strong>invalid</strong> on length alone and drop it. The block is also reachable through six independent upstreams, so there is no single provider to flood. A small business renting servers inside a block like this inherits that protection without owning an AS or writing a single ROA.</p>
+{callout('<strong>The lesson for organizations that do not own address space:</strong> you inherit your providers\' routing security. Ask them three questions before you buy: Do you publish exact-length ROAs for the blocks I will use? Do you drop RPKI-invalid routes? How many upstreams carry my block? The answers are visible on a public collector, so you can check them yourself.')}
+
+<h2>What still remains, and what comes next</h2>
+<p>Origin validation answers one question: <em>is this origin allowed to announce this prefix?</em> It does not check the path. A forged-origin announcement of an exact-length prefix (pretending to be the real origin) still validates. Two newer standards close that gap and are worth tracking now:</p>
+{table(['Technology', 'What it adds', 'Status'], [
+ ['ASPA (Autonomous System Provider Authorization)', 'Each network publishes its legitimate upstream providers; routers reject paths that could not have happened', 'IETF draft with validator and router support emerging; publish ASPA objects as registries offer them'],
+ ['BGP Roles and OTC (RFC 9234)', 'Sessions declare customer, peer or provider; an Only-To-Customer attribute stops route leaks automatically', 'Standard; supported in several open-source and commercial routers'],
+ ['RPKI-based route-server filtering at IXPs', 'Exchange route servers drop invalid routes for all members at once', 'Widely deployed at major exchanges'],
+])}
+
+<h2>A 30-60-90 day plan</h2>
+{table(['When', 'If you hold address space', 'If you rent it (cloud, CDN, ISP)'], [
+ ['First 30 days', 'Publish exact-length ROAs for every announced prefix; remove maxLength', 'List every public block you depend on; check each one on a collector'],
+ ['By 60 days', 'Enable origin validation (drop invalids); two RTR caches, monitored', 'Ask providers the three questions above; record the answers'],
+ ['By 90 days', 'Strip internal and action communities; neutral aggregator IDs; daily collector monitoring with alerts', 'Set up free monitoring of those blocks and their more-specifics; review yearly at renewal'],
+])}
+
+<h2>The takeaway</h2>
+<p>The routing table is the most honest security report on the Internet: anyone can read it, nobody can edit it, and it updates every second. Read once, it lists what is exposed. Read twice, it shows that the exposure shrinks wherever operators act. Each fix in this chapter costs minutes to days, and the result is enforced by the largest networks on the planet. That is the opportunity. <a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--accent)">Part 9</a> turns it into a concrete design.</p>
+<p style="font-size:.95rem;color:var(--fg-dim)">Want this review run against your own address space or providers? Write to <a href="mailto:info@konstas.us" style="color:var(--accent)">info@konstas.us</a>.</p>
+'''),
+ ('ch02-9-the-proposal-secure-peering', 'The Proposal: Secure, Low-Exposure Peering',
+  'A concrete design for peering that is more secure and exposes far less: layered controls, a reference architecture, a configuration template and a maturity path, mapped to every finding.', f'''
+<blockquote>The findings showed what leaks and what can be forged. This part proposes the answer: a peering design built on three rules. Accept only what can be verified. Announce only what you own. Expose nothing that is not required for routing to work.</blockquote>
+
+<h2>Design goals</h2>
+{table(['Goal', 'Meaning', 'Findings it answers'], [
+ ['Verified in', 'Every route accepted is checked for origin, and as standards mature, for path', '7, 8, 9, 10'],
+ ['Minimal out', 'Announce only owned and customer prefixes, with nothing internal attached', '3, 4, 5'],
+ ['Hardened sessions', 'A BGP session can only be formed by the intended peer, and cannot be overwhelmed', '6, 11'],
+ ['Protected control plane', 'The router\'s CPU serves routing first; noise and the public never reach it', '11'],
+ ['Observed without exposure', 'Full visibility for the operator, none for the public', '11, all'],
+ ['Deliberate decisions', 'Exit selection and failover are policy, not tie-breakers', '1, 2'],
+])}
+
+<h2>Reference architecture</h2>
+<figure style="margin:22px 0"><svg viewBox="0 0 900 470" role="img" aria-label="Secure peering reference architecture" style="width:100%;height:auto;display:block;background:hsl(0 0% 5%);border:1px solid hsl(43 45% 56% / .35);border-radius:10px;font-family:Inter,sans-serif">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="hsl(43 45% 56%)"/></marker></defs>
+<g font-size="13" fill="hsl(0 0% 92%)">
+<rect x="30" y="24" width="190" height="56" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="125" y="48" text-anchor="middle">Transit providers</text><text x="125" y="66" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">two or more, diverse</text>
+<rect x="355" y="24" width="190" height="56" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="450" y="48" text-anchor="middle">IXP route servers</text><text x="450" y="66" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">RPKI-filtered</text>
+<rect x="680" y="24" width="190" height="56" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="775" y="48" text-anchor="middle">Private peers (PNI)</text><text x="775" y="66" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">large content networks</text>
+<line x1="125" y1="80" x2="300" y2="140" stroke="hsl(43 45% 56%)" marker-end="url(#ar)"/><line x1="450" y1="80" x2="450" y2="140" stroke="hsl(43 45% 56%)" marker-end="url(#ar)"/><line x1="775" y1="80" x2="600" y2="140" stroke="hsl(43 45% 56%)" marker-end="url(#ar)"/>
+<rect x="200" y="142" width="500" height="120" rx="10" fill="hsl(43 45% 56% / .10)" stroke="hsl(43 45% 56%)"/>
+<text x="450" y="166" text-anchor="middle" font-size="15" fill="hsl(43 45% 56%)">Edge routers (two, separate sites)</text>
+<text x="450" y="190" text-anchor="middle" font-size="12">Session: TCP-AO or MD5 · GTSM · iACL on TCP 179 · BGP Roles · max-prefix</text>
+<text x="450" y="210" text-anchor="middle" font-size="12">Import: drop RPKI-invalid · ASPA · bogons · too-specific · own space · path sanity</text>
+<text x="450" y="230" text-anchor="middle" font-size="12">Export: own and customer prefixes only · strip communities · neutral router ID</text>
+<text x="450" y="250" text-anchor="middle" font-size="12">Control plane: CoPP · rate-limited ICMP · SSH only · AAA · idle timeouts</text>
+<line x1="300" y1="262" x2="160" y2="330" stroke="hsl(43 45% 56%)" stroke-dasharray="4 3" marker-end="url(#ar)"/><line x1="450" y1="262" x2="450" y2="330" stroke="hsl(43 45% 56%)" stroke-dasharray="4 3" marker-end="url(#ar)"/><line x1="600" y1="262" x2="740" y2="330" stroke="hsl(43 45% 56%)" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+<rect x="40" y="332" width="240" height="72" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="160" y="356" text-anchor="middle">RPKI validators ×2</text><text x="160" y="374" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">different software</text><text x="160" y="390" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">RTR over SSH, management VRF</text>
+<rect x="330" y="332" width="240" height="72" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="450" y="356" text-anchor="middle">Private BMP collector</text><text x="450" y="374" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">plus streaming telemetry</text><text x="450" y="390" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">no public login on the edge</text>
+<rect x="620" y="332" width="240" height="72" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="740" y="356" text-anchor="middle">External watch</text><text x="740" y="374" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">public collectors, hijack alerts</text><text x="740" y="390" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">your prefixes, daily</text>
+<text x="450" y="440" text-anchor="middle" font-size="12" fill="hsl(0 0% 62%)">Solid: BGP sessions. Dashed: out-of-band validation and monitoring, never reachable from the Internet.</text>
+</g></svg><figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Reference design: what enters, what leaves, and how the edge is watched without being exposed.</figcaption></figure>
+
+<h2>The controls, layer by layer</h2>
+{table(['Layer', 'Control', 'Stops', 'Standard'], [
+ ['Identity', 'Exact-length ROAs for every announced prefix, no maxLength', 'Sub-prefix and forged-origin hijacks', 'RFC 6480, RFC 9319'],
+ ['Identity', 'ASPA objects listing your real upstream providers', 'Forged paths and many leaks', 'IETF ASPA draft'],
+ ['Identity', 'IRR route objects and PeeringDB records that match reality', 'Being filtered by careful peers', 'MANRS'],
+ ['Session', 'TCP-AO (or MD5 where AO is not supported)', 'Spoofed resets and injected sessions', 'RFC 5925'],
+ ['Session', 'GTSM (<code>ttl-security hops 1</code>) on direct peerings', 'Remote attacks on TCP 179', 'RFC 5082'],
+ ['Session', 'Infrastructure ACL: TCP 179 only from configured neighbors', 'Scans and floods against BGP', 'BCP 194'],
+ ['Session', 'BGP Roles with strict mode', 'Route leaks between providers and peers', 'RFC 9234'],
+ ['Session', 'Maximum-prefix limit per neighbor, with warning threshold', 'A peer leaking a full table into a peering session', 'BCP 194'],
+ ['Import', 'Drop RPKI-invalid; later, ASPA-invalid', 'Hijacks and leaks other networks did not stop', 'RFC 6811, RFC 8893'],
+ ['Import', 'Drop bogon prefixes and ASNs, prefixes longer than /24 (IPv4) or /48 (IPv6), your own space, absurd paths', 'Garbage, hijack shapes, loops', 'BCP 194'],
+ ['Import', 'RFC 7606 error handling on current software', 'Malformed attributes resetting sessions', 'RFC 7606'],
+ ['Export', 'Explicit prefix list of own and customer routes only', 'Accidental leaks of learned routes', 'MANRS'],
+ ['Export', 'Delete internal and informational communities; ask upstreams to strip action communities', 'Publishing business relationships and intent', 'Best practice'],
+ ['Export', 'Public loopback as router ID; no AGGREGATOR with internal addresses', 'Internal addressing disclosure', 'Best practice'],
+ ['Export', 'Prepend three times or fewer; steer with upstream communities', 'Long paths that are easy to undercut', 'Best practice'],
+ ['Control plane', 'CoPP, rate-limited ICMP, management in a separate VRF or out-of-band', 'Background noise and floods reaching the CPU', 'Vendor guides'],
+ ['Control plane', 'SSH only, AAA with per-command authorization, idle timeouts, no public CLI on the edge', 'Credential theft, line exhaustion, information leaks', 'Vendor guides'],
+ ['Validation', 'Two validators from different implementations, RTR over SSH on the management network, alarms on divergence and total loss', 'A single bad or missing cache disabling validation', 'RFC 8210'],
+ ['Visibility', 'BMP to a private collector and streaming telemetry; external watch of your prefixes on public collectors', 'Flying blind, or exposing a looking glass to learn what you already know', 'RFC 7854'],
+ ['Hygiene', 'Anti-spoofing on customer edges (source address validation)', 'Your network being used for reflection attacks', 'BCP 38, MANRS'],
+])}
+
+<h2>Peering strategy: better, not only safer</h2>
+{table(['Choice', 'Why it is better'], [
+ ['Two or more transit providers, on separate routers and sites', 'No single upstream to flood or lose; the clean public-cloud block in Part 8 had six'],
+ ['IXP route servers with RPKI filtering', 'Many peers in one session, with invalid routes already removed by the exchange'],
+ ['Private interconnects with the largest content networks', 'Shorter, more predictable paths for most traffic, as the one-hop paths to Google and Cloudflare showed'],
+ ['Local preference by relationship: customer &gt; peer &gt; transit', 'Traffic follows the business, not the oldest session'],
+ ['Graceful shutdown community before maintenance', 'Traffic moves off a session before it drops (RFC 8326)'],
+ ['Join MANRS', 'A public commitment to filtering, anti-spoofing, coordination and validation that peers can check'],
+])}
+
+<h2>A configuration template</h2>
+<p>A compact FRRouting example of the import and export policy for one transit session. The same structure maps directly to IOS XR, Junos or BIRD.</p>
+{term('''
+! FRRouting example. Documentation addresses (RFC 5737) and ASNs (RFC 5398).
+rpki
+ rpki cache 10.0.0.10 3323 preference 1        ! validator A, management network
+ rpki cache 10.0.0.11 3323 preference 2        ! validator B, different software
+exit
+!
+router bgp 64500
+ bgp router-id 192.0.2.1                         ! public loopback, not an internal address
+ neighbor 198.51.100.1 remote-as 64510
+ neighbor 198.51.100.1 description TRANSIT-A
+ neighbor 198.51.100.1 ttl-security hops 1       ! GTSM: only a directly connected peer
+ neighbor 198.51.100.1 password <secret>         ! TCP-AO where both sides support it
+ neighbor 198.51.100.1 local-role customer strict ! RFC 9234: leak prevention
+ address-family ipv4 unicast
+  neighbor 198.51.100.1 route-map TRANSIT-IN in
+  neighbor 198.51.100.1 route-map EDGE-OUT out
+  neighbor 198.51.100.1 maximum-prefix 1200000 90
+ exit-address-family
+!
+ip prefix-list OWN       seq 5  permit 192.0.2.0/24           ! exactly what we announce
+ip prefix-list BOGONS    seq 5  permit 10.0.0.0/8 le 32       ! plus the full bogon list
+ip prefix-list TOO-LONG  seq 5  permit 0.0.0.0/0 ge 25 le 32
+bgp community-list standard INTERNAL permit 64500:1000      ! our informational tags
+bgp as-path access-list LONG-PATH seq 5 permit (_[0-9]+){50,}
+!
+route-map TRANSIT-IN deny 10
+ match rpki invalid                              ! origin validation
+route-map TRANSIT-IN deny 20
+ match ip address prefix-list BOGONS
+route-map TRANSIT-IN deny 30
+ match ip address prefix-list TOO-LONG
+route-map TRANSIT-IN deny 40
+ match ip address prefix-list OWN                ! our own space never comes from outside
+route-map TRANSIT-IN deny 50
+ match as-path LONG-PATH
+route-map TRANSIT-IN permit 100
+!
+route-map EDGE-OUT permit 10
+ match ip address prefix-list OWN                ! announce only what we own
+ set comm-list INTERNAL delete                   ! publish nothing internal
+route-map EDGE-OUT deny 100
+''')}
+<p>Two lines in it carry most of the value: <code>match rpki invalid</code> on the way in and <code>match ip address prefix-list OWN</code> on the way out. Everything else narrows what can go wrong.</p>
+
+<h2>Every finding, answered</h2>
+{table(['#', 'Finding', 'Answered by'], [
+ ['1', 'Best path by tie-breaker', 'Local preference by relationship'],
+ ['2', 'Content one hop away', 'Private interconnects and route servers'],
+ ['3', 'Communities reveal the business', 'Delete informational communities on export'],
+ ['4', 'Action communities published', 'Ask upstreams to strip them after use'],
+ ['5', 'AGGREGATOR exposes internal routers', 'Public loopback router ID, no internal AGGREGATOR'],
+ ['6', 'Unknown attributes pass through', 'Current software with RFC 7606; filter unused attributes'],
+ ['7', 'Prepends and unprotected more-specifics', 'Exact ROAs for every prefix; three prepends or fewer'],
+ ['8', 'Loose maxLength', 'Exact-length ROAs (RFC 9319)'],
+ ['9', 'Caches disagree', 'Two validators, different software, divergence alarms'],
+ ['10', 'Plain RTR', 'RTR over SSH on the management network'],
+ ['11', 'Hot, reachable control plane', 'CoPP, iACL, GTSM, idle timeouts, BMP instead of a public CLI'],
+])}
+
+<h2>Maturity path</h2>
+{table(['Level', 'What is in place', 'Typical time'], [
+ ['1 · Baseline', 'Exact ROAs, explicit export lists, bogon and too-specific filters, max-prefix, GTSM, iACL, CoPP, SSH and AAA', '30 days'],
+ ['2 · Validated', 'Origin validation enforced, two validators, RTR protected, communities scrubbed, neutral router IDs, external prefix monitoring, MANRS', '60 to 90 days'],
+ ['3 · Assured', 'TCP-AO, BGP Roles strict, ASPA published and verified, BMP and streaming telemetry, graceful shutdown in every maintenance', 'Within a year'],
+])}
+
+<h2>For organizations that do not run BGP</h2>
+<p>Most businesses never configure a BGP session; they rent addresses from cloud, CDN and access providers. The same principles still apply, one level up:</p>
+<ul>
+ <li><strong>Choose providers by routing security:</strong> exact-length ROAs, origin validation enforced, several upstreams. All three are visible on a public collector.</li>
+ <li><strong>Expose nothing you do not have to:</strong> put public services behind a CDN, keep management interfaces reachable only through a VPN, and close every port that is not serving users.</li>
+ <li><strong>Watch your blocks:</strong> free alerting on the prefixes you depend on tells you about a hijack before your users do.</li>
+</ul>
+
+<h2>The takeaway</h2>
+<p>Secure peering is not one product; it is a short list of controls that each close one gap found in this chapter. Verify what comes in, announce only what you own, keep everything internal inside, and watch from the outside. Done together, they turn a router that tells the world about your business into one that tells it only where your addresses are, which is all BGP ever needed to say.</p>
+<p style="font-size:.95rem;color:var(--fg-dim)">To have this design reviewed against your own network or providers, write to <a href="mailto:info@konstas.us" style="color:var(--accent)">info@konstas.us</a>. Next chapter: mapping a network from the outside.</p>
+'''),
+ ('ch02-10-the-session-command-by-command', 'The Session, Command by Command',
+  'The recorded Route Views session, step by step: eleven read-only commands, their real output, what each shows and why it matters.', '''
+<blockquote>The recorded session, one command at a time: the exact command, the real output, what you are looking at, and why it matters. Every command is read-only and works on the public login, so you can repeat each step yourself.</blockquote>
+<video controls playsinline preload="metadata" poster="/bgp/ch02/poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000">
+  <source src="/bgp/ch02/route-views-field-report.mp4" type="video/mp4">
+</video>
+<p style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Session recorded 3 November 2026 on <code>route-views.routeviews.org</code> (username <code>rviews</code>). Start with <code>terminal length 0</code>. In commands 3, 7 and 8, each path's RPKI line is folded onto the path it belongs to.</p>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 1 of 11</p>
+<h2 style="margin:0 0 12px">The size of the Internet and its RPKI posture</h2>
+<pre><code>route-views&gt; show ip bgp summary | include table version|RPKI|network entries|BGP using
+BGP table version is 1517822914, main routing table version 1517822914
+Path RPKI states: 11656636 valid, 4793762 not found, 5344 invalid
+1129444 network entries using 280102112 bytes of memory
+BGP using 3150829866 total bytes of memory</code></pre>
+<p><strong>What you see.</strong> The table version counts every best-path change since BGP started: over 1.5 billion. Of 16.4 million IPv4 paths, 11.66 million (70.8%) are RPKI-valid, 4.79 million (29.1%) have no ROA, and 5,344 (0.03%) contradict one. The collector holds 1,129,444 IPv4 networks in 3.15 GB of memory.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> This is the Internet's security score in one line. Two thirds of paths are now cryptographically checkable, and the invalid share is tiny because most large carriers drop invalid routes.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 2 of 11</p>
+<h2 style="margin:0 0 12px">IPv6 is better protected than IPv4</h2>
+<pre><code>route-views&gt; show bgp ipv6 unicast summary | include RPKI|network entries
+Path RPKI states: 2314874 valid, 472953 not found, 1425 invalid
+263194 network entries using 71588768 bytes of memory</code></pre>
+<p><strong>What you see.</strong> The IPv6 table: 263,194 networks, 2.31 million valid paths (83.0%), 472,953 not found (17.0%), 1,425 invalid (0.05%).</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> IPv6 space was allocated after RPKI existed, and it is twelve points better protected than IPv4. If you run IPv6, publishing ROAs is the easiest win you have.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 3 of 11</p>
+<h2 style="margin:0 0 12px">Fifteen paths to Google DNS, and why one wins</h2>
+<pre><code>route-views&gt; show ip bgp 8.8.8.8 | include Paths|^  [0-9]|best|RPKI
+Paths: (15 available, best #9, table default)
+  1351 214292 15169                               RPKI valid
+  3303 15169                                      RPKI valid
+  8283 15169                                      RPKI valid
+  3356 15169                                      RPKI valid
+  20130 6939 15169                                RPKI valid
+  3549 3356 15169                                 RPKI valid
+  57866 15169                                     RPKI valid
+  20912 15169                                     RPKI valid
+  101 15169                                       RPKI valid
+      Origin IGP, localpref 100, valid, external, best
+  3333 1257 15169                                 RPKI valid
+  4826 15169                                      RPKI valid
+  7018 15169                                      RPKI valid
+  49788 12552 15169                               RPKI valid
+  6939 15169                                      RPKI valid
+  2497 15169                                      RPKI valid</code></pre>
+<p><strong>What you see.</strong> Fifteen paths to 8.8.8.0/24, every one RPKI-valid. Ten are two hops (provider, then Google AS 15169); five go through one more network. Path #9, through the University of Washington (AS 101), is marked <code>best</code>.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> With equal preference and length, BGP falls through to tie-breakers such as route age. The best path is the oldest stable one, not the fastest. In your own network, set local preference on purpose.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 4 of 11</p>
+<h2 style="margin:0 0 12px">Cloudflare: one prefix, no more-specifics, all valid</h2>
+<pre><code>route-views&gt; show ip bgp 1.1.1.0/24 longer-prefixes
+BGP table version is 1517823485, local router ID is 128.223.51.103
+Status codes: s suppressed, d damped, h history, * valid, &gt; best, i - internal,
+              r RIB-failure, S Stale, m multipath, b backup-path, f RT-Filter,
+              x best-external, a additional-path, c RIB-compressed,
+Origin codes: i - IGP, e - EGP, ? - incomplete
+RPKI validation codes: V valid, I invalid, N Not found
+     Network          Next Hop            Metric LocPrf Weight Path
+V*   1.1.1.0/24       132.198.255.253                        0 1351 13335 i
+V*                    217.192.89.50                          0 3303 3356 13335 i
+V*                    94.142.247.3                           0 8283 13335 i
+V*                    208.51.134.254           0             0 3549 3356 13335 i
+V*                    4.68.4.46                0             0 3356 13335 i
+V*                    140.192.8.16                           0 20130 23352 13335 i
+V*                    162.251.163.2                          0 53767 13335 i
+V*                    209.124.176.223                        0 101 13335 i
+V*                    77.39.192.30                           0 20912 13335 i
+V*                    193.0.0.56                             0 3333 13335 i
+V*                    37.139.139.17            0             0 57866 13335 i
+V*&gt;                   12.0.1.63                              0 7018 13335 i
+V*                    114.31.199.16                          0 4826 13335 i
+V*                    91.218.184.60                          0 49788 13335 i
+V*                    64.71.137.241                          0 6939 3356 13335 i
+V*                    202.232.0.2                            0 2497 13335 i</code></pre>
+<p><strong>What you see.</strong> Only one entry: 1.1.1.0/24 itself, sixteen paths, all <code>V</code>alid, no more-specifics. Twelve paths are direct to Cloudflare (AS 13335); AT&amp;T's path is best (<code>&gt;</code>).</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> This is what good looks like: an exact-length ROA and nobody announcing a smaller block inside it. Run the same command on your own prefixes; any extra line is a leak or a hijack.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 5 of 11</p>
+<h2 style="margin:0 0 12px">Leaked internal router IDs in the AGGREGATOR attribute</h2>
+<pre><code>route-views&gt; show ip bgp 1.1.1.0/24 | include aggregated
+  1351 13335, (aggregated by 13335 10.34.2.204)
+  3303 3356 13335, (aggregated by 13335 10.34.23.128)
+  8283 13335, (aggregated by 13335 10.34.6.80)
+  3549 3356 13335, (aggregated by 13335 10.34.0.16)
+  3356 13335, (aggregated by 13335 10.34.9.112)
+  20130 23352 13335, (aggregated by 13335 10.34.3.248)
+  53767 13335, (aggregated by 13335 10.34.24.72)
+  101 13335, (aggregated by 13335 10.34.9.112)
+  20912 13335, (aggregated by 13335 10.34.130.16)
+  3333 13335, (aggregated by 13335 10.34.6.80)
+  57866 13335, (aggregated by 13335 10.34.6.80)
+  7018 13335, (aggregated by 13335 10.34.2.204)
+  4826 13335, (aggregated by 13335 10.34.8.168)
+  49788 13335, (aggregated by 13335 10.34.130.6)
+  6939 3356 13335, (aggregated by 13335 10.34.0.16)
+  2497 13335, (aggregated by 13335 10.34.7.24)</code></pre>
+<p><strong>What you see.</strong> Each path names the router that built the aggregate: eleven different 10.34.x.x addresses across sixteen paths.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> The AGGREGATOR attribute leaks private router IDs and shows how many sites announce this anycast prefix. If you aggregate, check what your router puts in this field.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 6 of 11</p>
+<h2 style="margin:0 0 12px">A loose ROA: only two of four /24s announced, all four authorized</h2>
+<pre><code>route-views&gt; show ip bgp 1.6.0.0/22 longer-prefixes | include /2
+V*   1.6.0.0/22       209.124.176.223                        0 101 11164 4637 64049 55836 9583 i
+V*   1.6.1.0/24       209.124.176.223                        0 101 11164 4637 64049 55836 9583 i
+V*   1.6.2.0/24       209.124.176.223                        0 101 11164 4637 64049 55836 9583 i</code></pre>
+<p><strong>What you see.</strong> Three entries inside 1.6.0.0/22: the /22 and two /24s (1.6.1.0 and 1.6.2.0). The filter shows one line per prefix. 1.6.0.0/24 and 1.6.3.0/24 are not announced, yet the ROA (maxLength 24) authorizes all four.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> Anyone forging AS 9583 as the origin could announce the two missing /24s, and they would be RPKI-valid and win on longest match. Fix: exact-length ROAs only (RFC 9319).</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 7 of 11</p>
+<h2 style="margin:0 0 12px">Not a hijack: a prepend typing error (AS 3 appended)</h2>
+<pre><code>route-views&gt; show ip bgp 103.182.177.0/24 | include ^  [0-9]|RPKI
+  1351 64049 55836 9583 133296                    RPKI valid
+  3303 2914 9583 133296                           RPKI valid
+  3356 64049 55836 9583 133296                    RPKI valid
+  3549 3356 64049 55836 9583 133296               RPKI valid
+  8283 64049 55836 9583 133296                    RPKI valid
+  57866 50673 133296 133296 133296 133296 133296  RPKI valid
+  20130 6939 64049 55836 9583 133296              RPKI valid
+  20912 9002 2914 9583 133296                     RPKI valid
+  101 11164 4637 64049 55836 9583 133296          RPKI valid
+  3333 64049 55836 9583 133296                    RPKI valid
+  4826 64049 55836 9583 133296                    RPKI valid
+  7018 2914 9583 133296                           RPKI valid
+  49788 12552 6797 9498 133296 3                  RPKI invalid
+  2497 2914 9583 133296                           RPKI valid
+  6939 64049 55836 9583 133296                    RPKI valid</code></pre>
+<p><strong>What you see.</strong> Fourteen valid paths end in the real origin, AS 133296. One, through AS 49788, ends <code>133296 3</code> and is <strong>invalid</strong>: AS 3 appears as the origin.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> AS 3 is a university that would never originate this prefix. Someone meant "prepend three times" and typed the number as an AS. A mistake, not an attack, and RPKI stopped it after one hop.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 8 of 11</p>
+<h2 style="margin:0 0 12px">Not a hijack: a provider still announcing leased space</h2>
+<pre><code>route-views&gt; show ip bgp 8.236.0.0/15 | include ^  [0-9]|RPKI
+  1351 214292 15169 396982                        RPKI valid
+  8283 15169 396982                               RPKI valid
+  3303 15169 396982                               RPKI valid
+  3356                                            RPKI invalid
+  3549 3356                                       RPKI invalid
+  20130 6939 3356                                 RPKI invalid
+  20912 15169 396982                              RPKI valid
+  57866 15169 396982                              RPKI valid
+  101 15169 396982                                RPKI valid
+  3333 1257 15169 396982                          RPKI valid
+  4826 15169 396982                               RPKI valid
+  7018 15169 396982                               RPKI valid
+  49788 12552 15169 396982                        RPKI valid
+  6939 3356                                       RPKI invalid
+  2497 15169 396982                               RPKI valid</code></pre>
+<p><strong>What you see.</strong> Eleven paths end in Google Cloud (AS 396982) and are valid. Four end in Lumen (AS 3356) and are invalid, all of them through Lumen.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> 8.236.0.0/15 is part of Lumen's 8.0.0.0/8 and has been leased to Google Cloud, which holds the ROA. Lumen's old announcement was never withdrawn. Stale, not malicious; the fix is one line in Lumen's configuration.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 9 of 11</p>
+<h2 style="margin:0 0 12px">The RPKI caches behind origin validation</h2>
+<pre><code>route-views&gt; show ip bgp rpki servers | include neighbor is|Prefixes|attempts|failures
+BGP SOVC neighbor is 128.223.157.83/3323 connected to port 3323
+  Prefixes 1029922
+  Connection attempts: 1920
+  Connection failures: 1390
+BGP SOVC neighbor is 128.223.157.89/3323 connected to port 3323
+  Prefixes 1165839
+  Connection attempts: 3046
+  Connection failures: 2958</code></pre>
+<p><strong>What you see.</strong> Two RPKI caches, both connected. They hold 1,029,922 and 1,165,839 entries, about 136,000 apart. Lifetime failure counts are 1,390 of 1,920 and 2,958 of 3,046 connection attempts.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> Origin validation is only as good as its cache. Run at least two validators from different software, protect the RTR session, and alert when they disagree.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 10 of 11</p>
+<h2 style="margin:0 0 12px">The collector under load</h2>
+<pre><code>route-views&gt; show processes cpu | include CPU utilization
+CPU utilization for five seconds: 42%/1%; one minute: 43%; five minutes: 36%</code></pre>
+<p><strong>What you see.</strong> CPU at 42% over five seconds, 43% over one minute and 36% over five minutes. An hour earlier, during the telemetry run, the same command showed 85-100%.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> Load swings with BGP churn and with the number of people querying the public login. Production routers keep monitoring off the control plane with BMP or streaming telemetry.</p>
+</div>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:10px;padding:16px 18px;margin:26px 0;background:hsl(0 0% 5%)">
+<p style="margin:0 0 4px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Command 11 of 11</p>
+<h2 style="margin:0 0 12px">Internet background radiation hitting the router</h2>
+<pre><code>route-views&gt; show ip traffic | include no port|echo reply
+        248400084 echo, 8852167 echo reply, 1360 mask requests, 0 mask replies, 0 quench
+  Sent: 0 redirects, 6527233 unreachable, 10679955 echo, 248400084 echo reply
+  Rcvd: 3301919288 total, 522 checksum errors, 3299988430 no port 0 finput
+  Rcvd: 2882788712 total, 39971 checksum errors, 20694751 no port</code></pre>
+<p><strong>What you see.</strong> ICMP: 248.4 million echo requests received and answered. UDP: 3.30 billion packets received, 3.2999 billion to ports nothing listens on. TCP: 2.88 billion received, 20.7 million to closed ports.</p>
+<p style="margin-bottom:0"><strong>Why it matters.</strong> This is the background noise every public address receives. All of it reaches a router's CPU unless control-plane policing and an infrastructure ACL filter it first.</p>
+</div>
+<h2>The session in one table</h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Command</th><th>Result</th></tr></thead><tbody><tr><td>1</td><td>Size and RPKI posture</td><td>70.8% valid, 5,344 invalid</td></tr><tr><td>2</td><td>IPv6 posture</td><td>83.0% valid</td></tr><tr><td>3</td><td>Best path to Google DNS</td><td>tie-breaker, not quality</td></tr><tr><td>4</td><td>Cloudflare more-specifics</td><td>none: textbook</td></tr><tr><td>5</td><td>AGGREGATOR</td><td>11 internal router IDs exposed</td></tr><tr><td>6</td><td>Loose ROA</td><td>2 unannounced /24s pre-authorized</td></tr><tr><td>7</td><td>Typing error</td><td>AS 3 as origin, contained</td></tr><tr><td>8</td><td>Stale provider route</td><td>Lumen still announces leased space</td></tr><tr><td>9</td><td>RPKI caches</td><td>136,000 entries apart</td></tr><tr><td>10</td><td>CPU</td><td>36-43% now, 85-100% earlier</td></tr><tr><td>11</td><td>Background noise</td><td>3.3 billion UDP to closed ports</td></tr></tbody></table></div>
+<p>Each result is explained in depth in Parts 2 to 9, and the fixes are in <a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--accent)">Part 9</a>.</p>
 '''),
 ]
 

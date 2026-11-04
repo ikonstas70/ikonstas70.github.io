@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch02-7-leaks-and-possible-hijacks">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaks and Possible Hijacks, Assessed Fairly — Special Topics in BGP, Chapter 2 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Every prefix with conflicting origins on the collector, classified with RPKI: what is authorized, what cannot be judged, what is a mistake, and whether anything looks like a deliberate hijack.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch02-7-leaks-and-possible-hijacks">
+<meta property="og:title" content="Special Topics in BGP · Chapter 2: Reading a Path · Part 7 of 10: Leaks and Possible Hijacks, Assessed Fairly">
+<meta property="og:description" content="Every prefix with conflicting origins on the collector, classified with RPKI: what is authorized, what cannot be judged, what is a mistake, and whether anything looks like a deliberate hijack.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 2: Reading a Path · Part 7 of 10: Leaks and Possible Hijacks, Assessed Fairly","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch02-7-leaks-and-possible-hijacks"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 2 &middot; Part 7 of 10</span>
+    <h1>Leaks and Possible Hijacks, Assessed Fairly</h1>
+    <p class="meta">Chapter 2: Reading a Path &middot; A field report from Route Views &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>A route with two origins is the classic signature of a hijack. It is also the signature of anycast, DDoS protection, a network migration and a typing error. Calling something a hijack is an accusation, so this part follows one rule: classify with evidence, and say plainly when the evidence is not enough.</blockquote>
+
+<h2>The method</h2>
+<pre><code>route-views&gt; show ip bgp inconsistent-as
+route-views&gt; show bgp ipv6 unicast inconsistent-as</code></pre>
+<p>Both commands list every prefix that reaches the collector with <strong>more than one origin AS</strong> (a MOAS conflict). For each one we compared the RPKI state of each origin's paths, counted how many of the collector's feeds carry each origin, and checked whether the conflicting origin is simply the other origin's upstream provider. We also scanned the collected paths for the shape of a route leak: a smaller network sitting between two large carriers.</p>
+
+<h2>What it looks like</h2>
+<figure style="margin:22px 0"><img src="/bgp/ch02/ipv6-origin-conflicts.jpg" alt="IPv6 prefixes with conflicting origins on Route Views" loading="lazy" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px">
+<figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Three classes in one screen, from <code>show bgp ipv6 unicast inconsistent-as</code>. <strong>2A13:EDC0:FFFF::/48</strong>: two origins (AS 216211 and AS 40792), both <code>V</code>alid: authorized. <strong>2C0F:EEA8:9000::/36</strong>: two origins (AS 328306 and AS 39356), both <code>N</code>ot found: cannot be judged. <strong>2C0F:EF68::/32</strong>: an <code>{211612}</code> AS_SET left by aggregation at AS 37662, the deprecated form that makes the true origin ambiguous.</figcaption></figure>
+
+<h2>What we found</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0"><div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.5rem var(--serif);color:var(--accent)">1,329</b><span style="font-size:.8rem;color:var(--fg-dim)">prefixes with conflicting origins (1,125 IPv4, 204 IPv6)</span></div><div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.5rem var(--serif);color:var(--accent)">64%</b><span style="font-size:.8rem;color:var(--fg-dim)">authorized: every origin has a valid ROA</span></div><div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.5rem var(--serif);color:var(--accent)">33%</b><span style="font-size:.8rem;color:var(--fg-dim)">cannot be judged: no ROA for any origin</span></div><div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.5rem var(--serif);color:var(--accent)">3.5%</b><span style="font-size:.8rem;color:var(--fg-dim)">one origin valid, the other invalid</span></div></div>
+<div class="table-wrap"><table><thead><tr><th>Class</th><th>IPv4</th><th>IPv6</th><th>What it usually is</th><th>Verdict</th></tr></thead><tbody><tr><td>Every origin RPKI-valid</td><td style="text-align:right">678</td><td style="text-align:right">170</td><td>Anycast, DDoS scrubbing services, migrations, multi-homed customers with ROAs for both origins</td><td>Authorized</td></tr><tr><td>No ROA for any origin</td><td style="text-align:right">402</td><td style="text-align:right">30</td><td>Could be anything, legitimate or not</td><td>Not enough evidence</td></tr><tr><td>One origin valid, one invalid</td><td style="text-align:right">42</td><td style="text-align:right">4</td><td>See below: mostly stale or mistaken announcements</td><td>Misconfiguration, contained</td></tr><tr><td>Every path invalid</td><td style="text-align:right">1</td><td style="text-align:right">0</td><td>A ROA that does not match the route actually used</td><td>Report to the owner</td></tr><tr><td>AS_SET or mixed</td><td style="text-align:right">2</td><td style="text-align:right">0</td><td>Old-style aggregation (deprecated by RFC 9774)</td><td>Not enough evidence</td></tr></tbody></table></div>
+
+<h2>The 46 real conflicts, read one by one</h2>
+<p>In every one of them, the RPKI-valid origin is seen by almost the whole collector (median <strong>14</strong> feeds), and the invalid origin by almost nobody (median <strong>1</strong> feed). That is origin validation working: the invalid announcement exists, but the large networks that drop invalid routes do not pass it on. The patterns behind them:</p>
+<div class="table-wrap"><table><thead><tr><th>Pattern</th><th>Example</th><th>Reading</th></tr></thead><tbody><tr><td>A provider still announcing space it delegated</td><td>38.51.236.0/24: ROA for AS 271907, also announced by AS 174 (Cogent, whose block 38.0.0.0/8 it is)</td><td>The customer has a ROA for its own origin; the provider's old announcement was never removed. Seven Cogent cases, five GTT (four in IPv6), one Lumen</td></tr><tr><td>Address space leased to a cloud</td><td>8.236.0.0/15: ROA for AS 396982 (Google Cloud); Lumen (AS 3356) also originates it from its 8.0.0.0/8 block</td><td>A lease or transfer where the original holder still announces the block. Four feeds carry the Lumen version, all through Lumen itself</td></tr><tr><td>Bring-your-own-IP in a cloud</td><td>212.103.45.0/24: ROA for AS 202280, also originated by Microsoft (AS 8075)</td><td>A customer prefix announced by the cloud without a matching ROA for the cloud's AS</td></tr><tr><td>A prepend typing error</td><td>103.182.177.0/24: path ends <code>… 9498 133296 3</code>; 103.234.137.0/24 ends <code>… 9498 133317 8</code></td><td>AS 3 and AS 8 are universities that would never originate these prefixes. Someone meant "prepend three times" and appended the number 3 as an AS. A classic configuration mistake, not an attack</td></tr><tr><td>Every path invalid</td><td>112.142.192.0/21: two origins, neither authorized, carried by all fifteen feeds</td><td>The ROA does not match the route in use. Either it changed very recently or it is simply wrong: a case for a quiet message to the owner</td></tr></tbody></table></div>
+
+<h2>Route leaks</h2>
+<p>A leak shows up as a <em>valley</em> in the AS path: a smaller network between two large carriers, for example a customer re-announcing one provider's routes to another. Scanning every path collected in this chapter for a large carrier, then a non-carrier, then another large carrier found <strong>no such pattern</strong>. That is a sample, not the whole table, but it is the expected result where BGP Roles, maximum-prefix limits and RPKI filtering are in place.</p>
+
+<h2>Is anything a deliberate hijack?</h2>
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-dim)">Finding 12 &middot; Info</span></p><p style="margin:0 0 6px;font-weight:600">No evidence of an active, deliberate hijack in this snapshot</p><div style="font-size:.95rem">
+<p>A deliberate hijack has a recognizable shape: an unrelated origin, often for a more-specific prefix, spreading through many networks. Nothing in this snapshot has that shape. Every invalid origin is either the legitimate holder's own provider, a cloud acting for a customer, or a typing error, and almost all of them were stopped after one hop.</p>
+<p>What the data <strong>does</strong> show is plenty of misconfiguration, and RPKI containing it. The 432 conflicts with no ROA at all are the honest gap: for those, a collector alone cannot tell legitimate from malicious, and no one should claim otherwise.</p></div></div>
+
+<h2>Fairness in reporting</h2>
+<div class="table-wrap"><table><thead><tr><th>Do</th><th>Do not</th></tr></thead><tbody><tr><td>Call a conflict "invalid" or "unauthorized" when RPKI says so</td><td>Call it a "hijack" without evidence of intent and spread</td></tr><tr><td>Note how many networks carry it, and through whom</td><td>Name a network as an attacker because it appears in a path</td></tr><tr><td>Check the obvious explanations first: provider, cloud, typo, migration</td><td>Publish other people's session details or addresses</td></tr><tr><td>Tell the prefix holder privately and give them time to fix it</td><td>Treat a single snapshot as a history</td></tr></tbody></table></div>
+<p>Confirming intent takes more than one view: route history (when did the origin first appear?), several collectors (RIPE RIS, other Route Views collectors), registry data, and ideally a word with the operators involved.</p>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch02-6-router-telemetry" style="color:var(--accent);text-decoration:none">&larr; Part 6: Router Telemetry: The Collector Under Load</a><span><a href="/bgp/ch02-8-from-problem-to-opportunity" style="color:var(--accent);text-decoration:none">Part 8: From Problem to Opportunity &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 2 &middot; Reading a Path</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--fg-dim);text-decoration:none">Part 1: Summary and Key Findings</a></li><li><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--fg-dim);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8</a></li><li><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--fg-dim);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a></li><li><a href="/bgp/ch02-4-reading-the-table" style="color:var(--fg-dim);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a></li><li><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--fg-dim);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It</a></li><li><a href="/bgp/ch02-6-router-telemetry" style="color:var(--fg-dim);text-decoration:none">Part 6: Router Telemetry: The Collector Under Load</a></li><li><strong><a href="/bgp/ch02-7-leaks-and-possible-hijacks" style="color:var(--accent);text-decoration:none">Part 7: Leaks and Possible Hijacks, Assessed Fairly</a></strong></li><li><a href="/bgp/ch02-8-from-problem-to-opportunity" style="color:var(--fg-dim);text-decoration:none">Part 8: From Problem to Opportunity</a></li><li><a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--fg-dim);text-decoration:none">Part 9: The Proposal: Secure, Low-Exposure Peering</a></li><li><a href="/bgp/ch02-10-the-session-command-by-command" style="color:var(--fg-dim);text-decoration:none">Part 10: The Session, Command by Command</a></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-7-leaks-and-possible-hijacks" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-7-leaks-and-possible-hijacks&amp;text=Special%20Topics%20in%20BGP%3A%20Leaks%20and%20Possible%20Hijacks%2C%20Assessed%20Fairly" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All output is from Route Views, a public collector operated for exactly this purpose. Network names are from public registry data; community meanings are from the operators' public documentation and may change. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

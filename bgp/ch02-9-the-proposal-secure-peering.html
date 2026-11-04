@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch02-9-the-proposal-secure-peering">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Proposal: Secure, Low-Exposure Peering — Special Topics in BGP, Chapter 2 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="A concrete design for peering that is more secure and exposes far less: layered controls, a reference architecture, a configuration template and a maturity path, mapped to every finding.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch02-9-the-proposal-secure-peering">
+<meta property="og:title" content="Special Topics in BGP · Chapter 2: Reading a Path · Part 9 of 10: The Proposal: Secure, Low-Exposure Peering">
+<meta property="og:description" content="A concrete design for peering that is more secure and exposes far less: layered controls, a reference architecture, a configuration template and a maturity path, mapped to every finding.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 2: Reading a Path · Part 9 of 10: The Proposal: Secure, Low-Exposure Peering","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch02-9-the-proposal-secure-peering"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 2 &middot; Part 9 of 10</span>
+    <h1>The Proposal: Secure, Low-Exposure Peering</h1>
+    <p class="meta">Chapter 2: Reading a Path &middot; A field report from Route Views &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>The findings showed what leaks and what can be forged. This part proposes the answer: a peering design built on three rules. Accept only what can be verified. Announce only what you own. Expose nothing that is not required for routing to work.</blockquote>
+
+<h2>Design goals</h2>
+<div class="table-wrap"><table><thead><tr><th>Goal</th><th>Meaning</th><th>Findings it answers</th></tr></thead><tbody><tr><td>Verified in</td><td>Every route accepted is checked for origin, and as standards mature, for path</td><td>7, 8, 9, 10</td></tr><tr><td>Minimal out</td><td>Announce only owned and customer prefixes, with nothing internal attached</td><td>3, 4, 5</td></tr><tr><td>Hardened sessions</td><td>A BGP session can only be formed by the intended peer, and cannot be overwhelmed</td><td>6, 11</td></tr><tr><td>Protected control plane</td><td>The router's CPU serves routing first; noise and the public never reach it</td><td>11</td></tr><tr><td>Observed without exposure</td><td>Full visibility for the operator, none for the public</td><td>11, all</td></tr><tr><td>Deliberate decisions</td><td>Exit selection and failover are policy, not tie-breakers</td><td>1, 2</td></tr></tbody></table></div>
+
+<h2>Reference architecture</h2>
+<figure style="margin:22px 0"><svg viewBox="0 0 900 470" role="img" aria-label="Secure peering reference architecture" style="width:100%;height:auto;display:block;background:hsl(0 0% 5%);border:1px solid hsl(43 45% 56% / .35);border-radius:10px;font-family:Inter,sans-serif">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="hsl(43 45% 56%)"/></marker></defs>
+<g font-size="13" fill="hsl(0 0% 92%)">
+<rect x="30" y="24" width="190" height="56" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="125" y="48" text-anchor="middle">Transit providers</text><text x="125" y="66" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">two or more, diverse</text>
+<rect x="355" y="24" width="190" height="56" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="450" y="48" text-anchor="middle">IXP route servers</text><text x="450" y="66" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">RPKI-filtered</text>
+<rect x="680" y="24" width="190" height="56" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="775" y="48" text-anchor="middle">Private peers (PNI)</text><text x="775" y="66" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">large content networks</text>
+<line x1="125" y1="80" x2="300" y2="140" stroke="hsl(43 45% 56%)" marker-end="url(#ar)"/><line x1="450" y1="80" x2="450" y2="140" stroke="hsl(43 45% 56%)" marker-end="url(#ar)"/><line x1="775" y1="80" x2="600" y2="140" stroke="hsl(43 45% 56%)" marker-end="url(#ar)"/>
+<rect x="200" y="142" width="500" height="120" rx="10" fill="hsl(43 45% 56% / .10)" stroke="hsl(43 45% 56%)"/>
+<text x="450" y="166" text-anchor="middle" font-size="15" fill="hsl(43 45% 56%)">Edge routers (two, separate sites)</text>
+<text x="450" y="190" text-anchor="middle" font-size="12">Session: TCP-AO or MD5 · GTSM · iACL on TCP 179 · BGP Roles · max-prefix</text>
+<text x="450" y="210" text-anchor="middle" font-size="12">Import: drop RPKI-invalid · ASPA · bogons · too-specific · own space · path sanity</text>
+<text x="450" y="230" text-anchor="middle" font-size="12">Export: own and customer prefixes only · strip communities · neutral router ID</text>
+<text x="450" y="250" text-anchor="middle" font-size="12">Control plane: CoPP · rate-limited ICMP · SSH only · AAA · idle timeouts</text>
+<line x1="300" y1="262" x2="160" y2="330" stroke="hsl(43 45% 56%)" stroke-dasharray="4 3" marker-end="url(#ar)"/><line x1="450" y1="262" x2="450" y2="330" stroke="hsl(43 45% 56%)" stroke-dasharray="4 3" marker-end="url(#ar)"/><line x1="600" y1="262" x2="740" y2="330" stroke="hsl(43 45% 56%)" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+<rect x="40" y="332" width="240" height="72" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="160" y="356" text-anchor="middle">RPKI validators ×2</text><text x="160" y="374" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">different software</text><text x="160" y="390" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">RTR over SSH, management VRF</text>
+<rect x="330" y="332" width="240" height="72" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="450" y="356" text-anchor="middle">Private BMP collector</text><text x="450" y="374" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">plus streaming telemetry</text><text x="450" y="390" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">no public login on the edge</text>
+<rect x="620" y="332" width="240" height="72" rx="8" fill="hsl(0 0% 8%)" stroke="hsl(0 0% 40%)"/><text x="740" y="356" text-anchor="middle">External watch</text><text x="740" y="374" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">public collectors, hijack alerts</text><text x="740" y="390" text-anchor="middle" font-size="11" fill="hsl(0 0% 62%)">your prefixes, daily</text>
+<text x="450" y="440" text-anchor="middle" font-size="12" fill="hsl(0 0% 62%)">Solid: BGP sessions. Dashed: out-of-band validation and monitoring, never reachable from the Internet.</text>
+</g></svg><figcaption style="font-size:.85rem;color:var(--fg-dim);margin-top:8px">Reference design: what enters, what leaves, and how the edge is watched without being exposed.</figcaption></figure>
+
+<h2>The controls, layer by layer</h2>
+<div class="table-wrap"><table><thead><tr><th>Layer</th><th>Control</th><th>Stops</th><th>Standard</th></tr></thead><tbody><tr><td>Identity</td><td>Exact-length ROAs for every announced prefix, no maxLength</td><td>Sub-prefix and forged-origin hijacks</td><td>RFC 6480, RFC 9319</td></tr><tr><td>Identity</td><td>ASPA objects listing your real upstream providers</td><td>Forged paths and many leaks</td><td>IETF ASPA draft</td></tr><tr><td>Identity</td><td>IRR route objects and PeeringDB records that match reality</td><td>Being filtered by careful peers</td><td>MANRS</td></tr><tr><td>Session</td><td>TCP-AO (or MD5 where AO is not supported)</td><td>Spoofed resets and injected sessions</td><td>RFC 5925</td></tr><tr><td>Session</td><td>GTSM (<code>ttl-security hops 1</code>) on direct peerings</td><td>Remote attacks on TCP 179</td><td>RFC 5082</td></tr><tr><td>Session</td><td>Infrastructure ACL: TCP 179 only from configured neighbors</td><td>Scans and floods against BGP</td><td>BCP 194</td></tr><tr><td>Session</td><td>BGP Roles with strict mode</td><td>Route leaks between providers and peers</td><td>RFC 9234</td></tr><tr><td>Session</td><td>Maximum-prefix limit per neighbor, with warning threshold</td><td>A peer leaking a full table into a peering session</td><td>BCP 194</td></tr><tr><td>Import</td><td>Drop RPKI-invalid; later, ASPA-invalid</td><td>Hijacks and leaks other networks did not stop</td><td>RFC 6811, RFC 8893</td></tr><tr><td>Import</td><td>Drop bogon prefixes and ASNs, prefixes longer than /24 (IPv4) or /48 (IPv6), your own space, absurd paths</td><td>Garbage, hijack shapes, loops</td><td>BCP 194</td></tr><tr><td>Import</td><td>RFC 7606 error handling on current software</td><td>Malformed attributes resetting sessions</td><td>RFC 7606</td></tr><tr><td>Export</td><td>Explicit prefix list of own and customer routes only</td><td>Accidental leaks of learned routes</td><td>MANRS</td></tr><tr><td>Export</td><td>Delete internal and informational communities; ask upstreams to strip action communities</td><td>Publishing business relationships and intent</td><td>Best practice</td></tr><tr><td>Export</td><td>Public loopback as router ID; no AGGREGATOR with internal addresses</td><td>Internal addressing disclosure</td><td>Best practice</td></tr><tr><td>Export</td><td>Prepend three times or fewer; steer with upstream communities</td><td>Long paths that are easy to undercut</td><td>Best practice</td></tr><tr><td>Control plane</td><td>CoPP, rate-limited ICMP, management in a separate VRF or out-of-band</td><td>Background noise and floods reaching the CPU</td><td>Vendor guides</td></tr><tr><td>Control plane</td><td>SSH only, AAA with per-command authorization, idle timeouts, no public CLI on the edge</td><td>Credential theft, line exhaustion, information leaks</td><td>Vendor guides</td></tr><tr><td>Validation</td><td>Two validators from different implementations, RTR over SSH on the management network, alarms on divergence and total loss</td><td>A single bad or missing cache disabling validation</td><td>RFC 8210</td></tr><tr><td>Visibility</td><td>BMP to a private collector and streaming telemetry; external watch of your prefixes on public collectors</td><td>Flying blind, or exposing a looking glass to learn what you already know</td><td>RFC 7854</td></tr><tr><td>Hygiene</td><td>Anti-spoofing on customer edges (source address validation)</td><td>Your network being used for reflection attacks</td><td>BCP 38, MANRS</td></tr></tbody></table></div>
+
+<h2>Peering strategy: better, not only safer</h2>
+<div class="table-wrap"><table><thead><tr><th>Choice</th><th>Why it is better</th></tr></thead><tbody><tr><td>Two or more transit providers, on separate routers and sites</td><td>No single upstream to flood or lose; the clean public-cloud block in Part 8 had six</td></tr><tr><td>IXP route servers with RPKI filtering</td><td>Many peers in one session, with invalid routes already removed by the exchange</td></tr><tr><td>Private interconnects with the largest content networks</td><td>Shorter, more predictable paths for most traffic, as the one-hop paths to Google and Cloudflare showed</td></tr><tr><td>Local preference by relationship: customer &gt; peer &gt; transit</td><td>Traffic follows the business, not the oldest session</td></tr><tr><td>Graceful shutdown community before maintenance</td><td>Traffic moves off a session before it drops (RFC 8326)</td></tr><tr><td>Join MANRS</td><td>A public commitment to filtering, anti-spoofing, coordination and validation that peers can check</td></tr></tbody></table></div>
+
+<h2>A configuration template</h2>
+<p>A compact FRRouting example of the import and export policy for one transit session. The same structure maps directly to IOS XR, Junos or BIRD.</p>
+<pre><code>! FRRouting example. Documentation addresses (RFC 5737) and ASNs (RFC 5398).
+rpki
+ rpki cache 10.0.0.10 3323 preference 1        ! validator A, management network
+ rpki cache 10.0.0.11 3323 preference 2        ! validator B, different software
+exit
+!
+router bgp 64500
+ bgp router-id 192.0.2.1                         ! public loopback, not an internal address
+ neighbor 198.51.100.1 remote-as 64510
+ neighbor 198.51.100.1 description TRANSIT-A
+ neighbor 198.51.100.1 ttl-security hops 1       ! GTSM: only a directly connected peer
+ neighbor 198.51.100.1 password &lt;secret&gt;         ! TCP-AO where both sides support it
+ neighbor 198.51.100.1 local-role customer strict ! RFC 9234: leak prevention
+ address-family ipv4 unicast
+  neighbor 198.51.100.1 route-map TRANSIT-IN in
+  neighbor 198.51.100.1 route-map EDGE-OUT out
+  neighbor 198.51.100.1 maximum-prefix 1200000 90
+ exit-address-family
+!
+ip prefix-list OWN       seq 5  permit 192.0.2.0/24           ! exactly what we announce
+ip prefix-list BOGONS    seq 5  permit 10.0.0.0/8 le 32       ! plus the full bogon list
+ip prefix-list TOO-LONG  seq 5  permit 0.0.0.0/0 ge 25 le 32
+bgp community-list standard INTERNAL permit 64500:1000      ! our informational tags
+bgp as-path access-list LONG-PATH seq 5 permit (_[0-9]+){50,}
+!
+route-map TRANSIT-IN deny 10
+ match rpki invalid                              ! origin validation
+route-map TRANSIT-IN deny 20
+ match ip address prefix-list BOGONS
+route-map TRANSIT-IN deny 30
+ match ip address prefix-list TOO-LONG
+route-map TRANSIT-IN deny 40
+ match ip address prefix-list OWN                ! our own space never comes from outside
+route-map TRANSIT-IN deny 50
+ match as-path LONG-PATH
+route-map TRANSIT-IN permit 100
+!
+route-map EDGE-OUT permit 10
+ match ip address prefix-list OWN                ! announce only what we own
+ set comm-list INTERNAL delete                   ! publish nothing internal
+route-map EDGE-OUT deny 100</code></pre>
+<p>Two lines in it carry most of the value: <code>match rpki invalid</code> on the way in and <code>match ip address prefix-list OWN</code> on the way out. Everything else narrows what can go wrong.</p>
+
+<h2>Every finding, answered</h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Finding</th><th>Answered by</th></tr></thead><tbody><tr><td>1</td><td>Best path by tie-breaker</td><td>Local preference by relationship</td></tr><tr><td>2</td><td>Content one hop away</td><td>Private interconnects and route servers</td></tr><tr><td>3</td><td>Communities reveal the business</td><td>Delete informational communities on export</td></tr><tr><td>4</td><td>Action communities published</td><td>Ask upstreams to strip them after use</td></tr><tr><td>5</td><td>AGGREGATOR exposes internal routers</td><td>Public loopback router ID, no internal AGGREGATOR</td></tr><tr><td>6</td><td>Unknown attributes pass through</td><td>Current software with RFC 7606; filter unused attributes</td></tr><tr><td>7</td><td>Prepends and unprotected more-specifics</td><td>Exact ROAs for every prefix; three prepends or fewer</td></tr><tr><td>8</td><td>Loose maxLength</td><td>Exact-length ROAs (RFC 9319)</td></tr><tr><td>9</td><td>Caches disagree</td><td>Two validators, different software, divergence alarms</td></tr><tr><td>10</td><td>Plain RTR</td><td>RTR over SSH on the management network</td></tr><tr><td>11</td><td>Hot, reachable control plane</td><td>CoPP, iACL, GTSM, idle timeouts, BMP instead of a public CLI</td></tr></tbody></table></div>
+
+<h2>Maturity path</h2>
+<div class="table-wrap"><table><thead><tr><th>Level</th><th>What is in place</th><th>Typical time</th></tr></thead><tbody><tr><td>1 · Baseline</td><td>Exact ROAs, explicit export lists, bogon and too-specific filters, max-prefix, GTSM, iACL, CoPP, SSH and AAA</td><td>30 days</td></tr><tr><td>2 · Validated</td><td>Origin validation enforced, two validators, RTR protected, communities scrubbed, neutral router IDs, external prefix monitoring, MANRS</td><td>60 to 90 days</td></tr><tr><td>3 · Assured</td><td>TCP-AO, BGP Roles strict, ASPA published and verified, BMP and streaming telemetry, graceful shutdown in every maintenance</td><td>Within a year</td></tr></tbody></table></div>
+
+<h2>For organizations that do not run BGP</h2>
+<p>Most businesses never configure a BGP session; they rent addresses from cloud, CDN and access providers. The same principles still apply, one level up:</p>
+<ul>
+ <li><strong>Choose providers by routing security:</strong> exact-length ROAs, origin validation enforced, several upstreams. All three are visible on a public collector.</li>
+ <li><strong>Expose nothing you do not have to:</strong> put public services behind a CDN, keep management interfaces reachable only through a VPN, and close every port that is not serving users.</li>
+ <li><strong>Watch your blocks:</strong> free alerting on the prefixes you depend on tells you about a hijack before your users do.</li>
+</ul>
+
+<h2>The takeaway</h2>
+<p>Secure peering is not one product; it is a short list of controls that each close one gap found in this chapter. Verify what comes in, announce only what you own, keep everything internal inside, and watch from the outside. Done together, they turn a router that tells the world about your business into one that tells it only where your addresses are, which is all BGP ever needed to say.</p>
+<p style="font-size:.95rem;color:var(--fg-dim)">To have this design reviewed against your own network or providers, write to <a href="mailto:info@konstas.us" style="color:var(--accent)">info@konstas.us</a>. Next chapter: mapping a network from the outside.</p>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch02-8-from-problem-to-opportunity" style="color:var(--accent);text-decoration:none">&larr; Part 8: From Problem to Opportunity</a><span><a href="/bgp/ch02-10-the-session-command-by-command" style="color:var(--accent);text-decoration:none">Part 10: The Session, Command by Command &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 2 &middot; Reading a Path</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--fg-dim);text-decoration:none">Part 1: Summary and Key Findings</a></li><li><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--fg-dim);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8</a></li><li><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--fg-dim);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a></li><li><a href="/bgp/ch02-4-reading-the-table" style="color:var(--fg-dim);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a></li><li><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--fg-dim);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It</a></li><li><a href="/bgp/ch02-6-router-telemetry" style="color:var(--fg-dim);text-decoration:none">Part 6: Router Telemetry: The Collector Under Load</a></li><li><a href="/bgp/ch02-7-leaks-and-possible-hijacks" style="color:var(--fg-dim);text-decoration:none">Part 7: Leaks and Possible Hijacks, Assessed Fairly</a></li><li><a href="/bgp/ch02-8-from-problem-to-opportunity" style="color:var(--fg-dim);text-decoration:none">Part 8: From Problem to Opportunity</a></li><li><strong><a href="/bgp/ch02-9-the-proposal-secure-peering" style="color:var(--accent);text-decoration:none">Part 9: The Proposal: Secure, Low-Exposure Peering</a></strong></li><li><a href="/bgp/ch02-10-the-session-command-by-command" style="color:var(--fg-dim);text-decoration:none">Part 10: The Session, Command by Command</a></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-9-the-proposal-secure-peering" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-9-the-proposal-secure-peering&amp;text=Special%20Topics%20in%20BGP%3A%20The%20Proposal%3A%20Secure%2C%20Low-Exposure%20Peering" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All output is from Route Views, a public collector operated for exactly this purpose. Network names are from public registry data; community meanings are from the operators' public documentation and may change. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>
