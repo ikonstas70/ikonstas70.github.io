@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Special Topics in BGP — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="A subscriber series by Ioannis Alexander Konstas: log in to the public route servers and looking glasses that carriers and exchanges run for everyone, and read the global routing table live: churn, RPKI, filtering policy, leaks and hijacks.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/">
+<meta property="og:title" content="Special Topics in BGP: Reading the Internet's Routing Table">
+<meta property="og:description" content="A subscriber series by Ioannis Alexander Konstas: log in to the public route servers and looking glasses that carriers and exchanges run for everyone, and read the global routing table live: churn, RPKI, filtering policy, leaks and hijacks.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "CollectionPage", "headline": "Special Topics in BGP", "author": {"@type": "Person", "name": "Ioannis Alexander Konstas", "url": "https://ikonstas70.github.io/about"}, "url": "https://ikonstas70.github.io/bgp/", "isAccessibleForFree": false}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <img src="/bgp/banner.jpg" width="1400" height="308" loading="eager" alt="Output of show ip bgp summary on a public route collector" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;margin-bottom:22px">
+    <span class="tag">Series &middot; Subscribers only</span>
+    <h1>Special Topics in BGP: Reading the Internet's Routing Table</h1>
+    <p class="meta">CCIE &middot; Advanced &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>Most engineers configure BGP. Few ever look at the Internet through it.</blockquote>
+
+<p>This series logs in to the public route servers and looking glasses that carriers and exchanges operate for everyone, and reads the global routing table live: how traffic really reaches a network, which providers stand in between, how leaks and hijacks show up in plain sight, and how much a single public BGP view reveals. Every chapter is hands-on: the question, the exact session, the reading of its output, and what it means for your own network. It is written for engineers who already know the protocol.</p>
+
+<h2>From the first session</h2>
+<p>One public login and one command, <code>show ip bgp summary</code>, already show this:</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0 22px">
+  <div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.6rem var(--serif);color:var(--accent)">916,896</b><span style="font-size:.8rem;color:var(--fg-dim)">IPv4 prefixes in the global table</span></div>
+  <div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.6rem var(--serif);color:var(--accent)">1.14 billion</b><span style="font-size:.8rem;color:var(--fg-dim)">best-path changes: the Internet&#39;s churn</span></div>
+  <div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.6rem var(--serif);color:var(--accent)">17,810</b><span style="font-size:.8rem;color:var(--fg-dim)">RPKI-invalid paths visible right now</span></div>
+  <div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.6rem var(--serif);color:var(--accent)">3.6 GB</b><span style="font-size:.8rem;color:var(--fg-dim)">of router memory to hold it all</span></div>
+</div>
+<p>Chapter 1 reads every one of those lines, the 57 neighbor sessions beneath them, and what that public view exposes about any network on the Internet.</p>
+
+    <h2>Chapters</h2>
+    <div class="card card-gold" style="cursor:default">
+      <h3>1 &middot; One Login, the Whole Internet</h3>
+      <p>Read a public route collector line by line: the size of the Internet, its churn, its RPKI posture, how the largest carriers filter routes, and what that public view exposes about any network.</p>
+      <span class="date">Published &middot; 3 Nov 2026 &middot; Subscribers</span>
+    </div>
+    <div class="card" style="cursor:default;border-style:dashed">
+      <h3>2 &middot; Reading a Path</h3>
+      <p>One route, attribute by attribute: AS path, origin, next hop, local preference, MED and communities, and what each one gives away about the networks it crossed.</p>
+      <span class="date">Coming soon</span>
+    </div>
+    <div class="card" style="cursor:default;border-style:dashed">
+      <h3>3 &middot; Mapping a Network from the Outside</h3>
+      <p>Prefixes, upstreams, peers and exchange points: reconstructing any organization&#39;s connectivity from public data alone.</p>
+      <span class="date">Coming soon</span>
+    </div>
+    <div class="card" style="cursor:default;border-style:dashed">
+      <h3>4 &middot; Leaks and Hijacks in Plain Sight</h3>
+      <p>Finding live route leaks and hijacks on public collectors, and how origin validation stops them.</p>
+      <span class="date">Coming soon</span>
+    </div>
+    <div class="card" style="cursor:default;border-style:dashed">
+      <h3>5 &middot; Special Topics</h3>
+      <p>Shaped by subscriber questions.</p>
+      <span class="date">Coming soon</span>
+    </div>
+
+<h2>Access</h2>
+<div class="card card-gold" style="cursor:default;border:1px solid var(--accent);background:linear-gradient(135deg, hsl(43 45% 56% / .10), hsl(0 0% 6%) 55%)">
+  <span style="display:inline-block;margin:0 0 12px;padding:3px 10px;border:1px solid var(--accent);border-radius:999px;color:var(--accent);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase">Subscribers only</span>
+  <p style="color:var(--fg);font-size:.95rem;margin-top:4px">The chapters are published for subscribers. Subscriber access through GitHub is opening soon.</p>
+  <p>To be among the first readers, email <a href="mailto:info@konstas.us?subject=Special%20Topics%20in%20BGP%20%E2%80%94%20access" style="color:var(--accent)">info@konstas.us</a>.</p>
+  <p style="margin:14px 0 0;padding-top:12px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.85rem;color:var(--fg-dim)"><strong style="color:var(--accent);font-weight:600">Hands-on video?</strong> If you would like a hands-on video walkthrough of this advanced topic, email <a href="mailto:info@konstas.us?subject=Special%20Topics%20in%20BGP%20%E2%80%94%20hands-on%20video" style="color:var(--accent)">info@konstas.us</a> and it will be considered.</p>
+</div>
+
+<div style="margin:30px 0 8px">
+  <a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.9rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a>
+  <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2F" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.9rem" rel="noopener" target="_blank">Share on LinkedIn</a>
+  <a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2F&amp;text=Special%20Topics%20in%20BGP%3A%20reading%20the%20Internet%27s%20routing%20table" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.9rem" rel="noopener" target="_blank">Share on X</a>
+</div>
+<p style="font-size:.85rem;color:var(--fg-dim)">Only public services that their operators provide for exactly this purpose are used: route collectors, route servers and looking glasses.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

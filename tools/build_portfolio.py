@@ -45,6 +45,7 @@ HEAD = '''<!DOCTYPE html>
     <nav class="top">
       <a href="/">Articles</a>
       <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/">BGP</a>
       <a href="/awareness/">Security Awareness</a>
       <a href="/data-science/">Data Science</a>
       <a href="/readings">Readings</a>
