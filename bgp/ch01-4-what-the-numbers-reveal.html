@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch01-4-what-the-numbers-reveal">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What the Numbers Reveal — Special Topics in BGP, Chapter 1 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Five readings an experienced engineer takes from the neighbor table, and the sessions that are down.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch01-4-what-the-numbers-reveal">
+<meta property="og:title" content="Special Topics in BGP · Chapter 1: One Login, the Whole Internet · Part 4 of 5: What the Numbers Reveal">
+<meta property="og:description" content="Five readings an experienced engineer takes from the neighbor table, and the sessions that are down.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 1: One Login, the Whole Internet · Part 4 of 5: What the Numbers Reveal","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch01-4-what-the-numbers-reveal"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 1 &middot; Part 4 of 5</span>
+    <h1>What the Numbers Reveal</h1>
+    <p class="meta">Chapter 1: One Login, the Whole Internet &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<h2>1. This is a collector, and the counters prove it</h2>
+<p>Hurricane Electric sent <strong>95.3 million</strong> messages in 34 weeks; the collector sent back 381,931. Over 241 days that is one message about every 55 seconds: keepalives and nothing else.</p>
+<h2>2. Churn has a fingerprint per network</h2>
+<p>Divide <code>MsgRcvd</code> by uptime:</p>
+<div class="table-wrap"><table><thead><tr><th>Peer</th><th>Updates per day</th><th>Per second</th></tr></thead><tbody><tr><td>Hurricane Electric (6939)</td><td style="text-align:right">≈ 395,000</td><td style="text-align:right">≈ 4.6</td></tr><tr><td>Coloclue (8283)</td><td style="text-align:right">≈ 777,000</td><td style="text-align:right">≈ 9.0</td></tr><tr><td>GTT (3257)</td><td style="text-align:right">≈ 314,000</td><td style="text-align:right">≈ 3.6</td></tr></tbody></table></div>
+<h2>3. Correlated events are visible</h2>
+<p>AS 3356, 7018, 701 and 3549 have all been up for exactly <strong>5d13h</strong>. Four of the largest networks did not fail independently in the same minute; something they share with the collector did: maintenance, a reboot, a common path. Spotting this is how operators correlate outages.</p>
+<h2>4. Prefix counts expose policy</h2>
+<p>Full feeds range from 845,477 to 880,273 prefixes. That 35,000-prefix spread is each network's filtering and export policy made visible: peering-rich networks and those that pass more-specific routes send more, while the large Tier-1 transit networks cluster tightly at 845k to 847k, consistent with strict filtering. You are reading routing policy from the outside.</p>
+<h2>5. The collector is healthy</h2>
+<p>Every Established neighbor shows <code>TblVer 1142409035</code> with <code>InQ</code> and <code>OutQ</code> at 0: no backlog, all in sync.</p>
+<h2>The sessions that are not up</h2>
+<div class="table-wrap"><table><thead><tr><th>State</th><th>Meaning</th><th>Examples</th></tr></thead><tbody><tr><td><code>Active</code></td><td>The router keeps trying to open TCP port 179; the far side does not answer (configuration removed, or a filter)</td><td>DigitalOcean (14061) ×4, Tata (6453), NTT (2914) ×2, Orange (5511), Microsoft (8075), LINX (5459)</td></tr><tr><td><code>Idle</code></td><td>Not even trying: administratively down, a maximum-prefix limit tripped, or no route to the neighbor</td><td>6539, 58511, 58901, RCN (6079) ×2</td></tr><tr><td><code>never</code></td><td>Has not come up since the counters were last reset</td><td>most of the above</td></tr><tr><td>a time with <code>Active</code></td><td>Was up, and dropped that long ago</td><td>KPN (286) 13w3d, AS 3277, AS 1403</td></tr></tbody></table></div>
+<p>About half of the 57 configured peers are not exchanging routes. For a collector that is normal: contributors come and go, and the configuration waits for them.</p>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch01-3-the-neighbors" style="color:var(--accent);text-decoration:none">&larr; Part 3: The Neighbors</a><span><a href="/bgp/ch01-5-what-is-exposed" style="color:var(--accent);text-decoration:none">Part 5: What Is Exposed, and Your Turn &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 1 &middot; One Login, the Whole Internet</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch01-1-the-session" style="color:var(--fg-dim);text-decoration:none">Part 1: The Session</a></li><li><a href="/bgp/ch01-2-the-header" style="color:var(--fg-dim);text-decoration:none">Part 2: The Header</a></li><li><a href="/bgp/ch01-3-the-neighbors" style="color:var(--fg-dim);text-decoration:none">Part 3: The Neighbors</a></li><li><strong><a href="/bgp/ch01-4-what-the-numbers-reveal" style="color:var(--accent);text-decoration:none">Part 4: What the Numbers Reveal</a></strong></li><li><a href="/bgp/ch01-5-what-is-exposed" style="color:var(--fg-dim);text-decoration:none">Part 5: What Is Exposed, and Your Turn</a></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch01-4-what-the-numbers-reveal" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch01-4-what-the-numbers-reveal&amp;text=Special%20Topics%20in%20BGP%3A%20What%20the%20Numbers%20Reveal" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">Only public services that their operators provide for exactly this purpose are used. Chapters 2 to 5 are for subscribers: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

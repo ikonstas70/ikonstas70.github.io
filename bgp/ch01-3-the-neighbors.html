@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch01-3-the-neighbors">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Neighbors — Special Topics in BGP, Chapter 1 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Who feeds the collector: 22 full tables from five continents, and the partial feeds that tell their own story.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch01-3-the-neighbors">
+<meta property="og:title" content="Special Topics in BGP · Chapter 1: One Login, the Whole Internet · Part 3 of 5: The Neighbors">
+<meta property="og:description" content="Who feeds the collector: 22 full tables from five continents, and the partial feeds that tell their own story.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 1: One Login, the Whole Internet · Part 3 of 5: The Neighbors","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch01-3-the-neighbors"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 1 &middot; Part 3 of 5</span>
+    <h1>The Neighbors</h1>
+    <p class="meta">Chapter 1: One Login, the Whole Internet &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<p>Below the header, each line is one BGP session. The columns that matter:</p>
+<div class="table-wrap"><table><thead><tr><th>Column</th><th>Meaning</th></tr></thead><tbody><tr><td><code>AS</code></td><td>The neighbor's autonomous system</td></tr><tr><td><code>MsgRcvd</code> / <code>MsgSent</code></td><td>BGP messages received and sent on this session</td></tr><tr><td><code>TblVer</code></td><td>The table version this neighbor has been brought up to</td></tr><tr><td><code>InQ</code> / <code>OutQ</code></td><td>Messages waiting to be processed or sent (backlog)</td></tr><tr><td><code>Up/Down</code></td><td>How long the session has been in its current state</td></tr><tr><td><code>State/PfxRcd</code></td><td>A number means Established, with that many prefixes; a word means not established</td></tr></tbody></table></div>
+<h2>Full tables</h2>
+<p>27 sessions are Established, and <strong>22 deliver a full table</strong> of more than 840,000 prefixes. Operator names are from public registry data.</p>
+<div class="table-wrap"><table><thead><tr><th>Neighbor</th><th>AS</th><th>Network</th><th>Prefixes</th><th>Up</th></tr></thead><tbody><tr><td>64.71.137.241</td><td>6939</td><td>Hurricane Electric</td><td style="text-align:right">869,346</td><td>34w3d</td></tr><tr><td>4.68.4.46</td><td>3356</td><td>Lumen (Level 3)</td><td style="text-align:right">845,477</td><td>5d13h</td></tr><tr><td>12.0.1.63</td><td>7018</td><td>AT&amp;T</td><td style="text-align:right">846,376</td><td>5d13h</td></tr><tr><td>137.39.3.55</td><td>701</td><td>Verizon</td><td style="text-align:right">847,301</td><td>5d13h</td></tr><tr><td>208.51.134.254</td><td>3549</td><td>Lumen (ex-Global Crossing)</td><td style="text-align:right">846,350</td><td>5d13h</td></tr><tr><td>89.149.178.10</td><td>3257</td><td>GTT</td><td style="text-align:right">846,817</td><td>39w3d</td></tr><tr><td>217.192.89.50</td><td>3303</td><td>Swisscom</td><td style="text-align:right">876,786</td><td>35w5d</td></tr><tr><td>202.232.0.2</td><td>2497</td><td>IIJ, Japan</td><td style="text-align:right">860,369</td><td>24w2d</td></tr><tr><td>203.62.252.83</td><td>1221</td><td>Telstra, Australia</td><td style="text-align:right">856,424</td><td>4w6d</td></tr><tr><td>154.11.12.212</td><td>852</td><td>TELUS, Canada</td><td style="text-align:right">848,162</td><td>6w3d</td></tr><tr><td>193.0.0.56</td><td>3333</td><td>RIPE NCC</td><td style="text-align:right">862,740</td><td>5w6d</td></tr><tr><td>132.198.255.253</td><td>1351</td><td>University of Vermont</td><td style="text-align:right">880,273</td><td>25w4d</td></tr><tr><td>209.124.176.223</td><td>101</td><td>University of Washington</td><td style="text-align:right">850,407</td><td>4w5d</td></tr></tbody></table></div>
+<h2>Partial feeds</h2>
+<p>Networks that send only part of the table are just as informative: they show what each one chooses to export.</p>
+<div class="table-wrap"><table><thead><tr><th>Neighbor</th><th>AS</th><th>Prefixes</th><th>Reading</th></tr></thead><tbody><tr><td>144.228.241.130</td><td>1239 (Sprint)</td><td style="text-align:right">63,381</td><td>Customer routes only</td></tr><tr><td>198.32.252.33</td><td>20080 (AMPATH, Miami)</td><td style="text-align:right">19,714</td><td>Research and education, Latin America</td></tr><tr><td>208.74.64.40</td><td>19214</td><td style="text-align:right">350,114</td><td>Partial view</td></tr><tr><td>203.181.248.168</td><td>7660 (APAN, Japan)</td><td style="text-align:right">710,120</td><td>Near-full research view</td></tr><tr><td>202.93.8.242</td><td>24441</td><td style="text-align:right">4,505</td><td>Regional routes</td></tr></tbody></table></div>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch01-2-the-header" style="color:var(--accent);text-decoration:none">&larr; Part 2: The Header</a><span><a href="/bgp/ch01-4-what-the-numbers-reveal" style="color:var(--accent);text-decoration:none">Part 4: What the Numbers Reveal &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 1 &middot; One Login, the Whole Internet</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch01-1-the-session" style="color:var(--fg-dim);text-decoration:none">Part 1: The Session</a></li><li><a href="/bgp/ch01-2-the-header" style="color:var(--fg-dim);text-decoration:none">Part 2: The Header</a></li><li><strong><a href="/bgp/ch01-3-the-neighbors" style="color:var(--accent);text-decoration:none">Part 3: The Neighbors</a></strong></li><li><a href="/bgp/ch01-4-what-the-numbers-reveal" style="color:var(--fg-dim);text-decoration:none">Part 4: What the Numbers Reveal</a></li><li><a href="/bgp/ch01-5-what-is-exposed" style="color:var(--fg-dim);text-decoration:none">Part 5: What Is Exposed, and Your Turn</a></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch01-3-the-neighbors" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch01-3-the-neighbors&amp;text=Special%20Topics%20in%20BGP%3A%20The%20Neighbors" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">Only public services that their operators provide for exactly this purpose are used. Chapters 2 to 5 are for subscribers: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

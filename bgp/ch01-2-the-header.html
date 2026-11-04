@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch01-2-the-header">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Header — Special Topics in BGP, Chapter 1 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Eleven lines that give the size of the Internet, its rate of change, its security posture and the cost of carrying it.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch01-2-the-header">
+<meta property="og:title" content="Special Topics in BGP · Chapter 1: One Login, the Whole Internet · Part 2 of 5: The Header">
+<meta property="og:description" content="Eleven lines that give the size of the Internet, its rate of change, its security posture and the cost of carrying it.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 1: One Login, the Whole Internet · Part 2 of 5: The Header","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch01-2-the-header"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 1 &middot; Part 2 of 5</span>
+    <h1>The Header</h1>
+    <p class="meta">Chapter 1: One Login, the Whole Internet &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<p>The first block of <code>show ip bgp summary</code> describes the router and its BGP table. Every line carries meaning.</p>
+<div class="table-wrap"><table><thead><tr><th>Line</th><th>Value</th><th>What it tells you</th></tr></thead><tbody><tr><td><code>BGP router identifier 128.223.51.103, local AS number 6447</code></td><td>AS 6447</td><td>Route Views' own autonomous system. A <strong>collector</strong>: it receives routes and announces none.</td></tr><tr><td><code>BGP table version is 1142409165</code></td><td><strong>1.14 billion</strong></td><td>Increments on every best-path change since the process started. This is the Internet's <strong>churn</strong>, and it never stops.</td></tr><tr><td><code>Path RPKI states: 6502331 valid, 13437858 not found, 17810 invalid</code></td><td>32.6% / 67.3% / 0.09%</td><td>Origin validation of every <strong>path</strong> (the three numbers add up exactly to the path count). A third of paths are cryptographically proven, two thirds have no ROA, and <strong>17,810 contradict a published ROA</strong>: leaks, hijacks or mistakes, visible because a collector does not filter.</td></tr><tr><td><code>916896 network entries</code></td><td><strong>916,896</strong></td><td>Unique IPv4 prefixes: the size of the global IPv4 table from this vantage point.</td></tr><tr><td><code>19957999 path entries</code></td><td>≈ <strong>21.8 per prefix</strong></td><td>One copy of each prefix per full-table peer.</td></tr><tr><td><code>3265932/154547 BGP path/bestpath attribute entries</code></td><td>3.27 M / 155 k</td><td>Unique attribute sets. Twenty million paths share only 3.3 million sets, about six paths each. That sharing is why a full table fits in memory.</td></tr><tr><td><code>3013798 BGP AS-PATH entries</code></td><td><strong>3.0 million</strong></td><td>Distinct routes through the Internet's graph.</td></tr><tr><td><code>174831 BGP community entries</code></td><td>174,831</td><td>Distinct community sets: the policy tags networks attach to routes.</td></tr><tr><td><code>BGP using 3610266520 total bytes of memory</code></td><td><strong>3.61 GB</strong></td><td>Path entries 2.39 GB, attributes 0.81 GB. About 3.9 KB per prefix at 22 views: why full-table routers are sized the way they are.</td></tr><tr><td><code>BGP activity … 868168614/845632564 paths</code></td><td><strong>868 million</strong></td><td>Path entries created and freed since start: the true workload of a full-table router.</td></tr></tbody></table></div>
+<div style="border:1px solid hsl(43 45% 56% / .30);border-left:3px solid var(--accent);background:hsl(0 0% 6%);border-radius:6px;padding:12px 16px;margin:18px 0"><strong>Takeaway.</strong> In eleven lines you have the size of the Internet, its rate of change, its security posture and the hardware cost of carrying it.</div>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch01-1-the-session" style="color:var(--accent);text-decoration:none">&larr; Part 1: The Session</a><span><a href="/bgp/ch01-3-the-neighbors" style="color:var(--accent);text-decoration:none">Part 3: The Neighbors &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 1 &middot; One Login, the Whole Internet</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch01-1-the-session" style="color:var(--fg-dim);text-decoration:none">Part 1: The Session</a></li><li><strong><a href="/bgp/ch01-2-the-header" style="color:var(--accent);text-decoration:none">Part 2: The Header</a></strong></li><li><a href="/bgp/ch01-3-the-neighbors" style="color:var(--fg-dim);text-decoration:none">Part 3: The Neighbors</a></li><li><a href="/bgp/ch01-4-what-the-numbers-reveal" style="color:var(--fg-dim);text-decoration:none">Part 4: What the Numbers Reveal</a></li><li><a href="/bgp/ch01-5-what-is-exposed" style="color:var(--fg-dim);text-decoration:none">Part 5: What Is Exposed, and Your Turn</a></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch01-2-the-header" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch01-2-the-header&amp;text=Special%20Topics%20in%20BGP%3A%20The%20Header" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">Only public services that their operators provide for exactly this purpose are used. Chapters 2 to 5 are for subscribers: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch01-5-what-is-exposed">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What Is Exposed, and Your Turn — Special Topics in BGP, Chapter 1 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="What a public BGP view reveals about any network, how attackers and defenders use it, and exercises to try yourself.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch01-5-what-is-exposed">
+<meta property="og:title" content="Special Topics in BGP · Chapter 1: One Login, the Whole Internet · Part 5 of 5: What Is Exposed, and Your Turn">
+<meta property="og:description" content="What a public BGP view reveals about any network, how attackers and defenders use it, and exercises to try yourself.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 1: One Login, the Whole Internet · Part 5 of 5: What Is Exposed, and Your Turn","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch01-5-what-is-exposed"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 1 &middot; Part 5 of 5</span>
+    <h1>What Is Exposed, and Your Turn</h1>
+    <p class="meta">Chapter 1: One Login, the Whole Internet &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<p>Everything in this chapter is shared voluntarily. It is still a great deal of information, which is exactly why it matters.</p>
+<div class="table-wrap"><table><thead><tr><th>Exposed</th><th>From this output</th><th>Why it matters</th></tr></thead><tbody><tr><td>Carrier BGP router addresses</td><td>4.68.4.46, 12.0.1.63, 64.71.137.241 …</td><td>Real edge-router interfaces on TCP 179, reachable because collector sessions are multihop: a target for session attacks and floods</td></tr><tr><td>Who participates</td><td>22 full-table providers on five continents</td><td>A map of the vantage points</td></tr><tr><td>Timing of events</td><td>the 5d13h reset cluster</td><td>When something happened, and what shares fate</td></tr><tr><td>Each network's churn</td><td>updates per second</td><td>How busy or unstable a network's routing is</td></tr><tr><td>Filtering policy</td><td>845k vs 880k; Sprint 63k</td><td>Who drops invalid or more-specific routes, who exports customers only</td></tr><tr><td>Global security posture</td><td>67% of paths with no ROA, 17,810 invalid</td><td>Which address space is unprotected, and live leaks or hijacks</td></tr></tbody></table></div>
+<p>One command deeper, <code>show ip bgp &lt;prefix&gt;</code> reveals any organization's <strong>upstream providers</strong> (and whether it is single-homed), its <strong>peering relationships</strong>, its <strong>traffic engineering</strong> (prepending shows primary and backup), its <strong>communities</strong> (often city, PoP and customer type, and blackhole tags that reveal a DDoS in progress), its <strong>more-specific</strong> routes, and its <strong>RPKI</strong> status.</p>
+<p>What is <strong>not</strong> exposed: configurations, passwords, keys, internal routing (OSPF, IS-IS), private addressing, traffic contents or volumes. BGP carries reachability only.</p>
+<h2>Reconnaissance versus defense</h2>
+<div class="table-wrap"><table><thead><tr><th>An attacker uses it to…</th><th>You defend by…</th></tr></thead><tbody><tr><td>Find a single upstream to flood</td><td>Multi-homing; DDoS scrubbing</td></tr><tr><td>Find prefixes with no ROA to hijack</td><td>Publishing ROAs for every prefix; asking providers to filter invalid routes</td></tr><tr><td>Find BGP session addresses</td><td>TCP-AO or MD5, GTSM (TTL security), port-179 filters, control-plane policing, maximum-prefix limits</td></tr><tr><td>Read communities to map PoPs</td><td>Stripping internal communities at the edge</td></tr><tr><td>Announce your space and watch it spread</td><td>Monitoring your own prefixes on public collectors, with alerting</td></tr></tbody></table></div>
+<div style="border:1px solid hsl(43 45% 56% / .30);border-left:3px solid var(--accent);background:hsl(0 0% 6%);border-radius:6px;padding:12px 16px;margin:18px 0"><strong>The defender's lesson.</strong> The same public data attackers use for reconnaissance is the best free early-warning system you have. If someone hijacks or leaks your address space, it appears on these collectors within seconds.</div>
+<h2>Your turn</h2>
+<p>Log in (<code>telnet route-views.routeviews.org</code>, username <code>rviews</code>) and try:</p>
+<div class="table-wrap"><table><thead><tr><th>Command</th><th>Look for</th></tr></thead><tbody><tr><td><code>show ip bgp 8.8.8.8</code></td><td>How many paths reach Google DNS, through whom, and with which communities</td></tr><tr><td><code>show ip bgp regexp _15169$</code></td><td>Every prefix Google originates</td></tr><tr><td><code>show ip bgp regexp ^6939_</code></td><td>The table as Hurricane Electric sees it</td></tr><tr><td><code>show ip bgp 1.1.1.0/24 longer-prefixes</code></td><td>Cloudflare's prefix and any more-specifics: the shape a hijack takes</td></tr><tr><td><code>show ip bgp &lt;your own prefix&gt;</code></td><td><strong>Your</strong> network as the world sees it: upstreams, prepends, communities, RPKI</td></tr></tbody></table></div>
+<p><strong>Exercise.</strong> Pick three Established neighbors and compute their updates per second. Which is the noisiest, and why might that be?</p>
+<h2>The takeaway</h2>
+<p>From one public login and one command you measured the Internet (917,000 IPv4 prefixes, 20 million paths, 3.6 GB of state), its churn (over a billion best-path changes), its security (a third of paths RPKI-valid, 17,810 invalid in plain sight) and the filtering policy of the world's largest carriers. Next chapter: a single path, read attribute by attribute.</p>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch01-4-what-the-numbers-reveal" style="color:var(--accent);text-decoration:none">&larr; Part 4: What the Numbers Reveal</a><span><a href="/bgp/" style="color:var(--accent);text-decoration:none">Series overview &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 1 &middot; One Login, the Whole Internet</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch01-1-the-session" style="color:var(--fg-dim);text-decoration:none">Part 1: The Session</a></li><li><a href="/bgp/ch01-2-the-header" style="color:var(--fg-dim);text-decoration:none">Part 2: The Header</a></li><li><a href="/bgp/ch01-3-the-neighbors" style="color:var(--fg-dim);text-decoration:none">Part 3: The Neighbors</a></li><li><a href="/bgp/ch01-4-what-the-numbers-reveal" style="color:var(--fg-dim);text-decoration:none">Part 4: What the Numbers Reveal</a></li><li><strong><a href="/bgp/ch01-5-what-is-exposed" style="color:var(--accent);text-decoration:none">Part 5: What Is Exposed, and Your Turn</a></strong></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch01-5-what-is-exposed" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch01-5-what-is-exposed&amp;text=Special%20Topics%20in%20BGP%3A%20What%20Is%20Exposed%2C%20and%20Your%20Turn" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">Only public services that their operators provide for exactly this purpose are used. Chapters 2 to 5 are for subscribers: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>
