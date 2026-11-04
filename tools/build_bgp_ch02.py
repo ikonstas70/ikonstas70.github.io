@@ -42,7 +42,15 @@ def kpis(items):
 PARTS = [
  ('ch02-1-summary-and-findings', 'Summary and Key Findings',
   'A field report from one public Route Views session: seven commands, ten findings, and why each one matters to anyone who runs a network.', f'''
-<blockquote>Chapter 1 read the summary of a route collector, from a snapshot taken on 17 October 2021. This chapter reads the routes themselves, in a live session. Everything here comes from one public session on Route Views (AS 6447) and seven commands. The output is real; the interpretation is the point.</blockquote>
+<blockquote>Chapter 1 read the summary of a route collector, from a snapshot taken on 17 October 2021. This chapter reads the routes themselves, in live sessions on 3 November 2026. Everything here comes from the public Route Views collector (AS 6447) and read-only commands. The output is real; the interpretation is the point.</blockquote>
+
+<div style="border:1px solid var(--accent);border-radius:10px;padding:18px 20px;margin:8px 0 26px;background:linear-gradient(135deg, hsl(43 45% 56% / .12), hsl(0 0% 6%) 60%)">
+<p style="margin:0 0 6px;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">The headline</p>
+<h2 style="margin:0 0 10px">Five years later, the Internet is far better protected</h2>
+<p style="margin:0 0 12px">The same public collector, the same command, 17 October 2021 and 3 November 2026. In five years, the share of Internet routes that are cryptographically verified <strong>more than doubled</strong>, and invalid announcements fell by <strong>two thirds</strong>, while the routing table grew by more than 200,000 networks.</p>
+{kpis([('32.6% → 70.8%', 'IPv4 paths RPKI-valid, 2021 → 2026'), ('67.3% → 29.1%', 'paths with no ROA at all'), ('17,810 → 5,344', 'RPKI-invalid paths'), ('83.0%', 'IPv6 paths valid today')])}
+<p style="margin:0;font-size:.92rem">Why it happened, what is still missing, and what to do next: <a href="/bgp/ch02-8-from-problem-to-opportunity" style="color:var(--accent)">Part 8, Five Years of Progress</a>.</p>
+</div>
 
 <h2>Watch the session</h2>
 <video controls playsinline preload="metadata" poster="/bgp/ch02/poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000">
@@ -65,6 +73,7 @@ PARTS = [
 
 <h2>Key findings</h2>
 {table(['#', 'Finding', 'Why it matters', 'Weight'], [
+ ['★', '<strong>RPKI-valid paths rose from 32.6% to 70.8% in five years; invalid paths fell by two thirds</strong>', 'Routing security works where operators adopt it, and adoption is accelerating', 'Headline'],
  ['1', 'Best path to 8.8.8.8 is via a university network (AS 101), not a Tier 1', 'When paths tie, BGP decides by age or router ID, not quality', 'Info'],
  ['2', 'Google and Cloudflare are one hop away from almost every provider', 'Direct peering, not transit, is how the large content networks reach the world', 'Info'],
  ['3', 'Lumen communities reveal region and relationship (peer or customer)', 'Communities are a public map of a carrier\'s business', 'Medium'],
@@ -490,11 +499,11 @@ route-views> show bgp ipv6 unicast inconsistent-as
 ])}
 <p>Confirming intent takes more than one view: route history (when did the origin first appear?), several collectors (RIPE RIS, other Route Views collectors), registry data, and ideally a word with the operators involved.</p>
 '''),
- ('ch02-8-from-problem-to-opportunity', 'From Problem to Opportunity',
+ ('ch02-8-from-problem-to-opportunity', 'Five Years of Progress, and the Opportunity',
   'A second session on the same collector shows routing security improving where operators act. What can be done about each finding, by whom, and why it is an opportunity.', f'''
 <blockquote>Every finding in this chapter is public. That is the uncomfortable part, and it is also the opportunity: the same visibility that helps an attacker plan lets every defender measure, fix and verify, for free, in minutes.</blockquote>
 
-<h2>A second session: the trend</h2>
+<h2>Five years of progress: October 2021 to November 2026</h2>
 <p>The same collector, the same command, two snapshots <strong>five years apart</strong>: the one read in Chapter 1, captured on 17 October 2021, and a fresh session on 3 November 2026.</p>
 {table(['Measure', 'Chapter 1 (17 Oct 2021)', 'This session (3 Nov 2026)', 'Change'], [
  ['Table version', '1,142,409,165', '1,517,803,889', 'the counter keeps climbing'],
