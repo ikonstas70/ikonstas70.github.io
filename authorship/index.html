@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/authorship/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proof of Authorship — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Fingerprint of a signed private manifest of original works by Ioannis Alexander Konstas, anchored in the Bitcoin blockchain with OpenTimestamps.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/authorship/">
+<meta property="og:title" content="Proof of Authorship">
+<meta property="og:description" content="Fingerprint of a signed private manifest of original works by Ioannis Alexander Konstas, anchored in the Bitcoin blockchain with OpenTimestamps.">
+<meta property="og:image" content="https://ikonstas70.github.io/authorship/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "headline": "Proof of Authorship", "author": {"@type": "Person", "name": "Ioannis Alexander Konstas", "alternateName": "Ioannis Konstas", "url": "https://ikonstas70.github.io/about"}, "datePublished": "2026-11-04", "license": "https://opensource.org/licenses/MIT", "copyrightHolder": "Ioannis Alexander Konstas", "image": "https://ikonstas70.github.io/authorship/share.jpg"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/authorship/">Authorship</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+    <main>
+    <span class="tag">Authorship</span>
+    <h1>Proof of Authorship</h1>
+    <p class="lead">Fingerprint of a signed, private manifest of original works by Ioannis Alexander Konstas / Pulse In Time Tunes Agency, anchored in the Bitcoin blockchain with OpenTimestamps on 4 November 2026.</p>
+
+    <h2>Manifest SHA-256</h2>
+    <p><code>2bacbe590559ac6fe5f9663844800e85916700f105c09231bd89eda5a532b4dd</code></p>
+
+    <h2>Files</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>File</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><a href="manifest.tsv.ots">manifest.tsv.ots</a></td><td>Bitcoin timestamp proof of the manifest fingerprint</td></tr>
+<tr><td><a href="manifest.tsv.sig">manifest.tsv.sig</a></td><td>Signature of the manifest (ECDSA P-256, SHA-256)</td></tr>
+<tr><td><a href="signer-certificate.pem">signer-certificate.pem</a></td><td>Signer certificate: CN=Ioannis Konstas, O=Pulse In Time Tunes Agency, C=US</td></tr>
+<tr><td><a href="root-ca-certificate.pem">root-ca-certificate.pem</a></td><td>Pulse In Time Tunes Agency Root CA</td></tr>
+</tbody></table></div>
+
+    <h2>Verify</h2>
+<pre>ots verify -d 2bacbe590559ac6fe5f9663844800e85916700f105c09231bd89eda5a532b4dd manifest.tsv.ots
+openssl verify -CAfile root-ca-certificate.pem signer-certificate.pem</pre>
+    <p>Also at <a href="https://www.pulseintimetunes.agency/authorship.html">pulseintimetunes.agency/authorship</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>
