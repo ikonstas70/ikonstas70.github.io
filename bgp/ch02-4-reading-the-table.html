@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch02-4-reading-the-table">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading the Table: Prepending, More-Specifics and maxLength — Special Topics in BGP, Chapter 2 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Listings filtered by neighbor, community and AS: what prepending, deaggregation, MED and loose ROAs look like in real routes.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch02-4-reading-the-table">
+<meta property="og:title" content="Special Topics in BGP · Chapter 2: Reading a Path · Part 4 of 5: Reading the Table: Prepending, More-Specifics and maxLength">
+<meta property="og:description" content="Listings filtered by neighbor, community and AS: what prepending, deaggregation, MED and loose ROAs look like in real routes.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 2: Reading a Path · Part 4 of 5: Reading the Table: Prepending, More-Specifics and maxLength","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch02-4-reading-the-table"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 2 &middot; Part 4 of 5</span>
+    <h1>Reading the Table: Prepending, More-Specifics and maxLength</h1>
+    <p class="meta">Chapter 2: Reading a Path &middot; A field report from Route Views &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<h2>A filtered view hides the best path</h2>
+<p>A listing filtered to paths that cross Lumen (AS 3356) shows many prefixes with no <code>&gt;</code> at all:</p>
+<pre><code>N*   5.3.64.0/20      4.68.4.46       0   0 3356 9002 9002 9002 9002 9002 57304 57304 9049 39028 i
+N*                    208.51.134.254  0   0 3549 3356 9002 9002 9002 9002 9002 57304 57304 9049 39028 i
+N*   5.3.64.0/22      4.68.4.46       0   0 3356 9002 9002 9002 9002 9002 57304 57304 9049 39028 i
+N*   5.3.68.0/22      4.68.4.46       0   0 3356 9002 9002 9002 9002 9002 57304 57304 9049 39028 i
+V*   5.3.85.0/24      4.68.4.46       0   0 3356 9002 57304 9049 i</code></pre>
+<p>The best path for those prefixes goes through another neighbor, so the filter removed it. Lesson for troubleshooting: <code>regexp</code> and <code>community</code> views show matching paths, not the router's decision. Always confirm with <code>show ip bgp &lt;prefix&gt;</code>.</p>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:hsl(36 70% 58%)">Finding 7 &middot; High</span></p><p style="margin:0 0 6px;font-weight:600">Prepending, and blocks of more-specifics with no ROA</p><div style="font-size:.95rem">
+<p>Three patterns in the lines above, all common, all readable by anyone:</p><div class="table-wrap"><table><thead><tr><th>Pattern</th><th>Where</th><th>Reading</th></tr></thead><tbody><tr><td>Five-fold prepend</td><td><code>9002 9002 9002 9002 9002</code> (RETN)</td><td>That path is deliberately made long so it is used only as a backup. The same prefixes without prepends (5.3.85.0/24) show the policy is set per prefix</td></tr><tr><td>Origin prepend</td><td><code>57304 57304</code>, <code>9049 9049 9049</code></td><td>Networks further down also lengthen their own paths: three layers of traffic engineering on one route</td></tr><tr><td>Nine-fold prepend</td><td><code>34984</code> ×9 on 2.19.193.0/24</td><td>Extreme prepending. Beyond three or four it rarely changes anything, and it makes the route easier to out-compete with a forged shorter path</td></tr><tr><td>Aggregate plus more-specifics</td><td>5.3.64.0/20 and four /22s inside it, same path</td><td>Deaggregation: more entries in every router's table, usually for inbound traffic engineering</td></tr><tr><td>RPKI NotFound</td><td><code>N*</code> on the /20 and every /22</td><td>No ROA covers any of them. Anyone can announce a /23 or /24 inside, and no origin-validating router would object</td></tr></tbody></table></div>
+<p><strong>Why it matters:</strong> a sub-prefix hijack wins on longest match, regardless of path length. Unprotected more-specifics are the exact gap it exploits. Publish ROAs for every prefix you announce, with maxLength equal to the length you actually announce.</p></div></div>
+
+<h2>MED shows the carrier's internal distance</h2>
+<p>On routes from Lumen's legacy Global Crossing network (AS 3549) the metric column is populated: <code>18891</code>, <code>18810</code>, <code>5644</code>. That network sets MED from its internal IGP cost. Akamai (AS 20940) prefixes arrive with either 18810 or 5644: two groups of routes leaving that backbone at different internal distances. MED is meant for the neighbor; published to a collector, it becomes a rough map of a carrier's backbone.</p>
+
+<h2>Hurricane Electric's view, and a maxLength trap</h2>
+<pre><code>route-views&gt; show ip bgp regexp ^6939_
+V*&gt;  1.6.0.0/22       64.71.137.241     0 6939 9583 i
+V*&gt;  1.6.1.0/24       64.71.137.241     0 6939 9583 i
+V*&gt;  1.6.2.0/24       64.71.137.241     0 6939 9583 i
+V*   1.6.7.0/24       64.71.137.241     0 6939 6453 4755 9583 i
+N*   1.1.64.0/19      64.71.137.241     0 6939 2519 i
+V*   1.0.182.0/24     64.71.137.241     0 6939 38040 23969 23969 23969 23969 23969 i</code></pre>
+<p>Every path starts with 6939 because that is the filter. Inside it: Sify (AS 9583) announces /22s and many /24s within them, some only via Tata (<code>6453 4755</code>) as a different inbound path; a block with no ROA at all (<code>N*</code>, AS 2519); and a five-fold origin prepend from AS 23969.</p>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:hsl(36 70% 58%)">Finding 8 &middot; High</span></p><p style="margin:0 0 6px;font-weight:600">A loose maxLength makes forged routes valid</p><div style="font-size:.95rem">
+<p>The RPKI table (Part 5) shows Sify's ROAs as <code>1.6.0.0/22, maxLength 24, AS 9583</code>. That one ROA authorizes the /22, both /23s and all four /24s. Some of those /24s are announced; the others are not. Anyone who forges AS 9583 as the origin (a <em>forged-origin</em> hijack) can announce an unannounced /24 and it will be RPKI <strong>valid</strong>, and it will beat the /22 on longest match.</p>
+<p>Compare Cloudflare's <code>1.1.1.0/24, maxLength 24</code>, which authorizes exactly what is announced. RFC 9319 recommends avoiding maxLength except where every covered prefix is actually announced.</p>
+<p><strong>Why it matters:</strong> RPKI only checks the origin. A ROA that authorizes more than you announce widens the hole it was supposed to close.</p></div></div>
+
+<h2>One community, many networks</h2>
+<p><code>show ip bgp community 3356:2</code> lists everything Lumen tagged with its Europe region value: Cloudflare via Swisscom, China Telecom (AS 4134) and Akamai (AS 20940) space among them. A single community query reconstructs which networks a carrier hears in a region. That is the basis for mapping any network's connectivity from the outside, the subject of Chapter 3.</p>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--accent);text-decoration:none">&larr; Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a><span><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--accent);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 2 &middot; Reading a Path</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--fg-dim);text-decoration:none">Part 1: Summary and Key Findings</a></li><li><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--fg-dim);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8</a></li><li><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--fg-dim);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a></li><li><strong><a href="/bgp/ch02-4-reading-the-table" style="color:var(--accent);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a></strong></li><li><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--fg-dim);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It</a></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-4-reading-the-table" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-4-reading-the-table&amp;text=Special%20Topics%20in%20BGP%3A%20Reading%20the%20Table%3A%20Prepending%2C%20More-Specifics%20and%20maxLength" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All output is from Route Views, a public collector operated for exactly this purpose. Network names are from public registry data; community meanings are from the operators' public documentation and may change. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

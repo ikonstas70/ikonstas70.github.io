@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch02-5-rpki-under-the-hood">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RPKI Under the Hood, and What to Do About It — Special Topics in BGP, Chapter 2 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="The router&#x27;s ROA table and its link to the RPKI caches: what the counters reveal, the two weaknesses they expose, and a checklist for your own network.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch02-5-rpki-under-the-hood">
+<meta property="og:title" content="Special Topics in BGP · Chapter 2: Reading a Path · Part 5 of 5: RPKI Under the Hood, and What to Do About It">
+<meta property="og:description" content="The router&#x27;s ROA table and its link to the RPKI caches: what the counters reveal, the two weaknesses they expose, and a checklist for your own network.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 2: Reading a Path · Part 5 of 5: RPKI Under the Hood, and What to Do About It","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch02-5-rpki-under-the-hood"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 2 &middot; Part 5 of 5</span>
+    <h1>RPKI Under the Hood, and What to Do About It</h1>
+    <p class="meta">Chapter 2: Reading a Path &middot; A field report from Route Views &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<h2>The ROA table</h2>
+<pre><code>route-views&gt; show ip bgp rpki table
+700457 BGP sovc network entries using 112073120 bytes of memory
+796106 BGP sovc record entries using 25475392 bytes of memory
+
+Network              Maxlen  Origin-AS  Source  Neighbor
+1.0.0.0/24           24      13335      0       128.223.157.89/3323
+1.0.0.0/24           24      13335      0       128.223.157.83/3323
+1.0.128.0/17         19      23969      0       128.223.157.89/3323
+1.6.0.0/22           24      9583       0       128.223.157.89/3323
+1.6.132.240/29       29      9583       0       128.223.157.89/3323</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Value</th><th>Reading</th></tr></thead><tbody><tr><td>700,457 network entries, 112 MB</td><td>Unique (prefix, maxLength) entries from the RPKI: about 160 bytes each</td></tr><tr><td>796,106 records, 25 MB</td><td>Prefix-to-origin records; some prefixes are authorized for more than one AS (1.6.136.0/24 for both 9583 and 132215)</td></tr><tr><td>Every line twice</td><td>One copy per cache: <code>.83</code> and <code>.89</code>, both on TCP port 3323</td></tr><tr><td><code>1.0.128.0/17</code> maxLength 19</td><td>A loose ROA: also authorizes /18s and /19s</td></tr><tr><td><code>1.6.132.240/29</code></td><td>A /29 ROA. Valid, but a /29 is not accepted by most networks, so it protects nothing on the public Internet</td></tr></tbody></table></div>
+<p>A ROA authorizes; it does not require an announcement. China Telecom (AS 4134) has ROAs for 1.1.4.0/22, 1.1.16.0/20 and 1.3.0.0/16, none of which appear in Hurricane Electric's listing. Authorized but unseen space is normal, and is worth monitoring: an announcement there from any other origin is invalid by design.</p>
+
+<h2>The link to the caches</h2>
+<pre><code>route-views&gt; show ip bgp rpki servers
+BGP SOVC neighbor is 128.223.157.83/3323 connected to port 3323
+Flags 64, Refresh time is 300, Serial number is 449, Session ID is 60017
+  Prefixes 1029914
+  Connection attempts: 1920
+  Connection failures: 1390
+  Errors sent: 200
+  Errors received: 13
+Connection state is ESTAB ... Mininum incoming TTL 0, Outgoing TTL 255
+uptime: 1000789147 ms
+BGP SOVC neighbor is 128.223.157.89/3323 connected to port 3323
+Flags 64, Refresh time is 300, Serial number is 39, Session ID is 11737
+  Prefixes 1165838
+  Connection attempts: 3046
+  Connection failures: 2958
+uptime: 27750949 ms</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Counter</th><th>Cache .83</th><th>Cache .89</th><th>Reading</th></tr></thead><tbody><tr><td>Prefixes</td><td style="text-align:right">1,029,914</td><td style="text-align:right">1,165,838</td><td>The caches disagree by 135,924 entries</td></tr><tr><td>Serial / session</td><td style="text-align:right">449 / 60017</td><td style="text-align:right">39 / 11737</td><td>Independent caches, separately restarted</td></tr><tr><td>Session uptime</td><td style="text-align:right">11.6 days</td><td style="text-align:right">7.7 hours</td><td>.89 reconnected today</td></tr><tr><td>Connection attempts / failures</td><td style="text-align:right">1,920 / 1,390 (72%)</td><td style="text-align:right">3,046 / 2,958 (97%)</td><td>Long histories of failed connections</td></tr><tr><td>Errors sent / received</td><td style="text-align:right">200 / 13</td><td style="text-align:right">55 / 23</td><td>Protocol errors in both directions</td></tr><tr><td>Refresh time</td><td style="text-align:right">300 s</td><td style="text-align:right">300 s</td><td>A new ROA takes up to five minutes to reach the router after the cache has it</td></tr><tr><td>Transport</td><td style="text-align:right">TCP 3323</td><td style="text-align:right">TCP 3323</td><td>Plain RTR: no TLS, no SSH, no TTL check (incoming TTL 0)</td></tr></tbody></table></div>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Finding 9 &middot; Medium</span></p><p style="margin:0 0 6px;font-weight:600">The two caches do not agree</p><div style="font-size:.95rem">
+<p>About 136,000 entries separate the caches. They may run different validator software, different trust anchors, or include IPv6 differently. Whatever the cause, the router's view of "valid" depends on which cache is up. With one cache reconnecting today, there were hours when the router may have had only one cache's view.</p>
+<p><strong>Why it matters:</strong> run at least two caches from <em>different</em> validator implementations, monitor their counts and serial numbers, and alert when they diverge or when one falls behind.</p></div></div>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:hsl(36 70% 58%)">Finding 10 &middot; High</span></p><p style="margin:0 0 6px;font-weight:600">Origin validation rests on a fragile, unauthenticated link</p><div style="font-size:.95rem">
+<p>RTR (RFC 8210) here runs over plain TCP with no transport security and no TTL protection, and the connection history shows thousands of failures. Anyone who can reach that TCP session or impersonate a cache can feed the router a false ROA set: mark good routes invalid, or bad ones valid.</p>
+<p><strong>Why it matters:</strong> on your own routers, keep RTR on a protected management network, use SSH or TLS transport where the platform supports it, and decide deliberately what happens when every cache is unreachable. Most routers fall back to "NotFound" for everything, which silently turns origin validation off.</p></div></div>
+
+<h2>Checklist for your own network</h2>
+<div class="table-wrap"><table><thead><tr><th>Area</th><th>Do this</th><th>Finding</th></tr></thead><tbody><tr><td>Local preference</td><td>Set it explicitly for customers, peers and transit; never leave exit choice to tie-breakers</td><td>1</td></tr><tr><td>Communities</td><td>Strip internal and action communities at the edge; assume anything you send is public</td><td>3, 4</td></tr><tr><td>Aggregation</td><td>Check what AGGREGATOR exposes; avoid publishing private router IDs</td><td>5</td></tr><tr><td>Attribute handling</td><td>Run code with RFC 7606 error handling; know how it treats unknown attributes</td><td>6</td></tr><tr><td>ROAs</td><td>One ROA per announced prefix, maxLength equal to the announced length</td><td>7, 8</td></tr><tr><td>Prepending</td><td>Three or fewer; use communities toward your upstream for finer control</td><td>7</td></tr><tr><td>RPKI caches</td><td>Two or more, different implementations, monitored for divergence</td><td>9</td></tr><tr><td>RTR transport</td><td>Protected network, SSH or TLS, an alarm when all caches are down</td><td>10</td></tr><tr><td>Monitoring</td><td>Watch your prefixes and their more-specifics on public collectors, daily</td><td>all</td></tr></tbody></table></div>
+
+<h2>Your turn</h2>
+<p>On <code>route-views.routeviews.org</code> (username <code>rviews</code>). Start with <code>terminal length 0</code> to avoid the <code>--More--</code> prompt, and type commands exactly: IOS rejects abbreviations it cannot resolve, as <code>how ip bgp</code> shows.</p>
+<div class="table-wrap"><table><thead><tr><th>Command</th><th>Look for</th></tr></thead><tbody><tr><td><code>show ip bgp &lt;your prefix&gt;</code></td><td>Which path wins and why; your communities as others see them</td></tr><tr><td><code>show ip bgp &lt;your prefix&gt; longer-prefixes</code></td><td>Anything you did not announce</td></tr><tr><td><code>show ip bgp regexp _&lt;your AS&gt;$</code></td><td>Everything originated in your name</td></tr><tr><td><code>show ip bgp rpki table | include &lt;your AS&gt;</code></td><td>Your ROAs and their maxLength</td></tr></tbody></table></div>
+<p><strong>Exercise.</strong> Find a prefix with an AGGREGATOR attribute from a network other than Cloudflare. How many distinct router IDs can you collect, and what do they say about the network's size?</p>
+<h2>The takeaway</h2>
+<p>Seven commands showed how BGP chooses among equal paths, how carriers label routes by region and relationship, how a content network's policy and internal addressing leak through attributes, how prepends and more-specifics shape traffic, and where RPKI is strong and where it is thin. None of it required access to any of those networks. Next: mapping a network from the outside.</p>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch02-4-reading-the-table" style="color:var(--accent);text-decoration:none">&larr; Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a><span><a href="/bgp/" style="color:var(--accent);text-decoration:none">Series overview &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 2 &middot; Reading a Path</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--fg-dim);text-decoration:none">Part 1: Summary and Key Findings</a></li><li><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--fg-dim);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8</a></li><li><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--fg-dim);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a></li><li><a href="/bgp/ch02-4-reading-the-table" style="color:var(--fg-dim);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a></li><li><strong><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--accent);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It</a></strong></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-5-rpki-under-the-hood" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-5-rpki-under-the-hood&amp;text=Special%20Topics%20in%20BGP%3A%20RPKI%20Under%20the%20Hood%2C%20and%20What%20to%20Do%20About%20It" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All output is from Route Views, a public collector operated for exactly this purpose. Network names are from public registry data; community meanings are from the operators' public documentation and may change. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

@@ -154,7 +154,7 @@ route-views&gt; show ip bgp summary</code></pre>
 ])}
 <p><strong>Exercise.</strong> Pick three Established neighbors and compute their updates per second. Which is the noisiest, and why might that be?</p>
 <h2>The takeaway</h2>
-<p>From one public login and one command you measured the Internet (917,000 IPv4 prefixes, 20 million paths, 3.6 GB of state), its churn (over a billion best-path changes), its security (a third of paths RPKI-valid, 17,810 invalid in plain sight) and the filtering policy of the world's largest carriers. Next chapter: a single path, read attribute by attribute.</p>
+<p>From one public login and one command you measured the Internet (917,000 IPv4 prefixes, 20 million paths, 3.6 GB of state), its churn (over a billion best-path changes), its security (a third of paths RPKI-valid, 17,810 invalid in plain sight) and the filtering policy of the world's largest carriers. Next: <a href="/bgp/ch02-1-summary-and-findings" style="color:var(--accent)">Chapter 2, a single path read attribute by attribute</a>.</p>
 '''),
 ]
 
@@ -178,7 +178,7 @@ def page(i, slug, title, desc, body):
     start = rest.index('<main>'); end = rest.index('</main>') + len('</main>')
     pre, post = rest[:start], rest[end:]
     prev_link = f'<a href="/bgp/{PARTS[i-2][0]}" style="color:var(--accent);text-decoration:none">&larr; Part {i-1}: {PARTS[i-2][1]}</a>' if i > 1 else '<a href="/bgp/" style="color:var(--accent);text-decoration:none">&larr; Series overview</a>'
-    next_link = f'<a href="/bgp/{PARTS[i][0]}" style="color:var(--accent);text-decoration:none">Part {i+1}: {PARTS[i][1]} &rarr;</a>' if i < n else '<a href="/bgp/" style="color:var(--accent);text-decoration:none">Series overview &rarr;</a>'
+    next_link = f'<a href="/bgp/{PARTS[i][0]}" style="color:var(--accent);text-decoration:none">Part {i+1}: {PARTS[i][1]} &rarr;</a>' if i < n else '<a href="/bgp/ch02-1-summary-and-findings" style="color:var(--accent);text-decoration:none">Chapter 2: Reading a Path &rarr;</a>'
     nav = (f'<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;'
            f'border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem">{prev_link}<span>{next_link}</span></div>')
     parts_list = ''.join(f'<li>{"<strong>" if j == i else ""}<a href="/bgp/{s}" style="color:{"var(--accent)" if j == i else "var(--fg-dim)"};text-decoration:none">Part {j}: {t}</a>{"</strong>" if j == i else ""}</li>'

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch02-3-cloudflare-and-the-hidden-attributes">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloudflare 1.1.1.1 and the Attributes That Leak — Special Topics in BGP, Chapter 2 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Sixteen paths to 1.1.1.0/24: action communities that reveal engineering intent, an aggregator attribute that reveals internal routers, and a clean more-specific check.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch02-3-cloudflare-and-the-hidden-attributes">
+<meta property="og:title" content="Special Topics in BGP · Chapter 2: Reading a Path · Part 3 of 5: Cloudflare 1.1.1.1 and the Attributes That Leak">
+<meta property="og:description" content="Sixteen paths to 1.1.1.0/24: action communities that reveal engineering intent, an aggregator attribute that reveals internal routers, and a clean more-specific check.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 2: Reading a Path · Part 3 of 5: Cloudflare 1.1.1.1 and the Attributes That Leak","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch02-3-cloudflare-and-the-hidden-attributes"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 2 &middot; Part 3 of 5</span>
+    <h1>Cloudflare 1.1.1.1 and the Attributes That Leak</h1>
+    <p class="meta">Chapter 2: Reading a Path &middot; A field report from Route Views &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<h2>Sixteen paths, one ROA</h2>
+<pre><code>route-views&gt; show ip bgp 1.1.1.0/24
+BGP routing table entry for 1.1.1.0/24, version 1509109845
+Paths: (16 available, best #12, table default)
+  3356 13335, (aggregated by 13335 10.34.9.112)
+    4.68.4.46 from 4.68.4.46 (4.69.184.201)
+      Origin IGP, metric 0, localpref 100, valid, external, atomic-aggregate
+      Community: 3356:3 3356:22 3356:100 3356:123 3356:575 3356:901 3356:2012
+                 13335:10028 65003:4134 65003:4837 65003:58453
+  7018 13335, (aggregated by 13335 10.34.2.204)
+    12.0.1.63 from 12.0.1.63 (12.0.1.63)
+      Origin IGP, localpref 100, valid, external, atomic-aggregate, best
+      Community: 7018:2500 7018:37171</code></pre>
+<p>Twelve of the sixteen paths are direct (<code>X 13335</code>). Four reach Cloudflare through a transit network, and three of those four go through Lumen. Hurricane Electric's path is <code>6939 3356 13335</code>: from this vantage point HE reaches 1.1.1.0/24 through Lumen rather than directly.</p>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Finding 4 &middot; Medium</span></p><p style="margin:0 0 6px;font-weight:600">Cloudflare's traffic engineering is visible in Lumen's communities</p><div style="font-size:.95rem">
+<p>Lumen supports <strong>action communities</strong> that its customers attach to ask for treatment downstream: <code>65000:AS</code> do not announce to that AS, and <code>65001:AS</code> to <code>65003:AS</code> prepend one to three times toward it. Cloudflare's route carries:</p><div class="table-wrap"><table><thead><tr><th>Community</th><th>Requested action</th></tr></thead><tbody><tr><td><code>65003:4134</code></td><td>Prepend three times toward AS 4134 (China Telecom)</td></tr><tr><td><code>65003:4837</code></td><td>Prepend three times toward AS 4837 (China Unicom)</td></tr><tr><td><code>65003:58453</code></td><td>Prepend three times toward AS 58453 (China Mobile International)</td></tr><tr><td><code>13335:100xx</code></td><td>Cloudflare's own tags, which differ per path and appear to identify the site that announced it</td></tr></tbody></table></div>
+<p><strong>Why it matters:</strong> the request was meant for Lumen, but Lumen forwards the communities, so the whole Internet can read Cloudflare's policy toward specific networks. Your own action communities are just as public unless your provider strips them. Treat them as published.</p></div></div>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Finding 5 &middot; Medium</span></p><p style="margin:0 0 6px;font-weight:600">One legacy attribute reveals eleven internal routers</p><div style="font-size:.95rem">
+<p>Each path carries <code>atomic-aggregate</code> and an <strong>AGGREGATOR</strong> attribute: the AS and router ID of the router that built the aggregate. Across the sixteen paths there are <strong>eleven different</strong> router IDs, all in private space: 10.34.0.16, 10.34.2.204, 10.34.3.248, 10.34.6.80, 10.34.7.24, 10.34.8.168, 10.34.9.112, 10.34.23.128, 10.34.24.72, 10.34.130.6, 10.34.130.16.</p>
+<p>This is anycast made visible: the same prefix is originated at many sites, and each peer hears it from a different one. The attribute also discloses the internal addressing plan (10.34.0.0/16 for router IDs) and a lower bound on the number of sites peering with these networks.</p>
+<p><strong>Why it matters:</strong> AGGREGATOR is rarely useful today and is sent by default when you aggregate. If you summarize routes, check what your router puts in it. Internal router IDs are reconnaissance data you did not mean to publish.</p></div></div>
+
+<h2>The more-specific check</h2>
+<pre><code>route-views&gt; show ip bgp 1.1.1.0/24 longer-prefixes
+     Network          Next Hop            Metric LocPrf Weight Path
+V*   1.1.1.0/24       132.198.255.253                        0 1351 13335 i
+V*                    217.192.89.50                          0 3303 3356 13335 i
+...
+V*&gt;                   12.0.1.63                              0 7018 13335 i
+V*                    202.232.0.2                            0 2497 13335 i</code></pre>
+<p>Only the /24 itself, sixteen paths, all RPKI <code>V</code>alid. No one is announcing a more-specific, and the ROA (<code>1.1.1.0/24, maxLength 24, AS 13335</code>, seen in Part 5) is tight. A /24 is also the longest IPv4 prefix most networks accept, so a sub-prefix hijack would be filtered almost everywhere. This is what good looks like, and it is the template for your own address space.</p>
+<div style="border:1px solid hsl(43 45% 56% / .30);border-left:3px solid var(--accent);background:hsl(0 0% 6%);border-radius:6px;padding:12px 16px;margin:18px 0"><strong>Defender's check.</strong> Run <code>show ip bgp &lt;your prefix&gt; longer-prefixes</code> on a public collector every day. Any line you did not announce is a leak or a hijack in progress.</div>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--accent);text-decoration:none">&larr; Part 2: Anatomy of a Route: 8.8.8.8</a><span><a href="/bgp/ch02-4-reading-the-table" style="color:var(--accent);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 2 &middot; Reading a Path</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--fg-dim);text-decoration:none">Part 1: Summary and Key Findings</a></li><li><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--fg-dim);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8</a></li><li><strong><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--accent);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a></strong></li><li><a href="/bgp/ch02-4-reading-the-table" style="color:var(--fg-dim);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a></li><li><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--fg-dim);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It</a></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-3-cloudflare-and-the-hidden-attributes" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-3-cloudflare-and-the-hidden-attributes&amp;text=Special%20Topics%20in%20BGP%3A%20Cloudflare%201.1.1.1%20and%20the%20Attributes%20That%20Leak" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All output is from Route Views, a public collector operated for exactly this purpose. Network names are from public registry data; community meanings are from the operators' public documentation and may change. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

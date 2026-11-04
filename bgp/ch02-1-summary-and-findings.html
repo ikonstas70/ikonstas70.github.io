@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch02-1-summary-and-findings">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Summary and Key Findings — Special Topics in BGP, Chapter 2 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="A field report from one public Route Views session: seven commands, ten findings, and why each one matters to anyone who runs a network.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch02-1-summary-and-findings">
+<meta property="og:title" content="Special Topics in BGP · Chapter 2: Reading a Path · Part 1 of 5: Summary and Key Findings">
+<meta property="og:description" content="A field report from one public Route Views session: seven commands, ten findings, and why each one matters to anyone who runs a network.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 2: Reading a Path · Part 1 of 5: Summary and Key Findings","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch02-1-summary-and-findings"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 2 &middot; Part 1 of 5</span>
+    <h1>Summary and Key Findings</h1>
+    <p class="meta">Chapter 2: Reading a Path &middot; A field report from Route Views &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<blockquote>Chapter 1 read the summary of a route collector. This chapter reads the routes themselves. Everything here comes from one public session on Route Views (AS 6447) and seven commands. The output is real; the interpretation is the point.</blockquote>
+
+<h2>Scope and method</h2>
+<p>Vantage point: <code>route-views.routeviews.org</code>, the University of Oregon collector that peers with more than twenty full-table providers and filters nothing. Because it filters nothing, it shows the Internet as it actually is, including what a production router would have dropped.</p>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Command</th><th>What it answers</th></tr></thead><tbody><tr><td>1</td><td><code>show ip bgp 8.8.8.8</code></td><td>Every path to Google Public DNS, with all attributes</td></tr><tr><td>2</td><td><code>show ip bgp 1.1.1.0/24</code></td><td>Every path to Cloudflare DNS, with all attributes</td></tr><tr><td>3</td><td><code>show ip bgp 1.1.1.0/24 longer-prefixes</code></td><td>Is anyone announcing a more-specific of 1.1.1.0/24?</td></tr><tr><td>4</td><td><code>show ip bgp regexp ^6939_</code></td><td>The Internet as Hurricane Electric hands it to the collector</td></tr><tr><td>5</td><td><code>show ip bgp community 3356:2</code></td><td>Every route Lumen tagged with one community value</td></tr><tr><td>6</td><td><code>show ip bgp rpki table</code></td><td>The validated ROA payloads the router checks routes against</td></tr><tr><td>7</td><td><code>show ip bgp rpki servers</code></td><td>The health of the router's link to its RPKI caches</td></tr></tbody></table></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0"><div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.5rem var(--serif);color:var(--accent)">15 / 16</b><span style="font-size:.8rem;color:var(--fg-dim)">paths to 8.8.8.8 and 1.1.1.1</span></div><div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.5rem var(--serif);color:var(--accent)">11</b><span style="font-size:.8rem;color:var(--fg-dim)">Cloudflare routers revealed by one attribute</span></div><div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.5rem var(--serif);color:var(--accent)">700,457</b><span style="font-size:.8rem;color:var(--fg-dim)">validated ROA entries in the router</span></div><div style="border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:12px 14px;background:hsl(0 0% 6%)"><b style="display:block;font:1.5rem var(--serif);color:var(--accent)">97%</b><span style="font-size:.8rem;color:var(--fg-dim)">RTR connection failure rate on one cache</span></div></div>
+
+<h2>Key findings</h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Finding</th><th>Why it matters</th><th>Weight</th></tr></thead><tbody><tr><td>1</td><td>Best path to 8.8.8.8 is via a university network (AS 101), not a Tier 1</td><td>When paths tie, BGP decides by age or router ID, not quality</td><td>Info</td></tr><tr><td>2</td><td>Google and Cloudflare are one hop away from almost every provider</td><td>Direct peering, not transit, is how the large content networks reach the world</td><td>Info</td></tr><tr><td>3</td><td>Lumen communities reveal region and relationship (peer or customer)</td><td>Communities are a public map of a carrier's business</td><td>Medium</td></tr><tr><td>4</td><td>Cloudflare asks Lumen to prepend three times toward China Telecom and China Unicom</td><td>Traffic engineering intent is visible to anyone</td><td>Medium</td></tr><tr><td>5</td><td>The AGGREGATOR attribute exposes 11 internal Cloudflare router IDs (10.34.x.x)</td><td>Internal addressing and site count leak through a legacy attribute</td><td>Medium</td></tr><tr><td>6</td><td>The collector cannot decode Large Communities; it forwards them as unknown</td><td>Optional transitive attributes cross routers that do not understand them</td><td>High</td></tr><tr><td>7</td><td>Prepending up to nine times, and whole blocks of more-specifics with no ROA</td><td>Unprotected more-specifics are exactly what a sub-prefix hijack needs</td><td>High</td></tr><tr><td>8</td><td>ROAs with maxLength 24 on /22s authorize every /24 inside</td><td>A loose maxLength turns a forged-origin hijack into an RPKI-valid route</td><td>High</td></tr><tr><td>9</td><td>The two RPKI caches disagree by about 136,000 entries</td><td>Validation depends on which cache the router trusts at that moment</td><td>Medium</td></tr><tr><td>10</td><td>RTR runs over plain TCP; one cache failed 97% of connection attempts</td><td>Origin validation is only as strong as the transport and cache behind it</td><td>High</td></tr></tbody></table></div>
+<div style="border:1px solid hsl(43 45% 56% / .30);border-left:3px solid var(--accent);background:hsl(0 0% 6%);border-radius:6px;padding:12px 16px;margin:18px 0"><strong>What matters, in one sentence.</strong> A public collector shows not only where traffic goes, but why: business relationships, engineering intent, internal addressing and security gaps, for any network, without touching it.</div>
+<p>The next four parts take the findings one by one, with the output that proves each.</p>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch01-5-what-is-exposed" style="color:var(--accent);text-decoration:none">&larr; Chapter 1</a><span><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--accent);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8 &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 2 &middot; Reading a Path</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><strong><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--accent);text-decoration:none">Part 1: Summary and Key Findings</a></strong></li><li><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--fg-dim);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8</a></li><li><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--fg-dim);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a></li><li><a href="/bgp/ch02-4-reading-the-table" style="color:var(--fg-dim);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a></li><li><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--fg-dim);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It</a></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-1-summary-and-findings" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-1-summary-and-findings&amp;text=Special%20Topics%20in%20BGP%3A%20Summary%20and%20Key%20Findings" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All output is from Route Views, a public collector operated for exactly this purpose. Network names are from public registry data; community meanings are from the operators' public documentation and may change. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>

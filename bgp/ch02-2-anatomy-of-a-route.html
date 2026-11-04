@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/bgp/ch02-2-anatomy-of-a-route">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anatomy of a Route: 8.8.8.8 — Special Topics in BGP, Chapter 2 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Fifteen paths to Google Public DNS, read attribute by attribute: best-path selection, communities, and attributes the router cannot decode.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/bgp/ch02-2-anatomy-of-a-route">
+<meta property="og:title" content="Special Topics in BGP · Chapter 2: Reading a Path · Part 2 of 5: Anatomy of a Route: 8.8.8.8">
+<meta property="og:description" content="Fifteen paths to Google Public DNS, read attribute by attribute: best-path selection, communities, and attributes the router cannot decode.">
+<meta property="og:image" content="https://ikonstas70.github.io/bgp/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Chapter 2: Reading a Path · Part 2 of 5: Anatomy of a Route: 8.8.8.8","isPartOf":{"@type":"CreativeWorkSeries","name":"Special Topics in BGP","url":"https://ikonstas70.github.io/bgp/"},"author":{"@type":"Person","name":"Ioannis Alexander Konstas","url":"https://ikonstas70.github.io/about"},"datePublished":"2026-11-03","url":"https://ikonstas70.github.io/bgp/ch02-2-anatomy-of-a-route"}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/" class="active">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Special Topics in BGP &middot; Chapter 2 &middot; Part 2 of 5</span>
+    <h1>Anatomy of a Route: 8.8.8.8</h1>
+    <p class="meta">Chapter 2: Reading a Path &middot; A field report from Route Views &middot; 3 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+<h2>The output</h2>
+<p>One prefix, <code>8.8.8.0/24</code>, and 15 paths, one per full-table neighbor that carries it. Three of them, trimmed:</p>
+<pre><code>route-views&gt; show ip bgp 8.8.8.8
+BGP routing table entry for 8.8.8.0/24, version 1488664824
+Paths: (15 available, best #9, table default)
+  Not advertised to any peer
+  Refresh Epoch 1
+  3356 15169
+    4.68.4.46 from 4.68.4.46 (4.69.184.201)
+      Origin IGP, metric 0, localpref 100, valid, external
+      Community: 3356:3 3356:86 3356:576 3356:666 3356:901 3356:2012
+      path 7F16D449CE88 RPKI State valid
+  Refresh Epoch 1
+  57866 15169
+    37.139.139.17 from 37.139.139.17 (37.139.139.17)
+      Origin IGP, metric 0, localpref 100, valid, external
+      Community: 57866:200 65102:41441 65103:1 65104:31
+      unknown transitive attribute: flag 0xE0 type 0x20 length 0x30
+        value 0000 E20A 0000 0065 0000 00C8 0000 E20A ...
+  Refresh Epoch 1
+  101 15169
+    209.124.176.223 from 209.124.176.223 (209.124.176.224)
+      Origin IGP, localpref 100, valid, external, best
+      Community: 101:20400 101:22200 101:24100</code></pre>
+
+<h2>Reading each line</h2>
+<div class="table-wrap"><table><thead><tr><th>Line</th><th>Meaning</th></tr></thead><tbody><tr><td><code>version 1488664824</code></td><td>The table version when this prefix last changed best path</td></tr><tr><td><code>15 available, best #9</code></td><td>Fifteen candidate paths; the ninth listed won</td></tr><tr><td><code>Not advertised to any peer</code></td><td>A collector: it learns, it never announces</td></tr><tr><td><code>Refresh Epoch 2</code></td><td>A route refresh has been requested on that session once (seen on Swisscom, AS 3303)</td></tr><tr><td><code>3356 15169</code></td><td>The AS path: Lumen, then Google. Read right to left: origin last</td></tr><tr><td><code>4.68.4.46 from 4.68.4.46 (4.69.184.201)</code></td><td>Next hop, the peer that sent it, and that peer's BGP router ID</td></tr><tr><td><code>Origin IGP, metric 0, localpref 100</code></td><td>Origin code, MED and local preference: identical for every peer here, because a collector applies no policy</td></tr><tr><td><code>RPKI State valid</code></td><td>The origin, AS 15169, matches a published ROA</td></tr></tbody></table></div>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-dim)">Finding 1 &middot; Info</span></p><p style="margin:0 0 6px;font-weight:600">The best path is via the University of Washington (AS 101)</p><div style="font-size:.95rem">
+<p>Ten of the fifteen paths are two hops long (provider, then Google). With equal local preference, equal length, the same origin code and MED only comparable within one neighbor AS, the Cisco decision process falls through to the tie-breakers: the <strong>oldest</strong> external path, then the lowest router ID. Path #9 won because it has been stable longest, not because it is faster or better.</p>
+<p><strong>Why it matters:</strong> in your own network, if you do not set local preference deliberately, the exit your traffic takes is decided by which session flapped least recently. That is not a policy; it is an accident.</p></div></div>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-dim)">Finding 2 &middot; Info</span></p><p style="margin:0 0 6px;font-weight:600">Google is one hop from almost everyone</p><div style="font-size:.95rem">
+<p>Path lengths: ten paths are <code>X 15169</code>, five are <code>X Y 15169</code>. Hurricane Electric, Lumen, AT&amp;T, Swisscom, IIJ, Coloclue and others all connect to Google directly. The three-hop paths are research and regional networks reaching Google through one upstream.</p>
+<p><strong>Why it matters:</strong> the content giants built their own global networks and peer directly with access and transit providers. For most destinations users care about, the "Tier 1 hierarchy" is no longer the path.</p></div></div>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Finding 3 &middot; Medium</span></p><p style="margin:0 0 6px;font-weight:600">Lumen's communities are a public map of its business</p><div style="font-size:.95rem">
+<p>The path via Lumen carries <code>3356:3 3356:86 3356:576 3356:666 3356:901 3356:2012</code>. Lumen publishes the meaning of its informational communities: a region value (<code>3356:3</code> for North America, <code>3356:2</code> for Europe), country and city or PoP codes, and a relationship tag. On this route <code>3356:666</code> marks a route learned from a <strong>peer</strong>; on Cloudflare's route (Part 3) Lumen adds <code>3356:123</code>, its <strong>customer</strong> tag.</p>
+<p><strong>Why it matters:</strong> from one public line you learn that Google peers with Lumen in North America while Cloudflare buys transit from it. Communities tell you where a route entered a carrier and on what commercial terms. Check the current Lumen community guide before relying on any single value.</p></div></div>
+
+<div style="border:1px solid hsl(43 45% 56% / .28);border-radius:8px;padding:12px 16px;margin:14px 0;background:hsl(0 0% 6%)"><p style="margin:0 0 6px"><span style="font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:hsl(36 70% 58%)">Finding 6 &middot; High</span></p><p style="margin:0 0 6px;font-weight:600">The router does not understand Large Communities, and passes them on anyway</p><div style="font-size:.95rem">
+<p><code>unknown transitive attribute: flag 0xE0 type 0x20</code> is attribute type 32, the <strong>Large Community</strong> (RFC 8092). This collector's software shows it as raw hex. Decoding it, 12 bytes per community:</p><pre><code>0000 E20A | 0000 0065 | 0000 00C8   -&gt;  57866:101:200
+0000 E20A | 0000 0066 | 0000 A1E1   -&gt;  57866:102:41441
+0000 E20A | 0000 0067 | 0000 0001   -&gt;  57866:103:1
+0000 E20A | 0000 0068 | 0000 001F   -&gt;  57866:104:31</code></pre>
+<p>They mirror the standard communities on the same path (<code>65102:41441</code>, <code>65103:1</code>, <code>65104:31</code>): AS 57866 tags its routes both ways. Coloclue (AS 8283) does the same: <code>8283:0:1</code>, <code>8283:5:1</code>, <code>8283:8:26</code>.</p>
+<p><strong>Why it matters:</strong> flag <code>0xE0</code> means optional, transitive, partial. BGP's rule is that a router must forward an optional transitive attribute it does not recognize. That rule is what lets new features spread, and it is also how a single malformed attribute has crossed many networks and reset sessions far from its source. Your edge should be running code that handles unknown attributes gracefully (RFC 7606, "treat-as-withdraw"), and you should know whether it does.</p></div></div>
+
+<h2>One more attribute</h2>
+<p>The path through AS 12552 carries <code>Extended Community: 0x43:100:0</code>. Type <code>0x43</code> is a non-transitive extended community; the format matches the origin-validation-state community of RFC 8097, which one network uses to tell its own routers the RPKI result. It is meant to stay inside that network. Seeing it here suggests it leaked across the boundary: harmless on a collector, but a sign of an edge that does not scrub internal markings.</p>
+
+<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:34px 0 14px;padding-top:14px;border-top:1px solid hsl(43 45% 56% / .25);font-size:.92rem"><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--accent);text-decoration:none">&larr; Part 1: Summary and Key Findings</a><span><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--accent);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak &rarr;</a></span></div>
+<div style="border:1px solid hsl(43 45% 56% / .25);border-radius:8px;padding:12px 18px;margin:14px 0;background:hsl(0 0% 6%)">
+  <p style="margin:0 0 6px;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)">Chapter 2 &middot; Reading a Path</p>
+  <ol style="margin:0;padding-left:20px;font-size:.92rem"><li><a href="/bgp/ch02-1-summary-and-findings" style="color:var(--fg-dim);text-decoration:none">Part 1: Summary and Key Findings</a></li><li><strong><a href="/bgp/ch02-2-anatomy-of-a-route" style="color:var(--accent);text-decoration:none">Part 2: Anatomy of a Route: 8.8.8.8</a></strong></li><li><a href="/bgp/ch02-3-cloudflare-and-the-hidden-attributes" style="color:var(--fg-dim);text-decoration:none">Part 3: Cloudflare 1.1.1.1 and the Attributes That Leak</a></li><li><a href="/bgp/ch02-4-reading-the-table" style="color:var(--fg-dim);text-decoration:none">Part 4: Reading the Table: Prepending, More-Specifics and maxLength</a></li><li><a href="/bgp/ch02-5-rpki-under-the-hood" style="color:var(--fg-dim);text-decoration:none">Part 5: RPKI Under the Hood, and What to Do About It</a></li></ol>
+</div>
+<div style="margin:18px 0 6px"><a href="https://github.com/ikonstas70" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem;background:hsl(43 45% 56% / .12)" rel="noopener">Follow on GitHub</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-2-anatomy-of-a-route" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on LinkedIn</a><a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fikonstas70.github.io%2Fbgp%2Fch02-2-anatomy-of-a-route&amp;text=Special%20Topics%20in%20BGP%3A%20Anatomy%20of%20a%20Route%3A%208.8.8.8" style="display:inline-block;margin:4px 6px 4px 0;padding:7px 14px;border:1px solid hsl(43 45% 56% / .55);border-radius:999px;color:var(--accent);text-decoration:none;font-size:.88rem" rel="noopener" target="_blank">Share on X</a></div>
+<p style="font-size:.85rem;color:var(--fg-dim)">All output is from Route Views, a public collector operated for exactly this purpose. Network names are from public registry data; community meanings are from the operators' public documentation and may change. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas. All rights reserved. Code samples are released under the <a href="/license">MIT License</a>. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+</body>
+</html>
