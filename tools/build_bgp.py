@@ -199,7 +199,7 @@ def page(i, slug, title, desc, body):
   <ol style="margin:0;padding-left:20px;font-size:.92rem">{parts_list}</ol>
 </div>
 {share}
-<p style="font-size:.85rem;color:var(--fg-dim)">Only public services that their operators provide for exactly this purpose are used. Chapters 2 to 5 are for subscribers: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
+<p style="font-size:.85rem;color:var(--fg-dim)">Only public services that their operators provide for exactly this purpose are used. More chapters: <a href="/bgp/" style="color:var(--accent)">see the series</a>. Text &copy; 2026 Ioannis Alexander Konstas; code samples under the <a href="/license">MIT License</a>.</p>
   </main>'''
     pre = pre.replace('<a href="/bgp/" class="active">BGP</a>', '<a href="/bgp/" class="active">BGP</a>')
     out = ROOT / 'bgp' / f'{slug}.html'
