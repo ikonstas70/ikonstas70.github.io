@@ -503,8 +503,17 @@ route-views> show bgp ipv6 unicast inconsistent-as
  ['Paths, RPKI <strong>invalid</strong>', '17,810 (0.09%)', '5,350 (0.03%)', '<strong>down 70%</strong>'],
  ['IPv4 network entries', '916,896', '1,129,606', 'the table keeps growing'],
  ['Full-table peers', '22', '15', 'a smaller peer mix this time'],
+ ['IPv6 paths, RPKI <strong>valid</strong>', 'not captured', '<strong>83.0%</strong>', 'IPv6 is ahead of IPv4'],
 ], num=(1, 2))}
 <p>A caution before the conclusion: the peer mix changed (fifteen full feeds now, twenty-two then), so absolute path counts are not directly comparable. The <em>shares</em> are, and over those five years they moved decisively: the IPv4 table grew by more than 200,000 prefixes while the share of paths with no ROA fell from two thirds to under a third. Where networks publish ROAs and their providers drop invalid routes, invalid announcements stop spreading. RPKI is not a theory any more; you can watch it work from a public login.</p>
+<h2>Why it improved</h2>
+{table(['Driver', 'What changed', 'Effect'], [
+ ['Large carriers began dropping invalid routes', 'Lumen, AT&amp;T, NTT, Arelion and others deployed origin validation between 2019 and 2022', 'Invalid announcements stopped spreading, so publishing a ROA started to pay off'],
+ ['Registries made ROAs easy', 'ARIN, RIPE NCC, APNIC, LACNIC and AFRINIC offer ROA creation in their portals', 'Minutes per prefix instead of a project'],
+ ['Clouds and CDNs signed their space', 'Cloudflare, Google, Amazon, Microsoft, Fastly and Oracle publish ROAs for their blocks', 'A large share of the routes people actually use became valid at once'],
+ ['Industry and regulatory pressure', 'MANRS commitments and government attention, such as the US FCC\'s 2024 BGP security inquiry', 'Routing security moved from optional to expected'],
+])}
+{callout('<strong>Two caveats.</strong> The peer mix changed (22 full feeds in 2021, 15 now), so compare the shares, not the counts. And RPKI checks only the origin: about 29% of paths still have no ROA, loose maxLength still leaves gaps, and forged paths need ASPA and BGP Roles, covered in Part 9.')}
 {kpis([('70.8%', 'of paths now RPKI-valid'), ('5,350', 'invalid paths left, down from 17,810'), ('0', 'unexpected more-specifics on the blocks we checked'), ('15', 'paths per block: every major carrier carries them')])}
 
 <h2>The opportunity, in four sentences</h2>
