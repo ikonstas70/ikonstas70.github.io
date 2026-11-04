@@ -426,7 +426,7 @@ route-views> show ip traffic
 
 <h2>IPv6 is ahead of IPv4</h2>
 {table(['Measure', 'IPv4', 'IPv6'], [
- ['Prefixes', '1,129,606', '263,159'],
+ ['Prefixes', '1,129,444', '263,159'],
  ['Paths RPKI valid', '70.8%', '<strong>83.0%</strong>'],
  ['Paths RPKI not found', '29.1%', '17.0%'],
  ['Paths RPKI invalid', '0.03%', '0.05%'],
@@ -507,10 +507,10 @@ route-views> show bgp ipv6 unicast inconsistent-as
 <p>The same collector, the same command, two snapshots <strong>five years apart</strong>: the one read in Chapter 1, captured on 17 October 2021, and a fresh session on 3 November 2026.</p>
 {table(['Measure', 'Chapter 1 (17 Oct 2021)', 'This session (3 Nov 2026)', 'Change'], [
  ['Table version', '1,142,409,165', '1,517,803,889', 'the counter keeps climbing'],
- ['Paths, RPKI <strong>valid</strong>', '6,502,331 (32.6%)', '11,656,019 (70.8%)', '<strong>more than double</strong> the share'],
- ['Paths, RPKI <strong>not found</strong>', '13,437,858 (67.3%)', '4,793,951 (29.1%)', 'down by more than half'],
- ['Paths, RPKI <strong>invalid</strong>', '17,810 (0.09%)', '5,350 (0.03%)', '<strong>down 70%</strong>'],
- ['IPv4 network entries', '916,896', '1,129,606', 'the table keeps growing'],
+ ['Paths, RPKI <strong>valid</strong>', '6,502,331 (32.6%)', '11,656,636 (70.8%)', '<strong>more than double</strong> the share'],
+ ['Paths, RPKI <strong>not found</strong>', '13,437,858 (67.3%)', '4,793,762 (29.1%)', 'down by more than half'],
+ ['Paths, RPKI <strong>invalid</strong>', '17,810 (0.09%)', '5,344 (0.03%)', '<strong>down 70%</strong>'],
+ ['IPv4 network entries', '916,896', '1,129,444', 'the table keeps growing'],
  ['Full-table peers', '22', '15', 'a smaller peer mix this time'],
  ['IPv6 paths, RPKI <strong>valid</strong>', 'not captured', '<strong>83.0%</strong>', 'IPv6 is ahead of IPv4'],
 ], num=(1, 2))}
@@ -523,7 +523,7 @@ route-views> show bgp ipv6 unicast inconsistent-as
  ['Industry and regulatory pressure', 'MANRS commitments and government attention, such as the US FCC\'s 2024 BGP security inquiry', 'Routing security moved from optional to expected'],
 ])}
 {callout('<strong>Two caveats.</strong> The peer mix changed (22 full feeds in 2021, 15 now), so compare the shares, not the counts. And RPKI checks only the origin: about 29% of paths still have no ROA, loose maxLength still leaves gaps, and forged paths need ASPA and BGP Roles, covered in Part 9.')}
-{kpis([('70.8%', 'of paths now RPKI-valid'), ('5,350', 'invalid paths left, down from 17,810'), ('0', 'unexpected more-specifics on the blocks we checked'), ('15', 'paths per block: every major carrier carries them')])}
+{kpis([('70.8%', 'of paths now RPKI-valid'), ('5,344', 'invalid paths left, down from 17,810'), ('0', 'unexpected more-specifics on the blocks we checked'), ('15', 'paths per block: every major carrier carries them')])}
 
 <h2>The opportunity, in four sentences</h2>
 <ol>
@@ -933,7 +933,7 @@ CPU utilization for five seconds: 42%/1%; one minute: 43%; five minutes: 36%</co
  ['IPv4 paths with no ROA', '67.3%', '29.1%', 'cut by more than half'],
  ['IPv4 paths RPKI-invalid', '17,810 (0.09%)', '<strong>5,344</strong> (0.03%)', 'down 70%'],
  ['IPv6 paths RPKI-valid', 'not captured', '<strong>83.0%</strong>', 'ahead of IPv4'],
- ['IPv4 networks in the table', '916,896', '1,129,606', 'up 23%'],
+ ['IPv4 networks in the table', '916,896', '1,129,444', 'up 23%'],
  ['Full-table peers', '22', '15', 'compare shares, not counts'],
 ])}
 {callout('<strong>Better protected, same weaknesses.</strong> Five years of adoption changed <em>how many</em> routes are verified. It did not remove the weaknesses this chapter documents: communities and AGGREGATOR still leak information, loose maxLength and missing ROAs still invite hijacks, RPKI caches still disagree over plain TCP, and origin validation still does not check the path. All twelve findings come from the 2026 sessions.')}
