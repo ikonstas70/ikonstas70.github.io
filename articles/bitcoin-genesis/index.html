@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/bitcoin-genesis/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Block Zero to Block 974,612 — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="Reading Bitcoin from its first breath to its latest block: the Genesis Block, Block 1, the first payment in block 170, the accounting of every satoshi, halvings, and today's live blocks, with the scripts that query it all.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/bitcoin-genesis/">
+<meta property="og:title" content="Block Zero to Block 974,612: Reading Bitcoin from Its First Breath">
+<meta property="og:description" content="The Genesis Block, Block 1, the first payment, the accounting of the 50 bitcoins, and today's live blocks, with working code.">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Block Zero to Block 974,612: Reading Bitcoin from Its First Breath", "author": {"@type": "Person", "name": "Ioannis Alexander Konstas", "alternateName": "Ioannis Konstas", "url": "https://ikonstas70.github.io/about"}, "datePublished": "2026-11-04", "license": "https://opensource.org/licenses/MIT", "copyrightHolder": "Ioannis Alexander Konstas"}</script>
+<style>
+  .btc-hero{border:1px solid hsl(43 45% 56% / .45);border-radius:12px;padding:26px 26px 20px;margin:0 0 26px;background:linear-gradient(135deg,hsl(43 45% 56% / .10),hsl(222 48% 8%) 60%);box-shadow:0 10px 30px hsl(0 0% 0% / .45)}
+  .btc-hero .hash{font-family:ui-monospace,Menlo,monospace;font-size:.86rem;color:var(--accent,#c9a858);word-break:break-all;letter-spacing:.02em}
+  .btc-hero .big{font-family:Georgia,serif;font-size:1.25rem;color:#e9dcb4;margin:14px 0 4px;font-style:italic}
+  table.btc{width:100%;border-collapse:collapse;margin:14px 0 22px;font-size:.92rem}
+  table.btc th,table.btc td{border-bottom:1px solid hsl(43 45% 56% / .18);padding:7px 10px;text-align:left;vertical-align:top}
+  table.btc th{color:var(--accent,#c9a858);font-weight:600;font-family:Georgia,serif}
+  table.btc td code,.mono{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;word-break:break-all}
+  table.btc td.num{text-align:right;font-family:ui-monospace,Menlo,monospace;white-space:nowrap}
+  .ledger{border:1px solid hsl(43 45% 56% / .35);border-radius:10px;padding:16px 20px;margin:16px 0 24px;background:hsl(222 48% 7%);font-family:ui-monospace,Menlo,monospace;font-size:.86rem;line-height:1.7;overflow-x:auto;white-space:pre}
+  .ledger b{color:var(--accent,#c9a858);font-weight:600}
+  .note{border-left:3px solid var(--accent,#c9a858);padding:6px 16px;margin:18px 0;color:#cfd6e4;background:hsl(43 45% 56% / .05)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:16px 0 24px}
+  .stats div{border:1px solid hsl(43 45% 56% / .3);border-radius:10px;padding:12px 14px;background:hsl(222 48% 7%)}
+  .stats b{display:block;font-family:Georgia,serif;font-size:1.3rem;color:var(--accent,#c9a858)}
+  .stats span{font-size:.78rem;color:#9aa5b8;letter-spacing:.04em}
+  pre code{font-size:.8rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/">BGP</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Cryptography &middot; Bitcoin</span>
+    <h1>Block Zero to Block 974,612: Reading Bitcoin from Its First Breath</h1>
+    <p class="meta">Article &middot; 4 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+    <div class="btc-hero">
+      <div class="hash">000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</div>
+      <p class="big">&ldquo;The Times 03/Jan/2009 Chancellor on brink of second bailout for banks&rdquo;</p>
+      <p style="margin:0;color:#9aa5b8;font-size:.85rem">The hash of block zero, and the sentence its creator chose to carry inside it forever.</p>
+    </div>
+
+<blockquote>Every bank keeps a ledger, and every one of those ledgers asks you to trust the bank. Bitcoin keeps a ledger too, except anyone on Earth can read every line of it, from the very first entry written in January 2009 to the block that was mined a few minutes ago. This article reads that ledger directly: the first block, the second, the first payment between two people, and the accounting that has balanced to the last satoshi for seventeen years.</blockquote>
+
+<p>Nothing on this page is taken on faith. Every number below was pulled live from the public Bitcoin network with a handful of small scripts, which are printed at the end so you can run them yourself. That is the spirit of the system: <em>don't trust, verify.</em></p>
+
+    <h2>1 &middot; Block 0: the Genesis Block</h2>
+
+<p>On 3 January 2009, at 18:15:05 UTC, a person or group writing as <strong>Satoshi Nakamoto</strong> created the first block of a chain that would grow to secure more value than many national economies. It is called the <strong>Genesis Block</strong>, and it sits at height zero. Here is what the network still returns for it today:</p>
+
+<table class="btc">
+<tr><th>Field</th><th>Value</th><th>What it means</th></tr>
+<tr><td>Block hash</td><td><code>000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</code></td><td>The block's fingerprint. The leading zeros are the visible proof that work was done to find it.</td></tr>
+<tr><td>Previous block</td><td>none</td><td>The only block in history with no parent. Its &ldquo;previous hash&rdquo; field is all zeros.</td></tr>
+<tr><td>Merkle root</td><td><code>4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b</code></td><td>A summary hash of all transactions. With only one transaction, it equals that transaction's ID.</td></tr>
+<tr><td>Time</td><td>2009-01-03 18:15:05 UTC</td><td>The same day as the newspaper headline embedded inside it.</td></tr>
+<tr><td>Bits / difficulty</td><td>486604799 (0x1d00ffff) / 1</td><td>The easiest target Bitcoin has ever had. A home computer could find a block.</td></tr>
+<tr><td>Nonce</td><td>2,083,236,893</td><td>The number that was changed again and again until the hash came out below the target.</td></tr>
+<tr><td>Transactions</td><td>1</td><td>Only the coinbase: the transaction that creates new coins.</td></tr>
+<tr><td>Reward</td><td>50.00000000 BTC</td><td>Paid to public key <code>04678afdb0fe5548&hellip;</code> (address <code>1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</code>).</td></tr>
+</table>
+
+    <h3>The message in the machine</h3>
+
+<p>A coinbase transaction has no real input to spend, so its input field is free space. Satoshi used it to write the front-page headline of <em>The Times</em> of London from that very morning: <strong>&ldquo;Chancellor on brink of second bailout for banks.&rdquo;</strong></p>
+
+<p>The headline does two jobs. Technically, it is a timestamp: the block cannot have been created before that newspaper was printed, which proves Satoshi did not secretly mine a head start. Philosophically, it is a statement. In the middle of a banking crisis paid for by the public, the first entry in a new kind of money pointed straight at the old kind.</p>
+
+<div class="note">A small detail for the curious: when you decode the raw input, a stray letter <code>E</code> appears just before &ldquo;The Times&rdquo;. It is not part of the message. It is the byte <code>0x45</code>, which means &ldquo;the next 69 bytes are data&rdquo;, and 0x45 happens to be the letter E in ASCII. Our scripts read the script push by push, so they print only the headline.</div>
+
+    <h3>The 50 bitcoins that can never be spent</h3>
+
+<p>The Genesis Block's reward exists, but it can never move. The block is written directly into the Bitcoin software rather than received from the network, and its transaction was never added to the database of spendable coins. Whether that was deliberate or an accident of the original code, the result is a permanent monument: 50 BTC locked at the very root of the chain. People still send small tributes to that address, where they will most likely stay.</p>
+
+    <h2>2 &middot; Block 1: the first link in the chain</h2>
+
+<p>The next block did not appear for almost six days. Then, on 9 January 2009 at 02:54:25 UTC, block 1 was mined, and with it Bitcoin became a <em>chain</em>: block 1 is the first block that points back to another.</p>
+
+<table class="btc">
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>Block hash</td><td><code>00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048</code></td></tr>
+<tr><td>Previous block</td><td><code>000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</code> (the Genesis Block)</td></tr>
+<tr><td>Merkle root</td><td><code>0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098</code></td></tr>
+<tr><td>Time</td><td>2009-01-09 02:54:25 UTC</td></tr>
+<tr><td>Bits / difficulty</td><td>486604799 / 1</td></tr>
+<tr><td>Nonce</td><td>2,573,394,689</td></tr>
+<tr><td>Transactions</td><td>1 (coinbase, 134 bytes)</td></tr>
+<tr><td>Reward</td><td>50.00000000 BTC to public key <code>0496b538e853519c&hellip;</code> (address <code>12c6DSiU4Rq3P4ZxziKxzrGRwzbRVXM9w</code>)</td></tr>
+</table>
+
+    <h3>Block 0 and Block 1, side by side</h3>
+
+<table class="btc">
+<tr><th></th><th>Block 0 (Genesis)</th><th>Block 1</th></tr>
+<tr><td>How it came to exist</td><td>Written into the software by hand. No node ever received it from the network.</td><td>Mined and broadcast like every block since.</td></tr>
+<tr><td>Previous block</td><td>none (all zeros)</td><td>points to Block 0. The chain begins here.</td></tr>
+<tr><td>Hidden message</td><td>The Times headline (69 bytes)</td><td>none, just the minimum technical data</td></tr>
+<tr><td>Coinbase transaction size</td><td>204 bytes</td><td>134 bytes. The 70-byte difference is the headline.</td></tr>
+<tr><td>Hash</td><td>10 leading zeros (<code>0000000000</code>19d6&hellip;)</td><td>8 leading zeros (<code>00000000</code>839a&hellip;), exactly what difficulty 1 requires</td></tr>
+<tr><td>Can its 50 BTC be spent?</td><td>Never. It is not in the spendable-coin database.</td><td>Yes, by whoever holds the key. It has never moved (verified unspent today).</td></tr>
+<tr><td>Time to the next block</td><td>5 days, 8 hours, 39 minutes, 20 seconds</td><td>a few minutes (block 2 followed the same morning)</td></tr>
+</table>
+
+<p>That six-day silence has never been fully explained. Some think Satoshi was testing, others that the Genesis Block was prepared in advance and its timestamp set to match the headline. What matters is the result: from block 1 onward, every block carries the hash of the one before it. Change a single byte anywhere in history and every hash after it breaks. That is the whole security model of Bitcoin in one sentence.</p>
+
+    <h2>3 &middot; The accounting of the 50</h2>
+
+<p>Bitcoin's ledger runs on two simple rules, and every block since 2009 has obeyed both:</p>
+
+<div class="ledger"><b>Rule 1 (normal transactions)</b>   inputs  =  outputs  +  fee
+<b>Rule 2 (the coinbase)</b>          new coins (subsidy)  +  all fees in the block  =  miner reward</div>
+
+<p>There are no account balances in Bitcoin. There are only <em>coins</em>, called unspent outputs, and each one is spent whole, like a banknote. To pay less than a coin is worth, you spend all of it and send yourself the change. Here is the money supply growing through the first blocks:</p>
+
+<table class="btc">
+<tr><th>Moment</th><th>Coins created</th><th>Total in existence</th><th>Spendable</th></tr>
+<tr><td>Block 0 (3 Jan 2009)</td><td class="num">50</td><td class="num">50</td><td class="num">0</td></tr>
+<tr><td>Block 1 (9 Jan 2009)</td><td class="num">50</td><td class="num">100</td><td class="num">50</td></tr>
+<tr><td>Block 9</td><td class="num">50</td><td class="num">500</td><td class="num">450</td></tr>
+<tr><td>Block 170 (12 Jan 2009)</td><td class="num">50</td><td class="num">8,550</td><td class="num">8,500</td></tr>
+</table>
+
+    <h3>Block 170: the first payment from one person to another</h3>
+
+<p>For the first nine days, coins were only created, never sent. Then, on 12 January 2009 at 03:30:25 UTC, transaction <code class="mono">f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16</code> was confirmed in block 170. Satoshi took the 50 BTC mined in block 9 and sent 10 of them to <strong>Hal Finney</strong>, the cryptographer who had been the first to download and run the software. It was the first time value moved from one person to another on the Bitcoin network.</p>
+
+<div class="ledger"><b>INPUT</b>
+  50.00000000 BTC   coinbase of block 9   (key 0411db93e1dcdb8a&hellip;)
+
+<b>OUTPUTS</b>
+  10.00000000 BTC   to Hal Finney          (key 04ae1a62fe09c5f5&hellip;)
+  40.00000000 BTC   change, back to sender  (key 0411db93e1dcdb8a&hellip;)
+
+<b>CHECK</b>   50.00000000  =  10.00000000  +  40.00000000  +  fee 0.00000000   balanced</div>
+
+<p>The pattern is right there in the first payment ever made: spend the whole coin, pay the recipient, return the change to yourself. Every wallet in the world still works this way. The fee was zero because there was no competition for space in a block. Today it never is.</p>
+
+    <h3>The halving: scarcity written in code</h3>
+
+<p>The 50 BTC subsidy is not permanent. Every 210,000 blocks, about every four years, it is cut in half. No committee votes on it and no central bank can change it. The rule is enforced by every node that checks every block.</p>
+
+<table class="btc">
+<tr><th>Era</th><th>From block</th><th>Year</th><th>New coins per block</th></tr>
+<tr><td>1</td><td class="num">0</td><td>2009</td><td class="num">50</td></tr>
+<tr><td>2</td><td class="num">210,000</td><td>2012</td><td class="num">25</td></tr>
+<tr><td>3</td><td class="num">420,000</td><td>2016</td><td class="num">12.5</td></tr>
+<tr><td>4</td><td class="num">630,000</td><td>2020</td><td class="num">6.25</td></tr>
+<tr><td>5 (now)</td><td class="num">840,000</td><td>2024</td><td class="num">3.125</td></tr>
+<tr><td>6</td><td class="num">1,050,000</td><td>about 2028</td><td class="num">1.5625</td></tr>
+</table>
+
+<p>Add up the eras and the total never quite reaches 21 million coins. The last fraction of a bitcoin will be created around the year 2140. After that, miners will be paid by fees alone.</p>
+
+    <h2>4 &middot; The same ledger, tonight</h2>
+
+<p>Seventeen years later, the rules have not changed by a single satoshi. Here is block <strong>974,612</strong>, mined by F2Pool at 01:47:27 UTC on 5 November 2026 (20:47 the previous evening in New York), read and checked on the evening this article was written:</p>
+
+<div class="ledger"><b>BLOCK 974,612</b>       hash 000000000000000000016c029344d9ab396fad95f260abb37aca40ff349c73a8
+mined 17 min 55 s after block 974,611
+
+<b>ACCOUNTING</b>
+  New coins (subsidy)          3.12500000 BTC
++ Transaction fees             0.02297870 BTC
+= Miner reward                 3.14797870 BTC   paid by the coinbase, balanced
+
+BTC moved               7,337.67123309 BTC   in 2,622 transactions
+Inputs / outputs        8,528 / 8,234        size 1.62 MB
+Largest transaction     2,482.73158488 BTC   (11 inputs, 2 outputs)</div>
+
+<div class="stats">
+  <div><b>1 &rarr; 148 trillion</b><span>difficulty, 2009 to today</span></div>
+  <div><b>~1,035 EH/s</b><span>network hashrate: about 10<sup>21</sup> guesses per second</span></div>
+  <div><b>2,622</b><span>transactions in block 974,612, compared with 1 in block 0</span></div>
+  <div><b>50 &rarr; 3.125</b><span>new BTC per block after four halvings</span></div>
+</div>
+
+<p>Look at the hash. The Genesis Block needed 10 leading zeros. Block 974,612 has 19. The difficulty has risen from 1 to about 148 trillion, because the whole world now competes for each block with specialised machines. That rising wall of energy is what makes rewriting history so expensive that no one tries.</p>
+
+<p>Block times are random. Block 974,611 arrived just 10 seconds after 974,610, and then the network waited almost 18 minutes for 974,612. The difficulty adjusts every 2,016 blocks so the <em>average</em> stays at ten minutes, but every individual block is a lottery draw.</p>
+
+    <h3>Watching it live</h3>
+
+<p>Here is the ledger in motion: one terminal, two screens. The top screen reads each new block and checks its accounting. The bottom screen shows transactions the moment they are broadcast, each with its fee and a verdict on how soon a miner will take it, and red <em>WHALE</em> alerts for anything of 10 BTC or more.</p>
+
+<figure style="margin:18px 0 26px;background:#000;border:1px solid hsl(43 45% 56% / .45);border-radius:12px;padding:10px;box-shadow:0 10px 30px hsl(0 0% 0% / .5)">
+  <video src="bitcoin-live-feed.mp4" poster="bitcoin-live-feed-poster.jpg" controls muted playsinline preload="metadata" style="display:block;width:100%;height:auto;border-radius:6px;background:#000"></video>
+  <figcaption style="color:#9aa5b8;font-size:.8rem;padding:10px 6px 2px;font-family:Georgia,serif;font-style:italic">Live recording, 4 November 2026, 20:58 New York time. Top: blocks 974,611 and 974,612 with their accounting. Bottom: the mempool, with a 101-BTC transfer arriving at the end.</figcaption>
+</figure>
+
+    <h3>What you can and cannot see</h3>
+
+<p>Watching transactions arrive live in the mempool, the waiting room before a block, you sometimes see a single transfer of 50, 73 or 2,482 BTC go by. But the blockchain records <em>movements</em> between keys, not purchases or names. When someone buys bitcoin on an exchange, the exchange usually just updates its own internal database, and nothing appears on the chain until coins are withdrawn or moved. Bitcoin is transparent about <em>what</em> moved, and silent about <em>who</em> moved it.</p>
+
+    <h2>5 &middot; The code: query it yourself</h2>
+
+<p>No node, no account, no API key. Everything above comes from the public <a href="https://mempool.space/docs/api/rest">mempool.space REST API</a>, with Google BigQuery's public Bitcoin dataset for historical analysis. Here are the scripts behind this article.</p>
+
+    <h3>One-line queries with curl</h3>
+<pre><code># The Genesis Block header (JSON)
+curl -s https://mempool.space/api/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f | python3 -m json.tool
+
+# The hash of any block by height
+curl -s https://mempool.space/api/block-height/1
+
+# The transactions in a block
+curl -s https://mempool.space/api/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f/txids
+
+# Has block 1's 50 BTC ever been spent?
+curl -s https://mempool.space/api/tx/0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098/outspends
+# [{"spent":false}]
+
+# The current tip of the chain
+curl -s https://mempool.space/api/blocks/tip/height</code></pre>
+
+    <h3>block_info.sh: a readable view of any block</h3>
+<pre><code>#!/bin/zsh
+# Usage: zsh block_info.sh [height or hash]
+python3 - "${1:-0}" &lt;&lt;'EOF'
+import sys, json, urllib.request, datetime as d
+A = 'https://mempool.space/api'
+get = lambda p: urllib.request.urlopen(A + p, timeout=30).read().decode()
+b = sys.argv[1]
+h = b if len(b) == 64 else get(f'/block-height/{b}')
+blk = json.loads(get(f'/v1/block/{h}'))
+tip = int(get('/blocks/tip/height'))
+line = lambda k, v: print(f'  {k:&lt;22} {v}')
+print(f'\n  BITCOIN BLOCK {blk["height"]:,}\n')
+line('Block hash', blk['id'])
+line('Previous block', blk.get('previousblockhash') or 'none (genesis block)')
+line('Merkle root', blk['merkle_root'])
+line('Time', f'{d.datetime.fromtimestamp(blk["timestamp"], d.UTC):%Y-%m-%d %H:%M:%S} UTC')
+line('Confirmations', f'{tip - blk["height"] + 1:,}')
+line('Bits / difficulty', f'{blk["bits"]}  /  {blk["difficulty"]:,.0f}')
+line('Nonce', f'{blk["nonce"]:,}')
+line('Transactions', f'{blk["tx_count"]:,}')
+EOF</code></pre>
+
+    <h3>tx_info.sh: inputs, outputs and the hidden message</h3>
+<pre><code>#!/bin/zsh
+# Usage: zsh tx_info.sh &lt;txid&gt;
+python3 - "$1" &lt;&lt;'EOF'
+import sys, json, urllib.request
+A = 'https://mempool.space/api'
+tx = json.loads(urllib.request.urlopen(f'{A}/tx/{sys.argv[1]}', timeout=30).read())
+print('\n  INPUTS')
+for i, v in enumerate(tx['vin']):
+    if v.get('is_coinbase'):
+        s = bytes.fromhex(v['scriptsig']); j = 0; parts = []
+        while j &lt; len(s):                  # read the script push by push:
+            n = s[j]; j += 1               # a length byte, then that many data bytes
+            if 1 &lt;= n &lt;= 75: parts.append(s[j:j+n]); j += n
+        msg = ' '.join(p.decode() for p in parts if len(p) &gt;= 4 and all(32 &lt;= c &lt; 127 for c in p))
+        print(f'  #{i}  coinbase (new coins)   {msg}')
+    else:
+        p = v['prevout']
+        print(f'  #{i}  {p["value"]/1e8:14.8f} BTC   spends {v["txid"]}:{v["vout"]}')
+print('\n  OUTPUTS')
+for i, o in enumerate(tx['vout']):
+    print(f'  #{i}  {o["value"]/1e8:14.8f} BTC   {o["scriptpubkey_type"]}')
+print(f'\n  fee {tx["fee"]} sats')
+EOF</code></pre>
+
+<p>Run <code>zsh tx_info.sh 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b</code> to see the Times headline, or <code>zsh tx_info.sh f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16</code> to see the first payment to Hal Finney balance to the satoshi.</p>
+
+    <h3>The accounting check: parsing a whole block locally</h3>
+
+<p>Rather than make thousands of requests, the live feed downloads each new block once (about 1.6 MB of raw bytes) and decodes every transaction on the local machine. The miner's reward is read straight from the coinbase outputs, and the subsidy is computed from the halving rule:</p>
+<pre><code>subsidy = (50 * 100_000_000) &gt;&gt; (height // 210_000)   # in satoshis: halves every 210,000 blocks
+reward  = sum(value for value, script in coinbase_outputs)
+fees    = reward - subsidy                             # everything the miner earned above new coins
+
+print(f'New coins (subsidy)  {subsidy / 1e8:.8f} BTC')
+print(f'+ Transaction fees   {fees / 1e8:.8f} BTC')
+print(f'= Miner reward       {reward / 1e8:.8f} BTC')</code></pre>
+
+<p>The transaction ID is computed the same way Bitcoin itself does it: a double SHA-256 of the transaction without its witness data, with the byte order reversed for display.</p>
+<pre><code>import hashlib
+def txid(base_bytes):
+    return hashlib.sha256(hashlib.sha256(base_bytes).digest()).digest()[::-1].hex()</code></pre>
+
+    <h3>Google BigQuery: the whole history in SQL</h3>
+
+<p>Google publishes the full Bitcoin blockchain as a public dataset, <code>bigquery-public-data.crypto_bitcoin</code>. The first terabyte of queries each month is free. Always filter on the monthly partition column to keep scans small.</p>
+<pre><code>-- The Genesis Block
+SELECT number, `hash`, timestamp, nonce, bits, transaction_count
+FROM `bigquery-public-data.crypto_bitcoin.blocks`
+WHERE timestamp_month = '2009-01-01' AND number = 0;
+
+-- The first person-to-person payment, output by output
+SELECT t.block_number, o.index, o.value / 1e8 AS btc
+FROM `bigquery-public-data.crypto_bitcoin.transactions` t, UNNEST(t.outputs) o
+WHERE t.block_timestamp_month = '2009-01-01'
+  AND t.`hash` = 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16';
+
+-- Total new coins and fees per day for a month
+SELECT DATE(timestamp) AS day, COUNT(*) AS blocks, SUM(transaction_count) AS txs
+FROM `bigquery-public-data.crypto_bitcoin.blocks`
+WHERE timestamp_month = '2026-10-01'
+GROUP BY day ORDER BY day;</code></pre>
+<pre><code># Run from a Mac with the Google Cloud SDK; --dry_run shows the bytes scanned first, at no cost
+bq query --use_legacy_sql=false --dry_run 'SELECT ...'
+bq query --use_legacy_sql=false --format=pretty 'SELECT ...'</code></pre>
+
+    <h2>6 &middot; Why it still matters</h2>
+
+<p>Block 0 holds a headline about banks being rescued with public money. Block 1 holds nothing at all, just the first link of a chain. Block 170 holds ten bitcoins passing from one person to another with no bank, no clearing house and no permission. And block 974,612, mined tonight, holds 2,622 transactions that balance to the last satoshi under the same rules written in 2009.</p>
+
+<p>Most systems ask you to trust them. This one hands you the ledger and the tools to check it. You do not need to believe a word of this article. Run the scripts, ask the network, and watch it answer.</p>
+
+<blockquote>&ldquo;The root problem with conventional currency is all the trust that's required to make it work.&rdquo; &mdash; Satoshi Nakamoto, 2009</blockquote>
+
+    <p class="meta" style="margin-top:30px">Data source: mempool.space public API and Google BigQuery <code>crypto_bitcoin</code>, read on 4&ndash;5 November 2026. Code on this page is MIT licensed.</p>
+  </main>
+</div>
+</body>
+</html>
