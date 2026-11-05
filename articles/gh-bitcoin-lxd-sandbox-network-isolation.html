@@ -11,17 +11,28 @@
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<style id="bitcoin-brand">
+  /* Bitcoin section branding: black + gold only */
+  .callout.tip{border-left-color:var(--accent,#c9a858)!important;border-color:hsl(43 45% 56% / .45)!important;background:hsl(43 45% 56% / .05)!important}
+  .callout.purple{color:#e4cb67!important}
+  .tl-dot.g,.tl-dot.c{background:var(--accent,#c9a858)!important}
+  main pre{white-space:pre-wrap;overflow-wrap:anywhere}
+  main p code,main td code{overflow-wrap:anywhere}
+</style>
 </head>
 <body>
 <div class="wrap">
   <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
     <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
     <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
     <div class="rule"></div>
     <nav class="top">
-      <a href="/" class="active">Articles</a>
+      <a href="/">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
       <a href="/bgp/">BGP</a>
-      <a href="/bitcoin/">Bitcoin</a>
+      <a href="/bitcoin/" class="active">Bitcoin</a>
       <a href="/awareness/">Security Awareness</a>
       <a href="/data-science/">Data Science</a>
       <a href="/readings">Readings</a>
@@ -33,10 +44,13 @@
     </nav>
   </header>
   <main>
-    <span class="tag">Systems</span>
+    <span class="tag">Bitcoin &middot; Systems</span>
     <h1>Bitcoin LXD Sandbox — Network Isolation Analysis</h1>
-    <p class="meta">Articles &middot; 2026 &middot; Ioannis (John) Konstas</p>
-<p>Analysis of a Bitcoin node running inside an LXD container (<code>bitcoin-sandbox</code>) on Ubuntu 24.04, confirming correct network isolation from the host LAN.</p><hr></hr><h2>Container Status</h2><pre><code>lxc list
+    <p class="meta">Articles &middot; 2026 &middot; Ioannis Alexander Konstas</p>
+<p>Analysis of a Bitcoin node running inside an LXD container (<code>bitcoin-sandbox</code>) on Ubuntu 24.04, confirming correct network isolation from the host LAN.</p><hr></hr><video controls playsinline preload="metadata" poster="/articles/gh-bitcoin-lxd-sandbox-network-isolation-media/poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000;margin:18px 0 26px">
+  <source src="/articles/gh-bitcoin-lxd-sandbox-network-isolation-media/field-report.mp4" type="video/mp4">
+</video>
+<h2>Container Status</h2><pre><code>lxc list
 +-----------------+---------+--------------------+-----------------------------------------------+
 |      NAME       |  STATE  |        IPV4        |                     IPV6                      |
 +-----------------+---------+--------------------+-----------------------------------------------+
@@ -70,10 +84,10 @@ lxc stop bitcoin-sandbox
 lxc start bitcoin-sandbox
 </code></pre><hr></hr><h2>Conclusion</h2><p>The sandbox is operating correctly. Bitcoin P2P traffic flows through NAT to the Internet while the internal LAN remains fully protected. All RPC endpoints are localhost-only. The container cannot be used as a pivot point to reach internal network devices.</p><hr></hr><p>
     <p><a href="/">← All articles</a></p>
-    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis (John) Konstas; compiled and finalized with AI assistance.</p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis Alexander Konstas; compiled and finalized with AI assistance.</p>
   </main>
   <footer class="site">
-    <p>&copy; 2026 Ioannis (John) Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+    <p>&copy; 2026 Ioannis Alexander Konstas &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
   </footer>
 </div>
 <div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
