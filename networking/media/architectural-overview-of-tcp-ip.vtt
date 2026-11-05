@@ -1,0 +1,361 @@
+WEBVTT
+
+1
+00:00:00.700 --> 00:00:05.144
+This is an architectural overview of the TCP/IP protocol suite.
+
+2
+00:00:05.494 --> 00:00:13.043
+Where it came from, how its four layers fit together, and what each core protocol does as data travels from one host to another.
+
+3
+00:00:15.167 --> 00:00:25.743
+The Transmission Control Protocol and Internet Protocol, TCP/IP, is the suite of protocols that lets computers communicate across wide area networks and the Internet.
+
+4
+00:00:26.093 --> 00:00:37.149
+Its development began in the late nineteen sixties and early seventies, funded by the United States Department of Defense, through its Advanced Research Projects Agency, DARPA.
+
+5
+00:00:37.499 --> 00:00:45.129
+DARPA experimented with packet switching: data is broken into blocks, and each block finds its own way across the network.
+
+6
+00:00:47.233 --> 00:00:49.112
+The milestones came quickly.
+
+7
+00:00:49.462 --> 00:00:55.514
+In nineteen seventy, ARPANET hosts adopted the Network Control Protocol, N C P.
+
+8
+00:00:55.864 --> 00:01:04.458
+In nineteen seventy two, the first Telnet specification was published as RFC 318, for remote terminal access.
+
+9
+00:01:04.808 --> 00:01:11.650
+In nineteen seventy three, the File Transfer Protocol followed, in RFC 454.
+
+10
+00:01:12.000 --> 00:01:19.201
+In nineteen seventy four, the Transmission Control Program was specified: the foundation of TCP/IP.
+
+11
+00:01:19.551 --> 00:01:26.903
+In nineteen eighty one, RFC 791 defined the Internet Protocol, its addressing and its routing.
+
+12
+00:01:27.253 --> 00:01:35.407
+In nineteen eighty two, the Defense Communications Agency and ARPA adopted TCP and IP as the standard for military networks.
+
+13
+00:01:35.757 --> 00:01:40.775
+In nineteen eighty three, ARPANET switched from N C P to TCP/IP.
+
+14
+00:01:41.125 --> 00:01:47.282
+And in nineteen eighty four, the Domain Name System arrived, so that hosts could be found by name.
+
+15
+00:01:49.400 --> 00:01:57.530
+Requests for Comments from the early nineteen eighties show that when TCP/IP was standardized, it was a Department of Defense standard.
+
+16
+00:01:57.880 --> 00:02:03.053
+RFC 760 is titled: DoD Standard Internet Protocol.
+
+17
+00:02:03.403 --> 00:02:09.042
+RFC 761: DoD Standard Transmission Control Protocol.
+
+18
+00:02:09.392 --> 00:02:18.718
+And RFC 810: DoD Internet Host Table Specification. Before DNS, every host kept a table of names and addresses.
+
+19
+00:02:19.068 --> 00:02:31.056
+RFC 791 and RFC 793 later replaced 760 and 761, and they remain the foundation of IP and TCP today.
+
+20
+00:02:33.167 --> 00:02:40.084
+The Internet Protocol is designed for use in interconnected systems of packet-switched computer communication networks.
+
+21
+00:02:40.434 --> 00:02:46.091
+It transmits blocks of data, called datagrams, from sources to destinations.
+
+22
+00:02:46.441 --> 00:02:51.632
+Sources and destinations are hosts, identified by fixed-length addresses.
+
+23
+00:02:51.982 --> 00:02:59.369
+And IP provides for fragmentation and reassembly of long datagrams, when they must pass through small packet networks.
+
+24
+00:03:01.500 --> 00:03:04.423
+TCP/IP is organized in four layers.
+
+25
+00:03:04.773 --> 00:03:08.607
+At the bottom, the network interface layer puts frames on the wire.
+
+26
+00:03:08.957 --> 00:03:15.346
+Above it, the internet layer moves datagrams between networks, with IP, ICMP and ARP.
+
+27
+00:03:15.696 --> 00:03:21.129
+The transport layer gives applications a conversation, with TCP and UDP.
+
+28
+00:03:21.479 --> 00:03:31.246
+And at the top, the application layer is where protocols such as HTTP, DNS, FTP and Telnet live, reached through the sockets interface.
+
+29
+00:03:33.367 --> 00:03:37.271
+As data moves down the stack, each layer wraps it in its own header.
+
+30
+00:03:37.621 --> 00:03:42.587
+TCP adds a header with ports and sequence numbers, and the result is a segment.
+
+31
+00:03:42.937 --> 00:03:47.435
+IP adds a header with the source and destination addresses: a datagram.
+
+32
+00:03:47.785 --> 00:03:53.053
+The network interface adds a frame header and a trailer, with hardware addresses and a checksum.
+
+33
+00:03:53.403 --> 00:03:58.886
+At the receiving host the process runs in reverse, each layer removing the header its peer added.
+
+34
+00:04:01.000 --> 00:04:02.572
+Here is the IP header.
+
+35
+00:04:02.922 --> 00:04:10.728
+Every datagram carries a time to live, the protocol of the layer above, a header checksum, and the source and destination addresses.
+
+36
+00:04:11.078 --> 00:04:15.423
+Nothing is set up in advance. Each datagram is delivered on its own.
+
+37
+00:04:15.773 --> 00:04:21.165
+IP makes no promise that a datagram arrives, arrives once, or arrives in order.
+
+38
+00:04:21.515 --> 00:04:23.393
+That is the job of the layers above.
+
+39
+00:04:25.500 --> 00:04:29.194
+When a datagram reaches a router, IP does four things.
+
+40
+00:04:29.544 --> 00:04:36.594
+It decrements the time to live, and discards the datagram if it reaches zero, so a loop cannot circulate it forever.
+
+41
+00:04:36.944 --> 00:04:41.255
+It calculates a new header checksum, because the header has changed.
+
+42
+00:04:41.605 --> 00:04:45.799
+It finds the next hop, and obtains that hop's hardware address.
+
+43
+00:04:46.149 --> 00:04:50.564
+And it forwards the datagram, one step closer to its destination.
+
+44
+00:04:52.667 --> 00:04:57.406
+Networks carry different maximum frame sizes, called the M T U.
+
+45
+00:04:57.756 --> 00:05:03.899
+Suppose a four thousand byte datagram must cross an Ethernet link with an M T U of fifteen hundred bytes.
+
+46
+00:05:04.249 --> 00:05:06.797
+IP splits it into three fragments.
+
+47
+00:05:07.147 --> 00:05:12.868
+Each fragment carries the same identification number, so the receiver knows they belong together.
+
+48
+00:05:13.218 --> 00:05:25.783
+A more fragments flag marks every piece except the last, and the fragment offset, counted in units of eight bytes, says where each piece belongs: zero, one eighty five, and three seventy.
+
+49
+00:05:26.133 --> 00:05:28.841
+Only the destination host reassembles them.
+
+50
+00:05:29.191 --> 00:05:35.417
+Today, most hosts avoid fragmentation by discovering the smallest M T U on the path first.
+
+51
+00:05:37.533 --> 00:05:44.793
+On a local network, frames are delivered by hardware address, not by IP address. ARP connects the two.
+
+52
+00:05:45.143 --> 00:05:53.853
+A host that needs to reach 192.0.2.1 broadcasts a question to every host on the link: who has this address?
+
+53
+00:05:54.203 --> 00:05:56.744
+The owner replies with its hardware address.
+
+54
+00:05:57.094 --> 00:06:03.785
+And the answer is kept in the ARP cache, so the next datagram goes out at once, with no question asked.
+
+55
+00:06:05.900 --> 00:06:11.233
+ICMP is IP's messenger. It reports problems and answers diagnostics.
+
+56
+00:06:11.583 --> 00:06:15.186
+Echo request and echo reply are what the ping command uses.
+
+57
+00:06:15.536 --> 00:06:20.623
+Destination unreachable reports that a network, host or port cannot be reached.
+
+58
+00:06:20.973 --> 00:06:27.589
+Time exceeded is sent when a time to live runs out, and traceroute uses it to reveal every router along a path.
+
+59
+00:06:27.939 --> 00:06:31.051
+Source quench once asked a sender to slow down.
+
+60
+00:06:31.401 --> 00:06:35.294
+It was retired in twenty twelve, because it did more harm than good.
+
+61
+00:06:37.400 --> 00:06:43.498
+At the transport layer, UDP, the User Datagram Protocol, is the lightweight choice.
+
+62
+00:06:43.848 --> 00:06:47.369
+It is connectionless, and delivery is not guaranteed.
+
+63
+00:06:47.719 --> 00:06:53.400
+Its header is only eight bytes: source port, destination port, length and checksum.
+
+64
+00:06:53.750 --> 00:07:00.841
+That makes it ideal when speed matters more than perfection: DNS queries, voice, video and streaming.
+
+65
+00:07:02.967 --> 00:07:09.953
+TCP, the Transmission Control Protocol, is connection oriented, and provides reliable delivery.
+
+66
+00:07:10.303 --> 00:07:14.787
+Before any data flows, the two hosts perform a three way handshake.
+
+67
+00:07:15.137 --> 00:07:16.646
+The client sends SYN.
+
+68
+00:07:16.996 --> 00:07:18.912
+The server answers with SYN ACK.
+
+69
+00:07:19.262 --> 00:07:21.285
+And the client confirms with ACK.
+
+70
+00:07:21.635 --> 00:07:29.093
+From then on, every byte has a sequence number, the receiver acknowledges what it receives, and anything lost is sent again.
+
+71
+00:07:29.443 --> 00:07:34.694
+Applications see a reliable, ordered byte stream, and never the packets underneath.
+
+72
+00:07:36.800 --> 00:07:43.339
+With Windows NT 4.0, Microsoft built TCP/IP in as a core networking protocol.
+
+73
+00:07:43.689 --> 00:07:50.484
+It offered universal compatibility: a standard, routable protocol supported across operating systems.
+
+74
+00:07:50.834 --> 00:07:55.550
+Cross platform connectivity, with utilities such as FTP and Telnet.
+
+75
+00:07:55.900 --> 00:08:01.567
+Scalability, through the Windows Sockets interface, for client server applications.
+
+76
+00:08:01.917 --> 00:08:09.350
+And access to the Internet itself, connecting research institutions, government agencies and enterprises worldwide.
+
+77
+00:08:11.467 --> 00:08:17.751
+No single organization owns or controls the Internet, but several oversee its protocols and standards.
+
+78
+00:08:18.101 --> 00:08:25.424
+The Internet Society, founded in nineteen ninety two, promotes the development and adoption of Internet technologies.
+
+79
+00:08:25.774 --> 00:08:29.325
+The Internet Architecture Board is its technical advisory group.
+
+80
+00:08:29.675 --> 00:08:34.166
+The Internet Engineering Task Force develops and maintains the protocols.
+
+81
+00:08:34.516 --> 00:08:38.484
+The Internet Research Task Force works on long term research.
+
+82
+00:08:38.834 --> 00:08:44.039
+And the Internet Assigned Numbers Authority manages addresses and protocol identifiers.
+
+83
+00:08:46.167 --> 00:08:54.534
+TCP/IP standards are published as Requests for Comments, developed by consensus. Each RFC keeps its number forever.
+
+84
+00:08:54.884 --> 00:09:02.713
+A revision is published as a new RFC, the way RFC 791 replaced RFC 760.
+
+85
+00:09:03.063 --> 00:09:11.193
+Requirement levels tell implementers what matters: required, recommended, elective, limited use, and not recommended.
+
+86
+00:09:11.543 --> 00:09:18.419
+A specification matures in stages: proposed standard, draft standard, and finally Internet standard.
+
+87
+00:09:18.769 --> 00:09:25.293
+Since twenty eleven, the process has used just two levels: proposed standard, and Internet standard.
+
+88
+00:09:27.400 --> 00:09:31.159
+TCP/IP remains the cornerstone of modern networking.
+
+89
+00:09:31.509 --> 00:09:41.073
+Four layers, a handful of core protocols, and one simple idea: move independent datagrams, and let the endpoints take care of reliability.
+
+90
+00:09:41.423 --> 00:09:48.670
+Written down as a Department of Defense standard more than forty years ago, it still carries almost every connection on Earth.

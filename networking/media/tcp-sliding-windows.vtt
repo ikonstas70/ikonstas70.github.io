@@ -1,0 +1,153 @@
+WEBVTT
+
+1
+00:00:00.700 --> 00:00:03.629
+Understanding TCP sliding windows.
+
+2
+00:00:03.979 --> 00:00:09.970
+The mechanism that lets TCP send data quickly and reliably, without overwhelming the receiver.
+
+3
+00:00:12.100 --> 00:00:17.212
+Every host taking part in a TCP connection has a send window and a receive window.
+
+4
+00:00:17.562 --> 00:00:20.583
+Data flows in both directions at the same time.
+
+5
+00:00:20.933 --> 00:00:27.065
+What host A sends arrives in host B's receive window, and what host B sends arrives in host A's.
+
+6
+00:00:29.167 --> 00:00:32.537
+In this example, the window size is eight kilobytes.
+
+7
+00:00:32.887 --> 00:00:35.990
+And the TCP segment size is one kilobyte.
+
+8
+00:00:36.340 --> 00:00:41.402
+So the sender may transmit eight segments before it must stop and wait for an acknowledgement.
+
+9
+00:00:43.533 --> 00:00:47.841
+The sender transmits segments one through eight, without waiting between them.
+
+10
+00:00:48.191 --> 00:00:52.043
+They arrive at the receiver, which places them in its receive window.
+
+11
+00:00:52.393 --> 00:00:55.937
+All eight are in flight before the first acknowledgement returns.
+
+12
+00:00:58.067 --> 00:01:00.143
+This is where the window slides.
+
+13
+00:01:00.493 --> 00:01:05.069
+When the receiver acknowledges segments one and two, the window moves past them.
+
+14
+00:01:05.419 --> 00:01:10.623
+Now segments nine and ten fall inside the window, and the sender transmits them immediately.
+
+15
+00:01:10.973 --> 00:01:15.086
+As long as acknowledgements keep arriving, the sender never has to stop.
+
+16
+00:01:17.200 --> 00:01:19.838
+Now suppose segment two is lost on the way.
+
+17
+00:01:20.188 --> 00:01:27.326
+The receiver gets segments three, four and five, and holds them, but it can only acknowledge data that arrives in order.
+
+18
+00:01:27.676 --> 00:01:30.149
+So it keeps acknowledging segment one.
+
+19
+00:01:30.499 --> 00:01:38.290
+The sender notices, either when a timer expires or after repeated acknowledgements for the same data, and sends segment two again.
+
+20
+00:01:38.640 --> 00:01:45.234
+The receiver now has one through five, and a single acknowledgement covers them all. The window slides forward again.
+
+21
+00:01:47.367 --> 00:01:51.187
+Sliding windows give TCP two performance improvements.
+
+22
+00:01:51.537 --> 00:01:54.751
+They eliminate the time spent waiting for acknowledgements.
+
+23
+00:01:55.101 --> 00:01:57.252
+And they minimize network traffic.
+
+24
+00:01:59.367 --> 00:02:03.177
+To see why this matters, look at the simplest possible rule.
+
+25
+00:02:03.527 --> 00:02:08.183
+Send one segment, then wait for its acknowledgement before sending the next.
+
+26
+00:02:08.533 --> 00:02:18.034
+It is reliable, but slow. The sender is idle for most of every round trip, and the link carries only one segment per round trip, however fast it is.
+
+27
+00:02:20.167 --> 00:02:25.927
+With a larger window, the sender keeps transmitting while the first acknowledgements are still on their way back.
+
+28
+00:02:26.277 --> 00:02:31.267
+Each acknowledgement slides the window and releases more data, so the pipe stays full.
+
+29
+00:02:31.617 --> 00:02:42.603
+And because acknowledgements are cumulative, one can confirm several segments. Receivers commonly acknowledge every second segment, which cuts acknowledgement traffic roughly in half.
+
+30
+00:02:44.733 --> 00:02:51.163
+The window is also how the receiver controls the pace. Every acknowledgement carries its current window size.
+
+31
+00:02:51.513 --> 00:02:59.202
+If the receiving application reads slowly, its buffer fills, the advertised window shrinks, and the sender slows down.
+
+32
+00:02:59.552 --> 00:03:05.732
+If the window reaches zero, the sender pauses, and sends a small window probe from time to time.
+
+33
+00:03:06.082 --> 00:03:09.985
+When space opens again, the window reopens and data flows.
+
+34
+00:03:12.100 --> 00:03:15.107
+So the sliding window delivers both improvements.
+
+35
+00:03:15.457 --> 00:03:18.409
+No more time lost waiting for each acknowledgement.
+
+36
+00:03:18.759 --> 00:03:20.748
+And less traffic on the network.
+
+37
+00:03:22.867 --> 00:03:30.440
+A sliding window lets TCP keep the pipe full, recover from loss without starting over, and match its speed to the receiver.
+
+38
+00:03:30.790 --> 00:03:35.379
+It is one of the simplest ideas in networking, and one of the most important.
