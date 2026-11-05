@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/cosmological-simulations/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building a Universe in a Computer: Cosmological Simulations — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="How cosmological simulations model cosmic evolution from the Big Bang to today: matter asymmetry, the dark-matter scaffolding of the cosmic web, black holes and supernovae regulating galaxies, and the open questions of dark matter and dark energy.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ikonstas70.github.io/articles/cosmological-simulations/">
+<meta property="og:title" content="Building a Universe in a Computer: Cosmological Simulations">
+<meta property="og:description" content="From the Big Bang to the cosmic web: how simulations model the evolution of the universe, and what they still cannot explain.">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/cosmological-simulations/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ikonstas70.github.io/articles/cosmological-simulations/share.jpg">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Building a Universe in a Computer: Cosmological Simulations", "image": "https://ikonstas70.github.io/articles/cosmological-simulations/share.jpg", "author": {"@type": "Person", "name": "Ioannis Alexander Konstas", "url": "https://ikonstas70.github.io/about"}, "datePublished": "2026-11-05"}</script>
+<style>
+  .cs-fig{margin:24px 0;border:1px solid hsl(43 45% 56% / .35);border-radius:12px;overflow:hidden;background:#000}
+  .cs-fig img{display:block;width:100%;height:auto}
+  .cs-fig figcaption{padding:12px 16px;font-size:.86rem;color:var(--fg-dim);border-top:1px solid hsl(43 45% 56% / .18)}
+  .cs-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:22px 0}
+  .cs-stats div{border:1px solid hsl(43 45% 56% / .30);border-top:2px solid var(--accent);border-radius:8px;padding:14px 16px;background:hsl(0 0% 5%)}
+  .cs-stats b{display:block;font:1.7rem var(--serif);color:var(--accent)}
+  .cs-stats span{font-size:.82rem;color:var(--fg-dim)}
+  .cs-scale{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:22px 0}
+  .cs-scale figure{margin:0;border:1px solid hsl(43 45% 56% / .3);border-radius:10px;overflow:hidden;background:#000}
+  .cs-scale img{display:block;width:100%;height:auto}
+  .cs-scale figcaption{padding:10px 12px;font-size:.82rem;color:var(--fg-dim)}
+  .cs-scale figcaption b{display:block;color:var(--accent);font-weight:600;font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis Konstas" style="float:left;width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .5);margin:0 18px 6px 0;">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div style="clear:both;"></div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/" style="color:var(--accent)">Articles</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/bgp/">BGP</a>
+      <a href="/bitcoin/">Bitcoin</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/readings">Readings</a>
+      <a href="/index-az">Index</a>
+      <a href="/search">Search</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <span class="tag">Cosmology &middot; Simulation</span>
+    <h1>Building a Universe in a Computer</h1>
+    <p class="meta">Investigating Cosmological Simulations &amp; Cosmic Evolution &middot; 5 November 2026 &middot; Ioannis Alexander Konstas</p>
+
+    <video controls playsinline preload="metadata" poster="/articles/cosmological-simulations/poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000;margin:18px 0 10px">
+      <source src="/articles/cosmological-simulations/cosmological-simulations.mp4" type="video/mp4">
+    </video>
+    <p style="font-size:.85rem;color:var(--fg-dim);margin-top:6px">Video &middot; 4 min 05 s</p>
+
+<blockquote>No one can rerun the universe, so cosmologists build one. This video follows a cosmological simulation from the Big Bang to the present day: how a slight excess of matter over antimatter, and an invisible scaffolding of dark matter, shaped the cosmic web; how black holes and supernovae keep galaxies from growing out of control; and the open questions about dark matter and dark energy that drive the search across the universe.</blockquote>
+
+    <div class="cs-stats">
+      <div><b>13.8 bn</b><span>years since the Big Bang</span></div>
+      <div><b>~68%</b><span>of the universe is dark energy</span></div>
+      <div><b>~27%</b><span>is dark matter</span></div>
+      <div><b>~5%</b><span>is the ordinary matter we are made of</span></div>
+    </div>
+
+    <h2>Why simulate a universe</h2>
+    <p>Astronomy has one universe and no laboratory. A telescope sees each galaxy at a single moment, never its whole life. A simulation fills that gap: it starts from the conditions recorded in the cosmic microwave background, where the young universe was smooth to about one part in a hundred thousand, then applies the laws of physics step by step for 13.8 billion years. If the universe that comes out looks like the one telescopes see, the theory that went in has passed a demanding test.</p>
+
+    <h2>A universe made of matter</h2>
+    <p>The first ingredient is an asymmetry. The early universe produced matter and antimatter in almost equal amounts, and when they met they annihilated. For roughly every billion antiparticles there were a billion and one particles. That tiny surplus survived, and it became every star, planet and person. Why nature tipped the balance at all is still one of physics' open questions.</p>
+
+    <h2>The dark scaffolding</h2>
+    <p>Most of the matter in the universe is dark: it gives off no light and is felt only through gravity. Because it does not interact with radiation, dark matter began to clump first, pulling the tiny early ripples into sheets, filaments and dense knots. Ordinary gas fell into that framework later, and where it gathered, galaxies were born. The result is the <strong>cosmic web</strong>: bright filaments and nodes surrounding vast, nearly empty voids.</p>
+    <figure class="cs-fig">
+      <img src="/articles/cosmological-simulations/still-121.jpg" width="1280" height="720" loading="lazy" alt="The cosmic web in a cosmological simulation, a 500 Mpc/h wide region">
+      <figcaption>The cosmic web across about 500 Mpc/h, roughly 2.3 billion light-years: filaments of dark matter with voids between them.</figcaption>
+    </figure>
+    <p>The video zooms through this structure in three steps. A megaparsec is about 3.26 million light-years, and <em>h</em>, close to 0.7, scales the distances to the expansion rate of the universe.</p>
+    <div class="cs-scale">
+      <figure><img src="/articles/cosmological-simulations/still-121.jpg" width="1280" height="720" loading="lazy" alt="500 Mpc/h scale"><figcaption><b>500 Mpc/h</b>about 2.3 billion light-years: the web as a whole</figcaption></figure>
+      <figure><img src="/articles/cosmological-simulations/still-141.jpg" width="1280" height="720" loading="lazy" alt="62.5 Mpc/h scale"><figcaption><b>62.5 Mpc/h</b>about 290 million light-years: filaments converging on a node</figcaption></figure>
+      <figure><img src="/articles/cosmological-simulations/still-161.jpg" width="1280" height="720" loading="lazy" alt="7.8 Mpc/h scale"><figcaption><b>7.8 Mpc/h</b>about 36 million light-years: a massive halo, home of a galaxy cluster</figcaption></figure>
+    </div>
+
+    <h2>Black holes and supernovae: the regulators</h2>
+    <p>Gravity alone makes galaxies too big. Early simulations that followed only gravity and cooling gas turned far too much of that gas into stars. Real galaxies are held in check by <strong>feedback</strong>. In small galaxies, exploding stars, supernovae, heat the surrounding gas and blow part of it away. In the largest galaxies, the supermassive black hole at the centre releases enormous energy as it feeds, heating gas and shutting down star formation. Modern simulations include both effects as "subgrid" models, physics too small to resolve directly, and tuning them is what lets simulated galaxies match the sizes, masses and colours of real ones.</p>
+    <figure class="cs-fig">
+      <img src="/articles/cosmological-simulations/still-41.jpg" width="1280" height="720" loading="lazy" alt="A bright halo where matter has collapsed into a dense knot">
+      <figcaption>Where filaments meet, matter collapses into dense halos. This is where galaxies, and their central black holes, grow.</figcaption>
+    </figure>
+
+    <h2>The open challenges</h2>
+    <div class="table-wrap"><table><thead><tr><th>Question</th><th>Where it stands</th></tr></thead><tbody>
+      <tr><td><strong>What is dark matter?</strong></td><td>Its gravity is measured on every scale, but no experiment has yet detected a dark-matter particle directly. The search spans underground detectors, particle colliders and sky surveys.</td></tr>
+      <tr><td><strong>What is dark energy?</strong></td><td>It drives the accelerating expansion of the universe. Recent large surveys hint that it may change over time rather than stay constant, a possibility the next generation of observations will test.</td></tr>
+      <tr><td><strong>How fast is the universe expanding?</strong></td><td>Measurements of the expansion rate from the early universe and from nearby galaxies disagree, the so-called Hubble tension.</td></tr>
+      <tr><td><strong>Do small galaxies match?</strong></td><td>On the smallest scales, simulated dwarf galaxies and their dark-matter cores do not always match what is observed, a test of both feedback models and the nature of dark matter.</td></tr>
+    </tbody></table></div>
+    <p>Simulations are the bridge between theory and the sky. Each new survey maps millions of galaxies, and each one is compared with universes built in a computer. Where they agree, the theory holds; where they do not, the next discovery begins.</p>
+
+    <div style="border:1px solid hsl(43 45% 56% / .30);border-left:3px solid var(--accent);background:hsl(0 0% 6%);border-radius:6px;padding:12px 16px;margin:26px 0"><strong>In one sentence.</strong> A slight excess of matter, an invisible web of dark matter and the regulating force of black holes and supernovae are enough to build a universe that looks like ours, and the parts that still do not fit point to where physics goes next.</div>
+
+    <p style="font-size:.85rem;color:var(--fg-dim)">Text &copy; 2026 Ioannis Alexander Konstas.</p>
+  </main>
+</div>
+</body>
+</html>
