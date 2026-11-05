@@ -1,0 +1,157 @@
+WEBVTT
+
+1
+00:00:00.700 --> 00:00:03.857
+Engineering notes, IBM i high availability.
+
+2
+00:00:04.207 --> 00:00:11.226
+PowerHA, or journal-based replication: two ways to keep an IBM i system running when the primary goes down.
+
+3
+00:00:13.333 --> 00:00:16.064
+Both answer the same question, at different layers.
+
+4
+00:00:16.414 --> 00:00:31.049
+PowerHA works at the storage layer. With a SAN it uses Metro Mirror, Global Mirror or HyperSwap, and without one, Geographic Mirroring over internal disks. The protected workloads live in an independent auxiliary storage pool, an I-ASP.
+
+5
+00:00:31.399 --> 00:00:40.892
+Journal-based replication works inside the operating system. Database changes are written to journals, and sent to the target with IBM i remote journaling.
+
+6
+00:00:41.242 --> 00:00:47.962
+One copies disk blocks. The other copies logical changes. That decision explains almost everything that follows.
+
+7
+00:00:50.067 --> 00:00:55.912
+First, the recovery point. Both can reach zero data loss for committed work, when they run synchronously.
+
+8
+00:00:56.262 --> 00:01:05.051
+PowerHA holds each write until the target storage confirms it. Journal-based replication holds each commit until the remote journal acknowledges it.
+
+9
+00:01:05.401 --> 00:01:11.481
+Run asynchronously, both stream changes ahead, and a sudden disaster loses only what was still in flight.
+
+10
+00:01:11.831 --> 00:01:15.671
+The price of synchronous mode is one network round trip on every commit.
+
+11
+00:01:17.800 --> 00:01:21.768
+So how far is too far? There is no hard limit, only a rule of thumb.
+
+12
+00:01:22.118 --> 00:01:30.566
+For busy transaction systems, architects aim for a round trip under about five to ten milliseconds. Lighter batch work can tolerate ten to twenty.
+
+13
+00:01:30.916 --> 00:01:37.401
+Light in fibre adds about one millisecond of round trip for every hundred kilometres, before any switches or routers.
+
+14
+00:01:37.751 --> 00:01:42.231
+Past that point, response times suffer, and replication moves to asynchronous.
+
+15
+00:01:44.333 --> 00:01:45.955
+Bandwidth follows the layer.
+
+16
+00:01:46.305 --> 00:01:54.347
+PowerHA sends every modified disk sector, whatever is inside it, which costs more during heavy random writes and the first full sync.
+
+17
+00:01:54.697 --> 00:02:08.244
+Journal-based replication sends only the records that changed, and it can be tuned further: minimised entry data on the journal, Option forty two for HA journal performance, excluding objects that do not matter, and compression.
+
+18
+00:02:10.367 --> 00:02:12.991
+Next, what the second system can do while it waits.
+
+19
+00:02:13.341 --> 00:02:22.066
+With PowerHA, the replicated I-ASP is not usable while it is attached to the primary. Point-in-time access needs a FlashCopy snapshot.
+
+20
+00:02:22.416 --> 00:02:31.867
+With journal-based replication, the target is running the whole time, so it can carry reporting, queries, role-swap tests and backups, while replication continues.
+
+21
+00:02:33.967 --> 00:02:35.353
+Scope of protection.
+
+22
+00:02:35.703 --> 00:02:47.373
+PowerHA protects what lives inside the I-ASP. User profiles, output queues and applications in the system pool need a cluster administrative domain, or a move into the I-ASP.
+
+23
+00:02:47.723 --> 00:03:02.592
+Journal-based replication works across the system pool and every storage pool, with no restructuring. The database travels by remote journaling, and programs, IFS files and profiles are usually handled by the HA software built on top of it.
+
+24
+00:03:04.700 --> 00:03:07.281
+Corruption, and to be fair, it cuts both ways.
+
+25
+00:03:07.631 --> 00:03:18.042
+Because PowerHA copies blocks, a physically damaged block is copied as it is. Journal-based replication moves only logical changes, so physical damage does not travel.
+
+26
+00:03:18.392 --> 00:03:26.221
+But logical mistakes, like a bad batch update or a wrong delete, are replicated faithfully by both. Neither replaces a good backup.
+
+27
+00:03:26.571 --> 00:03:39.414
+After an abnormal failover, PowerHA may need to rebuild indexes, which system-managed access path protection keeps in check. With journal-based replication, indexes are maintained as each change is applied.
+
+28
+00:03:41.533 --> 00:03:45.075
+Neither approach is free. They simply charge at different times.
+
+29
+00:03:45.425 --> 00:03:55.558
+PowerHA asks for its work up front: moving applications into I-ASPs, checking vendor support, and matching the storage. After that, it needs little daily attention.
+
+30
+00:03:55.908 --> 00:04:08.537
+Journal-based replication avoids that rebuild, but asks for attention every day: watching queues and apply lag, authority drift and record locks, and regular audit-and-heal checks so the two copies never drift apart.
+
+31
+00:04:10.667 --> 00:04:13.077
+Then there is distance, and regional risk.
+
+32
+00:04:13.427 --> 00:04:23.347
+Synchronous PowerHA needs low-latency fibre, which usually keeps both sites in the same metro area, under the same storms, flood plains, fault lines and power grid.
+
+33
+00:04:23.697 --> 00:04:29.543
+Asynchronous PowerHA can reach another region, but still needs matched storage and firmware at both ends.
+
+34
+00:04:29.893 --> 00:04:41.114
+Journal-based replication runs over ordinary TCP/IP, across regions and power grids, and can feed a local HA node and a distant cloud recovery copy at the same time.
+
+35
+00:04:43.233 --> 00:04:44.407
+So, which one?
+
+36
+00:04:44.757 --> 00:04:53.503
+PowerHA fits organisations with standardised infrastructure, applications already in I-ASPs, and a wish for hands-off replication.
+
+37
+00:04:53.853 --> 00:05:02.728
+Journal-based replication fits those that need hardware freedom, long distance, and a working target system, as long as the team owns the daily monitoring.
+
+38
+00:05:04.833 --> 00:05:07.372
+Choose by your recovery goals, not by the brand.
+
+39
+00:05:07.722 --> 00:05:15.253
+The full comparison, with references to IBM's documentation, is in the article at ikonstas70 dot github dot io.
