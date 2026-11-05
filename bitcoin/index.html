@@ -47,9 +47,9 @@
     <h1>Bitcoin</h1>
     <p class="meta">Series &middot; 2026 &middot; Ioannis Alexander Konstas</p>
 
-<blockquote>Bitcoin is a ledger anyone can read. These articles read it directly, block by block and transaction by transaction, with the scripts printed alongside so every number can be checked against the live network.</blockquote>
+<blockquote>Bitcoin is a ledger anyone can read. These articles read it directly, block by block and transaction by transaction, then go underneath: how a node stores the chain, how to run one safely, and how to analyze it without depending on anyone else.</blockquote>
 
-    <h2>Articles</h2>
+    <h2>Reading the Chain</h2>
     <a class="card card-gold" href="/articles/bitcoin-genesis/" style="padding:0;overflow:hidden">
       <img src="/articles/bitcoin-genesis/bitcoin-field-report-poster.jpg" width="1920" height="1080" loading="eager" alt="Title card: Block Zero to Block 974,612" style="display:block;width:100%;height:auto;max-height:260px;object-fit:cover">
       <div style="padding:18px 22px 20px">
@@ -57,6 +57,35 @@
         <p>The Genesis Block and its hidden headline, Block 1 and how it differs, the first payment to Hal Finney in block 170, the accounting of every satoshi, the halvings, and tonight's live blocks and mempool, with a field-report video and working code.</p>
         <span class="date">Genesis &middot; Accounting &middot; Live blocks &middot; Code</span>
       </div>
+    </a>
+    <a class="card" href="/articles/gh-bitcoin-blockchain-data-platform">
+      <h3>2 &middot; Bitcoin Blockchain Data Platform &amp; Genesis Block Deep Dive</h3>
+      <p>The design of a Bitcoin historical-data platform: users, block, transaction and mining queries, and the API. Then the economics: why the genesis 50 BTC is unspendable, the 2008 to 2009 financial context, programmatic scarcity, and what happens when the subsidy reaches zero.</p>
+      <span class="date">Data platform &middot; API design &middot; Scarcity &middot; Economics</span>
+    </a>
+
+    <h2>Inside the Node</h2>
+    <a class="card" href="/articles/bitcoin-leveldb">
+      <h3>3 &middot; How Bitcoin Core Stores the Blockchain</h3>
+      <p>Not one giant database: raw blocks in flat files, and a fast key-value index in LevelDB. Why that split exists, the UTXO set it makes possible, and what the design teaches.</p>
+      <span class="date">July 2026 &middot; Bitcoin Core &middot; LevelDB &middot; UTXO</span>
+    </a>
+    <a class="card" href="/articles/gh-bitcoin-crypto-node-tools-reference">
+      <h3>4 &middot; Bitcoin &amp; Crypto Node Tools</h3>
+      <p>A reference for node operators: running your own node, live block monitoring, halving-phase analysis, peer eclipse attacks, and heuristic threat checks.</p>
+      <span class="date">Node operations &middot; Monitoring &middot; Threat detection</span>
+    </a>
+    <a class="card" href="/articles/gh-bitcoin-lxd-sandbox-network-isolation">
+      <h3>5 &middot; Bitcoin LXD Sandbox: Network Isolation Analysis</h3>
+      <p>A Bitcoin node inside an LXD container on Ubuntu 24.04: listening ports, the bridge configuration, and tests confirming it cannot reach the host LAN.</p>
+      <span class="date">LXD &middot; Isolation &middot; Security assessment</span>
+    </a>
+
+    <h2>Analytics</h2>
+    <a class="card" href="/articles/gh-bitcoin-analytics-local-snapshots">
+      <h3>6 &middot; Maximizing Bitcoin Analytics with Local Snapshots</h3>
+      <p>What a full local snapshot of about 700 GB makes possible: high-speed offline queries and private analytics with no third-party API, plus hardware, security and the alternatives.</p>
+      <span class="date">September 2026 &middot; Snapshots &middot; Offline analytics</span>
     </a>
   </main>
 </div>
