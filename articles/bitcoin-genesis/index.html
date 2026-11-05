@@ -18,7 +18,7 @@
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Block Zero to Block 974,612: Reading Bitcoin from Its First Breath", "author": {"@type": "Person", "name": "Ioannis Alexander Konstas", "alternateName": "Ioannis Konstas", "url": "https://ikonstas70.github.io/about"}, "datePublished": "2026-11-04", "license": "https://opensource.org/licenses/MIT", "copyrightHolder": "Ioannis Alexander Konstas"}</script>
 <style>
-  .btc-hero{border:1px solid hsl(43 45% 56% / .45);border-radius:12px;padding:26px 26px 20px;margin:0 0 26px;background:linear-gradient(135deg,hsl(43 45% 56% / .10),hsl(222 48% 8%) 60%);box-shadow:0 10px 30px hsl(0 0% 0% / .45)}
+  .btc-hero{border:1px solid hsl(43 45% 56% / .45);border-radius:12px;padding:26px 26px 20px;margin:0 0 26px;background:linear-gradient(135deg,hsl(43 45% 56% / .12),#000 60%);box-shadow:0 10px 30px hsl(0 0% 0% / .45)}
   .btc-hero .hash{font-family:ui-monospace,Menlo,monospace;font-size:.86rem;color:var(--accent,#c9a858);word-break:break-all;letter-spacing:.02em}
   .btc-hero .big{font-family:Georgia,serif;font-size:1.25rem;color:#e9dcb4;margin:14px 0 4px;font-style:italic}
   table.btc{width:100%;border-collapse:collapse;margin:14px 0 22px;font-size:.92rem}
@@ -26,15 +26,17 @@
   table.btc th{color:var(--accent,#c9a858);font-weight:600;font-family:Georgia,serif}
   table.btc td code,.mono{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;word-break:break-all}
   table.btc td.num{text-align:right;font-family:ui-monospace,Menlo,monospace;white-space:nowrap}
-  .ledger{border:1px solid hsl(43 45% 56% / .35);border-radius:10px;padding:16px 20px;margin:16px 0 24px;background:hsl(222 48% 7%);font-family:ui-monospace,Menlo,monospace;font-size:.86rem;line-height:1.7;overflow-x:auto;white-space:pre}
+  .ledger{border:1px solid hsl(43 45% 56% / .35);border-radius:10px;padding:16px 20px;margin:16px 0 24px;background:#000;font-family:ui-monospace,Menlo,monospace;font-size:.86rem;line-height:1.7;overflow-x:auto;white-space:pre}
   .ledger b{color:var(--accent,#c9a858);font-weight:600}
-  .note{border-left:3px solid var(--accent,#c9a858);padding:6px 16px;margin:18px 0;color:#cfd6e4;background:hsl(43 45% 56% / .05)}
+  .note{border-left:3px solid var(--accent,#c9a858);padding:6px 16px;margin:18px 0;color:#ddd6c4;background:hsl(43 45% 56% / .05)}
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:16px 0 24px}
-  .stats div{border:1px solid hsl(43 45% 56% / .3);border-radius:10px;padding:12px 14px;background:hsl(222 48% 7%)}
+  .stats div{border:1px solid hsl(43 45% 56% / .3);border-radius:10px;padding:12px 14px;background:#000}
   .stats b{display:block;font-family:Georgia,serif;font-size:1.3rem;color:var(--accent,#c9a858)}
-  .stats span{font-size:.78rem;color:#9aa5b8;letter-spacing:.04em}
+  .stats span{font-size:.78rem;color:#a59f92;letter-spacing:.04em}
   pre code{font-size:.8rem}
-  main p code{word-break:break-all}
+  main p code,main td code{word-break:break-all;overflow-wrap:anywhere}
+  main{overflow-wrap:anywhere}
+  main pre code{background:#000}
   main pre{overflow-x:auto;max-width:100%}
 </style>
 </head>
@@ -69,7 +71,7 @@
     <div class="btc-hero">
       <div class="hash">000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</div>
       <p class="big">&ldquo;The Times 03/Jan/2009 Chancellor on brink of second bailout for banks&rdquo;</p>
-      <p style="margin:0;color:#9aa5b8;font-size:.85rem">The hash of block zero, and the sentence its creator chose to carry inside it forever.</p>
+      <p style="margin:0;color:#a59f92;font-size:.85rem">The hash of block zero, and the sentence its creator chose to carry inside it forever.</p>
     </div>
 
 <blockquote>Every bank keeps a ledger, and every one of those ledgers asks you to trust the bank. Bitcoin keeps a ledger too, except anyone on Earth can read every line of it, from the very first entry written in January 2009 to the block that was mined a few minutes ago. This article reads that ledger directly: the first block, the second, the first payment between two people, and the accounting that has balanced to the last satoshi for seventeen years.</blockquote>
@@ -216,7 +218,7 @@ Largest transaction     2,482.73158488 BTC   (11 inputs, 2 outputs)</div>
 
 <figure style="margin:18px 0 26px;background:#000;border:1px solid hsl(43 45% 56% / .45);border-radius:12px;padding:10px;box-shadow:0 10px 30px hsl(0 0% 0% / .5)">
   <video src="bitcoin-live-feed.mp4" poster="bitcoin-live-feed-poster.jpg" controls muted playsinline preload="metadata" style="display:block;width:100%;height:auto;border-radius:6px;background:#000"></video>
-  <figcaption style="color:#9aa5b8;font-size:.8rem;padding:10px 6px 2px;font-family:Georgia,serif;font-style:italic">Live recording, 4 November 2026, 20:58 New York time. Top: blocks 974,611 and 974,612 with their accounting. Bottom: the mempool, with a 101-BTC transfer arriving at the end.</figcaption>
+  <figcaption style="color:#a59f92;font-size:.8rem;padding:10px 6px 2px;font-family:Georgia,serif;font-style:italic">Live recording, 4 November 2026, 20:58 New York time. Top: blocks 974,611 and 974,612 with their accounting. Bottom: the mempool, with a 101-BTC transfer arriving at the end.</figcaption>
 </figure>
 
     <h3>What you can and cannot see</h3>
