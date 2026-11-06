@@ -1,0 +1,209 @@
+WEBVTT
+
+1
+00:00:00.700 --> 00:00:06.353
+This field report shows how three business domains were locked down in one afternoon, using only free tools.
+
+2
+00:00:06.703 --> 00:00:11.119
+DMARC, CAA, MTA-STS, TLS reporting, and a few edge settings.
+
+3
+00:00:11.469 --> 00:00:15.565
+Every name you will see is a documentation example, not a real system.
+
+4
+00:00:17.667 --> 00:00:18.861
+Why should you care?
+
+5
+00:00:19.211 --> 00:00:26.870
+Money: forged invoices and fake messages from executives cost businesses billions of dollars every year, according to the FBI.
+
+6
+00:00:27.220 --> 00:00:34.601
+Delivery: Gmail, Yahoo and Outlook now expect DMARC from bulk senders, and mail without it is more likely to land in spam.
+
+7
+00:00:34.951 --> 00:00:38.578
+Trust: one convincing fake sent in your name can cost you a client.
+
+8
+00:00:38.928 --> 00:00:41.424
+And cost: everything in this video is free.
+
+9
+00:00:43.533 --> 00:00:44.877
+Here is the problem.
+
+10
+00:00:45.227 --> 00:00:49.473
+An attacker's server can send a message that claims to be from your billing department.
+
+11
+00:00:49.823 --> 00:00:54.025
+Email was designed with no proof of sender. The From line is just text.
+
+12
+00:00:54.375 --> 00:00:57.789
+Without a published policy, the receiving server has to guess.
+
+13
+00:00:58.139 --> 00:01:03.323
+The goal is to tell every mail server exactly what to do with mail that is not really from you.
+
+14
+00:01:05.433 --> 00:01:07.695
+Three DNS records share the job.
+
+15
+00:01:08.045 --> 00:01:10.455
+SPF lists the servers allowed to send.
+
+16
+00:01:10.805 --> 00:01:13.877
+DKIM puts a cryptographic signature on every message.
+
+17
+00:01:14.227 --> 00:01:19.966
+DMARC adds the missing rule: the domain in the From line must match, and if it does not, here is what to do.
+
+18
+00:01:20.316 --> 00:01:24.369
+Strict alignment means an exact match, with no look-alike subdomains.
+
+19
+00:01:26.500 --> 00:01:28.548
+The audit found three different states.
+
+20
+00:01:28.898 --> 00:01:37.261
+One domain was already protected. One only monitored, so forged mail was reported but still delivered. One had no DMARC record at all.
+
+21
+00:01:37.611 --> 00:01:40.917
+DMARC has three levels: none, quarantine and reject.
+
+22
+00:01:41.267 --> 00:01:46.665
+Both weak domains moved to quarantine today. Reject comes after a clean week of reports.
+
+23
+00:01:48.767 --> 00:01:50.729
+This is the record that was added.
+
+24
+00:01:51.079 --> 00:01:54.578
+p equals quarantine sends failing mail to the spam folder.
+
+25
+00:01:54.928 --> 00:01:59.621
+The rua address receives daily reports from Google, Microsoft and other providers.
+
+26
+00:01:59.971 --> 00:02:02.915
+And the strict alignment tags close the look-alike loophole.
+
+27
+00:02:05.033 --> 00:02:06.889
+Never trust the dashboard alone.
+
+28
+00:02:07.239 --> 00:02:11.079
+Ask a public resolver the same question the rest of the internet asks.
+
+29
+00:02:11.429 --> 00:02:14.181
+Status zero, no error, means the name exists.
+
+30
+00:02:14.531 --> 00:02:19.395
+AD true means the answer is DNSSEC verified: signed, and not tampered with.
+
+31
+00:02:19.745 --> 00:02:23.649
+And the data line is the exact record every mail server now sees.
+
+32
+00:02:25.767 --> 00:02:26.812
+Next, CAA.
+
+33
+00:02:27.162 --> 00:02:32.687
+It is a short allow-list of the certificate authorities that may ever issue a certificate for this domain.
+
+34
+00:02:33.037 --> 00:02:39.587
+Any authority not on the list must refuse, so a rogue or tricked authority cannot mint a valid certificate for your name.
+
+35
+00:02:39.937 --> 00:02:45.739
+The list was copied from a domain whose automatic renewals already work, so nothing breaks at renewal time.
+
+36
+00:02:47.867 --> 00:02:51.728
+Mail between servers is encrypted only if both sides agree to it.
+
+37
+00:02:52.078 --> 00:02:57.646
+An attacker on the network path can quietly strip that offer, and the mail falls back to plain text.
+
+38
+00:02:57.996 --> 00:03:03.799
+MTA-STS publishes a rule: deliver to me over encryption, to these exact hosts, or not at all.
+
+39
+00:03:05.900 --> 00:03:09.676
+The policy is a four line text file served over HTTPS.
+
+40
+00:03:10.026 --> 00:03:14.357
+A tiny edge worker serves it for all three domains, with no server to patch.
+
+41
+00:03:14.707 --> 00:03:21.853
+It starts in testing mode: senders report problems but still deliver. Enforcement comes only after the reports are clean.
+
+42
+00:03:22.203 --> 00:03:27.195
+Two TXT records announce the policy, and send TLS reports to a mailbox.
+
+43
+00:03:29.300 --> 00:03:31.156
+Then four small edge switches.
+
+44
+00:03:31.506 --> 00:03:36.413
+Zero round trip resumption was turned off, because resumed requests can be replayed.
+
+45
+00:03:36.763 --> 00:03:41.989
+The browser integrity check was turned on everywhere. The managed rule set stays always on.
+
+46
+00:03:42.339 --> 00:03:47.843
+Fourteen API tokens became two, because every unused key is a spare key to your domains.
+
+47
+00:03:48.193 --> 00:03:55.297
+Each switch was tested right after the change: the websites, the music player, a media client and a link preview bot all still answered.
+
+48
+00:03:57.400 --> 00:03:59.213
+Finally, prove nothing broke.
+
+49
+00:03:59.563 --> 00:04:03.809
+The same audit script ran again, and every check passed on all three domains.
+
+50
+00:04:04.159 --> 00:04:10.601
+Mail records were identical, the websites answered, and the change log shows exactly who changed what, and when.
+
+51
+00:04:12.733 --> 00:04:14.803
+Free, verifiable and reversible.
+
+52
+00:04:15.153 --> 00:04:21.190
+Quarantine now, reject later. Testing now, enforce later. And always verify from the outside.
