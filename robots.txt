@@ -10,3 +10,4 @@ Disallow: /404.html
 Allow: /
 
 Sitemap: https://ikonstas70.github.io/sitemap.xml
+Sitemap: https://ikonstas70.github.io/mitre-attack/sitemap.xml
