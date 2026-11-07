@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="canonical" href="https://ikonstas70.github.io/articles/mailblock-exchange-online">
+<link rel="canonical" href="https://ikonstas70.github.io/articles/mailblock-safe-email">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MailBlock: Stop Unwanted Email in Microsoft 365, Safely — Konstas Engineering Notes</title>
@@ -10,7 +10,7 @@
 <meta property="og:title" content="MailBlock: Stop Unwanted Email, Safely">
 <meta property="og:description" content="One private page to block senders across Microsoft 365, with a smart bounce that can never be turned against you. Video included.">
 <meta property="og:type" content="article">
-<meta property="og:image" content="https://ikonstas70.github.io/articles/mailblock-media/mailblock-poster.jpg">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/mailblock-safe-email-media/mailblock-poster.jpg">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -47,9 +47,9 @@
     <p class="meta" style="clear:none;">Articles &middot; November 2026 &middot; Ioannis (John) Konstas</p>
     <div style="clear:both;"></div>
 
-    <video controls playsinline preload="metadata" poster="mailblock-media/mailblock-poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000;margin:18px 0 26px">
-      <source src="mailblock-media/mailblock-emma.mp4" type="video/mp4">
-      <track kind="captions" srclang="en" label="English" src="mailblock-media/mailblock-emma.vtt" default>
+    <video controls playsinline preload="metadata" poster="mailblock-safe-email-media/mailblock-poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000;margin:18px 0 26px">
+      <source src="mailblock-safe-email-media/mailblock-emma.mp4" type="video/mp4">
+      <track kind="captions" srclang="en" label="English" src="mailblock-safe-email-media/mailblock-emma.vtt" default>
     </video>
 
     <p>Every business on Microsoft 365 knows this inbox: the same sender every day, "unsubscribe" ignored, and blocking them in the admin portal is a job for an expert. MailBlock turns that into one private page: type a sender or a whole domain, press <strong>Add</strong>, and it is blocked across the entire mail system in seconds. Press <strong>remove</strong>, and it is unblocked just as fast. All names shown here are examples, not real customers.</p>
@@ -101,7 +101,7 @@
 <script>
 (function(){
   var el=document.getElementById("vc-num");
-  fetch("/api/views?slug=mailblock-exchange-online",{cache:"no-store"})
+  fetch("/api/views?slug=mailblock-safe-email",{cache:"no-store"})
     .then(function(r){return r.json();})
     .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
     .catch(function(){});

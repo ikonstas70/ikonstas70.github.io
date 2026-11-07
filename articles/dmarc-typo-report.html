@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="canonical" href="https://ikonstas70.github.io/articles/dmarc-one-typo">
+<link rel="canonical" href="https://ikonstas70.github.io/articles/dmarc-typo-report">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>One Misspelled Word in DMARC: Why sp=quarentine Matters — Konstas Engineering Notes</title>
@@ -10,7 +10,7 @@
 <meta property="og:title" content="One Misspelled Word in DMARC">
 <meta property="og:description" content="sp=quarentine instead of sp=quarantine: what an invalid DMARC tag does, why it matters, and how to fix it in minutes.">
 <meta property="og:type" content="article">
-<meta property="og:image" content="https://ikonstas70.github.io/articles/dmarc-one-typo-media/dmarc-one-typo-poster.jpg">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/dmarc-typo-report-media/dmarc-one-typo-poster.jpg">
 <link rel="stylesheet" href="/style.css">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
@@ -47,9 +47,9 @@
     <p class="meta" style="clear:none;">Articles &middot; November 2026 &middot; Ioannis (John) Konstas</p>
     <div style="clear:both;"></div>
 
-    <video controls playsinline preload="metadata" poster="dmarc-one-typo-media/dmarc-one-typo-poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000;margin:18px 0 26px">
-      <source src="dmarc-one-typo-media/dmarc-one-typo-emma.mp4" type="video/mp4">
-      <track kind="captions" srclang="en" label="English" src="dmarc-one-typo-media/dmarc-one-typo-emma.vtt" default>
+    <video controls playsinline preload="metadata" poster="dmarc-typo-report-media/dmarc-one-typo-poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000;margin:18px 0 26px">
+      <source src="dmarc-typo-report-media/dmarc-typo-report-emma.mp4" type="video/mp4">
+      <track kind="captions" srclang="en" label="English" src="dmarc-typo-report-media/dmarc-typo-report-emma.vtt" default>
     </video>
 
     <p>A routine check of a real business domain found a DMARC record with one misspelled word. The business is not named here; the domain is shown as <code>example.com</code> and every other value is a documentation example. The findings were read from public DNS (Cloudflare 1.1.1.1 and Google 8.8.8.8 returned the same records) and nothing was changed.</p>
@@ -83,17 +83,20 @@
       <li><strong>The fix is small.</strong> A few DNS edits, minutes of work, no cost, fully reversible.</li>
     </ol>
 
-    <h2>The corrections</h2>
+    <h2>The corrections, in order</h2>
+    <p>Severity follows a common external email-security scanner's rating of the same domain.</p>
     <ol>
-      <li><strong>DMARC (required).</strong> Change <code>sp=quarentine</code> to <code>sp=quarantine</code>:
+      <li><strong>Fix the DMARC record</strong> (High: the scanner reports "DMARC record invalid"). Change <code>sp=quarentine</code> to <code>sp=quarantine</code>:
         <pre><code>v=DMARC1; p=quarantine; pct=100; sp=quarantine; aspf=r; rua=mailto:reports@example.net</code></pre></li>
-      <li><strong>SPF.</strong> Change <code>~all</code> to <code>-all</code>, after the DMARC reports confirm that no legitimate source fails SPF for the domain.</li>
-      <li><strong>Microsoft 365 DKIM.</strong> Confirm that signing is enabled in the Defender portal (Email authentication settings &gt; DKIM). Published keys alone do not prove signing.</li>
-      <li><strong>Every bulk or app sender.</strong> Confirm that DKIM is verified for the domain in each service (Mailchimp, Postmark, Resend).</li>
-      <li><strong>Google Postmaster Tools.</strong> Register the domain to see its reputation, spam rate and DMARC pass rate at Gmail.</li>
-      <li><strong>Separate bulk mail</strong> to a subdomain (for example <code>news.example.com</code>) so marketing reputation cannot drag down business mail.</li>
-      <li><strong>Optional hardening:</strong> DNSSEC, MTA-STS, TLS-RPT and CAA.</li>
+      <li><strong>Confirm DKIM signing in every sender</strong>: Microsoft 365 (Defender portal &gt; Email authentication settings &gt; DKIM), Mailchimp, Postmark and Resend. Published keys alone do not prove signing.</li>
+      <li><strong>Read the DMARC reports</strong> until every legitimate source passes.</li>
+      <li><strong>Move DMARC to reject</strong> (Medium: quarantine still delivers failing mail, to the spam folder):
+        <pre><code>v=DMARC1; p=reject; pct=100; sp=reject; aspf=r; rua=mailto:reports@example.net</code></pre></li>
+      <li><strong>Enable DNSSEC</strong> at the DNS provider and the registrar (High: protects against DNS cache poisoning).</li>
+      <li><strong>Publish MTA-STS and TLS-RPT</strong> (High: protects mail in transit against TLS downgrade and man-in-the-middle attacks).</li>
+      <li><strong>Change SPF to <code>-all</code></strong>, register with <strong>Google Postmaster Tools</strong>, and <strong>move bulk mail to a subdomain</strong> (for example <code>news.example.com</code>).</li>
     </ol>
+    <p><em>Accuracy note:</em> DNSSEC and MTA-STS are security protections; they are not inputs to spam scoring. The DMARC error, SPF soft fail, sender reputation and content are what affect inbox placement.</p>
 
     <h2>Verify from the outside</h2>
     <pre><code>dig +short TXT _dmarc.example.com @8.8.8.8
@@ -122,7 +125,7 @@ dig +short TXT example.com @8.8.8.8</code></pre>
 <script>
 (function(){
   var el=document.getElementById("vc-num");
-  fetch("/api/views?slug=dmarc-one-typo",{cache:"no-store"})
+  fetch("/api/views?slug=dmarc-typo-report",{cache:"no-store"})
     .then(function(r){return r.json();})
     .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
     .catch(function(){});
