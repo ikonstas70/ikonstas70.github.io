@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/dmarc/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DMARC and Email Security — Konstas Engineering Notes</title>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="description" content="DMARC and email security field reports by Ioannis (John) Konstas: domain hardening on a free plan, a one-word DMARC typo, and MailBlock for Microsoft 365.">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");gtag("config","G-CG7YJ7E3Q7");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/about">About</a>
+      <a href="/">Articles</a>
+      <a href="/bgp/">BGP</a>
+      <a href="/bitcoin/">Bitcoin</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/dmarc/" class="active">DMARC</a>
+      <a href="/index-az">Index</a>
+      <a href="/mitre-attack/">MITRE ATT&amp;CK</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/readings">Readings</a>
+      <a href="/search">Search</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/networking/">TCP/IP</a>
+    </nav>
+  </header>
+
+  <main>
+    <p class="section-intro">Anyone can send email that claims to be your domain. These field reports show how DMARC, MTA-STS and careful mail-flow rules close that door, each one verified from the outside, with a narrated video.</p>
+
+    <a class="card" href="/articles/email-domain-security-free-plan">
+      <h3>Locking Down Three Domains on a Free Plan: DMARC, CAA, MTA-STS</h3>
+      <p>Anyone can send email as your domain. How three business domains were hardened in one afternoon with free tools: DMARC quarantine, CAA, MTA-STS with TLS reporting and edge settings, each verified from the outside. Narrated 4-minute video.</p>
+      <span class="date">Field report with video &middot; November 2026</span>
+    </a>
+    <a class="card" href="/articles/dmarc-typo-report">
+      <h3>One Misspelled Word in DMARC</h3>
+      <p>A real business domain had sp=quarentine in its DMARC record. What the standard says about an invalid tag, what it does and does not mean for spam, why the business should care, and the exact corrections. Narrated video.</p>
+      <span class="date">Field report with video &middot; November 2026</span>
+    </a>
+    <a class="card" href="/articles/mailblock-safe-email">
+      <h3>MailBlock: Stop Unwanted Email, Safely</h3>
+      <p>Block any sender or domain in Microsoft 365 in seconds. Genuine senders get a polite bounce, forgeries get silence, and you see who keeps trying. Installed as a managed service by IT Solutions USA. Narrated video.</p>
+      <span class="date">Showcase with video &middot; November 2026</span>
+    </a>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas, IT Solutions USA, Corp. All rights reserved. Articles, videos, narration, images and diagrams are original works: no reuse, re-upload or redistribution without written permission. Code samples are released under the <a href="/license">MIT License</a>. Educational content only, not professional or legal advice. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){var el=document.getElementById("vc-num");fetch("/api/views?slug=dmarc",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&typeof d.count==="number")el.textContent=d.count.toLocaleString();}).catch(function(){});})();
+</script>
+</body>
+</html>
