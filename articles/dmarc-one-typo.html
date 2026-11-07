@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/dmarc-one-typo">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Misspelled Word in DMARC: Why sp=quarentine Matters — Konstas Engineering Notes</title>
+<meta name="description" content="A field report: a real business domain had sp=quarentine in its DMARC record. What the standard says about an invalid tag, what it means for spoofing and inbox placement, why the business should care, and the exact corrections.">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta property="og:title" content="One Misspelled Word in DMARC">
+<meta property="og:description" content="sp=quarentine instead of sp=quarantine: what an invalid DMARC tag does, why it matters, and how to fix it in minutes.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/dmarc-one-typo-media/dmarc-one-typo-poster.jpg">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");gtag("config","G-CG7YJ7E3Q7");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/about">About</a>
+      <a href="/" class="active">Articles</a>
+      <a href="/bgp/">BGP</a>
+      <a href="/bitcoin/">Bitcoin</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/mitre-attack/">MITRE ATT&amp;CK</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/readings">Readings</a>
+      <a href="/search">Search</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/networking/">TCP/IP</a>
+    </nav>
+  </header>
+
+  <main>
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis (John) Konstas" style="float:left;width:80px;height:80px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .55);margin:6px 24px 10px 0;">
+    <span class="tag">Email Security</span>
+    <h1>One Misspelled Word in DMARC</h1>
+    <p class="meta" style="clear:none;">Articles &middot; November 2026 &middot; Ioannis (John) Konstas</p>
+    <div style="clear:both;"></div>
+
+    <video controls playsinline preload="metadata" poster="dmarc-one-typo-media/dmarc-one-typo-poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000;margin:18px 0 26px">
+      <source src="dmarc-one-typo-media/dmarc-one-typo.mp4" type="video/mp4">
+      <track kind="captions" srclang="en" label="English" src="dmarc-one-typo-media/dmarc-one-typo.vtt" default>
+    </video>
+
+    <p>A routine check of a real business domain found a DMARC record with one misspelled word. The business is not named here; the domain is shown as <code>example.com</code> and every other value is a documentation example. The findings were read from public DNS (Cloudflare 1.1.1.1 and Google 8.8.8.8 returned the same records) and nothing was changed.</p>
+
+    <h2>What was found</h2>
+    <pre><code>_dmarc.example.com.  TXT  "v=DMARC1; p=quarantine; pct=100; rua=mailto:reports@example.net; sp=quarentine; aspf=r;"</code></pre>
+    <ul>
+      <li><code>p=quarantine</code>, <code>pct=100</code>, <code>rua=</code> and <code>aspf=r</code> are valid.</li>
+      <li><code>sp=quarentine</code> is not: the only valid values are <code>none</code>, <code>quarantine</code> and <code>reject</code>.</li>
+      <li>SPF on the same domain ends in <code>~all</code> (soft fail), not <code>-all</code>.</li>
+      <li>The domain sends through five services: Microsoft 365, Proofpoint Essentials, Mailchimp, Postmark and Resend.</li>
+    </ul>
+
+    <h2>What the standard says about an invalid tag</h2>
+    <p>RFC 7489, section 6.6.3, covers a record that "contains an 'sp' tag that is not valid". When the record also has a valid <code>rua</code> address, as this one does, the receiving server <em>should</em> act as if the record said <code>p=none</code>: report, but do not quarantine or reject. In plain words, a receiver that follows the text strictly can treat the whole policy as monitor-only.</p>
+
+    <h2>What this does and does not mean</h2>
+    <ul>
+      <li><strong>It does</strong> weaken protection against forged mail in the domain's name at any receiver that applies the rule strictly. Forged messages that should go to spam may be delivered.</li>
+      <li><strong>It does</strong> signal a less carefully managed domain, and a valid, enforced DMARC policy is now required of bulk senders by Gmail, Yahoo and Microsoft.</li>
+      <li><strong>It does not</strong>, on its own, prove why genuine mail from the domain lands in spam. Receivers such as Gmail decide mainly on sender reputation, complaint rates and content. Large receivers may also ignore only the bad tag instead of the whole record. The typo is one contributing factor, not the whole explanation.</li>
+    </ul>
+
+    <h2>Why the business should care</h2>
+    <ol>
+      <li><strong>Lost sales.</strong> Newsletters, order confirmations and customer replies that land in spam are not read.</li>
+      <li><strong>Mailbox rules are enforced.</strong> Since February 2024 Gmail and Yahoo require bulk senders (over 5,000 messages a day to Gmail) to have SPF, DKIM and a valid DMARC record, one-click unsubscribe and a spam complaint rate below 0.3%. Microsoft began enforcing similar rules for high-volume senders to Outlook.com in May 2025.</li>
+      <li><strong>The brand can be forged.</strong> A weak policy makes fake invoices, payment-change requests and "order problem" emails in the company's name easier to deliver. The FBI reports business email compromise losses in the billions of dollars each year.</li>
+      <li><strong>Reputation is shared.</strong> Marketing, receipts and staff mail share one domain reputation; complaints about bulk mail lower delivery for everything.</li>
+      <li><strong>Customer trust.</strong> Real mail in spam, or fake mail in the inbox, damages the brand either way.</li>
+      <li><strong>The fix is small.</strong> A few DNS edits, minutes of work, no cost, fully reversible.</li>
+    </ol>
+
+    <h2>The corrections</h2>
+    <ol>
+      <li><strong>DMARC (required).</strong> Change <code>sp=quarentine</code> to <code>sp=quarantine</code>:
+        <pre><code>v=DMARC1; p=quarantine; pct=100; sp=quarantine; aspf=r; rua=mailto:reports@example.net</code></pre></li>
+      <li><strong>SPF.</strong> Change <code>~all</code> to <code>-all</code>, after the DMARC reports confirm that no legitimate source fails SPF for the domain.</li>
+      <li><strong>Microsoft 365 DKIM.</strong> Confirm that signing is enabled in the Defender portal (Email authentication settings &gt; DKIM). Published keys alone do not prove signing.</li>
+      <li><strong>Every bulk or app sender.</strong> Confirm that DKIM is verified for the domain in each service (Mailchimp, Postmark, Resend).</li>
+      <li><strong>Google Postmaster Tools.</strong> Register the domain to see its reputation, spam rate and DMARC pass rate at Gmail.</li>
+      <li><strong>Separate bulk mail</strong> to a subdomain (for example <code>news.example.com</code>) so marketing reputation cannot drag down business mail.</li>
+      <li><strong>Optional hardening:</strong> DNSSEC, MTA-STS, TLS-RPT and CAA.</li>
+    </ol>
+
+    <h2>Verify from the outside</h2>
+    <pre><code>dig +short TXT _dmarc.example.com @8.8.8.8
+dig +short TXT example.com @8.8.8.8</code></pre>
+
+    <h2>Sources</h2>
+    <ul>
+      <li><a href="https://datatracker.ietf.org/doc/html/rfc7489#section-6.6.3">RFC 7489, DMARC, section 6.6.3 (policy discovery and invalid tags)</a></li>
+      <li><a href="https://support.google.com/a/answer/81126">Google: Email sender guidelines</a></li>
+      <li><a href="https://senders.yahooinc.com/best-practices/">Yahoo: Sender best practices</a></li>
+      <li><a href="https://techcommunity.microsoft.com/blog/microsoftdefenderforoffice365blog/strengthening-email-ecosystem-outlook%E2%80%99s-new-requirements-for-high%E2%80%90volume-senders/4399730">Microsoft: Outlook requirements for high-volume senders</a></li>
+      <li><a href="https://www.ic3.gov/">FBI Internet Crime Complaint Center (IC3) annual reports</a></li>
+    </ul>
+
+    <blockquote>One letter turned an enforced policy into a questionable one. Check DMARC from the outside, spell every tag exactly, and read the reports.</blockquote>
+
+    <p><a href="/">&larr; All articles</a></p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis (John) Konstas; compiled and finalized with AI assistance. The business is not named; the domain and addresses shown are documentation examples. Educational content, not legal advice.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas, IT Solutions USA, Corp. All rights reserved. Articles, videos, narration, images and diagrams are original works: no reuse, re-upload or redistribution without written permission. Code samples are released under the <a href="/license">MIT License</a>. Educational content only, not professional or legal advice. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=dmarc-one-typo",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>

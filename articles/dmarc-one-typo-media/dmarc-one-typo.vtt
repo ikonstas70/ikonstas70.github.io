@@ -1,0 +1,101 @@
+WEBVTT
+
+1
+00:00:00.700 --> 00:00:06.404
+A routine check of a real business domain found one misspelled word in its DMARC record.
+
+2
+00:00:06.754 --> 00:00:11.619
+The business is not named, and every value shown is a documentation example.
+
+3
+00:00:13.733 --> 00:00:16.938
+This is the record, read from public DNS.
+
+4
+00:00:17.288 --> 00:00:20.750
+One tag stands out: s p equals quarentine.
+
+5
+00:00:21.100 --> 00:00:22.595
+The other tags are valid.
+
+6
+00:00:22.945 --> 00:00:31.295
+But s p accepts only three values: none, quarantine, or reject. Quarentine, with an e, is not one of them.
+
+7
+00:00:33.400 --> 00:00:35.144
+What does the standard say?
+
+8
+00:00:35.494 --> 00:00:46.054
+RFC 7489 says that when the s p tag is not valid, and a report address is present, the receiver should act as if the policy were p equals none.
+
+9
+00:00:46.404 --> 00:00:51.919
+So a policy written as quarantine can, under a strict reading, become monitor only.
+
+10
+00:00:54.033 --> 00:00:55.592
+Accuracy matters here.
+
+11
+00:00:55.942 --> 00:00:59.939
+It does weaken protection against forged mail in the company's name.
+
+12
+00:01:00.289 --> 00:01:07.305
+It does make the domain look less carefully managed, at a time when mailbox providers require valid DMARC.
+
+13
+00:01:07.655 --> 00:01:15.343
+But it does not, on its own, explain why genuine mail lands in spam. Reputation and content decide most of that.
+
+14
+00:01:15.693 --> 00:01:21.431
+Large receivers may ignore only the bad tag. The typo is one factor, not the whole story.
+
+15
+00:01:23.533 --> 00:01:25.184
+Why should the business care?
+
+16
+00:01:25.534 --> 00:01:28.254
+Receipts and newsletters in spam are not read.
+
+17
+00:01:28.604 --> 00:01:35.898
+Gmail and Yahoo have enforced sender rules since February twenty twenty four, and Microsoft since May twenty twenty five.
+
+18
+00:01:36.248 --> 00:01:40.605
+A weak policy makes forged invoices in the company's name easier to deliver.
+
+19
+00:01:40.955 --> 00:01:44.510
+Bulk complaints lower delivery for all of the domain's mail.
+
+20
+00:01:44.860 --> 00:01:49.066
+And the fix takes minutes, costs nothing, and can be undone.
+
+21
+00:01:51.167 --> 00:01:52.386
+The corrections.
+
+22
+00:01:52.736 --> 00:01:54.719
+First, fix the spelling.
+
+23
+00:01:55.069 --> 00:02:02.406
+Then move S P F to a hard fail once the reports are clean, and confirm DKIM signing in every sending service.
+
+24
+00:02:02.756 --> 00:02:07.682
+Register with Google Postmaster Tools, and move bulk mail to its own subdomain.
+
+25
+00:02:09.800 --> 00:02:14.676
+Spell every tag exactly, check from the outside, and read the reports.

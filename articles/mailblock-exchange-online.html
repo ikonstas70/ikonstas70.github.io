@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://ikonstas70.github.io/articles/mailblock-exchange-online">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MailBlock: Stop Unwanted Email in Microsoft 365, Safely — Konstas Engineering Notes</title>
+<meta name="description" content="MailBlock blocks any sender or domain in Microsoft 365 in seconds, bounces genuine senders politely, stays silent to forgeries, and tracks who keeps trying. Installed as a managed service by IT Solutions USA.">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta property="og:title" content="MailBlock: Stop Unwanted Email, Safely">
+<meta property="og:description" content="One private page to block senders across Microsoft 365, with a smart bounce that can never be turned against you. Video included.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://ikonstas70.github.io/articles/mailblock-media/mailblock-poster.jpg">
+<link rel="stylesheet" href="/style.css">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BZK50T0JFT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BZK50T0JFT");gtag("config","G-CG7YJ7E3Q7");</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="brand" href="/">Konstas<em>.</em>Engineering Notes</a>
+    <div class="tagline">Networking &middot; Cybersecurity &middot; Infrastructure</div>
+    <div class="rule"></div>
+    <nav class="top">
+      <a href="/about">About</a>
+      <a href="/" class="active">Articles</a>
+      <a href="/bgp/">BGP</a>
+      <a href="/bitcoin/">Bitcoin</a>
+      <a href="/data-science/">Data Science</a>
+      <a href="/index-az">Index</a>
+      <a href="/mitre-attack/">MITRE ATT&amp;CK</a>
+      <a href="/portfolio/">Portfolio</a>
+      <a href="/readings">Readings</a>
+      <a href="/search">Search</a>
+      <a href="/awareness/">Security Awareness</a>
+      <a href="/articles/sentinel-platform">SENTINEL</a>
+      <a href="/stack">Stack</a>
+      <a href="/networking/">TCP/IP</a>
+    </nav>
+  </header>
+
+  <main>
+    <img src="/ioannis-portrait.jpg?v=4" alt="Ioannis (John) Konstas" style="float:left;width:80px;height:80px;object-fit:cover;border-radius:50%;border:1px solid hsl(43 45% 56% / .85);box-shadow:0 0 0 4px hsl(43 45% 56% / .12), 0 3px 14px rgb(0 0 0 / .55);margin:6px 24px 10px 0;">
+    <span class="tag">Email Security</span>
+    <h1>MailBlock: Stop Unwanted Email, Safely</h1>
+    <p class="meta" style="clear:none;">Articles &middot; November 2026 &middot; Ioannis (John) Konstas</p>
+    <div style="clear:both;"></div>
+
+    <video controls playsinline preload="metadata" poster="mailblock-media/mailblock-poster.jpg" style="display:block;width:100%;height:auto;border:1px solid hsl(43 45% 56% / .35);border-radius:10px;background:#000;margin:18px 0 26px">
+      <source src="mailblock-media/mailblock.mp4" type="video/mp4">
+      <track kind="captions" srclang="en" label="English" src="mailblock-media/mailblock.vtt" default>
+    </video>
+
+    <p>Every business on Microsoft 365 knows this inbox: the same sender every day, "unsubscribe" ignored, and blocking them in the admin portal is a job for an expert. MailBlock turns that into one private page: type a sender or a whole domain, press <strong>Add</strong>, and it is blocked across the entire mail system in seconds. Press <strong>remove</strong>, and it is unblocked just as fast. All names shown here are examples, not real customers.</p>
+
+    <h2>Why a careless block is dangerous</h2>
+    <p>Spammers forge sender addresses all the time. A tool that bounces everything will send its bounces to innocent people whose addresses were forged, and the business that sent them starts to look like a spam source. Bounces also help attackers learn which addresses exist. A block has to be smart about <em>who</em> gets an answer.</p>
+
+    <h2>The smart bounce</h2>
+    <ul>
+      <li><strong>Genuine sender, proven by Microsoft:</strong> a polite, final bounce, "The email account that you tried to reach is no longer active", so they remove you from their list.</li>
+      <li><strong>Forged or unproven:</strong> silence. The message is held for your review and nobody receives a reply, so your company can never be used as a weapon.</li>
+      <li><strong>Generic text:</strong> no names, no internal details, nothing an attacker can use.</li>
+    </ul>
+
+    <h2>Everything inside</h2>
+    <ul>
+      <li><strong>Private dashboard</strong>: one page, one click, runs inside your business.</li>
+      <li><strong>Smart bounce</strong> and <strong>silent quarantine</strong>, as described above.</li>
+      <li><strong>Attempt tracker</strong>: how many times each blocked sender tried, and when, with every attempt one click away.</li>
+      <li><strong>Status check</strong>: whether any sender's latest email arrived, bounced, or is being held.</li>
+      <li><strong>Secure connection</strong>: encrypted to today's strongest, post-quantum-ready standard.</li>
+      <li><strong>Automatic sync</strong>: every change reaches Exchange Online by itself.</li>
+      <li><strong>Backups and history</strong>: a backup before every change, and a permanent record of every action.</li>
+      <li><strong>Always on</strong>: it starts by itself and keeps running.</li>
+    </ul>
+
+    <h2>Secure by design</h2>
+    <ul>
+      <li><strong>Private</strong>: nothing is exposed to the internet.</li>
+      <li><strong>Least privilege</strong>: it manages blocking only and cannot read anyone's mail.</li>
+      <li><strong>Reversible</strong>: every change can be undone in one click.</li>
+      <li><strong>Built by an auditor</strong>: security is part of the design, not an afterthought.</li>
+    </ul>
+
+    <h2>We install it for you</h2>
+    <p>MailBlock is offered as a managed service by <a href="https://it-solutionsusa.com">IT Solutions USA</a>: we review your Microsoft 365, install MailBlock on your system, train your team in minutes, and stay with you for support. Your tenant, your control, and no code for you to touch.</p>
+
+    <blockquote>Block fast. Reply safely. Undo anytime. Ask for a demo at <a href="https://it-solutionsusa.com">it-solutionsusa.com</a>.</blockquote>
+
+    <p><a href="/">&larr; All articles</a></p>
+    <p class="meta ai-note" style="margin-top:28px;font-style:italic;text-transform:none;letter-spacing:0">Research and direction by Ioannis (John) Konstas; compiled and finalized with AI assistance. All names, addresses and values shown are examples.</p>
+  </main>
+
+  <footer class="site">
+    <p>&copy; 2026 Ioannis Alexander Konstas, IT Solutions USA, Corp. All rights reserved. Articles, videos, narration, images and diagrams are original works: no reuse, re-upload or redistribution without written permission. Code samples are released under the <a href="/license">MIT License</a>. Educational content only, not professional or legal advice. &middot; <a href="https://github.com/ikonstas70">github.com/ikonstas70</a></p>
+  </footer>
+</div>
+<div class="viewcount" aria-label="page views"><span class="vc-eye">&#128065;</span><span class="vc-num" id="vc-num">&middot;</span>&nbsp;views</div>
+<script>
+(function(){
+  var el=document.getElementById("vc-num");
+  fetch("/api/views?slug=mailblock-exchange-online",{cache:"no-store"})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d&&typeof d.count==="number") el.textContent=d.count.toLocaleString(); })
+    .catch(function(){});
+})();
+</script>
+</body>
+</html>
